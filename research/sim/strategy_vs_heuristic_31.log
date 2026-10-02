@@ -1,0 +1,15 @@
+greedy {'n_decks': 8000, 'mean_vs_heuristic': -3.6749, 'ci95': [-3.7445, -3.6052]}
+take_played {'n_decks': 8000, 'mean_vs_heuristic': -3.8191, 'ci95': [-3.8892, -3.7489]}
+take_played_weak {'n_decks': 8000, 'mean_vs_heuristic': -3.6313, 'ci95': [-3.7011, -3.5614]}
+trail_court_first {'n_decks': 8000, 'mean_vs_heuristic': -3.5014, 'ci95': [-3.5738, -3.429]}
+trail_foster {'n_decks': 8000, 'mean_vs_heuristic': -3.6527, 'ci95': [-3.7242, -3.5812]}
+trail_psellos {'n_decks': 8000, 'mean_vs_heuristic': -3.6761, 'ci95': [-3.7455, -3.6068]}
+trail_high {'n_decks': 8000, 'mean_vs_heuristic': -4.0389, 'ci95': [-4.1049, -3.9729]}
+hold_face_last {'n_decks': 8000, 'mean_vs_heuristic': -3.4617, 'ci95': [-3.5317, -3.3918]}
+hold_face_dealer_only {'n_decks': 8000, 'mean_vs_heuristic': -3.514, 'ci95': [-3.5838, -3.4442]}
+avoid_sweep_trail {'n_decks': 8000, 'mean_vs_heuristic': -3.6628, 'ci95': [-3.732, -3.5936]}
+cards_first_w04 {'n_decks': 8000, 'mean_vs_heuristic': -3.6768, 'ci95': [-3.7466, -3.6069]}
+long1792_all {'n_decks': 8000, 'mean_vs_heuristic': -3.4256, 'ci95': [-3.4979, -3.3532]}
+foster_all {'n_decks': 8000, 'mean_vs_heuristic': -3.4576, 'ci95': [-3.5289, -3.3864]}
+long1792_no_take {'n_decks': 8000, 'mean_vs_heuristic': -3.2316, 'ci95': [-3.3042, -3.1591]}
+long1792_weak_take {'n_decks': 8000, 'mean_vs_heuristic': -3.2339, 'ci95': [-3.3063, -3.1616]}

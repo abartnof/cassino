@@ -8,7 +8,7 @@
   - **Oriental flip-from-stock games** (hanafuda, Go-Stop, Chinese Ten).
 - The earliest European fishing game on record is English **Laugh and Lie Down**, named in 1522 and described by Francis Willughby c. 1665 [09-S69][09-S42].
   - Parlett calls it "the earliest known example of a European game of the Fishing family (Cassino, Scopa, etc), which may be of Chinese origin" [02-S34].
-  - Its name comes from the rule that a player who can no longer capture lays down the hand, "whereupon the other players are supposed to laugh at you" [02-S34].
+  - Its name comes from the rule that a player who can no longer capture lays down the hand, "whereupon the other players are supposed to laugh at you" [09-S69].
 - Other early French and English fishing games:
   - French **Culbas** (1658) [09-S43] and **Papillon**, which appears in the *Académie des jeux* by 1730 [09-S41]. Papillon already had sum-capture: an ace, a four and a five "vous pouvez prendre … avec un seul dix" [you can take with a single ten] [09-S79].
   - The Yorkshire game **Snitch'ems**, printed in 1773 and 1797, captured by "making eights and tens" [02-S18][09-S73].
@@ -17,10 +17,10 @@
 ### 2.2 First records: London, 1792 — two rival rulebooks
 - **Robert Long, *Short Rules for Playing the Game of Cassino* (London, 1792)** is the earliest known rulebook. Its title page spells the game "CASSINO" [11-V-S1].
 - **Long's game:**
-  - Deal: four cards each, plus four face up "upon the Board (the first Deal only)" [11-V-S1].
+  - Deal: four cards each, plus four face up "upon the Board (the first Deal only)" [03-S1][11-V-S1].
   - Captures are made by "pairing or equalling any number of Pips" [03-S1].
   - Court cards can only pair [03-S1]. There is no building and no calling [03-S1].
-  - Scoring: an 11-point game, "The Ten of Diamonds, which is Great Cassino, marks two Points: The Deuce of Spades, which is Little Cassino, marks one Point: The Majority of the Cards — three Points. The Majority of the Spades — one Point: and The Four Aces — one Point each", with "Six Points gained save the Lurch" [11-V-S1].
+  - Scoring: an 11-point game, "The Ten of Diamonds, which is Great Cassino, marks two Points: The Deuce of Spades, which is Little Cassino, marks one Point: The Majority of the Cards — three Points. The Majority of the Spades — one Point: and The Four Aces — one Point each", with "Six Points gained save the Lurch" [03-S1][11-V-S1].
 - Clearing the board already scored in 1792. A player who takes all the table cards "clears the Board, and marks one Point in the Game as often as repeated" [11-V-S1]. This contradicts Pratesi's claim that the earliest rules gave no points for sweeps [11 §V2].
 - Long describes a forerunner of the later "call". With a pair in hand and a third card of that rank on the board, a player "may (if he pleases) lay down one of them and wait his Turn". The cards are not protected: "the Adversary being at Liberty to take them if he can" [03-S1].
 - A second 1792 text, ***Casino; a mock-heroic poem***, reprinted with an appendix of laws in 1793, spells the game "Casino". It attacks Long directly: "Mr. R. L. speaks of Three-handed Casino, (or CASSINO as he erroneously spells it,)" [11-V-S2].
@@ -64,7 +64,7 @@
   - "Derjenige, der … den Tisch räumt, zähle für jedesmal unwiderruflich ein Point" (whoever clears the table scores one point, irrevocably, each time).
   - "dieses nennet man den Sweep, oder den Kehraus" (this is called the sweep, or the *Kehraus*).
   - "Der Lurch (Bredouille) oder doppelt gewonnenes Spiel ist Fünf" (the lurch, or doubly won game, is five).
-- The same text, with the poem's Florentine etymology, the lurch of five and the count-out order for three players, reappears in Polish (Wrocław 1821) and Danish (1829) [10-S46][10-S36]. These are my inferences from the textual match [11 §V3]:
+- The same text, with the poem's Florentine etymology, the lurch of five and the count-out order for three players, reappears in Polish (Wrocław 1821) and Danish (1829) [10-S46][10-S36]. Note 11 infers from the textual match [11 §V3]:
   - Continental Casino descends from the poem's "Casino" tradition rather than from Long.
   - This may explain why German sources "invariably use the spelling 'Casino'" [01-S1].
 - The German and Polish books even teach pronunciation: Sweep "wie Swiep", Lurch "wie Lordsch" [10-S41]; Polish "Świp", "Lordź" [10-S46].
@@ -84,7 +84,7 @@
   - the preface to the fourth edition of the *American Hoyle* lists Cassino among games "added to the fourth edition" [11-V-S3];
   - that edition's preface is dated February 1867 [03-S15].
 - The 1867 *American Hoyle* adds **calling** with spoken grammar. A build is announced in the singular ("'Nine' or 'Ten' — not 'Nines' or 'Tens'"), and a call in the plural ("'Fours,' not 'Four'") [03-S15].
-- The same book shows how rare the old English game had become in America. It calls the 11-point subtraction game "Set-back or Rounce Cassino" [11 §V5]. Several OCR transcriptions misread this as "Bounce" [11 §V5].
+- Pratesi reads the same book as showing how rare the old English game had become in America [04-S7]. The passage itself, though, says "The European game is the favorite with those who play merely for recreation, and is known as Set-back or Rounce Cassino" [11-V-S3][11 §V5]. Several OCR transcriptions misread this as "Bounce" [11 §V5].
 - Variants multiplied in print:
   - **21-point play** with mid-hand claims (Townsend 1891; Dick 1894) [03-S20][03-S22].
   - **Court cards valued 11/12/13** as "An Interesting Variation… now very generally played" (1894) [03-S22]. Foster named this **Royal Cassino** in 1897 [03-S23].
@@ -105,7 +105,7 @@
   - Every Nordic edition peaks in July [01-S63].
   - Finnish sources describe Kasino as "hyvin suosittu" (very popular) and suitable for children and adults alike [10-S1].
   - In 2024, 78.1% of Finns played card games at least sometimes [10-S3].
-- **Southern Africa.** A 40-card "Khasino" with stealable capture piles is played in townships, taverns and prisons, and has its own association (KASA) and online apps [02-S4][05-S81][06-S22].
+- **Southern Africa.** A 40-card "Khasino" with stealable capture piles is played in townships and has its own association (KASA) and online apps [02-S4][05-S81][06-S22]. A since-removed Wikipedia edit adds taverns, shebeens and prisons [01-S8].
   - The biggest growth among Cassino apps found is South African: "the most beloved card game from South African townships" [06-S58][06 §12.18].
 - **Caribbean.** A Reddit user calls Royal Casino "the national card game of the dominican republic" [05-S95]. Pagat documents a "popular card game in Haiti" pronounced *cásino* [02-S3].
 - **United States.** The game survives mainly through family memory: "My mom taught me this game almost 60 years ago, when I was learning arithmetic" [02-S57]. Several players also report learning it in prison [05-S100][06-S20].
@@ -133,9 +133,7 @@
 | cs Pasúr | "italská hra Cassino" [the Italian game Cassino] | unsourced [01-S62] |
 | CardRules+ (cited by it) | Cassino is the "progenitore" [progenitor] of Scopa and Escoba | web page, unsupported [01-S70] |
 
-- **Spelling:**
-  - en now says "Cassino" is used in Long 1792 and is "the most persistent spelling since … although German sources invariably use the spelling 'Casino'" [01-S1].
-  - Pagat says the reverse: "the earliest sources use the spelling Casino, but a tradition has grown up among later writers to spell it with a double 's'" [01-S64].
+- **Spelling** (the Long-vs-poem dispute is in §2.2 above; further details):
   - The archive.org scan of Long's title page reads "SHORT RULES FOR PLAYING THE GAME OF CASSINO", and the archive metadata gives "cassino" [01-S81]. Hoyle 1796 uses both: the running head "The Game of CASINO" and the text "GAME of CASSINO" [01-S82].
   - Bermicourt's 2022 talk comment ("Both spellings were used early on, but 'Casino' was first") conflicts with his own later article text [01-S2].
   - The nb title moved to "Kasino" as the Språkrådet spelling [01-S28].

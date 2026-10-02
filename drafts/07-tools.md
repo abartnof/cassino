@@ -5,7 +5,7 @@
   - The 1793 poem's three-handed game needs "Six Counters … to score with" [11-V-S2].
   - The German 1797 rules print a counter layout ("Man marquirt auf folgende Art", one marks as follows) [10-S41]. So does the 1810 *Spielalmanach* [01-S83].
   - The Polish 1821 almanac opens with a "Tablica do Oznaczenia Gry", a chart of counter patterns for marking 1–9 points [10-S46].
-  - In 1804 Martha Wilmot in Russia had "a little box of Cassino Markers of tortoiseshell" [04-S36].
+  - In 1804 Martha Wilmot in Russia bought "a little box of Cassino Markers of tortoiseshell" as a gift [04-S36].
 - **Paper, counters or a cribbage board (1897):** "the score may be kept with counters, on a sheet of paper, or on a cribbage board" [03-S31].
   - Spade Cassino is built around pegging: "every point being pegged immediately … Sixty-one points is game, once round the board and into the game hole" [03-S23].
   - Porrazo, a Mexican-American relative, is also played to 61 on a cribbage board [09-S26].
@@ -34,12 +34,13 @@
   - A Reddit user asks, "Is it allowed to stack or track your spades separately so you can see if you have yet won seven?" This is an unmet need a digital game can meet [02-S63].
 
 ### 7.2 Digital landscape (2026)
-- **Small market:** Cassino apps are one to two orders of magnitude smaller than Scopa or Basra apps [06 §2.1].
+- **Small market:** the leading Cassino app has about 166,000 Android installs, far behind the leading Scopa app (see the scale comparison below) [06 §2.1].
 - **Board Game Arena:** "Available since Apr 7th 2025", with 2,653 games played [06-S31].
 - **No Cassino on Steam** [06-S37].
 - **Not in the big compilations:** no Cassino in *Hoyle Card Games* or *Clubhouse Games* [06-S38].
 - **Open-source projects:** come largely from Finnish university courses and South African developers [06-S53][06-S56][06-S57].
 - **Roguelike trend:** *Scopa Sweep* is a "Traditional Italian Scopa card game turned roguelike" [06-S37]. The Finnish *Kasino* app has a dungeon-style "Trials" mode [06-S24].
+
 #### Mobile catalogue (from note 06)
 
 | App (developer) | Installs (exact) | Rating (n) | Released | Rules / modes noted | Source |
@@ -55,11 +56,13 @@
 | Cassino Pro (Sizo Develops II) | 59 | — | Jun 2026 | SA 40-card; room codes; LAN | [06-S48] |
 
 iOS:
+
 - **Cassino! (Michael Dokken):** 3.76 stars from 302 ratings, released 2012-09-13, v2.5. Supports "2 player, 3 player, and 4 player… Local multiplayer games can be played over bluetooth or wifi. Online… through game center… Turn-Based"; "Four difficulty levels"; variations "Royal, Draw, Sweep, Other Variations"; tutorial; statistics. [06-S26]
 - **Cassino Royale (PikeSquare, 2026):** "Training mode suggests your best move — and explains why • It even explains the computer's moves"; "A new Daily Challenge every day — the same deal for everyone"; "Pass & Play: two players, one device"; "Large, readable cards designed for comfortable play at any age"; "No ads. No data collection." [06-S28]
 - **Casino Card Game (Paris Pinkney):** 4.33 stars from 6 ratings on iOS. [06-S30]
 
-**Scale comparison with relatives.** The same day, Scopa and Basra apps were one to two orders of magnitude larger than any Cassino app:
+**Scale comparison with relatives.** On the same day, the leading Scopa app had about 75 times the installs of the top Cassino app (Zol's, 165,691 [06-S19]). The leading Basra and Chkobba apps had about 3–5 times as many, and the leading Pasur app had fewer:
+
 - Scopa: *Scopa: la Sfida* (WhatWapp) 12,339,804 installs and 4.36 stars (229,507 ratings); *Scopa originale Dal Negro* 3,560,675; *Scopa (Broom)* (Lisitso) 1,888,672; *Scopa!* (Escogitare) 1,637,117; *Scopa Più* 1,221,038; *Scopa 15* (Escoba) 865,798. [06-S40]
 - Others: *Egyptian Basra v2* 831,177; *Egyptian Basra – كوتشينه* 532,117; *Chkobba Tn* 531,113; the Iranian Pasur app *چهاربرگ آنلاین 11* 142,848; *Xeri+* 68,376. [06-S42]
 - iOS: *Scopa!* (Marcarelli) 4.73 stars from 3,743 ratings; *La Scopa* (OutOfTheBit) 4.72 from 3,322; *Pasur11* 4.63 from 1,239; compared with Cassino!'s 302 ratings. [06-S30][06-S43]
@@ -70,7 +73,7 @@ iOS:
   - Psellos labels each build pile with its value [06-S33].
   - SpiteNET treated missing labels as a bug worth a version fix: "If you have version 1 and the numbers on your Build piles don't show… please update" [06-S34].
 - **Ownership and value pickers:**
-  - South African rules: "Each build has an owner" [02-S4].
+  - Southern African rules: "Each build has an owner" [06-S4].
   - One open-source implementation draws an owner style for each build and opens a modal to choose its value [06-S57].
 - **The worst failure is inferring intent.**
   - Paris Pinkney's app made players start "from the middle" [06-S20].

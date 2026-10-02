@@ -1,0 +1,137 @@
+{
+ "greedy": {
+  "n_decks": 8000,
+  "mean_vs_heuristic": -3.6749,
+  "gain_over_greedy": 0.0,
+  "ci95": [
+   0.0,
+   0.0
+  ]
+ },
+ "take_played": {
+  "n_decks": 8000,
+  "mean_vs_heuristic": -3.8191,
+  "gain_over_greedy": -0.1442,
+  "ci95": [
+   -0.1762,
+   -0.1121
+  ]
+ },
+ "take_played_weak": {
+  "n_decks": 8000,
+  "mean_vs_heuristic": -3.6313,
+  "gain_over_greedy": 0.0436,
+  "ci95": [
+   0.0229,
+   0.0643
+  ]
+ },
+ "trail_court_first": {
+  "n_decks": 8000,
+  "mean_vs_heuristic": -3.5014,
+  "gain_over_greedy": 0.1735,
+  "ci95": [
+   0.1107,
+   0.2363
+  ]
+ },
+ "trail_foster": {
+  "n_decks": 8000,
+  "mean_vs_heuristic": -3.6527,
+  "gain_over_greedy": 0.0222,
+  "ci95": [
+   -0.0374,
+   0.0818
+  ]
+ },
+ "trail_psellos": {
+  "n_decks": 8000,
+  "mean_vs_heuristic": -3.6761,
+  "gain_over_greedy": -0.0013,
+  "ci95": [
+   -0.0616,
+   0.0591
+  ]
+ },
+ "trail_high": {
+  "n_decks": 8000,
+  "mean_vs_heuristic": -4.0389,
+  "gain_over_greedy": -0.364,
+  "ci95": [
+   -0.4299,
+   -0.2981
+  ]
+ },
+ "hold_face_last": {
+  "n_decks": 8000,
+  "mean_vs_heuristic": -3.4617,
+  "gain_over_greedy": 0.2131,
+  "ci95": [
+   0.1924,
+   0.2339
+  ]
+ },
+ "hold_face_dealer_only": {
+  "n_decks": 8000,
+  "mean_vs_heuristic": -3.514,
+  "gain_over_greedy": 0.1609,
+  "ci95": [
+   0.1435,
+   0.1782
+  ]
+ },
+ "avoid_sweep_trail": {
+  "n_decks": 8000,
+  "mean_vs_heuristic": -3.6628,
+  "gain_over_greedy": 0.0121,
+  "ci95": [
+   -0.0131,
+   0.0372
+  ]
+ },
+ "cards_first_w04": {
+  "n_decks": 8000,
+  "mean_vs_heuristic": -3.6768,
+  "gain_over_greedy": -0.0019,
+  "ci95": [
+   -0.0109,
+   0.0071
+  ]
+ },
+ "long1792_all": {
+  "n_decks": 8000,
+  "mean_vs_heuristic": -3.4256,
+  "gain_over_greedy": 0.2493,
+  "ci95": [
+   0.1816,
+   0.317
+  ]
+ },
+ "foster_all": {
+  "n_decks": 8000,
+  "mean_vs_heuristic": -3.4576,
+  "gain_over_greedy": 0.2172,
+  "ci95": [
+   0.1542,
+   0.2803
+  ]
+ },
+ "long1792_no_take": {
+  "n_decks": 8000,
+  "mean_vs_heuristic": -3.2316,
+  "gain_over_greedy": 0.4432,
+  "ci95": [
+   0.3789,
+   0.5076
+  ]
+ },
+ "long1792_weak_take": {
+  "n_decks": 8000,
+  "mean_vs_heuristic": -3.2339,
+  "gain_over_greedy": 0.4409,
+  "ci95": [
+   0.3755,
+   0.5064
+  ]
+ }
+}

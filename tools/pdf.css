@@ -1,0 +1,48 @@
+/* Print stylesheet for the PDF build (pandoc -> HTML -> WeasyPrint). */
+@page {
+  size: Letter;
+  margin: 0.8in 0.75in 0.9in 0.75in;
+  @bottom-center { content: counter(page) " / " counter(pages); font: 8pt "Noto Sans", "DejaVu Sans", sans-serif; color: #666; }
+  @top-right { content: "Cassino: A Literature Review"; font: 8pt "Noto Sans", "DejaVu Sans", sans-serif; color: #999; }
+}
+@page :first { @top-right { content: none; } }
+
+html { font-size: 10pt; }
+body {
+  font-family: "Noto Serif", "DejaVu Serif", "Noto Naskh Arabic", "Noto Sans", serif;
+  line-height: 1.4;
+  color: #1a1a1a;
+  hyphens: auto;
+}
+h1, h2, h3, h4 { font-family: "Noto Sans", "DejaVu Sans", sans-serif; line-height: 1.2; page-break-after: avoid; break-after: avoid; }
+h1 { font-size: 20pt; margin: 0 0 0.6em; }
+h2 { font-size: 15pt; margin: 1.6em 0 0.5em; border-bottom: 1px solid #bbb; padding-bottom: 0.15em; break-before: page; }
+h3 { font-size: 12pt; margin: 1.3em 0 0.4em; }
+h4 { font-size: 10.5pt; margin: 1.1em 0 0.3em; }
+/* The four front-matter headings (How to read, Method, Executive summary, Contents) flow on from the title. */
+h2:nth-of-type(-n+4) { break-before: auto; }
+
+p, li { orphans: 2; widows: 2; }
+ul, ol { padding-left: 1.4em; margin: 0.3em 0 0.6em; }
+li { margin: 0.12em 0; }
+a { color: #1d4f91; text-decoration: none; }
+code { font-family: "DejaVu Sans Mono", monospace; font-size: 0.86em; background: #f3f3f3; padding: 0 0.15em; overflow-wrap: anywhere; }
+blockquote { margin: 0.6em 0; padding: 0.2em 0.8em; border-left: 3px solid #ccc; color: #444; }
+hr { border: 0; border-top: 1px solid #ddd; margin: 1.2em 0; }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 7.2pt;
+  line-height: 1.25;
+  margin: 0.6em 0 1em;
+  page-break-inside: auto;
+}
+thead { display: table-header-group; }
+tr { page-break-inside: avoid; break-inside: avoid; }
+th, td { border: 1px solid #ccc; padding: 2px 3px; vertical-align: top; text-align: left; overflow-wrap: break-word; hyphens: auto; }
+th { background: #eef1f5; font-family: "Noto Sans", "DejaVu Sans", sans-serif; }
+tbody tr:nth-child(even) td { background: #fafafa; }
+/* Let the layout engine size columns from content (pandoc's dash-count widths squash narrow columns). */
+col { width: auto !important; }
+table { table-layout: auto; }

@@ -599,7 +599,7 @@ All accessed 2026-10-02 unless noted. `[S#]` numbers not listed (S60, S63, S75, 
 - [S5] Frederick Reynolds, *Cheap Living: a comedy, in five acts* (London, 1797). archive.org `cheaplivingacom00reyngoog` — https://archive.org/details/cheaplivingacom00reyngoog
 - [S6] Jane Austen, *Pride and Prejudice* (1813), ch. XXIX. Project Gutenberg #1342 — https://www.gutenberg.org/cache/epub/1342/pg1342.txt
 - [S7] *Bohn's New Hand-book of Games* (1851), "Cassino." archive.org `bohnsnewhandboo00hoylgoog` — https://archive.org/details/bohnsnewhandboo00hoylgoog
-- [S8] "Trumps" [William Brisbane Dick], *The American Hoyle, or, Gentleman's Hand-book of Games* (New York: Dick & Fitzgerald, 1864), "Cassino" — Terms, Laws 1–16, pp. 218–221. archive.org `americanhoyleorg00dick` — https://archive.org/details/americanhoyleorg00dick
+- [S8] "Trumps" [William Brisbane Dick], *The American Hoyle, or, Gentleman's Hand-book of Games* (New York: Dick & Fitzgerald, 4th ed., ©1864; preface Feb. 1867), "Cassino" — Terms, Laws 1–16, pp. 218–221. archive.org `americanhoyleorg00dick` — https://archive.org/details/americanhoyleorg00dick
 - [S9] *Cassell's Book of In-door Amusements, Card Games, and Fireside Fun*, 3rd ed. (London: Cassell, Petter, Galpin & Co., n.d.), "Cassino," p. 129 ff. Project Gutenberg #49137 — https://www.gutenberg.org/ebooks/49137
 - [S10] Baxter-Wray [W. H. Peel], *Round Games with Cards* (London, 1891), "Cassino," pp. 97–100. Project Gutenberg #27819 — https://www.gutenberg.org/ebooks/27819
 - [S11b] R. F. Foster, *Foster's complete Hoyle; an encyclopedia of all the indoor games played at the present day* (London/New York: F. A. Stokes, 1897), "Cassino." archive.org `fosterscomplete00fostgoog` — https://archive.org/details/fosterscomplete00fostgoog

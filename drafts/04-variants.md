@@ -2,7 +2,7 @@
 
 ### 4.1 Named Cassino variants
 - **Classic English (1792):** no building; court cards pair only; 11-point difference scoring with a lurch [11-V-S1][03-S1]. The Americans later called it "Set-back or Rounce Cassino" [11 §V5].
-- **American (1866–67):** adds building, calling and spoken announcements; each deal counts as a game [03-S14][03-S15].
+- **American (1866–67):** adds building, calling and spoken announcements; each deal counts as a game. Building is printed from 1866 [03-S14], the deal-as-game scoring from 1867 [03-S15].
 - **Twenty-one-point:**
   - Points are scored as made, and a correct claim wins "even if his adversary has 21 or more" [03-S31].
   - "If he is mistaken, and cannot show out, he loses the game" [03-S31].
@@ -11,7 +11,7 @@
   - J/Q/K = 11/12/13 [03-S31]. The ace is "14 or 1 at the option of the holder; but if it is one of the cards lying on the table, it is always 1" [03-S28].
   - In 1898 the USPC suggested using 60-card poker packs with 11- and 12-spot cards, making "the jacks thirteens, the queens fourteens, the kings fifteens, and the aces ones or sixteens" [03-S24].
   - In 1905 the joker was valued at 15 [03-S27].
-- **Spade Cassino:** "every spade counts one point … The spade Jack counts one in addition". That makes 24 points per hand, pegged on a cribbage board to 61 [03-S23][11 §V7].
+- **Spade Cassino:** "every spade counts one point … The spade Jack counts one in addition" [09-S76]. That makes 24 points per hand, pegged on a cribbage board to 61 [03-S23][11 §V7].
 - **Draw / Royal Draw Cassino:**
   - Players refill their hand to four from a stock "left on the table, face down, slightly spread" [03-S29].
   - "If a player fails to draw in proper turn … he must draw two cards" [03-S33].
@@ -50,7 +50,7 @@
 
 ### 4.2 Comparison matrix across the family
 
-Abbreviations: Σ+ = sum to the played card; "+15/+11/+10/+8,10" = played card plus captured set = N; B = building; ΣΣ = multiple sets per capture; J* = Jack sweeps; Seq = sequence; Pile = single-pile.
+Abbreviations: Σ+ = sum to the played card; "+15/+11/+10/+8,10" = played card plus captured set = N; B = building; ΣΣ = multiple sets per capture; P = pairing; 1-of = capture a single card or set; Flip = turn up from stock; Seq = sequence; Pile = single-pile.
 
 | Game | Region | Deck | Pl. | Deal (hand/table; re-deal) | Capture | B | Special-power cards | Sweep | Main scoring items | Target | Src |
 |---|---|---|---|---|---|---|---|---|---|---|---|

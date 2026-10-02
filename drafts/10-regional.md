@@ -10,7 +10,7 @@
   - The earliest *mökki* found in print is a 1938 pulp story. It sneers at "amerikkalaisittain, ilman mitään mökkejä, sieppauksia ja muuta maallista turhuutta" (the American way, without any mökkis, snatches or other worldly vanity) [10-S6].
 - **Sweden (Kasino, Byggkasino, Krypkasino, Mulle):**
   - Lyckans Talisman documents a hand-value *choice*: "Spelaren som står på tur får välja om storan skall räknas som sexton ögon eller de vanliga tio ögonen" (the player whose turn it is may choose whether the big one counts sixteen or the usual ten) [10-S24].
-  - It also documents a rich set of calls ("sistan", "båten går", "ligger", "trött", "storan privat", "tabbe på knekt") [10-S24][10-S25][10-S26].
+  - It also documents a rich set of calls ("sistan" *last one*, "båten går" *the boat's leaving*, "ligger" *lies*, "trött" *tired*, "storan privat" *the big one, private*, "tabbe på knekt" *sweep on a jack*) [10-S24][10-S25][10-S26].
   - Mulle has margin slang: "hundraklubben" (the hundred club), "senap" (mustard), "ketchup" [10-S26].
 - **Norway:**
   - Kasino is listed among "Påskespill" (Easter games), with "Papir og blyant til poengene" (paper and pencil for the points) [10-S32].
@@ -24,18 +24,18 @@
   - The 1797 and 1821 texts translate the English rules, with pronunciation notes for "Sweep" and "Lurch" [10-S41][10-S46].
   - Modern German dictionaries have no card-game sense for *Kasino* [10-S43].
   - Zwicker survives in Schleswig-Holstein [10-S44].
-- **Hungary:** Kaszinó has 3-card deals, multi-card captures from the hand, "Ausz!" and "Fals!" [01-S20]. It appears in Tandori's novels [10-S56].
+- **Hungary:** Kaszinó has 3-card deals, multi-card captures from the hand, "Ausz!" (*Out!*) and "Fals!" (*False!*) [01-S20]. It appears in Tandori's novels [10-S56].
 - **Russia:** "сказать: «Строю 7»" (say: "I build 7"); "смести подчистую" (to sweep clean) [10-S57]. A separate folk game, *Скопа*, scores clubs instead of spades [01-S58].
 - **Brazil / Portugal:**
   - Casino is little known in Brazil. "Assim mesmo, com um 's' só (pronuncia-se casinó)" (Just like that, with a single 's', pronounced casinó) [10-S49].
-  - *Escopa* is the national fishing game [09-S82].
+  - The fishing game Brazilians actually play is *Escopa/Escova*, brought by Italian immigrants [10-S49][09-S82].
   - Dictionaries define "Cassino grande, o dez de ouros. Cassino pequeno, o dois de espadas" (Big cassino, the ten of diamonds; little cassino, the two of spades) [10-S50].
 - **Argentina:** "El Casino o Cassino es un juego de cartas de origen inglés" (Casino or Cassino is a card game of English origin) [10-S53]. Escoba de 15 has an official seniors' tournament regulation [10-S54].
 - **Ecuador:** the related Cuarenta is a public festival game with a world championship held since 1968/69 [05-S55][10-S55].
 - **Japan:** "ゲーム名は「カジノ」ではなく「カシノ」になります" (the game's name is "kashino", not "kajino" [casino]) [10-S59].
   - Japanese "ビルド" ("build") means capture-by-sum, while the English build is "付け札" (*tsukefuda*, "attached card") [01-S24].
   - This is a localisation trap [01 §2.9].
-- **French / Québec:** "gros casino (10 de carreau) 2 points; Le petit casino (2 de pique) 1 point" (Mainguy 1987) [10-S62].
+- **French / Québec:** "gros casino (10 de carreau) 2 points; Le petit casino (2 de pique) 1 point" (*big casino [10♦] 2 points; little casino [2♠] 1 point*) (Mainguy 1987) [10-S62].
 - **Afrikaans:** "Bly jy maar hier vanaand by my, en speel kasino, man" (Just stay here with me tonight and play kasino, man; Leipoldt) [10-S61].
 
 ### 10.2 Cross-national comparison (from note 10)
@@ -65,10 +65,11 @@
 (n/a = not stated in the fetched source.)
 
 **Patterns visible in the table:**
-1. Only the Nordic family gives ♦10, ♠2 and aces higher capture values from the hand.
+
+1. Apart from the German 1810 *Spielalmanach* and the German Wikipedia text derived from it [01-S83], only the Nordic family gives ♦10, ♠2 and aces higher capture values from the hand.
 2. Nordic sweeps usually score 1 and may cancel each other.
-3. The English-derived continental texts (German, Polish, Danish, Russian, Brazilian, Argentine) keep "pair-only" face cards and cards = 3 points.
-4. The ♦10 survives as a point card even in unrelated games: Greek Xeri and German Zwicker.
+3. The English-derived continental texts (German 1797, Polish 1821, Danish 1829, Russian, Brazilian) keep "pair-only" face cards and cards = 3 points.
+4. The ♦10 survives as a point card even in other fishing games: Greek Xeri and German Zwicker [10-S60][10-S44].
 
 ---
 
@@ -96,6 +97,7 @@ Key: "h/t" = cards to each hand / to the table. Values are as stated in that edi
 | Target | 11 (lurch <6), or each deal a game; 21 (1880) | **21**; closest to 21 wins if several exceed | 21 | **16** (var. 21; exact-16 var.) | **11**, claimed by "Ausz!" | 11 or 21 | 21 | — (talk: 16) | **16** | e.g. 21 | agreed (e.g. 52) |
 
 Notes:
+
 - (a) Spade Cassino (en): every spade 1 and the ♠J +1, 24 points per hand, game 61 [01-S1, 01-S78]; the it edition says 25 [01-S23].
 - (b) Finnish ties "jää pakkaan" [stay in the deck] and accumulate [01-S17].
 - (c) The de deal sizes conflict with every other edition [01-S14].

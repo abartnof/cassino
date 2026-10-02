@@ -1,5 +1,5 @@
 ## Appendix A. Repository map
-- `cassino-lit-review.md`: this document (assembled from `drafts/` by `tools/assemble.sh`).
+- `cassino-lit-review.md`: this document (assembled from `drafts/` by `tools/assemble.sh`). `cassino-lit-review.pdf` is built from it by `tools/build_pdf.sh` (pandoc + WeasyPrint, styled by `tools/pdf.css`).
 - `research/01-wikipedia.md` … `research/10-multilingual.md`: the ten research notes. Each contains its full, numbered source list, plus quotations and tables too long for this review.
 - `research/11-coordinator-verifications.md`: primary-source checks of contradictions (V1–V9).
 - `research/evidence/`: page images of the key primary sources:
@@ -9,7 +9,7 @@
 - `research/sim/`: simulation code and outputs.
   - `cassino_sim.py`: rules engine and policies.
   - `run_experiments.py`, `mechanism.py`, `pimc.py`, `combinatorics.py`: note 07's experiments.
-  - `strategy_tests.py`, `strategy_vs_heuristic.py`: the maxim tests in §9.4. Outputs are `*.json` and `*.log`.
+  - `strategy_tests.py`, `strategy_vs_heuristic.py`, `paired_deltas.py`: the maxim tests in §9.4. Outputs are `strategy_*.json` and `strategy_*.log`.
 - `tools/`:
   - `rekey.py`: citation re-keying;
   - `build_bibliography.py`: Appendix B;

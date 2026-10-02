@@ -21,7 +21,7 @@ for f in sorted(glob.glob('research/[01][0-9]-*.md')):
     out.append(body.strip() + "\n")
 out.append('''
 ### Original computation added in the synthesis pass
-- [SIM-ST] Strategy-maxim tests: `research/sim/strategy_tests.py` (variants vs. greedy baseline, duplicate decks; outputs `strategy_tests_2026.json`, `strategy_tests_2027.json`) and `research/sim/strategy_vs_heuristic.py` (variants vs. the one-ply card-counting heuristic; output `strategy_vs_heuristic_31.json`). Rules engine: `research/sim/cassino_sim.py` (pagat standard two-player rules, sweeps scored) [07-S40].
+- [SIM-ST] Strategy-maxim tests: `research/sim/strategy_tests.py` (variants vs. greedy baseline, duplicate decks; outputs `strategy_tests_2026.json`, `strategy_tests_2027.json`) and `research/sim/strategy_vs_heuristic.py` (variants vs. the one-ply card-counting heuristic, same decks for every variant; output `strategy_vs_heuristic_31.json`, with paired differences from plain greedy computed by `research/sim/paired_deltas.py` → `strategy_vs_heuristic_31_paired.json`). Rules engine: `research/sim/cassino_sim.py` (pagat standard two-player rules, sweeps scored) [07-S40].
 ''')
 out.append('''
 ### Key aliases

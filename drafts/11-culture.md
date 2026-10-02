@@ -57,4 +57,4 @@
   - Jack London: "We can give 'em cards and spades an' little casino an' win out on big casino and the aces" [04-S29].
 - **Swedish *tabberas*** ("to make a clean sweep") is used figuratively by Astrid Lindgren: "Nu har vi tagit tabberas på allting" (now we've made a clean sweep of everything) [10-S19].
 - **Danish "at rydde bordet"** ("to clear the table") is traced to Kasino by Lex.dk [05-S44].
-- **The Billy the Kid "Big Casino / Little Casino" nicknames** appear in the film *Chisum* (1970) and on websites. They are **absent** from Garrett's own 1882 *Authentic Life* and from Burns (1926) [04-S52][04-S165][04-S57]. Treat them as a 20th-century embellishment [04 §6].
+- **The Billy the Kid "Big Casino / Little Casino" nicknames** appear in the film *Chisum* (1970) and on websites. They are **absent** from Garrett's own 1882 *Authentic Life* and from Burns (1926) [04-S52][04-S165][04-S57]. They are probably a 20th-century embellishment, though this is unconfirmed [04 §6].

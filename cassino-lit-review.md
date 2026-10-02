@@ -27,26 +27,28 @@
    - 10: non-English sources beyond Wikipedia
 2. **Sources searched:**
    - Project Gutenberg, Internet Archive (full text and page images), Wikisource
-   - Chronicling America; the Finnish, Norwegian and Swedish national library collections; SAOB/ODS dictionaries
+   - Chronicling America; the Finnish and Norwegian national library collections; the Swedish SAOB and Danish ODS dictionaries
    - Wikipedia in 15+ languages
    - Pagat, BoardGameGeek and Reddit (via archives)
    - App stores, GitHub, Google Patents
    - arXiv, OpenAlex and CrossRef
 3. **Coordinator synthesis pass (note 11).** Contradictions between the notes were resolved by reading primary sources directly from page images: Long 1792, the 1793 mock-heroic poem, Dick's *American Hoyle* (4th ed.), the German translation of 1797 and the *Sporting Magazine* of 1793. This pass produced several new findings (§12).
-4. **New simulation experiments** tested 14 historical strategy maxims against a baseline player over 32,000 duplicate deals each (§9.4).
+4. **New simulation experiments** tested historical strategy maxims, singly and in combination, against a greedy baseline (32,000 duplicate deals per variant) and against a card-counting player (8,000 per variant) (§9.4).
 
 ---
 
 ## Executive summary
 **What the game is.**
+
 - Cassino is a "fishing" card game. A card played from the hand captures table cards of equal rank, or sets of table cards that sum to its value [09-S1][02-S1].
 - It is "the only fishing game to have become popular in English speaking countries" [02-S1].
 - Its distinctive mechanics are **building** and **calling**. These are American additions of 1866–67 [11 §V4][03-S15]. Pratesi notes they are "absent from other games of the family" [02-S30].
 
 **History in brief.**
-- **First records: London, 1792.** Two rival texts appeared: Robert Long's *Short Rules* ("Cassino") and an anonymous mock-heroic poem with laws ("Casino"). They disagreed on spelling, the lurch and capture etiquette [11 §V1–V3].
+
+- **First records: London, 1792.** Two rival texts appeared: Robert Long's *Short Rules* ("Cassino") and an anonymous mock-heroic poem ("Casino"; 1792, reissued with laws in 1793). They disagreed on spelling, the lurch and capture etiquette [11 §V1–V3].
 - **The poem's tradition went to Germany, Poland and Denmark.** The German 1797 laws translate it closely [11 §V3].
-- **The poem's "General Rules" became the strategy canon.** They were merged with Long's laws by the *Sporting Magazine* in 1793 and became the Hoyle maxims, reprinted until 1929 [11 §V9].
+- **The poem's "General Rules" became the strategy canon.** They were merged with Long's laws by the *Sporting Magazine* in 1793, and a condensed version became the Hoyle maxims, reprinted until 1929 [11 §V9][08 §0].
 - **America reinvented the game:**
   - building and spoken calls in 1866–67 [03-S14][03-S15];
   - Royal, Spade and Draw Cassino in 1894–1909 [03-S22][03-S23][03-S29];
@@ -54,12 +56,14 @@
 - **The "Italian origin" story is unsupported.** Its earliest printed form is the poem's dictionary-based Florentine etymology [04-S21][09-S70].
 
 **Where the game lives now** [01-S63][10-S1][02-S4][06-S22][02-S57]:
+
 - Nordic summer cottages (Kasino; Wikipedia pageviews peak in July);
 - South African townships (40-card Khasino);
-- the Dominican Republic and Haiti;
+- the Dominican Republic and Haiti [02-S3][05-S95];
 - American family memory.
 
 **What people say.**
+
 - From 1867 the spoken announcement *was* the rule. A build was named in the singular ("Nine"), a call or lock in the plural ("Fives"), "audibly and distinctly", or the opponent "may separate the cards" [11-V-S3][03-S15].
 - Calls with the same function exist in Danish ("mere syv"), Swedish ("två åttor", "ligger", "storan privat"), Finnish ("rakennan ässälle") and Russian ("Строю 7") [10-S37][10-S25][10-S1][10-S57].
 - The dealer warns "Last" / "sistan" / "båten går" / "sidsten" [02-S1][10-S24][10-S37].
@@ -67,6 +71,7 @@
 - **No traditional English sweep shout was found.** The shouted sweep belongs to Scopa, Escoba and Pişti [05 §3].
 
 **Scorekeeping tools** [04-S36][11-V-S2][03-S23][03-S31][10-S24][02-S13][06 §1.7]:
+
 - Tortoiseshell "Cassino Markers" (1804); counters (1793).
 - A cribbage board (Spade Cassino to 61).
 - The near-universal face-up sweep card; Swedish offset tallies.
@@ -77,22 +82,25 @@
   - explicit capture/build choices;
   - pace control;
   - score breakdowns;
-  - fairness transparency, because "the computer cheats" is the top complaint [06 §12].
+  - fairness transparency, because "the computer cheats" is the top complaint [06 §8][06 §12].
 
 **Statistics.**
+
 - No published quantitative study of Cassino exists [07 §1]. Original simulation for this review finds [07-S40][07-S43][07-S42]:
   - a game to 21 lasts about 3.5 hands;
   - 26–26 card ties occur about 7% of the time;
-  - sweeps range from 0.16 to 0.86 per hand depending on style;
+  - sweeps range from about 0.05 per hand (random play) to 0.86, and from 0.16 to 0.86 for non-random styles;
   - the dealer takes the end-of-hand residue in 60–77% of hands;
   - a one-ply card-counting bot beats greedy play in 91% of games;
   - there are about 10^50 distinct deals.
 - The best analogue research, on Scopone, measured a dealer-side edge and found that search AI (ISMCTS) is much harder for humans than rule-based bots [07-S2].
 
 **Strategy.**
+
 - Classical advice: memory first; cards > spades > cash points; take the opponent's trailed card; never feed the Cassinos; the dealer keeps a court card for the last capture [08 §1–8].
 - The main disputes are trailing small vs high cards (Foster vs Psellos), when to cash Big Cassino, and whether Royal Cassino is more skilful [08 §14].
-- Simulation tests of these maxims are in §9.4.
+- Simulation tests of these maxims (§9.4) support trailing court cards first and then low cards, and holding a court card for the end of the hand, in either seat. They find that taking the card your opponent just trailed helps only as a tie-break [SIM-ST].
+- No maxim comes close to the combined value of the card-counting bot's look-ahead, counting and building. The best bundle of maxims recovers about an eighth of a greedy player's deficit against the card-counting bot [SIM-ST].
 
 **Recommendations** for the game are in §14.
 
@@ -125,7 +133,7 @@
   - **Oriental flip-from-stock games** (hanafuda, Go-Stop, Chinese Ten).
 - The earliest European fishing game on record is English **Laugh and Lie Down**, named in 1522 and described by Francis Willughby c. 1665 [09-S69][09-S42].
   - Parlett calls it "the earliest known example of a European game of the Fishing family (Cassino, Scopa, etc), which may be of Chinese origin" [02-S34].
-  - Its name comes from the rule that a player who can no longer capture lays down the hand, "whereupon the other players are supposed to laugh at you" [02-S34].
+  - Its name comes from the rule that a player who can no longer capture lays down the hand, "whereupon the other players are supposed to laugh at you" [09-S69].
 - Other early French and English fishing games:
   - French **Culbas** (1658) [09-S43] and **Papillon**, which appears in the *Académie des jeux* by 1730 [09-S41]. Papillon already had sum-capture: an ace, a four and a five "vous pouvez prendre … avec un seul dix" [you can take with a single ten] [09-S79].
   - The Yorkshire game **Snitch'ems**, printed in 1773 and 1797, captured by "making eights and tens" [02-S18][09-S73].
@@ -134,10 +142,10 @@
 ### 2.2 First records: London, 1792 — two rival rulebooks
 - **Robert Long, *Short Rules for Playing the Game of Cassino* (London, 1792)** is the earliest known rulebook. Its title page spells the game "CASSINO" [11-V-S1].
 - **Long's game:**
-  - Deal: four cards each, plus four face up "upon the Board (the first Deal only)" [11-V-S1].
+  - Deal: four cards each, plus four face up "upon the Board (the first Deal only)" [03-S1][11-V-S1].
   - Captures are made by "pairing or equalling any number of Pips" [03-S1].
   - Court cards can only pair [03-S1]. There is no building and no calling [03-S1].
-  - Scoring: an 11-point game, "The Ten of Diamonds, which is Great Cassino, marks two Points: The Deuce of Spades, which is Little Cassino, marks one Point: The Majority of the Cards — three Points. The Majority of the Spades — one Point: and The Four Aces — one Point each", with "Six Points gained save the Lurch" [11-V-S1].
+  - Scoring: an 11-point game, "The Ten of Diamonds, which is Great Cassino, marks two Points: The Deuce of Spades, which is Little Cassino, marks one Point: The Majority of the Cards — three Points. The Majority of the Spades — one Point: and The Four Aces — one Point each", with "Six Points gained save the Lurch" [03-S1][11-V-S1].
 - Clearing the board already scored in 1792. A player who takes all the table cards "clears the Board, and marks one Point in the Game as often as repeated" [11-V-S1]. This contradicts Pratesi's claim that the earliest rules gave no points for sweeps [11 §V2].
 - Long describes a forerunner of the later "call". With a pair in hand and a third card of that rank on the board, a player "may (if he pleases) lay down one of them and wait his Turn". The cards are not protected: "the Adversary being at Liberty to take them if he can" [03-S1].
 - A second 1792 text, ***Casino; a mock-heroic poem***, reprinted with an appendix of laws in 1793, spells the game "Casino". It attacks Long directly: "Mr. R. L. speaks of Three-handed Casino, (or CASSINO as he erroneously spells it,)" [11-V-S2].
@@ -181,7 +189,7 @@
   - "Derjenige, der … den Tisch räumt, zähle für jedesmal unwiderruflich ein Point" (whoever clears the table scores one point, irrevocably, each time).
   - "dieses nennet man den Sweep, oder den Kehraus" (this is called the sweep, or the *Kehraus*).
   - "Der Lurch (Bredouille) oder doppelt gewonnenes Spiel ist Fünf" (the lurch, or doubly won game, is five).
-- The same text, with the poem's Florentine etymology, the lurch of five and the count-out order for three players, reappears in Polish (Wrocław 1821) and Danish (1829) [10-S46][10-S36]. These are my inferences from the textual match [11 §V3]:
+- The same text, with the poem's Florentine etymology, the lurch of five and the count-out order for three players, reappears in Polish (Wrocław 1821) and Danish (1829) [10-S46][10-S36]. Note 11 infers from the textual match [11 §V3]:
   - Continental Casino descends from the poem's "Casino" tradition rather than from Long.
   - This may explain why German sources "invariably use the spelling 'Casino'" [01-S1].
 - The German and Polish books even teach pronunciation: Sweep "wie Swiep", Lurch "wie Lordsch" [10-S41]; Polish "Świp", "Lordź" [10-S46].
@@ -201,7 +209,7 @@
   - the preface to the fourth edition of the *American Hoyle* lists Cassino among games "added to the fourth edition" [11-V-S3];
   - that edition's preface is dated February 1867 [03-S15].
 - The 1867 *American Hoyle* adds **calling** with spoken grammar. A build is announced in the singular ("'Nine' or 'Ten' — not 'Nines' or 'Tens'"), and a call in the plural ("'Fours,' not 'Four'") [03-S15].
-- The same book shows how rare the old English game had become in America. It calls the 11-point subtraction game "Set-back or Rounce Cassino" [11 §V5]. Several OCR transcriptions misread this as "Bounce" [11 §V5].
+- Pratesi reads the same book as showing how rare the old English game had become in America [04-S7]. The passage itself, though, says "The European game is the favorite with those who play merely for recreation, and is known as Set-back or Rounce Cassino" [11-V-S3][11 §V5]. Several OCR transcriptions misread this as "Bounce" [11 §V5].
 - Variants multiplied in print:
   - **21-point play** with mid-hand claims (Townsend 1891; Dick 1894) [03-S20][03-S22].
   - **Court cards valued 11/12/13** as "An Interesting Variation… now very generally played" (1894) [03-S22]. Foster named this **Royal Cassino** in 1897 [03-S23].
@@ -222,7 +230,7 @@
   - Every Nordic edition peaks in July [01-S63].
   - Finnish sources describe Kasino as "hyvin suosittu" (very popular) and suitable for children and adults alike [10-S1].
   - In 2024, 78.1% of Finns played card games at least sometimes [10-S3].
-- **Southern Africa.** A 40-card "Khasino" with stealable capture piles is played in townships, taverns and prisons, and has its own association (KASA) and online apps [02-S4][05-S81][06-S22].
+- **Southern Africa.** A 40-card "Khasino" with stealable capture piles is played in townships and has its own association (KASA) and online apps [02-S4][05-S81][06-S22]. A since-removed Wikipedia edit adds taverns, shebeens and prisons [01-S8].
   - The biggest growth among Cassino apps found is South African: "the most beloved card game from South African townships" [06-S58][06 §12.18].
 - **Caribbean.** A Reddit user calls Royal Casino "the national card game of the dominican republic" [05-S95]. Pagat documents a "popular card game in Haiti" pronounced *cásino* [02-S3].
 - **United States.** The game survives mainly through family memory: "My mom taught me this game almost 60 years ago, when I was learning arithmetic" [02-S57]. Several players also report learning it in prison [05-S100][06-S20].
@@ -250,9 +258,7 @@
 | cs Pasúr | "italská hra Cassino" [the Italian game Cassino] | unsourced [01-S62] |
 | CardRules+ (cited by it) | Cassino is the "progenitore" [progenitor] of Scopa and Escoba | web page, unsupported [01-S70] |
 
-- **Spelling:**
-  - en now says "Cassino" is used in Long 1792 and is "the most persistent spelling since … although German sources invariably use the spelling 'Casino'" [01-S1].
-  - Pagat says the reverse: "the earliest sources use the spelling Casino, but a tradition has grown up among later writers to spell it with a double 's'" [01-S64].
+- **Spelling** (the Long-vs-poem dispute is in §2.2 above; further details):
   - The archive.org scan of Long's title page reads "SHORT RULES FOR PLAYING THE GAME OF CASSINO", and the archive metadata gives "cassino" [01-S81]. Hoyle 1796 uses both: the running head "The Game of CASINO" and the text "GAME of CASSINO" [01-S82].
   - Bermicourt's 2022 talk comment ("Both spellings were used early on, but 'Casino' was first") conflicts with his own later article text [01-S2].
   - The nb title moved to "Kasino" as the Språkrådet spelling [01-S28].
@@ -317,7 +323,7 @@ The table below is reproduced from research note 02 (33 rows, each alternative a
 | 22 | Building with court cards | Never [02-S59][02-S61] | Royal yes [02-S3]; "Trailing-royals" natural building [02-S37] |
 | 23 | Sweeps | Variant in pagat; standard in Foster/USPCC/Britannica (1 pt) [02-S1][02-S31][02-S32][02-S33] | None (Royal per many; California; Swazi) [02-S3][02-S37][02-S4]; cancel between sides [02-S31][02-S3][02-S5]; not when ≥18/≥10 pts [02-S3][02-S5]; not in last deal [02-S5]; 2 pts (Michigan) [02-S37]; first-turn sweep 2 pts (Hungarian) [02-S3] |
 | 24 | Last-card sweep | Counts only if a genuine full capture [02-S1][02-S31] | Never (Scopa) [02-S10]; never after last deal (Finnish) [02-S5] |
-| 25 | Residue (cards left) | To last capturer, not a sweep [02-S1][02-S31] | +1 point "sistan" (Swedish) [02-S5]; 2 for cards + 1 last capture [02-S1]; court card played last takes them (Long 1792) [02-S36]; nobody (Haitian, Cuarenta) [02-S39][02-S13]; dealer's team (Tablić) [02-S17] |
+| 25 | Residue (cards left) | To last capturer, not a sweep [02-S1][02-S31] | +1 point "sistan" (Swedish) [02-S5]; 2 for cards + 1 last capture [02-S1]; keep a court card back to win them (Long 1792 advice, not a rule) [03-S1]; nobody (Haitian, Cuarenta) [02-S39][02-S13]; dealer's team (Tablić) [02-S17] |
 | 26 | Points: cards / spades | 3 / 1 [02-S1][02-S31] | 2 / 2 (Wippen; Swazi split ties; family) [02-S1][02-S4][02-S61]; 1 / 2 (Swedish/Finnish) [02-S5]; 1 (CT/NY) [02-S1]; ≥5 spades =1 (S. Africa) [02-S4]; Överspader (1 per spade over 6) [02-S5]; thresholds 27+/7+ [02-S45][02-S60]; bonus per card >35 / spade >10 [02-S61] |
 | 27 | Points: 10♦ / 2♠ / aces | 2 / 1 / 1 each [02-S1] | 3 / 2 (CT/NY) [02-S1]; Spade Cassino every spade 1, J♠ +1 (24 total, to 61) [02-S1][02-S31][02-S32] |
 | 28 | Ties for cards/spades | Nobody scores [02-S1] | Split 1–1 (Swazi) [02-S4]; postponed to next round (Finnish) [02-S53]; most spades breaks a 26–26 (Portuguese) [02-S37] |
@@ -326,7 +332,6 @@ The table below is reproduced from research note 02 (33 rows, each alternative a
 | 31 | Count-out / claim | Optional [02-S1] | Claim mid-hand, wrong claim loses (Foster; Dick 1880; Cats) [02-S31][02-S36][02-S39]; order cards, spades, big, little, aces ♠♣♥♦, sweeps [02-S31][02-S32][02-S1] |
 | 32 | Skunk / all 11 | — | +1 point, or instant win [02-S37] |
 | 33 | Extra play modes | — | Draw, Royal Draw (fail to draw → draw two) [02-S32]; Pluck [02-S37][02-S39]; misère (Krypkasino, Misäärikasino, Lazy/Laisto, Give-away) [02-S6][02-S53][02-S61][02-S30]; capture-pile stealing (Swazi, Steal Pile) [02-S4][02-S61]; solo vs automaton [02-S61] |
-
 | 34 | Lurch (double game) | — (modern) | 1792 Long: "Six Points gained save the Lurch" [11-V-S1]; 1793 poem/German 1797/Danish 1829: lurch is **five** [11-V-S2][11-V-S6][10-S36]; 3-handed lurch 7 (poem) [11-V-S2]; 1952 USPCC: 11 in two deals doubled, in one deal ×4 [03-S36] |
 | 35 | Compulsory capture (historical) | Optional (Long 1792) [03-S1] | Opponents "may compel you" to take up a pair (1793 poem) [11-V-S2] |
 | 36 | Count-out precedence | Cards, spades, Big, Little, aces ♠♣♥♦, sweeps (Foster) [03-S31] | Great Casino, Little Casino, Cards, Spades, aces ♠♣♥♦ (1793) [11-V-S2]; points first, then cards, then spades (Finnish) [10-S1]; "no one point has precedence" (*NY Clipper*, 1883/1890) [04-S131][04-S167]; "Cards and spades go out first, of course" (Jack London, 1912) [04-S28] |
@@ -368,7 +373,7 @@ The table below is reproduced from research note 02 (33 rows, each alternative a
 
 ### 4.1 Named Cassino variants
 - **Classic English (1792):** no building; court cards pair only; 11-point difference scoring with a lurch [11-V-S1][03-S1]. The Americans later called it "Set-back or Rounce Cassino" [11 §V5].
-- **American (1866–67):** adds building, calling and spoken announcements; each deal counts as a game [03-S14][03-S15].
+- **American (1866–67):** adds building, calling and spoken announcements; each deal counts as a game. Building is printed from 1866 [03-S14], the deal-as-game scoring from 1867 [03-S15].
 - **Twenty-one-point:**
   - Points are scored as made, and a correct claim wins "even if his adversary has 21 or more" [03-S31].
   - "If he is mistaken, and cannot show out, he loses the game" [03-S31].
@@ -377,7 +382,7 @@ The table below is reproduced from research note 02 (33 rows, each alternative a
   - J/Q/K = 11/12/13 [03-S31]. The ace is "14 or 1 at the option of the holder; but if it is one of the cards lying on the table, it is always 1" [03-S28].
   - In 1898 the USPC suggested using 60-card poker packs with 11- and 12-spot cards, making "the jacks thirteens, the queens fourteens, the kings fifteens, and the aces ones or sixteens" [03-S24].
   - In 1905 the joker was valued at 15 [03-S27].
-- **Spade Cassino:** "every spade counts one point … The spade Jack counts one in addition". That makes 24 points per hand, pegged on a cribbage board to 61 [03-S23][11 §V7].
+- **Spade Cassino:** "every spade counts one point … The spade Jack counts one in addition" [09-S76]. That makes 24 points per hand, pegged on a cribbage board to 61 [03-S23][11 §V7].
 - **Draw / Royal Draw Cassino:**
   - Players refill their hand to four from a stock "left on the table, face down, slightly spread" [03-S29].
   - "If a player fails to draw in proper turn … he must draw two cards" [03-S33].
@@ -416,7 +421,7 @@ The table below is reproduced from research note 02 (33 rows, each alternative a
 
 ### 4.2 Comparison matrix across the family
 
-Abbreviations: Σ+ = sum to the played card; "+15/+11/+10/+8,10" = played card plus captured set = N; B = building; ΣΣ = multiple sets per capture; J* = Jack sweeps; Seq = sequence; Pile = single-pile.
+Abbreviations: Σ+ = sum to the played card; "+15/+11/+10/+8,10" = played card plus captured set = N; B = building; ΣΣ = multiple sets per capture; P = pairing; 1-of = capture a single card or set; Flip = turn up from stock; Seq = sequence; Pile = single-pile.
 
 | Game | Region | Deck | Pl. | Deal (hand/table; re-deal) | Capture | B | Special-power cards | Sweep | Main scoring items | Target | Src |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -528,7 +533,7 @@ Each item below is a rule found in a real variant, so a mode can be named after 
   - Both spellings date from 1792–93 [11 §V1].
   - Italian *casino* meant a small house where "small Coteries meet, play at cards, generally sup together" (Lady Miller, Venice 1771) [04-S37].
   - Etymonline: "The card game (also cassino) is attested by that name from 1792. Specifically as 'building for aristocratic gambling' by 1820" [04-S8].
-  - Italian *cassino* means a "box-cart" [02-S30]. Italian dictionaries record no card game called *casino* [10-S47][09-S70].
+  - Italian *cassino* means a "box-cart" [02-S30]. Treccani gives *casino* no card-game sense [10-S47], and Pratesi found no game called Casino in Florentine club archives [09-S70].
 - **Great / Big Cassino (♦10) and Little Cassino (♠2):**
   - "Great" and "Little" from 1792 [11-V-S1]. "Big" in American speech by 1875 [04-S138].
   - Regional nicknames:
@@ -544,15 +549,16 @@ Each item below is a rule found in a real variant, so a mode can be named after 
     - Polish *wymiatacz* ("sweeper") [10-S46]
     - French translators' "coups de balai" ("broom strokes") [10-S62]
 - **Lurch:** a doubled loss when the loser scored under 6 (Long) [11-V-S1] or under 5 (1793 poem) [11-V-S2]. The 1797 German glosses it as "Bredouille" [11-V-S6].
-- **Build, building up, raise, call:** American, from 1866–67 [11 §V4][03-S15]. **Trailing** appears from Foster 1897: "because he is simply following along waiting for opportunities" [03-S31][03-S23].
+- **Build, building up, call:** American, from 1866–67 [11 §V4][03-S15]. **Raise** is printed from 1894 ("raise the Build") [03-S22]. **Trailing** appears from Foster 1897: "because he is simply following along waiting for opportunities" [03-S31][03-S23].
 - **Cards and spades:** the two majority points gave American English the idiom "to give someone cards and spades", meaning a big head start. Green's earliest citation is from 1861 [04-S13].
-### 5.3 English glossary (from note 05)
+
+### 5.2 English glossary (from note 05)
 
 Format: term | definition (quoted where possible) | source(s) | earliest attestation found in fetched texts.
 
-> Note on "earliest attestation": this is the earliest **among the sources I fetched**, not a dictionary-grade first citation. Chronicling America (US newspapers) blocked automated access, so newspaper antedatings were not possible (see Gaps).
+> Note on "earliest attestation": this is the earliest date among the sources fetched for this review (rulebooks, note 04's newspaper searches and the primary-source checks in note 11). It is not a dictionary-grade first citation.
 
-#### 5.3a Game names, spellings, cards, and scoring objects
+#### 5.2a Game names, spellings, cards, and scoring objects
 
 | Term | Definition / usage | Source(s) | Earliest attestation found |
 |---|---|---|---|
@@ -560,7 +566,7 @@ Format: term | definition (quoted where possible) | source(s) | earliest attesta
 | **Casino** | Single-s spelling; Pagat's preferred headword. German sources "invariably use the spelling 'Casino'" [05-S2]. A 2012 BGG user: searching "Casino" in the App Store "just yields a list of gambling apps!"; another notes "'Cassino' (note the doubled 's')" finds the card game [05-S74-BGG826479] | [05-S1, 05-S2, 05-S74] | Etymonline: "The card game (also cassino) is attested by that name from 1792" [05-S79] |
 | **"Cersina"** (folk pronunciation) | "One of my grandma's favorite card games is called 'Cassino' Pronounced 'Cersina'" | [05-S90 Reddit AskReddit 2023] `[UGC]` | — |
 | **cásino** (Haiti) | In Haiti "pronounced with the stress on the first syllable: cásino" | [05-S12] | — |
-| **Great Cassino** | The ten of diamonds, 2 points. "Great Caſſino, is the ten of diamonds, and reckons for two points" (1797) | [05-S4, 05-S7, 05-S8, 05-S9, 05-S10] | 1792 (Long; OCR fragment "while Gres . Caflino is in" ≈ "while Great Cassino is in") [05-S3]; 1797 [05-S4] |
+| **Great Cassino** | The ten of diamonds, 2 points. "Great Caſſino, is the ten of diamonds, and reckons for two points" (1797) | [05-S4, 05-S7, 05-S8, 05-S9, 05-S10] | 1792 (Long, p. 5, "Great Caſſino", confirmed from the page image) [11-V-S1]; 1797 [05-S4] |
 | **Big Cassino / Big Casino** | Later name for the 10♦. "The Ten of diamonds, Big Cassino. 2" | [05-S11, 05-S1] | in rulebooks: Townsend 1891 ("Big Casino") [03-S20]; in speech: "big cassino" in an 1875 sermon and "little and big cassino" in 1878 [04-S138][04-S102][11 §V6] |
 | **Good Ten** | Alternative name for 10♦ ("called Big Casino or the Good Ten") | [05-S1] | — (cf. Greek «το 10 το καλό» [05-S24], Turkish "güzel onlu" [05-S68]) |
 | **Big ten** | South African name for 10♦ ("Ten of diamonds ('big ten')") | [05-S13] | — |
@@ -577,11 +583,11 @@ Format: term | definition (quoted where possible) | source(s) | earliest attesta
 | **Royal Cassino / Royal Casino** | Variant where J/Q/K = 11/12/13, A = 1 or 14 | [05-S11, 05-S12] | Foster 1897 per [05-S2]; 1894 mention per [05-S2] |
 | **Draw Cassino** | Each player "keeps his hand filled to four cards by drawing" | [05-S11] | Foster [05-S11] |
 | **Twenty-one Point Cassino** | Played to 21; points "count out in the following order:--Cards first, then Spades, Big Cassino, Little Cassino, Aces, and Sweeps" | [05-S11, 05-S2] | 1880 per [05-S2]; Foster 1914 text [05-S11] |
-| **Set-back / Rounce Cassino** | 1867 name for the "European" 11-point subtraction game: "known as Set-back or Rounce Cassino" | [05-S8] | 1867 [05-S8] |
+| **Set-back / Rounce Cassino** | 1867 name for the "European" 11-point subtraction game: "known as Set-back or Rounce Cassino" | [05-S8][11-V-S3] (§12, V5) | 1867 [05-S8] |
 | **Diamond Cassino** | Modern 40-card variant ("cross between Cassino and Scopa") | [05-S2] | Parlett 2008 per [05-S2] |
 | **Tuxedo** | US Casino variant with Rook cards; players call "orange" | [05-S12] | — |
 
-#### 5.3b Actions and play terms
+#### 5.2b Actions and play terms
 
 | Term | Definition / usage | Source(s) | Earliest attestation found |
 |---|---|---|---|
@@ -589,7 +595,7 @@ Format: term | definition (quoted where possible) | source(s) | earliest attesta
 | **combine / combining** | Taking cards whose pips sum to the played card. 1867 term list: "To play a card which will take two or more cards of a different denomination…" | [05-S8, 05-S9, 05-S11] | 1867 [05-S8] |
 | **take in / taking in** | Capturing; Foster's heading "Taking In"; "cards … taken in or won" | [05-S11] | 1914 [05-S11]; Swedish "ta in" parallel [05-S33] |
 | **capture** | Modern rules-speak ("A build can be captured by playing a numeral card of the rank which was announced") | [05-S1] | modern [05-S1] |
-| **build** | "A card already built up" (1867); modern: cards combined "into builds, which can only be captured as a unit" | [05-S8, 05-S1] | 1867 [05-S8]; Wikipedia claims "building up" first in Dick 1867 [05-S2], but Cassino was absent from the 1867 first edition; earliest building is 1866 [11 §V4] |
+| **build** | "A card already built up" (1867); modern: cards combined "into builds, which can only be captured as a unit" | [05-S8, 05-S1] | 1867 [05-S8]; Wikipedia claims "building up" first in Dick 1864 [05-S2], but Cassino was absent from the 1864 first edition; earliest building is 1866 [11 §V4] |
 | **building up** | 1867: playing a card on a table card and calling the total — "This is called building up" | [05-S8, 05-S9] | 1867 [05-S8] |
 | **build from the table** | "Employing cards on the table to continue a build" (Cassell's term list) | [05-S9] | Cassell's (3rd ed., n.d.) [05-S9] |
 | **single build** | Build whose cards sum to the capture value, e.g. "a 5-build made of a 2 and a 3" | [05-S1] | modern [05-S1] |
@@ -618,7 +624,7 @@ Format: term | definition (quoted where possible) | source(s) | earliest attesta
 | **pile / capture pile** | Captured cards "stores them all face down in a pile" | [05-S1] | modern |
 | **bundle** | A player's face-up capture pile in **Stealing Bundles** ("to start your 'bundle'") | [05-S16] | — |
 | **Stealing Bundles / Steal the Old Man's Bundle / Steal Pile** | Children's fishing game where you capture an opponent's whole bundle by matching its top card | [05-S16, 05-S74-BGG90163] | — (BGG: "It was called, appropriately enough, Steal Pile" [05-S74]) |
-| **tricks** | Old usage for captured cards: "The number of tricks are not to be examined or counted before all the cards are played" | [05-S7, 05-S8] | "face them like Tricks before you" 1792 [11-V-S1] |
+| **tricks** | Old usage for captured cards: "The number of tricks are not to be examined or counted before all the cards are played" | [05-S7, 05-S8] | "face them like Tricks before you" 1792 [03-S1] |
 | **eldest hand** | "The player sitting at the left hand of the dealer, so called because he is the first to play" | [05-S8, 05-S9] | 1867 [05-S8] |
 | **pone** | Player on dealer's right (Foster) | [05-S11] | 1914 [05-S11] |
 | **false build** | "A build made without any card in hand to redeem it" | [05-S9] | Cassell's [05-S9] |
@@ -631,7 +637,7 @@ Format: term | definition (quoted where possible) | source(s) | earliest attesta
 | **Cabin (mökki)** | Finnish sweep term rendered in English on BGG: "Cabin variant (mökki)" | [05-S74-BGG433043] `[UGC]` | 2009 |
 | **Lazy Casino (Laisto Casino)** | BGG rendering of Finnish *laistokasino* (misère) | [05-S74-BGG433043] | 2009 |
 
-#### 5.3c Required and illegal announcements (rules digest)
+#### 5.2c Required and illegal announcements (rules digest)
 
 - **Must announce, audibly** — 1867 Law 11: "the player must declare the denomination of the proposed 'build' or 'call,' audibly and distinctly, so that no doubt of his intentions may exist, and failing to comply with this requirement, his opponent may separate the cards, and employ them in any lawful way" [05-S8, p. 220–221]. Example given: playing a Five on a Deuce is not a build "unless the player of the Five says … audibly and distinctly, 'Seven'"; for a call "he must announce his intention by saying, clearly and audibly, 'Fives'" [05-S8].
 - **Number of the noun is mandatory (19th c.)** — build = singular ("'Nine' or 'Ten'—not 'Nines' or 'Tens'"); call = plural ("'Fours,' not 'Four'"); "calling out (not Five, but) 'Fives'"; "call (not Four, but) 'Fours'" [05-S8 pp. 218–220; 05-S9].
@@ -639,14 +645,14 @@ Format: term | definition (quoted where possible) | source(s) | earliest attesta
 - **Ambiguous announcements** — Pagat: playing a 5 on a 5 requires "announcing 'building 10' … or 'building 5'"; the announcement fixes what may capture it [05-S1]. Danish (unsourced wiki): if someone lays a 4 on a 4 "og glemmer at fortælle, om det er 8 eller mere 4, er det modstanderens pligt at spørge, hvad det er, man bygger" [*and forgets to say whether it is 8 or "more 4", it is the opponent's duty to ask what is being built*] [05-S43]. Finnish: "Jos esimerkiksi niputtaa kaksi kolmosta yhteen, pitää sanoa selvästi rakentaako kolmoselle vai kuutoselle" [*If you bundle two threes together you must say clearly whether you are building for three or for six*] [05-S40].
 - **Can't trail while you own a build** — "you are not allowed simply to trail a card … You must either make a capture of some kind, create another build, or add to a build" [05-S1]; 1867 Law 8 [05-S8].
 - **Can't re-examine captured cards** — "nor may any trick but that last won be looked at, as every mistake must be challenged immediately" [05-S7, 05-S8]; Foster: errors "must be challenged and proved before the next trick is taken in" [05-S11].
-- **Claiming the win** — Foster: a correct claim of 21 wins "even if his adversary has 21 or more"; a mistaken claim "loses the game" [05-S11]. Same structure in Tablić ("a player who claims to have won but turns out to have fewer than 101 points automatically loses") [05-S26] and Pasur ("per shodam"; a false claim means "you have made a fool of yourself") [05-S21].
+- **Claiming the win** — Foster: a correct claim of 21 wins "even if his adversary has 21 or more"; a mistaken claim "loses the game" [05-S11]. Same structure in Tablić ("a player who claims to have won but turns out to have fewer than 101 points automatically loses") [05-S26] and Pasur ("per shodam" [*I'm full*]; a false claim means "you have made a fool of yourself") [05-S21].
 - **Called-but-false bonus** — Tuxedo: "A false call of 'orange' incurs a 10 point penalty"; if you forget, "another player can score 10 points by calling 'orange'" [05-S12].
 - **Pointing out missed captures** — Dominican Royal Casino: cards left that could have been taken are "dejado" (left behind) or "pisado" (stepped on); "It is customary for the opponents to point out such cards" [05-S12].
 - **Historical "table talk" cap** — Austen's cassino table (1813): "Their table was superlatively stupid. Scarcely a syllable was uttered that did not relate to the game" [05-S6, ch. XXIX] — a period description of cassino as quiet, game-focused talk.
 
 ---
 
-### 5.4 Per-language glossaries (from note 05)
+### 5.3 Per-language glossaries (from note 05)
 
 Format: original | literal/English gloss | usage note | source.
 
@@ -655,27 +661,27 @@ Format: original | literal/English gloss | usage note | source.
 | Original | English | Notes | Source |
 |---|---|---|---|
 | **kasino** / *cassino* (older) | Cassino | SAOB: older spelling "cassino 1817—1883"; first Swedish card-game citation Düben, *Talisman* (1817): "Två .. kort, som caracterisera Spelet, och hvilka bära namnet Cassino, nemligen Spader Tvåan och Ruter Tian" [*Two cards which characterise the game and bear the name Cassino, namely the two of spades and the ten of diamonds*] | [05-S36] |
-| **storan**, also **storstina**, **stora kasino** | "the big one" = 10♦ | "ruter tio som kallas för storan (även storstina eller stora kasino)" | [05-S33, 05-S34, 05-S35, 05-S14] |
-| **lillan**, also **lillstina**, **lilla kasino** | "the little one" = 2♠ | "spader två som kallas för lillan (lillstina eller lilla kasino)" | [05-S33, 05-S34, 05-S35] |
-| **lill-kajsa** / **lill-kasina** / **lill-stina** | colloquial "little Kajsa/Stina" = Little Cassino | SAOB: "-KAJSA, äv. -KASINA. [av KASINO; i formen -KAJSA med anslutning till kvinnonamnet KAJSA] (vard.) spelt. 'lilla kasino'"; "-STINA. [ombildning av -KASINA] (vard.) … Östergren (1931)" — i.e., the cards were punningly turned into women's names | [05-S38] |
+| **storan**, also **storstina**, **stora kasino** | "the big one" = 10♦ | "ruter tio som kallas för storan (även storstina eller stora kasino)" [*the ten of diamonds, called "the big one" (also "big Stina" or "big casino")*] | [05-S33, 05-S34, 05-S35, 05-S14] |
+| **lillan**, also **lillstina**, **lilla kasino** | "the little one" = 2♠ | "spader två som kallas för lillan (lillstina eller lilla kasino)" [*the two of spades, called "the little one" ("little Stina" or "little casino")*] | [05-S33, 05-S34, 05-S35] |
+| **lill-kajsa** / **lill-kasina** / **lill-stina** | colloquial "little Kajsa/Stina" = Little Cassino | SAOB: "-KAJSA, äv. -KASINA. [av KASINO; i formen -KAJSA med anslutning till kvinnonamnet KAJSA] (vard.) spelt. 'lilla kasino'" [*-KAJSA, also -KASINA (from KASINO; in the form -KAJSA associated with the woman's name Kajsa) (colloq.) card games: "little casino"*]; "-STINA. [ombildning av -KASINA] (vard.) … Östergren (1931)" [*-STINA (reshaping of -KASINA) (colloq.) … Östergren (1931)*] — i.e., the cards were punningly turned into women's names | [05-S38] |
 | **tabbe**, **tabberas** | sweep | "säger man att hen har gjort en tabbe eller tabberas (ytterst av latinska 'tabula rasa', rent bord)" [*one says they have made a tabbe or tabberas (ultimately from Latin tabula rasa, clean table)*] | [05-S33, 05-S34] |
-| tabbe (etymology/date) | — | SAOB tabbe sbst.²: "[efter TABELRAS l. TABLE RASE] kortsp. i kortspelet kasino: förhållandet att ta hem alla kort på bordet. Werner o. Sandgren Kortox. 53 (1949)". Note the **homonym** tabbe sbst.¹ = "blunder, gaffe" — an easy pun for VO ("en tabbe!") | [05-S37] |
-| **tabbar** | sweeps (plural) | "För att hålla koll på alla tabbar" | [05-S32, 05-S14] |
+| tabbe (etymology/date) | — | SAOB tabbe sbst.²: "[efter TABELRAS l. TABLE RASE] kortsp. i kortspelet kasino: förhållandet att ta hem alla kort på bordet. Werner o. Sandgren Kortox. 53 (1949)" [*(after TABELRAS or TABLE RASE) card games: in the card game kasino, the act of taking home all the cards on the table. Werner and Sandgren, Kortox. 53 (1949)*]. Note the **homonym** tabbe sbst.¹ = "blunder, gaffe" — an easy pun for VO ("en tabbe!") | [05-S37] |
+| **tabbar** | sweeps (plural) | "För att hålla koll på alla tabbar" [*To keep track of all the sweeps*] | [05-S32, 05-S14] |
 | **tvångstabbe** | forced sweep (Krypkasino) | | [05-S15, 05-S33] |
-| **"tabbe på knekt"** / **"tabbe på 9"** | "sweep for a jack / for a nine" | Krypkasino courtesy announcement when you leave a capturable table: "En spelare som till exempel spelar ♣4 när det bara ligger ♠7 på bordet bör säga 'tabbe på knekt'" | [05-S33, 05-S15] |
-| **sistan** | "the last one" — last capture point **and** dealer's warning | "När given delar ut de sista korten ska denne informera alla … genom att helt enkelt säga 'sistan' eller 'båt'" | [05-S32, 05-S14] |
-| **båt / båten / "båten går"** | "boat" / "the boat goes" | Synonyms of sistan; dealer may say "'sistan', 'båten går' eller 'sista given'" | [05-S34, 05-S33, 05-S14] |
+| **"tabbe på knekt"** / **"tabbe på 9"** | "sweep for a jack / for a nine" | Krypkasino courtesy announcement when you leave a capturable table: "En spelare som till exempel spelar ♣4 när det bara ligger ♠7 på bordet bör säga 'tabbe på knekt'" [*A player who, for example, plays ♣4 when there is only ♠7 on the table should say "sweep for a jack"*] | [05-S33, 05-S15] |
+| **sistan** | "the last one" — last capture point **and** dealer's warning | "När given delar ut de sista korten ska denne informera alla … genom att helt enkelt säga 'sistan' eller 'båt'" [*When the dealer deals out the last cards, they must inform everyone … by simply saying "the last one" or "boat"*] | [05-S32, 05-S14] |
+| **båt / båten / "båten går"** | "boat" / "the boat's leaving" | Synonyms of sistan; dealer may say "'sistan', 'båten går' eller 'sista given'" [*"the last one", "the boat's leaving" or "last deal"*] | [05-S34, 05-S33, 05-S14] |
 | **ta in** | take in (capture) | | [05-S33] |
-| **lägga ut** | lay out (trail) | "Man säger att spelaren lägger ut" | [05-S33, 05-S34] |
-| **krypa** | to creep/crawl = trail without capturing (Krypkasino) | "Att lägga ut ett kort på bordet kallas för att krypa" | [05-S15, 05-S35-Krypkasino] |
-| **havet**, **fiska** | "the sea", "to fish" | "På svenska säger man att korten på bordet utgör havet och att spelarna fiskar upp kort därifrån" | [05-S32] |
+| **lägga ut** | lay out (trail) | "Man säger att spelaren lägger ut" [*One says that the player lays out*] | [05-S33, 05-S34] |
+| **krypa** | to creep/crawl = trail without capturing (Krypkasino) | "Att lägga ut ett kort på bordet kallas för att krypa" [*Laying a card out on the table is called creeping*] | [05-S15, 05-S35-Krypkasino] |
+| **havet**, **fiska** | "the sea", "to fish" | "På svenska säger man att korten på bordet utgör havet och att spelarna fiskar upp kort därifrån" [*In Swedish one says the table cards are "the sea" and players "fish" cards from it*] | [05-S32] |
 | **bygga nytt / bygga på** | build new / build on (increase) | | [05-S34] |
 | **enkelt bygge / sammansatt bygge** | single build / compound (multiple) build | | [05-S34] |
 | **fria kort** | loose cards | | [05-S34] |
 | **"bygger till elva" / "bygger till knekt"** | "building to eleven / to jack" | Required announcement of a single build | [05-S34] |
 | **"två åttor"** / **"tre tior"** | "two eights" / "three tens" | Announcing a compound build by value and number of parts | [05-S34] |
-| **"ligger"** / **"åttan ligger"** / **"femman ligger"** / **"knekten ligger"** | "lies" / "the eight lies [stays]" | Said when laying a same-rank card to make a locked build instead of capturing ("brukar spelaren förtydliga att hen inte tänker ta in korten genom att annonsera bygget med 'ligger'") | [05-S34] |
-| **"storan privat"** | "big casino, private" | Build to 16 that only the 10♦ can take: "Vissa spelare understryker att bygget bara kan tas in av detta enda kort genom att annonsera det med 'storan privat'" | [05-S34] |
+| **"ligger"** / **"åttan ligger"** / **"femman ligger"** / **"knekten ligger"** | "lies" / "the eight lies [stays]" | Said when laying a same-rank card to make a locked build instead of capturing ("brukar spelaren förtydliga att hen inte tänker ta in korten genom att annonsera bygget med 'ligger'" [*the player usually makes clear that they do not intend to take in the cards by announcing the build with "lies"*]) | [05-S34] |
+| **"storan privat"** | "big casino, private" | Build to 16 that only the 10♦ can take: "Vissa spelare understryker att bygget bara kan tas in av detta enda kort genom att annonsera det med 'storan privat'" [*Some players stress that the build can only be taken in by this one card by announcing it with "big one private"*] | [05-S34] |
 | **"bygga åt sin partner"** | build for one's partner | | [05-S34] |
 | **"stjäla" ett bygge** | "steal" a build | | [05-S34] |
 | **överspader** | "over-spades" scoring variant | 1 point per spade beyond six | [05-S14, 05-S32] |
@@ -688,11 +694,11 @@ Format: original | literal/English gloss | usage note | source.
 
 | Original | English | Notes | Source |
 |---|---|---|---|
-| **lillekasino / storekasino** | little/big cassino | "spar 2 (lillekasino), og to poeng for ruter 10 (storekasino)" | [05-S42] |
+| **lillekasino / storekasino** | little/big cassino | "spar 2 (lillekasino), og to poeng for ruter 10 (storekasino)" [*two of spades (little casino), and two points for the ten of diamonds (big casino)*] | [05-S42] |
 | **stikk / ta stikk / stikke** | trick / take a trick (capture) | | [05-S41, 05-S42] |
 | **bygge / bygg / doble et bygg** | build / to "double" a build | | [05-S41] `[wiki, tagged unsourced]` |
 | **tabbe** | sweep (one extra point) | | [05-S41] |
-| **"døgga"** | local name for the last round | "siste runde kalles 'døgga'" | [05-S41] `[wiki, unsourced — treat as UNVERIFIED]` |
+| **"døgga"** | local name for the last round | "siste runde kalles 'døgga'" [*the last round is called "døgga"*] | [05-S41] `[wiki, unsourced — treat as UNVERIFIED]` |
 | **smyg / krypkasino** | misère variant | | [05-S41] |
 | **byggekasino** | building variant | | [05-S42] |
 
@@ -703,10 +709,10 @@ Format: original | literal/English gloss | usage note | source.
 | **store kasino / lille kasino** | big / little cassino | | [05-S43, 05-S44] |
 | **svupper** | sweep (clearing the table) | Lex.dk: "Udtrykket 'at rydde bordet' kendes blandt andet fra kasino, hvor det betyder, at man hjemtager samtlige kort på bordet og får en 'svupper', dvs. et ekstra point" [*The expression "to clear the table" is known from kasino, meaning taking all the cards and getting a "svupper", i.e., an extra point*] | [05-S44, 05-S43] |
 | **at rydde bordet** | to clear the table | idiom traced to kasino | [05-S44] |
-| **sidsten** | "the last" | dealer marks last round "ved at udmelde 'sidsten'" | [05-S43] `[wiki, unsourced]` |
+| **sidsten** | "the last" | dealer marks last round "ved at udmelde 'sidsten'" [*by announcing "sidsten"*] | [05-S43] `[wiki, unsourced]` |
 | **udsmidning / matchning / kombinere / bygning** | discard (trail) / matching / combining / building | | [05-S43] |
 | **"bygger 9"** | "building 9" | | [05-S43] |
-| **"mere syv"** | "more seven" = locked same-rank build | "lægge en 7'er oven på en 7'er og melde 'mere syv'" | [05-S43] |
+| **"mere syv"** | "more seven" = locked same-rank build | "lægge en 7'er oven på en 7'er og melde 'mere syv'" [*lay a 7 on top of a 7 and announce "more seven"*] | [05-S43] |
 | **bygge dobbelt / trippelt** | build double / triple | | [05-S43] |
 | **spar 5 rydder bordet** | five of spades clears the table (house rule in Danish wiki) | | [05-S43] `[unsourced]` |
 
@@ -714,22 +720,22 @@ Format: original | literal/English gloss | usage note | source.
 
 | Original | English | Notes | Source |
 |---|---|---|---|
-| **mökki** (pl. **mökit**) | "hut/cabin" = sweep | Pagat: "an extra point for each sweep, known in Finnish as a mökki (hut)"; fi-wiki: "Jos pelaaja nostaa omalla vuorollaan kaikki kortit pöydästä, hän saa mökin" | [05-S14, 05-S39, 05-S40] |
+| **mökki** (pl. **mökit**) | "hut/cabin" = sweep | Pagat: "an extra point for each sweep, known in Finnish as a mökki (hut)"; fi-wiki: "Jos pelaaja nostaa omalla vuorollaan kaikki kortit pöydästä, hän saa mökin" [*If a player lifts all cards from the table on their turn, they get a mökki*] | [05-S14, 05-S39, 05-S40] |
 | **mökki kaatuu / kaataa mökin** | the hut "falls" / to knock down a hut | Sweep cancellation: "mökkiä ei oteta itselle vaan sen sijaan kaadetaan yksi vastapuolen mökeistä" [*you don't take a hut for yourself; instead one of the opponent's huts is knocked down*] | [05-S40, 05-S39] |
-| **patakakkonen** = **pieni kasino** | two of spades = little casino ("Pikku-Kasino" in a commenter's usage) | "Patakakkonen eli pieni kasino on kädessä 15 ja pöydässä tavallinen kakkonen" | [05-S40, 05-S39] |
-| **ruutukymppi** = **iso kasino** | ten of diamonds = big casino | "ruutukymppi eli iso kasino on kädessä 16 ja pöydässä 10" | [05-S40, 05-S39] |
-| **pata / padat** | spade(s) | from French *pique* via Swedish *spader* (fi-wiki); Kasino aim: "kerätä … patoja" | [05-S39, 05-S93] |
-| **risti** | clubs (♣); *risti* = "cross" | general Finnish suit name ("nimi on vaihtunut ulkomuodon perusteella ristiksi"), not Kasino-specific | [05-S93] |
-| **ruutu** | diamonds (♦) | "Suomenkielinen nimi johdettiin ruotsinkielisestä nimestä" (*ruter*) | [05-S93] |
+| **patakakkonen** = **pieni kasino** | two of spades = little casino ("Pikku-Kasino" in a commenter's usage) | "Patakakkonen eli pieni kasino on kädessä 15 ja pöydässä tavallinen kakkonen" [*The two of spades, or "little casino", is 15 in the hand and an ordinary two on the table*] | [05-S40, 05-S39] |
+| **ruutukymppi** = **iso kasino** | ten of diamonds = big casino | "ruutukymppi eli iso kasino on kädessä 16 ja pöydässä 10" [*the ten of diamonds, or "big casino", is 16 in the hand and 10 on the table*] | [05-S40, 05-S39] |
+| **pata / padat** | spade(s) | from French *pique* via Swedish *spader* (fi-wiki); Kasino aim: "kerätä … patoja" [*collect … spades*] | [05-S39, 05-S93] |
+| **risti** | clubs (♣); *risti* = "cross" | general Finnish suit name ("nimi on vaihtunut ulkomuodon perusteella ristiksi" [*the name changed to "cross" on the basis of its appearance*]), not Kasino-specific | [05-S93] |
+| **ruutu** | diamonds (♦) | "Suomenkielinen nimi johdettiin ruotsinkielisestä nimestä" [*The Finnish name was derived from the Swedish name*] (*ruter*) | [05-S93] |
 | **ässä** | ace (14 in hand, 1 on table) | | [05-S39, 05-S40] |
-| **sotilas / jätkä**, **rouva / kuningatar**, **kuningas** | jack, queen, king | "jätkällä jätkän, rouvalla rouvan" | [05-S40] |
+| **sotilas / jätkä**, **rouva / kuningatar**, **kuningas** | jack, queen, king | "jätkällä jätkän, rouvalla rouvan" [*a jack with a jack, a queen with a queen*] | [05-S40] |
 | **korttivoitto / patavoitto** | "card win" / "spade win" (majorities) | | [05-S39, 05-S40] |
 | **"pakkaan"** | "into the deck" — tied majority points carry over to next deal | | [05-S39, 05-S40] |
 | **nostaa / napata / ottaa** | lift / snatch / take (capture) | | [05-S39, 05-S40] |
 | **pöytääminen** | "tabling" = trailing | | [05-S39] |
 | **etukäsi** | eldest hand | | [05-S40] |
 | **rakennuskasino / rakentaa / rakennus** | building-kasino / to build / a build | | [05-S39, 05-S40] |
-| **"rakennan ässälle"** | "I'm building for the ace" | Example announcement: "kympin päälle voisi pelata nelosen ja sanoa 'rakennan ässälle'" | [05-S40] |
+| **"rakennan ässälle"** | "I'm building for the ace" | Example announcement: "kympin päälle voisi pelata nelosen ja sanoa 'rakennan ässälle'" [*on a ten one could play a four and say "I'm building for the ace"*] | [05-S40] |
 | **"rakennan yhdeksikölle"**, **"rakennan kuutoselle"** | "I'm building for the nine / for the six" | | [05-S40] |
 | **korottaa** | to raise (a build) | | [05-S39, 05-S40] |
 | **kaksoisrakennus** | double build (cannot be raised) | | [05-S39, 05-S40] |
@@ -761,19 +767,19 @@ Format: original | literal/English gloss | usage note | source.
 | Original | English | Notes | Source |
 |---|---|---|---|
 | **scopa** (pl. **scope**) | broom → sweep | "capturing all the cards on the table leaving it empty, which is known as a scopa (sweep)" | [05-S17, 05-S46, 05-S47] |
-| **fare scopa** | to make a sweep | "realizza una scopa, che vale un punto" | [05-S46] |
-| **"Scopa!"** | shouted at the sweep | see §3 | [05-S48, 05-S49] |
-| **settebello / sette bello**, also **"Piricchio"** | "beautiful seven" = 7 of coins/diamonds | it-wiki: "Settebello (o 'Piricchio')" | [05-S46, 05-S27] |
-| **primiera / settanta** | prime (best four-suit set) | "Primiera o Settanta" | [05-S46, 05-S17] |
+| **fare scopa** | to make a sweep | "realizza una scopa, che vale un punto" [*makes a scopa, which is worth one point*] | [05-S46] |
+| **"Scopa!"** | shouted at the sweep | see §6.4c | [05-S48, 05-S49] |
+| **settebello / sette bello**, also **"Piricchio"** | "beautiful seven" = 7 of coins/diamonds | it-wiki: "Settebello (o 'Piricchio')" [*Settebello (or "Piricchio")*] | [05-S46, 05-S27] |
+| **primiera / settanta** | prime (best four-suit set) | "Primiera o Settanta" [*Primiera or Settanta ("seventy")*] | [05-S46, 05-S17] |
 | **re bello / rebello** | king of coins bonus | | [05-S46, 05-S17] |
 | **napola / napoletana**, **napoleone** | coins sequence bonus | | [05-S46, 05-S17] |
 | **punti di mazzo** | "deck's points" (the four standard points) | | [05-S47] |
-| **la matta** | the King of Coins used to pick dealer | "fino all'uscita della 'matta' (Re di Denari)" | [05-S46] |
+| **la matta** | the King of Coins used to pick dealer | "fino all'uscita della 'matta' (Re di Denari)" [*until the "matta" (King of Coins) comes out*] | [05-S46] |
 | **"burning an ace"** (bruciare un asso) | playing an ace when one is already on the table (Scopa d'assi) — "every player will try to avoid" | | [05-S47] |
 | **accusare / accuse** | to declare hand combinations (Bàzzica scopa) | | [05-S46] |
 | **bussare** | to knock on the table to claim a hand bonus (Cirulla) | "claims a hand bonus … by knocking on the table (bussare)" | [05-S27, 05-S47] |
 | **cappotto** | capturing the whole coin suit (instant win, Cirulla) | | [05-S27] |
-| **scopa a cascina** | Scopa variant **with building** ("cascina" = farmhouse/stack) | "giocare una carta sopra a una di quelle in tavola, se si possiede una carta che permette di catturarle entrambe al giro successivo" | [05-S46] |
+| **scopa a cascina** | Scopa variant **with building** ("cascina" = farmhouse/stack) | "giocare una carta sopra a una di quelle in tavola, se si possiede una carta che permette di catturarle entrambe al giro successivo" [*play a card on top of one of those on the table, if one holds a card that can capture both on the next turn*] | [05-S46] |
 | **scopa a fidasse** ("a fidarsi") | "trust-me scopa" — bluff sweep | Claimant asks **"vi fidate?" / "ti fidi?"** [*do you (pl./sg.) trust me?*]; a false scopa caught loses a point, a doubter of a true one loses a point | [05-S46] |
 | **maresciallo / maresciallone / saponificatrice / argentina** | K♠ penalty card ("marshal"), K♠-on-K♠ scopa, Q♠ penalty ("soap-maker"), Q♦ bonus | regional Maresciallo variant | [05-S46] |
 | **rosmarino** | J♠ bonus ("rosemary") | | [05-S46] |
@@ -806,17 +812,17 @@ Format: original | literal/English gloss | usage note | source.
 | **"dos señor juez" / "dos por favor, señor juez" / "dos juecito"** | "two, Mr. Judge" / "two please, Mr. Judge" / "two, little judge" | claiming caída points from the scorer-judge | [05-S56, 05-S59, 05-S55] |
 | **"con esta te caigo"** | "with this one I'll fall on you" | said while holding the card to your forehead | [05-S57, 05-S54] |
 | **"as que no me caerás"** | "ace that you won't fall on me" | | [05-S57] |
-| **"Capariche"** | (unglossed) | said "cuando se realiza una caída o limpia que levante muchas cartas de la mesa" | [05-S57] |
-| **"Cuatrero has de ser"** | "You must be a rustler" (*cuatrero* = cattle-thief; wordplay on *cuatro*) | said "cuando lanzan la baraja con el número 4" | [05-S57, 05-S58] |
+| **"Capariche"** | (unglossed) | said "cuando se realiza una caída o limpia que levante muchas cartas de la mesa" [*when a caída or limpia is made that lifts many cards from the table*] | [05-S57] |
+| **"Cuatrero has de ser"** | "You must be a rustler" (*cuatrero* = cattle-thief; wordplay on *cuatro*) | said "cuando lanzan la baraja con el número 4" [*when the card with the number 4 is thrown*] | [05-S57, 05-S58] |
 | **"marido tiene"**, **"José me llamo"**, **"la foto"**, **"dolido va"** | "she has a husband", "my name is José", "the photo", "he goes off hurt" | listed vocabulary/distractors (meanings not explained in sources) | [05-S56, 05-S58, 05-S54] |
 | **"treinta y ocho que no juega" / "38 que no juega"** | "38 doesn't play" — at 38 you can only win by a caída | | [05-S56, 05-S59, 05-S53, 05-S54] |
-| **zapatero / zapatería / "zapateros se quedaron"** | "shoemaker" — losing a chica with < 10 points; "they stayed shoemakers" | El Telégrafo: losers "deben lustrar los zapatos a los rivales" [*must shine the rivals' shoes*]; tournament "rincón de la zapatería" | [05-S53, 05-S55, 05-S58, 05-S59] |
+| **zapatero / zapatería / "zapateros se quedaron"** | "shoemaker" — losing a chica with < 10 points; "they stayed shoemakers" | El Telégrafo: losers "deben lustrar los zapatos a los rivales" [*must shine the rivals' shoes*]; tournament "rincón de la zapatería" [*the shoe-shop corner*] | [05-S53, 05-S55, 05-S58, 05-S59] |
 | **perro / tanto** | "dog" (10 pts) / "tally" (2 pts) score cards | | [05-S53, 05-S56, 05-S59] |
 | **viejas** | "old ladies" = J, Q, K | | [05-S56, 05-S59] |
 | **chica / mesa / data / cartón** | 40-point game / match / a deal / one's captured cards | | [05-S53, 05-S54] |
 | **"pasa la mano con diez"** | "the deal passes, with ten" — misdeal penalty | | [05-S59, 05-S53] |
 | **"dos por darlas" / "dos por dar"** | "two for dealing them" | tie-break points | [05-S53, 05-S59] |
-| **"dos por falla"** | "two for failure" — "es una gran vergüenza" | | [05-S59] |
+| **"dos por falla"** | "two for failure" — "es una gran vergüenza" [*it is a great shame*] | | [05-S59] |
 | **"veo y juego"** | "I see and I play" — formal challenge of a capture | | [05-S59] |
 | **Juez de Aguas** | "Water Judge" — referee/scorer | | [05-S59] |
 | **"cuarenta señores, gracias"** | "Forty, gentlemen, thank you" — winner's sign-off | | [05-S57] |
@@ -826,7 +832,7 @@ Format: original | literal/English gloss | usage note | source.
 
 | Original | English | Notes | Source |
 |---|---|---|---|
-| **Escova / jogo de escovas** | "brush" — Portuguese/Brazilian Escoba | "faz uma 'escova' e deverá colocar uma delas desvirada na sua pilha" | [05-S73] |
+| **Escova / jogo de escovas** | "brush" — Portuguese/Brazilian Escoba | "faz uma 'escova' e deverá colocar uma delas desvirada na sua pilha" [*makes an "escova" and must place one of them face up in their pile*] | [05-S73] |
 | **carteador** | dealer | | [05-S73] |
 | **Primeira** | prime | | [05-S73] |
 | **"grande cassino" / "pequeno cassino"** | big/little cassino | **[UNVERIFIED — appears only in a search-engine summary of a login-walled Brazilian forum; page returned 403]** | — |
@@ -837,14 +843,14 @@ Format: original | literal/English gloss | usage note | source.
 | Original | English | Notes | Source |
 |---|---|---|---|
 | **chkobba / škubba (شكبّة)** | sweep (from Italian *scopa*) | "Capturing all the cards from the layout leaving it empty is called a chkobba"; verb "chkobber" | [05-S17, 05-S66] |
-| **ʾakala (أكل)** "manger" | "to eat" = capture | "faire le pli (أكل ʾakala ou « manger » en arabe)" | [05-S66] |
+| **ʾakala (أكل)** "manger" | "to eat" = capture | "faire le pli (أكل ʾakala ou « manger » en arabe)" [*to take the trick (أكل ʾakala, or "to eat" in Arabic)*] | [05-S66] |
 | **kārṭa (كارطة)** | the cards (majority) | | [05-S17, 05-S66] |
 | **dīnārī (ديناري)** | diamonds (from Italian *denari*) | | [05-S17, 05-S66] |
 | **barmīla (برميلة)** | prime (from *primiera*) | | [05-S17, 05-S66] |
 | **sabʿa l-ḥayya (سبعة الحيّة)** / **al-ḥayya** | "the living seven" = 7♦ | | [05-S17, 05-S66] |
-| **bājī (باجي)** | a tied point ("Lorsqu'il y a égalité … il est déclaré bājī") | | [05-S66] |
+| **bājī (باجي)** | a tied point ("Lorsqu'il y a égalité … il est déclaré bājī" [*When there is a tie … it is declared bājī*]) | | [05-S66] |
 | card names **laṣ, dū, trīs, kwātrū, šīnkū, sīs, sabʿa, mujīra, kawwāl, rayy** | A,2,3,4,5,6,7,Q,J,K (Sicilian/Spanish/French loans) | | [05-S66] |
-| **"CHKOBBAAA!", "Sab3a l-7ayya!", "Barmīla!", "Wesh hadi?!", "Yaser ya 3ammi!", "Rak tel3ab bel 7adh ken!", "Khallini narba7 marra!", "Yallah Nel3bou!"** | sweep shout; 7♦ shout; prime shout; "What's this?!"; hype; trash-talk; "let me win once!"; "let's play!" | **promotional site — use as flavour, verify with a native speaker** | [05-S67] `[promo]` |
+| **"CHKOBBAAA!", "Sab3a l-7ayya!", "Barmīla!", "Wesh hadi?!", "Yaser ya 3ammi!" [*That's a lot, uncle! (?)*], "Rak tel3ab bel 7adh ken!" [*You're only playing on luck!*], "Khallini narba7 marra!", "Yallah Nel3bou!"** | sweep shout; 7♦ shout; prime shout; "What's this?!"; hype; trash-talk; "let me win once!"; "let's play!" | **promotional site — use as flavour, verify with a native speaker** | [05-S67] `[promo]` |
 | **Racham (رشّام)**, **El Ghaffas (الغفّاص)**, **Tannbir (التنبير)** | café scorekeeper; the sore loser; spectators' sneaky commentary | | [05-S67] `[promo]` |
 | **basra** | sweep worth 10 (Egypt); in Lebanon, specifically capturing a lone card | | [05-S20, 05-S61, 05-S62] |
 | **double basra** | jack takes lone jack (20) | | [05-S20, 05-S61] |
@@ -876,18 +882,18 @@ Format: original | literal/English gloss | usage note | source.
 | **το καλό 10 / το καλό δύο** | "the good 10" (10♦) / "the good two" (2♣) | «το 2 το καλό» and «το 10 το καλό»; "one could alternatively call them the 'lucky 2' and the 'lucky 10'" | [05-S24, 05-S70] |
 | **Δηλωτή (Diloti)** | "declared" — from «δηλώνω» "to declare" | | [05-S23] |
 | **δηλώνω / δήλωση** | to declare / a declaration (= build) | "Usually the player will verbally declare the value of the pile … though this is not obligatory" | [05-S23, 05-S72] |
-| **«οκτάρια»** | "eights" — group declaration of eights | "δεν πρέπει … να τα βάλουμε όλα μαζί δηλώνοντας «οκτάρια»" | [05-S72] |
-| **«σόι»** (soi) | "kin/family" — a pair-of-equal-cards declaration | "δηλώνουμε «σόι» βάζοντας ένα 3 πάνω σε κάποιο 3" | [05-S72, 05-S23] |
+| **«οκτάρια»** | "eights" — group declaration of eights | "δεν πρέπει … να τα βάλουμε όλα μαζί δηλώνοντας «οκτάρια»" [*we must not … put them all together declaring "eights"*] | [05-S72] |
+| **«σόι»** (soi) | "kin/family" — a pair-of-equal-cards declaration | "δηλώνουμε «σόι» βάζοντας ένα 3 πάνω σε κάποιο 3" [*we declare "kin" by putting a 3 on top of a 3*] | [05-S72, 05-S23] |
 | **"two 9's" / "group of 9's" / "family of 9's"** | Pagat's English for group declarations | | [05-S23] |
 | **χαρτωσιά** | a round/deal of cards | | [05-S72] |
 | **Κοντσίνα / Κολτσίνα / Κολιτσίνα** | Kontsina (children's game) | | [05-S24] |
-| **καφενεία** | coffeehouses — Diloti "το πιο παραδοσιακό παιχνίδι τράπουλας στα καφενεία" | | [05-S72] |
+| **καφενεία** | coffeehouses — Diloti "το πιο παραδοσιακό παιχνίδι τράπουλας στα καφενεία" [*the most traditional card game in the coffeehouses*] | | [05-S72] |
 
 #### 5.4m Turkish — Pişti / Pişpirik
 
 | Original | English | Notes | Source |
 |---|---|---|---|
-| **pişti** | "cooked" — capturing a lone card (10 pts) | Pagat: "The word 'pişti', which means 'cooked'"; first in Ahmed Vefik Paşa's *Lugat-ı Osmani* (1876) as "kâğıt oyunu" | [05-S25, 05-S68] |
+| **pişti** | "cooked" — capturing a lone card (10 pts) | Pagat: "The word 'pişti', which means 'cooked'"; first in Ahmed Vefik Paşa's *Lugat-ı Osmani* (1876) as "kâğıt oyunu" [*card game*] | [05-S25, 05-S68] |
 | **pişpirik** | alt. name | | [05-S25, 05-S68] |
 | **kesmek** | "to cut" — to capture (matching or with a jack) | | [05-S68] |
 | **güzel onlu / karo onlu** | "beautiful ten" (10♦, 3 pts) | | [05-S68] |
@@ -916,7 +922,8 @@ Format: original | literal/English gloss | usage note | source.
 ## 6. Table talk: what people say during the game
 
 ### 6.1 The announcement is part of the rules (a timeline)
-The single most important finding for voice-over and UI is that, from 1866 on, **what a player said changed what the move legally was**.
+The single most important finding for voice-over and UI is that, from 1867 on, **what a player said changed what the move legally was**.
+
 - **1792:** Long's forerunner of the call is silent. You lay one card of a pair "and wait your Turn", and the cards are not protected [03-S1].
 - **1866:** Dick's building example has the players speak the totals: "the dealer puts an ace upon it and says 'seven,' … the non-dealer throws a deuce upon them and says 'nine,' … the dealer again puts upon the heap his other ace, and cries 'ten'" [03-S14].
 - **1867:** the *American Hoyle* makes speech binding. "the player must declare the denomination of the proposed 'build' or 'call,' audibly and distinctly, … and failing to comply with this requirement, his opponent may separate the cards." "No announcement … possesses any value whatever, unless the above condition be strictly observed" [11-V-S3][03-S15].
@@ -929,29 +936,30 @@ The single most important finding for voice-over and UI is that, from 1866 on, *
 - **1891:** Townsend adds explicit verbs, "'I build seven' (not sevens)" and "'I call sixes'". His reason: "to avoid the disputes caused by misunderstanding whether singular or plural number was called" [03-S20].
 - **1894:** in Dick's rewritten *American Hoyle*, saying the number can end your turn. "if A had said 'nine' when he played his Ace, this would have completed his play" [03-S22].
 - **1897–1914:** Foster's forms are "Nine", "Ten", "Two Sevens", "Two Nines", and "'two Eights,' called" for a partner [03-S31].
-- **1945–1952:** "Building eight" / "Building sevens" [03-S35]; "building six" / "building fours" [03-S36]. The penalty for silence stays: "If in building the player fail to call the build, his adversaries have the right to disperse the cards" [03-S25].
+- **1904:** the penalty for silence is still in the *Standard Hoyle*: "If in building the player fail to call the build, his adversaries have the right to disperse the cards" [03-S25].
+- **1945–1952:** "Building eight" / "Building sevens" [03-S35]; "building six" / "building fours" [03-S36].
 - **Today:** Pagat requires "building 5", "building 9 for partner" [02-S1].
   - Equivalents in other languages:
-    - Danish "bygger 9" and, for a same-rank lock, "mere syv" ("more seven") [10-S37]
-    - Swedish "bygger till knekt", "två åttor", "åttan ligger", "storan privat" [10-S25]
+    - Danish "bygger ni" [*building nine*] and, for a same-rank lock, "mere syv" ("more seven") [10-S37]
+    - Swedish "bygger till knekt" [*building to jack*], "två åttor" [*two eights*], "åttan ligger" [*the eight lies*], "storan privat" [*big one private*] [10-S25]
     - Finnish "rakennan ässälle" ("I'm building for the ace") [10-S1]
-    - Norwegian "bygger 9" [10-S32]
-    - German Wippen "Für 9" / "Nochmal für 5" [01-S60]
-    - Russian "Строю 7" / "Строю восьмерки" [10-S57]
-    - Italian "costruisco un sei" [01-S23]
-    - Brazilian Portuguese "construindo seis" [10-S49]
-  - The duty to ask is also attested. In Danish, if a player forgets to say whether a 4 on a 4 is "8 eller mere 4", "er det modstanderens pligt at spørge" (it is the opponent's duty to ask) [01-S11].
+    - Norwegian "bygger 9" [*building 9*] [10-S32]
+    - German Wippen "Für 9" [*For 9*] / "Nochmal für 5" [*Again for 5*] [01-S60]
+    - Russian "Строю 7" [*I build 7*] / "Строю восьмерки" [*I build eights*] [10-S57]
+    - Italian "costruisco un sei" [*I build a six*] [01-S23]
+    - Brazilian Portuguese "construindo seis" [*building six*] [10-S49]
+  - The duty to ask is also attested. In Danish, if a player forgets to say whether a 4 on a 4 is "8 eller mere 4" [*8 or "more 4"*], "er det modstanderens pligt at spørge" (it is the opponent's duty to ask) [01-S11].
 
 ### 6.2 The dealer's "last"
 - English: "The dealer must announce "last" when dealing the last cards" [02-S1]. An older Wikipedia text gives "cards" [01-S5].
 - The rule is old. "When the last cards are being dealt, the dealer must announce that fact" (1949) [03-S35]. "Before dealing the final round, dealer must announce the fact that it is the last" (1952) [03-S36].
 - Other languages:
-  - Swedish "sistan", "båt", "båten går", "sista given" [10-S24]
-  - Norwegian "sisten" [10-S32], with a local "døgga" [01-S26]
-  - Danish "sidsten" [10-S37]
-  - Brazilian "últimas cartas" [10-S49]
-  - German "Letzte Runde" [02-S29]
-- In Norway the call has scoring consequences. If the dealer fails to announce the last deal "*før* forhånda legger sitt første kort", the last-trick point counts only for the forehand player [01-S27].
+  - Swedish "sistan" [*the last one*], "båt" [*boat*], "båten går" [*the boat's leaving*], "sista given" [*last deal*] [10-S24]
+  - Norwegian "sisten" [*the last*] [10-S32], with a local "døgga" [01-S26]
+  - Danish "sidsten" [*the last one*] [10-S37]
+  - Brazilian "últimas cartas" [*last cards*] [10-S49]
+  - German "Letzte Runde" [*last round*] [02-S29]
+- In Norway the call may have scoring consequences. A 2022 Norwegian Wikipedia talk-page comment says that if the dealer fails to announce the last deal "*før* forhånda legger sitt første kort" (*before forehand lays down his first card*), the last-trick point counts only if forehand takes it [01-S27] `[UGC]`.
 - Players notice when software drops the cue. "Why has it stopped calling cards? It's no longer notifying it being the last hand. please fix" (13 upvotes) [06-S20]. SpiteNET plays a sound instead [06-S34].
 
 ### 6.3 Counting, claiming and challenging aloud
@@ -963,13 +971,13 @@ The single most important finding for voice-over and UI is that, from 1866 on, *
 - **Claiming out:**
   - "I have three points, and am out" (*New York Dispatch*, 1881) [04-S130].
   - "In playing cassino the one claiming game first wins" (*Police Gazette*) [04-S133].
-  - Hungarian "Ausz!" / "Ausz vagyok!" / "Kint vagyok!". A player who fails to declare and is beaten to it loses [01-S20].
+  - Hungarian "Ausz!" / "Ausz vagyok!" / "Kint vagyok!" ("Out!" / "I'm out!") [01-S20][02-S3]. A player who fails to declare and is beaten to it loses [01-S20].
   - Pasur "per shodam" ("I'm full") [02-S14].
 - **Challenging:**
-  - Hungarian "Fals!" [01-S20].
+  - Hungarian "Fals!" [*False!*] [01-S20].
   - English rules say "every mistake must be challenged immediately" [03-S15].
   - Dominican players customarily point out *dejado* / *pisado* ("left behind" / "stepped on") cards their opponent missed [02-S3].
-  - Spanish Escoba players shout "¡Asoplo!" to claim a missed 15 [05-S52].
+  - A 2005 Spanish-language forum post says players shout "¡Asoplo!" [*Blow!*] to claim an opponent's missed 15 [05-S52] `[UGC]`.
 - **Agreeing house rules before the deal**, as Jack London scripts it in 1912 [04-S28]:
   - "Do you count sweeps?" / "Certainly not … That's a sissy game."
   - "Cards and spades go out first, of course, and then big and little casino, and the aces in the bridge order of value. Is that right?"
@@ -995,15 +1003,15 @@ Legend for **Status**: **R** = required/regulated by the rules (silence or misst
 | Build-and-call (adding a duplicate to own build) | **"Fours."** (repeated) | R | 1867 Law 9: "repeating his announcement … call (not Four, but) 'Fours'" | [05-S8] |
 | Building for partner | **"…for partner"**; **"two Eights"** (built on partner's 8); **"building 9 for partner"** | R | Pagat; Dominican variant "must always announce 'for partner'"; Foster "'two Eights,' called, although the player has no 8" | [05-S1, 05-S12, 05-S11] |
 | Combining (no build) | (calling attention) | C | Foster: player "may combine these three cards, calling attention to the fact that their collective value is 9" | [05-S11] |
-| Opponent's unclear build | "**What are you building?**" (implied) | C | 1867: unclear build → opponent "may separate the cards"; Danish: opponent's "pligt at spørge, hvad det er, man bygger" | [05-S8, 05-S43] |
+| Opponent's unclear build | "**What are you building?**" (implied) | C | 1867: unclear build → opponent "may separate the cards"; Danish: opponent's "pligt at spørge, hvad det er, man bygger" [*duty to ask what is being built*] | [05-S8, 05-S43] |
 | Dealer deals the final round | **"Last."** | R/C | Pagat: "The dealer must announce 'last' when dealing the last cards"; BGG user calls the end "how EPIC the 'last' round is" | [05-S1, 05-S74-BGG1156351] |
 | Taking the last cards | (no fixed line) | — | Foster: "The last trick is usually made by the dealer, who always keeps back a court card" | [05-S11] |
-| Sweep / clear | **no traditional English sweep shout found** | — | Sources describe *marking* a sweep (capturing card turned face up "at the bottom of the tricks") rather than a call. Family-variant evidence: Swedish-heritage family playing reverse Cassino says **"Sweep 9"** to warn of a forced sweep | [S11, S1, S92 `[UGC]`] |
+| Sweep / clear | **no traditional English sweep shout found** | — | Sources describe *marking* a sweep (capturing card turned face up "at the bottom of the tricks") rather than a call. Family-variant evidence: Swedish-heritage family playing reverse Cassino says **"Sweep 9"** to warn of a forced sweep | [05-S11, 05-S1, 05-S92] `[UGC]` |
 | Counting at hand end | announce card count; claim spades, Cassinos, aces | R | Foster: "each player counts his cards face downward, and announces the number … then turned face up, and the spades counted and claimed" | [05-S11] |
 | Reaching 21 mid-hand | claim the game ("count out") | R | Foster: "The moment he reaches 21 he should claim the game … If he is mistaken … he loses" | [05-S11] |
 | Challenging an error | challenge "immediately" | R | "every mistake must be challenged immediately"; Foster: before "the next trick is taken in" | [05-S7, 05-S8, 05-S11] |
 | Tuxedo (Cassino variant) | **"Orange!"** | R | must call to score; others can steal it; false call −10 | [05-S12] |
-| Whole-round shutout | "skunking" | D | family usage | [S91 `[UGC]`] |
+| Whole-round shutout | "skunking" | D | family usage | [05-S91] `[UGC]` |
 | Period flavour (public domain) | **"I do long for a game of cassino — that is, in the family way — just for a trifle; — I never lose much, you know."** | — | Mrs. Scatter in Reynolds, *Cheap Living* (1797) | [05-S5] |
 | Period flavour | "Their table was superlatively stupid. Scarcely a syllable was uttered that did not relate to the game" | — | Austen 1813 on Miss De Bourgh's cassino table | [05-S6] |
 
@@ -1011,18 +1019,18 @@ Legend for **Status**: **R** = required/regulated by the rules (silence or misst
 
 | Moment | Line(s) | Translation | Status | Source |
 |---|---|---|---|---|
-| Dealer deals last cards (SE) | **"Sistan!"**, **"Båt!"**, **"Båten går!"**, **"Sista given!"** | "The last one!", "Boat!", "The boat goes!", "Last deal!" | R (should warn) | [05-S14, 05-S32, 05-S34] |
+| Dealer deals last cards (SE) | **"Sistan!"**, **"Båt!"**, **"Båten går!"**, **"Sista given!"** | "The last one!", "Boat!", "The boat's leaving!", "Last deal!" | R (should warn) | [05-S14, 05-S32, 05-S34] |
 | Dealer marks last round (DK) | **"Sidsten!"** | "The last!" | C | [05-S43] `[unsourced wiki]` |
-| Single build (SE) | **"Bygger till elva."** / **"Bygger till knekt."** / **"Bygger till tretton / kung."** | "Building to eleven / to jack / to thirteen / king" | R ("Spelaren annonserar sedan byggets värde") | [05-S34] |
+| Single build (SE) | **"Bygger till elva."** / **"Bygger till knekt."** / **"Bygger till tretton / kung."** | "Building to eleven / to jack / to thirteen / king" | R ("Spelaren annonserar sedan byggets värde" [*The player then announces the value of the build*]) | [05-S34] |
 | Compound build (SE) | **"Två åttor."** / **"Tre tior."** | "Two eights." / "Three tens." | C | [05-S34] |
 | Locking same rank (SE) | **"Ligger."** / **"Åttan ligger."** / **"Knekten ligger."** | "It lies." / "The eight lies." | C | [05-S34] |
-| Build only the 10♦ can take (SE) | **"Storan privat."** | "Big one, private." | C ("Vissa spelare…") | [05-S34] |
+| Build only the 10♦ can take (SE) | **"Storan privat."** | "Big one, private." | C ("Vissa spelare…" [*Some players…*]) | [05-S34] |
 | Single build (DK) | **"Bygger 9."** / locked: **"Mere syv."** | "Building 9." / "More seven." | R/C | [05-S43] |
-| Single build (FI) | **"Rakennan ässälle."** / **"Rakennan yhdeksikölle."** / **"Rakennan kuutoselle."** | "I'm building for the ace / the nine / the six." | R (must "sanoa selvästi") | [05-S40] |
-| Sweep (SE/FI/DK) | **"Tabbe!"** / **"Mökki!"** / **"Svupper!"** | the sweep nouns | **Not documented as shouted**; documented as the *name* of the event (e.g., "gjort en tabbe", "saa mökin", "får en 'svupper'") | [05-S33, 05-S39, 05-S44] |
-| Cancelling opponent's sweep (FI) | **"Mökki kaatuu."** / "kaadetaan mökki" | "The hut falls." | C (descriptive verb) | [05-S40, 05-S39] |
-| Setting up a forced sweep (Krypkasino) | **"Tabbe på knekt."** / **"Tabbe på 9."** / "sweep for an ace" / "sweep for a six or a queen" | "Sweep for a jack / for a nine" | C ("It is customary for a player who sets up a sweep to announce it"; "bör säga") | [05-S15, 05-S33] |
-| Claiming 16 mid-deal (SE) | (announce reaching target) | — | R (variant: "kan spelaren annonsera detta") | [05-S33] |
+| Single build (FI) | **"Rakennan ässälle."** / **"Rakennan yhdeksikölle."** / **"Rakennan kuutoselle."** | "I'm building for the ace / the nine / the six." | R (must "sanoa selvästi" [*say clearly*]) | [05-S40] |
+| Sweep (SE/FI/DK) | **"Tabbe!"** / **"Mökki!"** / **"Svupper!"** | the sweep nouns | **Not documented as shouted**; documented as the *name* of the event (e.g., "gjort en tabbe" [*made a tabbe*], "saa mökin" [*gets a mökki*], "får en 'svupper'" [*gets a "svupper"*]) | [05-S33, 05-S39, 05-S44] |
+| Cancelling opponent's sweep (FI) | **"Mökki kaatuu."** / "kaadetaan mökki" [*a hut is knocked down*] | "The hut falls." | C (descriptive verb) | [05-S40, 05-S39] |
+| Setting up a forced sweep (Krypkasino) | **"Tabbe på knekt."** / **"Tabbe på 9."** / "sweep for an ace" / "sweep for a six or a queen" | "Sweep for a jack / for a nine" | C ("It is customary for a player who sets up a sweep to announce it"; "bör säga" [*should say*]) | [05-S15, 05-S33] |
+| Claiming 16 mid-deal (SE) | (announce reaching target) | — | R (variant: "kan spelaren annonsera detta" [*the player may announce this*]) | [05-S33] |
 
 #### 6.4c Italian (Scopa family)
 
@@ -1034,7 +1042,7 @@ Legend for **Status**: **R** = required/regulated by the rules (silence or misst
 | Bluff sweep (Scopa a fidasse) | **"Vi fidate?"** / **"Ti fidi?"** | "Do you (all) trust me?" / "Do you trust me?" | R in that variant | [05-S46] |
 | Claiming hand bonus (Cirulla) | knock on table (**bussare**), reveal cards; name the 7's wild value | | R | [05-S27, 05-S47] |
 | Turn-taking | **"A chi tocca?"**, **"Tocca a me."**, **"Tocca a te."** | "Whose turn?", "My turn.", "Your turn." | C | [05-S50] `[blog]` |
-| Partner signalling | (no words) — "segnalare il possesso di una determinata carta al proprio compagno" by card choice; "questi segnali sono comprensibili anche dagli avversari" | | C | [05-S46] |
+| Partner signalling | (no words) — "segnalare il possesso di una determinata carta al proprio compagno" [*signal possession of a particular card to one's partner*] by card choice; "questi segnali sono comprensibili anche dagli avversari" [*these signals can also be read by the opponents*] | | C | [05-S46] |
 | Wit/etiquette | "Scopa FRAC: Definita scherzosamente 'la scopa più elegante che c'è'" | "jokingly called 'the most elegant scopa there is'" | — | [05-S46] |
 
 #### 6.4d Spanish — Escoba
@@ -1042,7 +1050,7 @@ Legend for **Status**: **R** = required/regulated by the rules (silence or misst
 | Moment | Line(s) | Translation | Status | Source |
 |---|---|---|---|---|
 | Sweep | **"¡Escoba!"** | "Broom!" | C — rules text calls it an "escoba cantada" (a called escoba) | [05-S51] |
-| Claiming opponent's missed 15 | **"¡Soplo!"** / **"¡Asoplo!"** | "Blow!" (cf. huffing in draughts) | D | [S52 `[UGC]`] |
+| Claiming opponent's missed 15 | **"¡Soplo!"** / **"¡Asoplo!"** | "Blow!" (cf. huffing in draughts) | D | [05-S52] `[UGC]` |
 | Uruguayan Chorizo declarations | **"¡Flor!"**, **"¡Escalera!"**, **"¡Chorizo!"**, **"¡Báciga!"** | combo names | R (declared "immediately before playing the first of their three cards") | [05-S83] |
 
 #### 6.4e Spanish — Cuarenta (Ecuador) — the richest documented bark set
@@ -1051,21 +1059,21 @@ General: "The play is supposed to be full of bravado, loud, exciting, even silly
 
 | Moment | Line(s) | Translation | Status | Source |
 |---|---|---|---|---|
-| Ronda dealt (3 of a kind) | **"¡Ronda!"** / **"¡Dos por guapo!"** | "Round!" / "Two for being handsome!" | R (must claim before first card; "bajo cualquier frase como … 'dos por guapo'") | [05-S19, 05-S59, 05-S57] |
+| Ronda dealt (3 of a kind) | **"¡Ronda!"** / **"¡Dos por guapo!"** | "Round!" / "Two for being handsome!" | R (must claim before first card; "bajo cualquier frase como … 'dos por guapo'" [*using any phrase such as … "two for being handsome"*]) | [05-S19, 05-S59, 05-S57] |
 | Caída (matching previous card) | **"¡Toma, dos por shunsho!"** / **"Dos por shunsho"** / **"Toma por shunsho"** | "Take that, two for shunsho!" | C | [05-S57, 05-S56, 05-S59, 05-S58] |
 | Caída (to the scorer) | **"Dos, señor juez."** / **"Dos por favor, señor juez."** / **"Dos, juecito."** | "Two, Mr. Judge." / "Two please, Mr. Judge." / "Two, little judge." | C | [05-S56, 05-S59, 05-S55] |
 | Big caída / limpia | **"¡Capariche!"** | (unglossed exclamation) | C | [05-S57] |
-| Caída + limpia | **"¡Caída y limpia!"** | "Fall and clean!" | C — earns "el permiso de burlarse de los contrincantes" | [05-S55, 05-S59] |
+| Caída + limpia | **"¡Caída y limpia!"** | "Fall and clean!" | C — earns "el permiso de burlarse de los contrincantes" [*permission to mock the opponents*] | [05-S55, 05-S59] |
 | Threat (card on forehead) | **"Con esta te caigo."** | "With this one I'll fall on you." | T | [05-S57, 05-S54] |
-| Defiance | **"As que no me caerás."** | "Ace that won't fall on me." | T | [05-S57] |
+| Defiance | **"As que no me caerás."** | "Ace, you won't fall on me." | T | [05-S57] |
 | When a 4 is played | **"Cuatrero has de ser."** | "You must be a cattle-thief." | T | [05-S57, 05-S58] |
 | Assorted distractors | **"Marido tiene."**, **"José me llamo."**, **"La foto."**, **"Dolido va."** | "She's got a husband.", "My name is José.", "The photo.", "Off he goes, hurt." | T | [05-S56, 05-S58, 05-S54] |
 | At 38 points | **"Treinta y ocho que no juega."** | "Thirty-eight doesn't play." | C (rule state) | [05-S56, 05-S59, 05-S54] |
-| Shutout (<10 pts) | **"¡Zapatero!"** / **"Zapateros se quedaron."** | "Shoemaker!" / "They stayed shoemakers." | T (losers "deben lustrar los zapatos a los rivales") | [05-S55, 05-S58, 05-S53] |
+| Shutout (<10 pts) | **"¡Zapatero!"** / **"Zapateros se quedaron."** | "Shoemaker!" / "They stayed shoemakers." | T (losers "deben lustrar los zapatos a los rivales" [*must shine the rivals' shoes*]) | [05-S55, 05-S58, 05-S53] |
 | Misdeal | **"Pasa la mano con diez."** | "The deal passes, with ten." | R | [05-S59, 05-S53] |
 | Challenge | **"¡Veo y juego!"** | "I see and I play!" | R | [05-S59] |
 | Winning | **"Cuarenta, señores, gracias."** | "Forty, gentlemen, thank you." | C | [05-S57] |
-| Gesture: caída | card "snapped" down "with great vigor and from well above the surface" — "a purely friendly, but nonetheless rib-poking, gesture"; card raised and thrown "con fuerza" | | T | [05-S19, 05-S57] |
+| Gesture: caída | card "snapped" down "with great vigor and from well above the surface" — "a purely friendly, but nonetheless rib-poking, gesture"; card raised and thrown "con fuerza" [*forcefully*] | | T | [05-S19, 05-S57] |
 | Gesture: prediction | hold the expected card face down near the table, or "on your forehead (facing you, of course)" | | T | [05-S19, 05-S57] |
 
 #### 6.4f Arabic (Chkobba, Basra)
@@ -1075,9 +1083,9 @@ General: "The play is supposed to be full of bravado, loud, exciting, even silly
 | Chkobba sweep | **"CHKOBBAAA!"** | D `[promo]` | [05-S67] |
 | Capturing 7♦ | **"Sab3a l-7ayya!"** (sabʿa l-ḥayya, "the living seven") | D `[promo]` | [05-S67] |
 | Prime | **"Barmīla!"** | D `[promo]` | [05-S67] |
-| Surprise / hype / trash talk / bad luck | **"Wesh hadi?!"**, **"Yaser ya 3ammi!"**, **"Rak tel3ab bel 7adh ken!"**, **"Khallini narba7 marra!"** | D `[promo]` | [05-S67] |
-| Gesture | comic gestures "surtout lorsqu'ils font une chkobba ou qu'ils « mangent » le 7 de carreau"; snapping cards ("faire claquer les cartes, geste technique tunisien par excellence") | C | [05-S66] |
-| Etiquette | play fast: "il n'est pas question … de provoquer des temps morts"; speed disrupts card counting | C | [05-S66] |
+| Surprise / hype / trash talk / bad luck | **"Wesh hadi?!"** [*What's this?!*], **"Yaser ya 3ammi!"** [*That's a lot, uncle! (?)*], **"Rak tel3ab bel 7adh ken!"** [*You're only playing on luck!*], **"Khallini narba7 marra!"** [*Let me win once!*] | D `[promo]` | [05-S67] |
+| Gesture | comic gestures "surtout lorsqu'ils font une chkobba ou qu'ils « mangent » le 7 de carreau" [*especially when they make a chkobba or "eat" the 7 of diamonds*]; snapping cards ("faire claquer les cartes, geste technique tunisien par excellence" [*snapping the cards, the Tunisian technical gesture par excellence*]) | C | [05-S66] |
+| Etiquette | play fast: "il n'est pas question … de provoquer des temps morts" [*there is no question … of causing dead time*]; speed disrupts card counting | C | [05-S66] |
 | Tie on a point | "**bājī**" | C (term) | [05-S66] |
 | Basra capture | "the player announces his capture" | C (generic) | [05-S62] |
 | Basra slang | jack as "**imam**" that "eats" the floor | C | [05-S20] |
@@ -1093,14 +1101,14 @@ General: "The play is supposed to be full of bravado, loud, exciting, even silly
 
 | Moment | Line | Translation | Status | Source |
 |---|---|---|---|---|
-| Lone-card capture / table-clear | **"Ξερή!"** (*Xerí!*) | "Dry!" | name of the event ("κάνει ξερή"); explicit shout **not documented in fetched sources** | [05-S22, 05-S23, 05-S70] |
+| Lone-card capture / table-clear | **"Ξερή!"** (*Xerí!*) | "Dry!" | name of the event ("κάνει ξερή" [*makes a xeri*]); explicit shout **not documented in fetched sources** | [05-S22, 05-S23, 05-S70] |
 | Declaring a pile (Diloti) | "**eight**" (Pagat's English rendering of a plain declaration; the Greek wording is not quoted in the source); group: **«οκτάρια»** ("eights"); **«σόι»** ("kin") | | C (Pagat: "Usually the player will verbally declare the value … though this is not obligatory"; must clarify if ambiguous) | [05-S23, 05-S72] |
 
 #### 6.4i Turkish (Pişti)
 
 | Moment | Line | Translation | Status | Source |
 |---|---|---|---|---|
-| Lone-card capture | **"Pişti!"** | "Cooked!" | C — "pişti diyerek yerde bulunan kağıtları alır" [*takes the cards on the floor saying "pişti"*] | [05-S69] |
+| Lone-card capture | **"Pişti!"** | "Cooked!" | C — "pişti diyerek yerde bulunan kağıtları alır" [*takes the cards on the table (lit. "on the ground") saying "pişti"*] | [05-S69] |
 | After first capture | **"İlk elin günahı olmaz."** | "The first hand has no sin." | C (proverbial) | [05-S68] |
 
 #### 6.4j Other relatives
@@ -1121,6 +1129,7 @@ General: "The play is supposed to be full of bravado, loud, exciting, even silly
 These are quotations from forums/social media, useful for writing natural-sounding character dialogue and for understanding player expectations. All are `[UGC]`.
 
 **Nostalgia & family transmission**
+
 - "I used to play Cassino with my grandpa growing up." [05-S96]
 - "Before she passed, I *did* play Cassino with my grandma (it was a classic for her)" [05-S97]
 - "My mom taught me this game almost 60 years ago, when I was learning arithmetic." [05-S74-BGG85266]
@@ -1131,11 +1140,13 @@ These are quotations from forums/social media, useful for writing natural-soundi
 - Polish-American lineage: "Some of my dad's grandparents came from Poland, and my dad grew up playing Casino" [05-S99]
 
 **Prison/"jail" transmission (US)**
+
 - "I was taught by someone who played in jail a lot" (scoring 10♦ = 3, 2♠ = 2) [05-S100]; reply: "two of them spend a little time in jail. In my Hoyle book, the spelling is casino. Copyright 1947" [05-S100]
 - Advice threads about incarceration list "spades, casino, pea knuckle. Domino's" and "Learn to play dominoes, spades, casino, and chess" [05-S101]
 - Swedish Mulle is "kåkfararvarianten av kasino" ("the jailbird variant") per Glimne, quoted by [05-S33-index].
 
 **Opinions & arguments (good for rival-AI personality)**
+
 - On sweeps: "Sweeps are not part of the regular rules. They are a variant and we play with them every single time. Why wouldn't you??" vs. "there is virtually no skill in getting a sweep, it's just the luck of the deal" [05-S74-BGG1893693]
 - On face cards: "Never part of a build. Ever." [05-S74-BGG1893693]; "you cannot play one on the existing King, call a 'Kings' build" [05-S74-BGG122955]
 - On rule-reading: "I would rather it say 'take the cards' than 'snake the flobble'" (about jargon on Pagat) [05-S74-BGG1221271]
@@ -1146,9 +1157,10 @@ These are quotations from forums/social media, useful for writing natural-soundi
 - Pronunciation: grandma's "Cassino" "Pronounced 'Cersina'" [05-S90]
 
 **Regional identity**
+
 - US Northeast: Pagat has "two reports of a version played by some in Connecticut and New York state in which 3 points are scored for the 10 of diamonds, 2 points for the 2 of spades and just 1 point for taking most cards" [05-S1]. A 2025 Reddit poster taught "by someone who played in jail a lot" reports the same values ("10 of spades [sic] (big Cassino) 3 pts, 2 of spades (little Cassino) 2 pts … most cards 1 pt"); a reply: "We play 10 Diamonds is 3 points" [05-S100] — two independent sightings of the same house rule.
 - Dominican Republic: "Royal Cassino … the national card game of the dominican republic" [05-S95]
-- Ecuador: Cuarenta's World Championship organised by the Asociación de Periodistas Deportivos de Pichincha since 1968, with oath ("juramento de rigor") taken by the Reina de Quito [05-S55, 05-S58]
+- Ecuador: Cuarenta's World Championship organised by the Asociación de Periodistas Deportivos de Pichincha since 1968, with oath ("juramento de rigor" [*the customary oath*]) taken by the Reina de Quito [05-S55, 05-S58]
 - South Africa: an association (KASA) runs Khasino leagues/tournaments [05-S81]; YouTube "Khasino Game Play … 40 on Deck" [05-S80]
 - Haiti: "Haitian Card Game 'Casino'" taught by a parks programmer (CreekTV) [05-S80]
 
@@ -1164,7 +1176,7 @@ These are quotations from forums/social media, useful for writing natural-soundi
 - **No traditional English sweep shout was found.** English sources describe *marking* a sweep, not shouting one [05 §3a]. The noun "clear" [02-S1], the 1878 phrase "clean sweep" [04-S102] and Feydeau's "Clean sweep!" [04-S159] are the closest attested English words.
   - Shouted sweeps are documented for "Scopa!" [05-S49], "¡Escoba!" ("cantada", i.e. called out) [05-S51] and "Pişti!" [05-S69].
   - The Nordic nouns (*tabbe*, *mökki*, *svupper*) are documented as names, not exclamations [05 §3b].
-- **Chatter systems.** Ecuadorian Cuarenta treats noise as strategy: "La idea es desconcentrar al rival para que se olvide las cartas lanzadas" (the idea is to distract your rival so they forget which cards have been played) [05-S57]. Its winner earns "el permiso de burlarse de los contrincantes" (permission to mock the opponents) after a *caída y limpia* [05-S59].
+- **Chatter systems.** Ecuadorian Cuarenta treats noise as strategy: "La idea es desconcentrar al rival para que se olvide las cartas lanzadas" (the idea is to distract your rival so they forget which cards have been played) [05-S57]. A player who makes a *caída y limpia* earns "el permiso de burlarse de los contrincantes" (permission to mock the opponents) [05-S59].
 - **Flavour lines that fire on suit** are available in Finnish card-table puns, e.g. "Pata putos, muttei särkynyt" ("the pot [= spade] fell but didn't break") [10-S2].
 - **Accessibility.** Spoken move announcements are the digital equivalent of the old calls. They are already used for TalkBack/VoiceOver in Scopa apps [06-S40][06-S41].
 ## 7. Scorekeepers, tools and digital implementations
@@ -1174,7 +1186,7 @@ These are quotations from forums/social media, useful for writing natural-soundi
   - The 1793 poem's three-handed game needs "Six Counters … to score with" [11-V-S2].
   - The German 1797 rules print a counter layout ("Man marquirt auf folgende Art", one marks as follows) [10-S41]. So does the 1810 *Spielalmanach* [01-S83].
   - The Polish 1821 almanac opens with a "Tablica do Oznaczenia Gry", a chart of counter patterns for marking 1–9 points [10-S46].
-  - In 1804 Martha Wilmot in Russia had "a little box of Cassino Markers of tortoiseshell" [04-S36].
+  - In 1804 Martha Wilmot in Russia bought "a little box of Cassino Markers of tortoiseshell" as a gift [04-S36].
 - **Paper, counters or a cribbage board (1897):** "the score may be kept with counters, on a sheet of paper, or on a cribbage board" [03-S31].
   - Spade Cassino is built around pegging: "every point being pegged immediately … Sixty-one points is game, once round the board and into the game hole" [03-S23].
   - Porrazo, a Mexican-American relative, is also played to 61 on a cribbage board [09-S26].
@@ -1203,12 +1215,13 @@ These are quotations from forums/social media, useful for writing natural-soundi
   - A Reddit user asks, "Is it allowed to stack or track your spades separately so you can see if you have yet won seven?" This is an unmet need a digital game can meet [02-S63].
 
 ### 7.2 Digital landscape (2026)
-- **Small market:** Cassino apps are one to two orders of magnitude smaller than Scopa or Basra apps [06 §2.1].
+- **Small market:** the leading Cassino app has about 166,000 Android installs, far behind the leading Scopa app (see the scale comparison below) [06 §2.1].
 - **Board Game Arena:** "Available since Apr 7th 2025", with 2,653 games played [06-S31].
 - **No Cassino on Steam** [06-S37].
 - **Not in the big compilations:** no Cassino in *Hoyle Card Games* or *Clubhouse Games* [06-S38].
 - **Open-source projects:** come largely from Finnish university courses and South African developers [06-S53][06-S56][06-S57].
 - **Roguelike trend:** *Scopa Sweep* is a "Traditional Italian Scopa card game turned roguelike" [06-S37]. The Finnish *Kasino* app has a dungeon-style "Trials" mode [06-S24].
+
 #### Mobile catalogue (from note 06)
 
 | App (developer) | Installs (exact) | Rating (n) | Released | Rules / modes noted | Source |
@@ -1224,11 +1237,13 @@ These are quotations from forums/social media, useful for writing natural-soundi
 | Cassino Pro (Sizo Develops II) | 59 | — | Jun 2026 | SA 40-card; room codes; LAN | [06-S48] |
 
 iOS:
+
 - **Cassino! (Michael Dokken):** 3.76 stars from 302 ratings, released 2012-09-13, v2.5. Supports "2 player, 3 player, and 4 player… Local multiplayer games can be played over bluetooth or wifi. Online… through game center… Turn-Based"; "Four difficulty levels"; variations "Royal, Draw, Sweep, Other Variations"; tutorial; statistics. [06-S26]
 - **Cassino Royale (PikeSquare, 2026):** "Training mode suggests your best move — and explains why • It even explains the computer's moves"; "A new Daily Challenge every day — the same deal for everyone"; "Pass & Play: two players, one device"; "Large, readable cards designed for comfortable play at any age"; "No ads. No data collection." [06-S28]
 - **Casino Card Game (Paris Pinkney):** 4.33 stars from 6 ratings on iOS. [06-S30]
 
-**Scale comparison with relatives.** The same day, Scopa and Basra apps were one to two orders of magnitude larger than any Cassino app:
+**Scale comparison with relatives.** On the same day, the leading Scopa app had about 75 times the installs of the top Cassino app (Zol's, 165,691 [06-S19]). The leading Basra and Chkobba apps had about 3–5 times as many, and the leading Pasur app had fewer:
+
 - Scopa: *Scopa: la Sfida* (WhatWapp) 12,339,804 installs and 4.36 stars (229,507 ratings); *Scopa originale Dal Negro* 3,560,675; *Scopa (Broom)* (Lisitso) 1,888,672; *Scopa!* (Escogitare) 1,637,117; *Scopa Più* 1,221,038; *Scopa 15* (Escoba) 865,798. [06-S40]
 - Others: *Egyptian Basra v2* 831,177; *Egyptian Basra – كوتشينه* 532,117; *Chkobba Tn* 531,113; the Iranian Pasur app *چهاربرگ آنلاین 11* 142,848; *Xeri+* 68,376. [06-S42]
 - iOS: *Scopa!* (Marcarelli) 4.73 stars from 3,743 ratings; *La Scopa* (OutOfTheBit) 4.72 from 3,322; *Pasur11* 4.63 from 1,239; compared with Cassino!'s 302 ratings. [06-S30][06-S43]
@@ -1239,10 +1254,10 @@ iOS:
   - Psellos labels each build pile with its value [06-S33].
   - SpiteNET treated missing labels as a bug worth a version fix: "If you have version 1 and the numbers on your Build piles don't show… please update" [06-S34].
 - **Ownership and value pickers:**
-  - South African rules: "Each build has an owner" [02-S4].
+  - Southern African rules: "Each build has an owner" [06-S4].
   - One open-source implementation draws an owner style for each build and opens a modal to choose its value [06-S57].
 - **The worst failure is inferring intent.**
-  - Paris Pinkney's app made players start "from the middle".
+  - Paris Pinkney's app made players start "from the middle" [06-S20].
   - Users complained: "Controls are so horrible you cannot know whether the app will build or take!" [06-S20].
 - **Rule asymmetry between human and AI** produced the most specific complaints, for example "Can't build on what the bot builds, but the bot can build on what you build" [06-S19].
 
@@ -1369,7 +1384,7 @@ iOS:
 - **No published quantitative study of Anglo-American Cassino exists.** There is no AI paper, no complexity estimate and no dealer-advantage figure in arXiv, OpenAlex, CrossRef or the thesis repositories searched [07-S1][07-S30][07-S31][07-S32][07-S34].
 - **Ludii has no fishing game at all.** Its library has no card-game category [07-S33][02-S65].
 - **The closest academic work is on Scopone** (Di Palma & Lanzi, *IEEE Transactions on Games* 10(3):317–332, 2018) [07-S2]:
-  - The dealer's ("deck") team wins 45.7% of matches against 41.7% for the other side, with 12.6% ties, under random play (p = 0.071).
+  - The dealer's ("deck") team wins 45.7% of matches against 41.7% for the other side, with 12.6% ties, under random play (not significant at the 95% level, p = 0.071).
   - The hand team's win rate falls as skill rises: "38.0% of the random strategy, 38.1% of CS, 34.7% of ISMCTS, and 29.5% of MCTS" [07-S2].
   - In the final tournament ISMCTS won 55.8%, against 41.7% for the expert-rule bot [07-S2].
   - Humans won 47.6% against a greedy bot but only 23.8% against ISMCTS-4000 [07-S2].
@@ -1392,6 +1407,7 @@ iOS:
 - **YouGov:** its 2023 US survey of 30 card games does not list Casino at all. The only fishing game it lists is Zwickern, which 4% have played [07-S25].
 - **Google Books Ngram:** lower-case "cassino" peaks at 6.50×10⁻⁸ in **1821** and falls about 46-fold by 2019 [07-S26]. "Big Casino" (single s) peaks in 1912, which tracks the American revival [07-S26].
 - **Wikipedia:** see §2.6 for Nordic July seasonality [01-S63]. The table below shows annual pageviews.
+
 #### 8.2.1 Wikipedia pageviews (Wikimedia REST API, user agents, calendar-year totals) [07-S27]
 
 | Article | 2016 | 2020 | 2025 | 2025 per month |
@@ -1413,6 +1429,7 @@ iOS:
 | no: Kasino (kortspill) | 29,111 | 16,297 | 23,240 | ~1,937 |
 
 Notes:
+
 - 2020 shows a pandemic bump for several games (Gin rummy, Bastra, Pasur).
 - Finnish Kasino roughly tripled between 2018 and 2020 and stayed high.
 - The Tablanette article only became a real article around 2020–21, which explains its jump.
@@ -1438,9 +1455,9 @@ Notes:
   - Escoba's remaining table cards must sum to 10, 25, 40, …
 
 ### 8.4 Monte Carlo study of two-player Cassino (original computation, research note 07)
-These are **policy-conditional** results from five policy sets (random, greedy, one-ply heuristic with card counting, PIMC), not equilibrium values [07 §6.12]. The engine implements Pagat's standard rules with sweeps scored [07-S40]. Invariants were checked: 52 cards, 13 spades, 4 aces, 11 or 8 non-sweep points [07-S43].
+These are **policy-conditional** results from four policies (random, greedy, one-ply heuristic with card counting, PIMC), in self-play and mixed matches,, not equilibrium values [07 §6.12]. The engine implements Pagat's standard rules with sweeps scored [07-S40]. Invariants were checked: 52 cards, 13 spades, 4 aces, 11 or 8 non-sweep points [07-S43].
 
-#### 8.4.2 Points per hand by policy (self-play; one "hand" = one full pass of the deck)
+#### 8.4.1 Points per hand by policy (self-play; one "hand" = one full pass of the deck)
 
 | Self-play policy (N hands) | Dealer pts/hand | Non-dealer pts/hand | Dealer − non-dealer [95% CI] | P(dealer wins hand) | P(hand tied) |
 |---|---|---|---|---|---|
@@ -1450,9 +1467,10 @@ These are **policy-conditional** results from five policy sets (random, greedy, 
 
 - The standard deviation of points per player per hand is about 2.9–3.1. The standard deviation of the dealer − non-dealer difference is about 5.8–6.2 points.
 - Excluding sweeps, the dealer − non-dealer difference is +0.354 (random), −1.236 (greedy) and −0.922 (heuristic) [07-S40].
+- **A 26–26 "cards" tie**, which awards nobody the 3 points for cards, occurs in 4.5% (random), 6.9% (greedy) and 7.1% (heuristic) of hands. The scoreboard has to handle it often [07-S40][07 §6.6].
 
 
-#### 8.4.5 Sweeps
+#### 8.4.2 Sweeps
 
 | Self-play policy | Sweeps per hand (both players) | P(≥1 sweep) | Distribution 0 / 1 / 2 / 3 / 4+ |
 |---|---|---|---|
@@ -1465,10 +1483,10 @@ These are **policy-conditional** results from five policy sets (random, greedy, 
 - Where sweeps happen (heuristic) [07-S41]:
   - Most come mid-deal: 0.147 per hand on the dealer's 2nd play and 0.121 on the non-dealer's 2nd play.
   - Only 0.065 (dealer) + 0.070 (non-dealer) sweeps per hand happen in the first deal; the other 0.55 happen in deals 2–6.
-- **Sweeps add at most about 0.7–0.9 points per hand (heuristic or greedy), and only about 0.16 under the sweep-averse PIMC style, but they swing games.** Without sweep scoring a game lasts 3.63 hands instead of 3.48 (§6.7).
+- **Sweeps add at most about 0.7–0.9 points per hand (heuristic or greedy), and only about 0.16 under the sweep-averse PIMC style, but they swing games.** Without sweep scoring a game lasts 3.63 hands instead of 3.48 (§8.4.3).
 
 
-#### 8.4.7 Game length to 21 points (deal alternates, first dealer randomised)
+#### 8.4.3 Game length to 21 points (deal alternates, first dealer randomised)
 
 | Matchup (N games) | Mean hands [95% CI] | Hands 2 / 3 / 4 / 5 / 6+ | Winner / loser mean final score |
 |---|---|---|---|
@@ -1478,11 +1496,11 @@ These are **policy-conditional** results from five policy sets (random, greedy, 
 | greedy vs greedy, no sweeps (20,000) | 3.63 [3.62, 3.64] | 0.8 / 40.0 / 54.5 / 4.7 / 0.1 % | 24.4 / 14.8 |
 | random vs random (20,000) | 3.56 [3.55, 3.57] | 1.5 / 45.1 / 49.6 / 3.8 / 0.1 % | 24.6 / 14.3 |
 
-- Two hands can only reach 21 in about 1–8% of games, because each hand gives at most 11 points plus sweeps.
+- Only 0.6–4.0% of self-play games end after two hands, because each hand gives at most 11 points plus sweeps.
 - **For session design:** at 52 plays per hand, a typical game is about 180 plays.
 - No game ran past 7 hands [07-S40].
 
-#### 8.4.8 Policy comparison (duplicate format: each deck played twice with seats swapped)
+#### 8.4.4 Policy comparison (duplicate format: each deck played twice with seats swapped)
 
 | A vs B | A − B points/hand [95% CI] | P(A wins hand) | P(A wins game to 21) |
 |---|---|---|---|
@@ -1490,20 +1508,18 @@ These are **policy-conditional** results from five policy sets (random, greedy, 
 | heuristic vs random | +7.34 [7.28, 7.40] | 96.0% | 99.9% (2,000 games) |
 | heuristic vs greedy | +3.79 [3.72, 3.86] | 75.9% | 91.4% (4,000 games) |
 
-Skill dominates luck in Cassino much more than the "simple game" reputation suggests. A modest look-ahead player beats a greedy capture-maximiser in about 9 of 10 games to 21 [07-S40]. Compare Scopone, where the expert rule set beat Greedy by only about 4 percentage points [07-S2].
 
-
-#### 8.4.x Dealer vs non-dealer: an open question
+#### 8.4.5 Dealer vs non-dealer: an open question
 - The per-hand seat effect is small, and its sign depends on the policy [07-S40][07-S43]:
   - random +0.35, PIMC +0.65, heuristic −0.87, greedy −1.15 points per hand (dealer minus non-dealer).
 - Over a whole game it mostly washes out. The first dealer wins 48.4% (greedy) and 48.8% (heuristic) of games to 21 [07-S40].
 - The robust positional fact is that **the dealer takes the end-of-hand residue in 60–77% of hands** under every policy [07-S40][07-S43]. This bears out the advice of 1792 ("In the last Deal, a Court-Card or some other ought to be kept to secure the Advantage of the Cards on the Board" [03-S1]) and of 1897 ("The last trick is usually made by the dealer, who always keeps back a court card" [03-S31]).
 - Scopone research finds a dealer-side advantage that grows with skill [07-S2]. The Cassino simulations do not settle the direction for strong play, so a stronger agent is needed [07 §6.10].
 
-#### 8.4.y Skill vs luck
+#### 8.4.6 Skill vs luck
 - Under duplicate scoring, a one-ply card-counting heuristic beats greedy play by **+3.79 points per hand** and wins **91.4%** of games to 21 [07-S40].
 - In Scopone, by contrast, expert rules beat Greedy by only about 4 percentage points [07-S2].
-- In Cassino, building and card-counting skill matter far more than the game's "child's game" reputation suggests [07 §6.8][04-S7].
+- In Cassino, look-ahead, card counting and building matter far more than the game's reputation as "a child's game" suggests [07 §6.8][04-S28][04-S7].
 - This supports the 1945 assessment that the game "provides wide scope for scientific play and sharp contest of wits" [03-S35].
 ## 9. Strategy
 
@@ -1516,7 +1532,7 @@ Skill dominates luck in Cassino much more than the "simple game" reputation sugg
   - "V. Never play a Ten while Great Cassino is in, nor a Deuce while Little Cassino is unplayed."
 - **The 1793 poem** has eleven "General Rules and Directions for Playing the Game of Casino". These are the source of most later classical advice [11 §V9]:
   - The *Sporting Magazine* (Nov–Dec 1793) merged them with Long's laws [11-V-S7].
-  - That merged text then appeared, with little change, in Hoyle from 1796 to 1929 [08 §0][03-S5][03-S33].
+  - A condensed version became Hoyle's "principal objects" paragraph, reprinted with small edits from 1796 to 1929 [08 §0][03-S5][03-S33].
 - **R. F. Foster (1897)** wrote the other classic set, "Suggestions for Good Play" [03-S31].
 - **20th-century "pointers"** come from Morehead & Mott-Smith (1946–52), Scarne, Silberstang and Hervey [08-S12][08-S13][08-S14][08-S15][08-S16][08-S17].
 - **Modern sources** add numerical reasoning: Psellos's "9% rule" and expected-value test for builds [08-S36].
@@ -1571,7 +1587,77 @@ Skill dominates luck in Cassino much more than the "simple game" reputation sugg
 
 
 ### 9.4 Testing the maxims in simulation (original computation)
-PLACEHOLDER_TESTS
+No published source tests any Cassino maxim [07 §1]. For this review, each maxim was coded as a small change to the simulator's greedy player and played against an unchanged copy of it [SIM-ST].
+
+**Set-up** [SIM-ST][07-S40]:
+
+- **Rules:** standard two-player Pagat rules, with sweeps worth 1 point. A hand has about 11.7 points at stake (11.65 in greedy self-play [07-S40]): up to 11 for cards, spades and cash points (cards score nothing on a 26–26 tie), plus about 0.87 for sweeps.
+- **Baseline ("greedy"):** makes the capture with the highest immediate value and never builds. When it cannot capture, it trails its least valuable card. In practice that is a random plain card, since every non-spade card from 2 to K except Big Cassino carries the same weight.
+- **Duplicate deals:** each shuffled deck is played twice, with the two players swapping seats, so the luck of the deal cancels out. Each variant played 32,000 decks (64,000 hands).
+- **Measure:** the variant's average points per hand minus the baseline's, with a 95% confidence interval. A game to 21 lasts about 3.5 hands [07-S40], so +0.3 points per hand is roughly one point per game.
+- **Control:** an unchanged copy of the baseline scored +0.005 [−0.023, +0.032], confirming that the harness is unbiased.
+- **Second opponent:** the main variants were also played against the one-ply card-counting player, which builds. These runs used 8,000 decks each, with the same decks for every variant, so each variant can be compared directly with plain greedy [SIM-ST].
+
+#### Results
+
+| Maxim (source) | How it was coded | vs greedy (pts/hand) | Gain over greedy vs card-counter |
+|---|---|---|---|
+| **Trail court cards first**, then small cards; keep aces and Cassinos (Long VIII; 1793 rule 10) [08-S1][08-S2] | trail order: courts → low numerals → aces/Cassinos; spades last within each group | **+0.32** [+0.29, +0.35] | **+0.17** [+0.11, +0.24] |
+| **Trail small cards**, except aces and Little Cassino; avoid spades (Foster) [08-S9] | trail order: low → high (courts last), then spades, then aces/Cassinos | **+0.16** [+0.13, +0.19] | +0.02 [−0.04, +0.08] |
+| Trail middle/high cards early, low cards late (Psellos, written for Royal Cassino) [08-S36] | deals 1–3 high-first, deals 4–6 low-first | +0.06 [+0.03, +0.09] | 0.00 [−0.06, +0.06] |
+| *Control:* trail courts, then the highest numerals | trail order: courts → 10 → 9 → …; suit ignored | **−0.57** [−0.60, −0.54] | **−0.36** [−0.43, −0.30] |
+| **Keep a court card back** for the end of the last deal (Long; 1793 rule 16; Foster) [08-S1][08-S2][08-S9] | final deal: don't spend a court card while other cards remain | **+0.21** [+0.18, +0.24] | **+0.21** [+0.19, +0.23] |
+| — dealer only | | +0.11 [+0.08, +0.14] | +0.16 [+0.14, +0.18] |
+| — non-dealer only | | +0.11 [+0.08, +0.13] | not run |
+| **Take the opponent's trailed card** "in Preference to any other" (Long I) [08-S1] | always capture the trailed card when possible | **−0.11** [−0.14, −0.09] | **−0.14** [−0.18, −0.11] |
+| — as a tie-break only ("if you have a choice", Foster) [08-S9] | prefer it only among captures worth within 0.25 points of the best | +0.01 [−0.02, +0.04] | +0.04 [+0.02, +0.06] |
+| "Go for 'cards' in preference to everything else" (Foster) [08-S9] | value of each card captured doubled (0.2 → 0.4) | −0.01 [−0.04, +0.01] | 0.00 [−0.01, +0.01] |
+| — stronger (0.8) / weaker (0.05) | | −0.06 / −0.07 (both significant) | not run |
+| *Control:* overweight spades (bonus 0.15 → 0.5) | | −0.07 [−0.10, −0.04] | not run |
+| Never trail a card that makes ten while Big Cassino is unseen (Foster's form of Long V) [08-S1][08-S9] | trail filter | +0.01 [−0.02, +0.03] | not run |
+| Don't leave a table one card can sweep (Long IV; 1793) [08-S1][11-V-S2] | trail filter, no exceptions | 0.00 [−0.03, +0.03] | +0.01 [−0.01, +0.04] |
+| **Long 1792 bundle:** courts first + sweep defence + keep a court + take trailed card | combined | **+0.47** [+0.44, +0.50] | **+0.25** [+0.18, +0.32] |
+| — same bundle without take-trailed-card | combined | **+0.61** [+0.58, +0.64] | **+0.44** [+0.38, +0.51] |
+| — same bundle, take-trailed as a tie-break | combined | **+0.62** [+0.59, +0.65] | **+0.44** [+0.38, +0.51] |
+| **Foster 1897 bundle:** small cards first + avoid tens + keep a court + cards ×2 | combined | **+0.30** [+0.27, +0.33] | **+0.22** [+0.15, +0.28] |
+
+*Original computation [SIM-ST]. Middle column: 32,000 duplicate decks per row. Right column: 8,000 duplicate decks per row, paired against plain greedy on the same decks; in absolute terms every variant still loses to the card-counter by 3.2–4.0 points per hand (plain greedy: −3.67; the separate run in §8.4.4, on different decks, gives 3.79 [3.72, 3.86]).*
+
+#### What the tests suggest
+- **Trailing court cards first is one of the two most valuable single maxims.**
+  - Trailing court cards first is the largest single-rule gain against greedy. Against the card-counter, only keeping a court back gains more. This matches the classical reason: courts "can never be of any other use than to make a pair" [08-S2].
+  - Order matters a great deal. The control that trails courts and then *high* numerals loses 0.57 points per hand. The maxim (courts, then *low* numerals) gains 0.32. The gap between them is almost 0.9 points per hand. Most of it probably comes from low versus high numerals, since the only other difference is that the control ignores suit. This is consistent with Foster's reason for trailing small cards: they can "be combined and won with the larger cards kept in the player's hand" [08-S9].
+  - Psellos's high-cards-early advice adds little here. It was written for Royal Cassino, where courts count 11–13 and can be combined [08-S36], so these standard-rules tests are not a fair test of it.
+- **Keeping a court card for the end works, and not only for the dealer.**
+  - Foster, Pagat and the 1793 rule address the dealer [08-S2][08-S9][08-S19]. Long states it for either seat: "In the last Deal, a Court-Card or some other ought to be kept to secure the Advantage of the Cards on the Board" [08-S1]. So does Morehead [08-S12]. The simulation supports the seat-neutral reading. Against greedy, the non-dealer gains just as much (+0.11 each way), and the two gains add up to the combined +0.21.
+  - The simulation does not show *why* the non-dealer gains. That would need a dedicated experiment.
+- **Taking the opponent's trailed card helps only as a tie-break.**
+  - Read literally ("in Preference to any other" [08-S1]), it costs 0.11–0.14 points per hand. It also shrinks the Long bundle's gain, from +0.61 to +0.47 against greedy and from +0.44 to +0.25 against the card-counter.
+  - As a tie-break among roughly equal captures, it is neutral against greedy and slightly positive against the card-counter. This is Foster's reading ("if you have a choice" [08-S9]). No source gives a reason for the maxim [08 §1.5], and these tests do not supply one.
+- **Re-weighting priorities did not help.**
+  - The greedy player already values each card at 0.2 points, so doubling that changed nothing measurable. Larger or smaller weights hurt.
+  - Overweighting spades also hurt (−0.07), which agrees with the 1793 warning that "the Desire of taking Spades should never bias your Play" [11-V-S2].
+  - These results depend on the simulator's card weights, which are a modelling choice [07-S40].
+- **Sweep defence works but does not pay on its own.** Refusing to leave a sweepable table cut the opponent's sweeps from 0.44 to 0.39 per hand, but the net gain was zero, presumably because applying the rule without exceptions forces worse trails elsewhere. The 1793 author's four exceptions (early game, a point available, a close race for cards, a comfortable score) [11-V-S2] may be an answer to this cost. The Long bundle's +0.61 exceeds the sum of its parts (+0.53), so the rules interact, but no run isolates the sweep defence's share.
+- **The "Big Cassino" trail filter** (never make ten while ♦10 is unseen) had no measurable effect, probably because the situation is rare: it needs a trail that makes ten with the table while ♦10 is still unaccounted for.
+- **Maxims recover only a small part of the gap to the card-counter.** The best bundle (Long's maxims without the literal take-the-trailed-card rule) recovers 0.44 of greedy's 3.67-point deficit per hand against the card-counter. The card-counter still beats every greedy-based variant by more than 3.2 points per hand. The card-counter differs in several ways at once: look-ahead, card counting, building, the option to trail when a capture is available, and explicit handling of the last capture. The tests cannot split the gap between these. The whole gap is about eight times what the best bundle recovers.
+
+#### Limits
+- Every variant is the greedy player plus one or more rules. The tests show whether a maxim helps a simple capture-first player, not whether it is part of optimal play.
+- The maxims that need memory, inference or building were **not tested**:
+  - unpaired-rank counting and negative inference;
+  - when to build, raise or take builds;
+  - the pair trap;
+  - seat-dependent cash-card plans;
+  - when to cash Big Cassino.
+  Testing these needs a stronger base agent (§13).
+- Results are per hand, under one rule set (Pagat, sweeps scored). Nordic scoring (spades worth 2) and Royal values would need their own runs.
+
+**Implications for AI tiers (§9.5):**
+
+- Tier 2 should use the maxims that hold up: courts first, then low cards; keep a court card for the end in either seat; take the trailed card only as a tie-break.
+- Taking the trailed card at any cost, and a fixed bias towards spades, are cheap ways to make a lower tier slightly weaker in a way that looks human.
+- The large gap to the card-counter suggests that memory, look-ahead and building, not more maxims, should separate Tier 2 from Tier 3.
 
 ### 9.5 AI difficulty tiers (from note 08)
 
@@ -1579,6 +1665,7 @@ Design principle: tiers differ in (a) what the AI *remembers*, (b) how far it *l
 
 #### Tier 1 — Beginner ("Greedy, no memory")
 Behaviour, each item cited:
+
 - Capture whenever possible; otherwise trail. This is the BGG solo-variant automaton: "If it can capture one or more cards, it will … If it can't … it will trail them … The AI does not build." [08-S42]
 - Among captures, take the most valuable or most cards: "tries to perform the best capture available or it plays the least valuable card if a capture is not available" [08-S48]. Cassino prizes: cards, spades, cash points [08-S1, 08-S9, 08-S14].
 - Trail simple discards: court cards first, then small cards [08-S1, 08-S2, 08-S4]. Never trail a 10/2 while a Cassino is out [08-S1, 08-S4]. This is cheap to implement and makes the bot look sensible.
@@ -1588,17 +1675,19 @@ Behaviour, each item cited:
 
 #### Tier 2 — Intermediate ("Hoyle player")
 Adds the classical maxims and partial memory:
+
 - Tracks the cash points and the high spot cards (♦10, ♠2, aces; tens, nines, eights) but not everything: "Most players do not make a great effort to remember all other cards" [08-S13]; see also [08-S2, 08-S9, 08-S16].
 - Keeps running totals of cards and spades and switches priorities once a majority is clinched (27 cards / 7 spades) [08-S13, 08-S15, 08-S12, 08-S19].
-- Capture preferences: the opponent's trailed card [08-S1, 08-S2, 08-S9]; spades in ties [08-S4, 08-S9]; the Ace before Big Cassino [08-S2]; combinations before pairs early [08-S4]; more cards per capture [08-S9].
+- Capture preferences: the opponent's trailed card, as a tie-break (§9.4) [08-S1, 08-S2, 08-S9]; spades in ties [08-S4, 08-S9]; the Ace before Big Cassino [08-S2]; combinations before pairs early [08-S4]; more cards per capture [08-S9].
 - Trail heuristics conditioned on counts: play the 4th ace at once when three are out [08-S2, 08-S9]; prefer Little Cassino over an Ace as a forced trail [08-S2]; trail dead ranks [08-S3, 08-S20]; avoid trailing spades [08-S9, 08-S13]; don't make ten while ♦10 is unseen [08-S9, 08-S12].
 - Builds only by a simple EV test: "build only if you get more than 1 extra point" early, more freely later [08-S36]. Uses multiple builds for protection [08-S9, 08-S43]. Raises or steals opponent builds when holding the card [08-S9].
-- Endgame: as dealer, keeps a court card for the last capture [08-S1, 08-S9, 08-S19]. As non-dealer, saves a cash card for the last trail of a deal [08-S12, 08-S14].
+- Endgame: in the final deal, keeps a court card for the last capture in either seat (§9.4) [08-S1, 08-S9, 08-S19]. As non-dealer, saves a cash card for the last trail of a deal [08-S12, 08-S14].
 - Score-aware sweep defence per the 1793 rule-21 exceptions [08-S2].
 - Hobby precedent for tuning: the MakinenJO bot's level 3 adds `tactic_next` ("try placing card tactically for good pickup next round") and higher weights for aces, ♠2 and spades [08-S50].
 
 #### Tier 3 — Expert ("Morehead/Culbertson player")
 Adds full memory and inference:
+
 - Knows every rank still to come, and in the last deal the opponent's exact hand [08-S12]. Tracks unpaired ranks to deduce the final hands [08-S13, 08-S30]. Uses the 220/364 pip total as a cross-check [08-S24, 08-S47a; Derived §2.7].
 - Systematic negative inference: "If he had a ten he would have done this…" [08-S13]; the opponent passing a Cassino means he lacks its pair [08-S37]; a surviving build means he lacks its rank [08-S40].
 - Opening probability model: about 9% per unseen card per opponent card [08-S36]. EV comparison of capture vs build vs trail [08-S36].
@@ -1641,7 +1730,7 @@ Adds full memory and inference:
   - The earliest *mökki* found in print is a 1938 pulp story. It sneers at "amerikkalaisittain, ilman mitään mökkejä, sieppauksia ja muuta maallista turhuutta" (the American way, without any mökkis, snatches or other worldly vanity) [10-S6].
 - **Sweden (Kasino, Byggkasino, Krypkasino, Mulle):**
   - Lyckans Talisman documents a hand-value *choice*: "Spelaren som står på tur får välja om storan skall räknas som sexton ögon eller de vanliga tio ögonen" (the player whose turn it is may choose whether the big one counts sixteen or the usual ten) [10-S24].
-  - It also documents a rich set of calls ("sistan", "båten går", "ligger", "trött", "storan privat", "tabbe på knekt") [10-S24][10-S25][10-S26].
+  - It also documents a rich set of calls ("sistan" *last one*, "båten går" *the boat's leaving*, "ligger" *lies*, "trött" *tired*, "storan privat" *the big one, private*, "tabbe på knekt" *sweep on a jack*) [10-S24][10-S25][10-S26].
   - Mulle has margin slang: "hundraklubben" (the hundred club), "senap" (mustard), "ketchup" [10-S26].
 - **Norway:**
   - Kasino is listed among "Påskespill" (Easter games), with "Papir og blyant til poengene" (paper and pencil for the points) [10-S32].
@@ -1655,18 +1744,18 @@ Adds full memory and inference:
   - The 1797 and 1821 texts translate the English rules, with pronunciation notes for "Sweep" and "Lurch" [10-S41][10-S46].
   - Modern German dictionaries have no card-game sense for *Kasino* [10-S43].
   - Zwicker survives in Schleswig-Holstein [10-S44].
-- **Hungary:** Kaszinó has 3-card deals, multi-card captures from the hand, "Ausz!" and "Fals!" [01-S20]. It appears in Tandori's novels [10-S56].
+- **Hungary:** Kaszinó has 3-card deals, multi-card captures from the hand, "Ausz!" (*Out!*) and "Fals!" (*False!*) [01-S20]. It appears in Tandori's novels [10-S56].
 - **Russia:** "сказать: «Строю 7»" (say: "I build 7"); "смести подчистую" (to sweep clean) [10-S57]. A separate folk game, *Скопа*, scores clubs instead of spades [01-S58].
 - **Brazil / Portugal:**
   - Casino is little known in Brazil. "Assim mesmo, com um 's' só (pronuncia-se casinó)" (Just like that, with a single 's', pronounced casinó) [10-S49].
-  - *Escopa* is the national fishing game [09-S82].
+  - The fishing game Brazilians actually play is *Escopa/Escova*, brought by Italian immigrants [10-S49][09-S82].
   - Dictionaries define "Cassino grande, o dez de ouros. Cassino pequeno, o dois de espadas" (Big cassino, the ten of diamonds; little cassino, the two of spades) [10-S50].
 - **Argentina:** "El Casino o Cassino es un juego de cartas de origen inglés" (Casino or Cassino is a card game of English origin) [10-S53]. Escoba de 15 has an official seniors' tournament regulation [10-S54].
 - **Ecuador:** the related Cuarenta is a public festival game with a world championship held since 1968/69 [05-S55][10-S55].
 - **Japan:** "ゲーム名は「カジノ」ではなく「カシノ」になります" (the game's name is "kashino", not "kajino" [casino]) [10-S59].
   - Japanese "ビルド" ("build") means capture-by-sum, while the English build is "付け札" (*tsukefuda*, "attached card") [01-S24].
   - This is a localisation trap [01 §2.9].
-- **French / Québec:** "gros casino (10 de carreau) 2 points; Le petit casino (2 de pique) 1 point" (Mainguy 1987) [10-S62].
+- **French / Québec:** "gros casino (10 de carreau) 2 points; Le petit casino (2 de pique) 1 point" (*big casino [10♦] 2 points; little casino [2♠] 1 point*) (Mainguy 1987) [10-S62].
 - **Afrikaans:** "Bly jy maar hier vanaand by my, en speel kasino, man" (Just stay here with me tonight and play kasino, man; Leipoldt) [10-S61].
 
 ### 10.2 Cross-national comparison (from note 10)
@@ -1696,10 +1785,11 @@ Adds full memory and inference:
 (n/a = not stated in the fetched source.)
 
 **Patterns visible in the table:**
-1. Only the Nordic family gives ♦10, ♠2 and aces higher capture values from the hand.
+
+1. Apart from the German 1810 *Spielalmanach* and the German Wikipedia text derived from it [01-S83], only the Nordic family gives ♦10, ♠2 and aces higher capture values from the hand.
 2. Nordic sweeps usually score 1 and may cancel each other.
-3. The English-derived continental texts (German, Polish, Danish, Russian, Brazilian, Argentine) keep "pair-only" face cards and cards = 3 points.
-4. The ♦10 survives as a point card even in unrelated games: Greek Xeri and German Zwicker.
+3. The English-derived continental texts (German 1797, Polish 1821, Danish 1829, Russian, Brazilian) keep "pair-only" face cards and cards = 3 points.
+4. The ♦10 survives as a point card even in other fishing games: Greek Xeri and German Zwicker [10-S60][10-S44].
 
 ---
 
@@ -1727,6 +1817,7 @@ Key: "h/t" = cards to each hand / to the table. Values are as stated in that edi
 | Target | 11 (lurch <6), or each deal a game; 21 (1880) | **21**; closest to 21 wins if several exceed | 21 | **16** (var. 21; exact-16 var.) | **11**, claimed by "Ausz!" | 11 or 21 | 21 | — (talk: 16) | **16** | e.g. 21 | agreed (e.g. 52) |
 
 Notes:
+
 - (a) Spade Cassino (en): every spade 1 and the ♠J +1, 24 points per hand, game 61 [01-S1, 01-S78]; the it edition says 25 [01-S23].
 - (b) Finnish ties "jää pakkaan" [stay in the deck] and accumulate [01-S17].
 - (c) The de deal sizes conflict with every other edition [01-S14].
@@ -1793,7 +1884,7 @@ Notes:
   - Jack London: "We can give 'em cards and spades an' little casino an' win out on big casino and the aces" [04-S29].
 - **Swedish *tabberas*** ("to make a clean sweep") is used figuratively by Astrid Lindgren: "Nu har vi tagit tabberas på allting" (now we've made a clean sweep of everything) [10-S19].
 - **Danish "at rydde bordet"** ("to clear the table") is traced to Kasino by Lex.dk [05-S44].
-- **The Billy the Kid "Big Casino / Little Casino" nicknames** appear in the film *Chisum* (1970) and on websites. They are **absent** from Garrett's own 1882 *Authentic Life* and from Burns (1926) [04-S52][04-S165][04-S57]. Treat them as a 20th-century embellishment [04 §6].
+- **The Billy the Kid "Big Casino / Little Casino" nicknames** appear in the film *Chisum* (1970) and on websites. They are **absent** from Garrett's own 1882 *Authentic Life* and from Burns (1926) [04-S52][04-S165][04-S57]. They are probably a 20th-century embellishment, though this is unconfirmed [04 §6].
 ## 12. Contradictions in the literature, and how they were resolved
 Each item was checked against the primary source during this review. The page images are in `research/evidence/`.
 
@@ -1801,12 +1892,12 @@ Each item was checked against the primary source during this review. The page im
 |---|---|---|---|
 | V1 | "The earliest sources use the spelling Casino" (Pagat); Long's title is "…Casino" (Pratesi) [02-S1][09-S70] | Long's 1792 title page reads "CASSINO". The rival 1792/93 poem uses "Casino" and calls Long's spelling an error [11-V-S1][11-V-S2] | Both spellings date from the start; Pagat and Pratesi are wrong about Long |
 | V2 | Early rules gave no points for sweeps (Pratesi) [02-S30] | Long (1792): "he clears the Board, and marks one Point in the Game as often as repeated"; the poem (1793): "Whoever clears the Board reckons for each Time one Point absolutely" [11-V-S1][11-V-S2] | Pratesi is right that "sweep" then meant the final take, but wrong about points |
-| V3 | Continental Casino derives from Long / "the English rules" | The German 1797 laws translate the 1793 poem (lurch = five, Florentine etymology, three-handed play to 15 with a fixed count-out order) [11-V-S6][11-V-S2] | The Continental line descends from the poem |
+| V3 | Continental Casino derives from Long / "the English rules" (implicit assumption; cf. note 10's "1797 translation of the English rules") [10-S41] | The German 1797 laws translate the 1793 poem (lurch = five, Florentine etymology, three-handed play to 15 with a fixed count-out order) [11-V-S6][11-V-S2] | The Continental line descends from the poem |
 | V4 | Building first printed in 1864 [01-S1] | The *American Hoyle*'s 4th-edition preface lists Cassino as "added to the fourth edition"; building is first printed in 1866 (*American Card Player*) [11-V-S3][11-V-S4] | The 1864 date is wrong |
 | V5 | "Set-back or Bounce Cassino" [05-S8][01-S79] | Page image reads "Set-back or Rounce Cassino" [11-V-S3] | "Bounce" is an OCR error |
-| V6 | "Big Cassino" first in Foster 1897 [05-S11b] | "big cassino" appears in an 1875 sermon and in 1878 newspapers [04-S138][04-S102] | Antedated by about 20 years |
+| V6 | "Big Cassino" first in Foster 1897 [05-S11b] | "big cassino" appears in an 1875 sermon and an 1878 newspaper [04-S138][04-S102] | Antedated by about 20 years |
 | V7 | Spade Cassino = 25 points per hand (it.wiki) [01-S23] | Foster: "24 points are made in every hand" [03-S23] | 24 |
-| V8 | Royal Cassino first appears in Foster 1897 [01-S1] | Court values 11/12/13 appear in German play by 1810/1846 and in Dick's American variation of 1894; "Royal Draw" appears in 1898 [01-S83][03-S11][03-S22][03-S24] | Older than claimed |
+| V8 | Royal Cassino rules first appear in Foster 1897; Royal Draw in 1911 [01-S1] | Court values 11/12/13 appear in German play by 1810/1846 and in Dick's American variation of 1894; "Royal Draw" appears in 1898 [01-S83][03-S11][03-S22][03-S24] | Older than claimed |
 | V9 | Long and the 1793 *Sporting Magazine* contradict each other on the pair trap [08 §3.6] | The magazine merges Long's laws with the poem's "General Rules" and reverses Long's condition; Hoyle kept Long's sense [11-V-S7][03-S6] | Copying slip; the classical maxims trace to the poem |
 | — | "Royal Cassino" means face cards have no value (BarGames101) [02-S44] | Royal means courts are 11/12/13 [02-S3] | Web error |
 | — | Cassino is Italian (nb, hu, cs Wikipedia; Dick 1866; Lindskog 1847) [01-S26][01-S20][01-S62][03-S14][10-S16] | No Italian game called Casino is attested; Scopa and Scopone are documented later [09-S70][09-S71] | Unsupported tradition. Its earliest printed form is the 1792/93 poem's Florentine etymology [04-S21] |
@@ -1833,6 +1924,7 @@ Each item was checked against the primary source during this review. The page im
 - **Spoken table talk:** YouTube caption transcripts and regional Reddit communities could not be mined [05 §Gaps]. The **English sweep shout** remains undocumented [05 §3a].
 - **No dedicated Cassino scorekeeping product** (pad, board or patent) has been found [06 §1.7–1.8].
 - **No strategy literature** was found for Spade Cassino or Draw Cassino [08 §12].
+- **Maxims not yet tested in simulation:** building and raising advice, negative inference, the pair trap, seat-dependent cash-card plans and Big Cassino timing. These need a base agent that builds and remembers (§9.4).
 
 ## 14. Recommendations for the video game (each traced to evidence above)
 1. **Ship rule presets and a variation builder.** Players hold strong and conflicting house rules (§3.2–3.3) [06-S19][06-S22][06-S27]. Suggested presets:
@@ -1846,14 +1938,14 @@ Each item was checked against the primary source during this review. The page im
    - *Hungarian Kaszinó* [01-S20]
    - *South African 40-card* [02-S4]
    - *Stealing Bundles (kids)* [03-S36]
-2. **Make announcements part of the interface.** From 1867 the spoken build/call was binding, singular for builds and plural for locks [03-S15]. Show labels such as "Building 8" vs "Building 8s / Two 8s", voice them, and let opponents "separate" undeclared builds in a *Strict 1867* mode [03-S15][03-S25].
+2. **Make announcements part of the interface.** From 1867 the spoken build/call was binding, singular for builds and plural for locks [03-S15]. Show labels such as *Building 8* vs *Building 8s / Two 8s*, voice them, and let opponents "separate" undeclared builds in a *Strict 1867* mode [03-S15][03-S25].
 3. **Voice the dealer's "Last" and use a sound cue.** Players notice when it is missing [06-S20][06-S34]. Localise it as "sistan / båten går", "sisten", "sidsten", "últimas cartas" [10 §18].
 4. **Show the sweep as a rotated face-up card in the capture pile.** This is the near-universal physical convention [03-S31][10-S24][02-S10]. Swedish players offset each one to make a tally [10-S24]. Animate cancellation by turning cards face down [03-S22]. Keep celebrations short [06-S40].
 5. **Live trackers:** cards (toward 27), spades (toward 7), cash points and sweeps, with an end-of-hand breakdown checked against the 11-point total [03-S31][02-S1][06-S20][06-S33].
 6. **A claim / count-out button with a selectable precedence order**:
    - Foster's (cards first) [03-S31]
    - the 1793 seniority order (Great Casino first) [11-V-S2]
-   - "no precedence" [04-S131]
+   - no precedence ("Neither cards nor any other point has precedence", *New York Clipper*, 1883) [04-S131]
 
    Show a penalty for a false claim [03-S31][03-S35].
 7. **Never infer intent.** Use explicit capture / build / trail choices that show only legal options [06 §12][06-S33][06-S34]. Give human and AI identical rules, and explain why a move is refused [06 §12.3].
@@ -1862,8 +1954,8 @@ Each item was checked against the primary source during this review. The page im
    - same-deal daily challenges;
    - AI difficulty defined by memory and inference rather than peeking [06-S27][06-S19][06-S42][06-S49].
 9. **AI tiers** following the Scopone template [07-S2][08 §15]:
-   - **Greedy:** humans can beat it [07-S2].
-   - **"Hoyle 1793/1897" rule bot:** classical maxims, with the simulation-validated ones prioritised (§9.4).
+   - **Greedy:** the bot humans beat most often in Scopone (47.6% wins) [07-S2].
+   - **Hoyle 1793/1897 rule bot:** classical maxims, prioritising those the simulations support: courts first, then low cards; keep a court for the end; take the trailed card only as a tie-break (§9.4) [SIM-ST].
    - **Card-counting look-ahead:** beats greedy in 91% of games [07-S40].
    - **ISMCTS.**
 10. **Chatter and personality** drawn from attested speech:
@@ -1875,7 +1967,7 @@ Each item was checked against the primary source during this review. The page im
 11. **Teaching ladder** modelled on Wippen and Stealing Bundles: pairing → summing → building → raising → multiple builds [09-S61][03-S36]. The arithmetic-teaching heritage is a marketing angle [04-S128][10-S1].
 12. **Store naming.** Searching "Casino" returns gambling apps. Use "Cassino (card game)" and regional names (Kasino, Kasi Cassino) [02-S62][06-S27][06-S22].
 ## Appendix A. Repository map
-- `cassino-lit-review.md`: this document (assembled from `drafts/` by `tools/assemble.sh`).
+- `cassino-lit-review.md`: this document (assembled from `drafts/` by `tools/assemble.sh`). `cassino-lit-review.pdf` is built from it by `tools/build_pdf.sh` (pandoc + WeasyPrint, styled by `tools/pdf.css`).
 - `research/01-wikipedia.md` … `research/10-multilingual.md`: the ten research notes. Each contains its full, numbered source list, plus quotations and tables too long for this review.
 - `research/11-coordinator-verifications.md`: primary-source checks of contradictions (V1–V9).
 - `research/evidence/`: page images of the key primary sources:
@@ -1885,7 +1977,7 @@ Each item was checked against the primary source during this review. The page im
 - `research/sim/`: simulation code and outputs.
   - `cassino_sim.py`: rules engine and policies.
   - `run_experiments.py`, `mechanism.py`, `pimc.py`, `combinatorics.py`: note 07's experiments.
-  - `strategy_tests.py`, `strategy_vs_heuristic.py`: the maxim tests in §9.4. Outputs are `*.json` and `*.log`.
+  - `strategy_tests.py`, `strategy_vs_heuristic.py`, `paired_deltas.py`: the maxim tests in §9.4. Outputs are `strategy_*.json` and `strategy_*.log`.
 - `tools/`:
   - `rekey.py`: citation re-keying;
   - `build_bibliography.py`: Appendix B;
@@ -2329,7 +2421,7 @@ All accessed 2026-10-02 unless noted. `[S#]` numbers not listed (S60, S63, S75, 
 - [05-S5] Frederick Reynolds, *Cheap Living: a comedy, in five acts* (London, 1797). archive.org `cheaplivingacom00reyngoog` — https://archive.org/details/cheaplivingacom00reyngoog
 - [05-S6] Jane Austen, *Pride and Prejudice* (1813), ch. XXIX. Project Gutenberg #1342 — https://www.gutenberg.org/cache/epub/1342/pg1342.txt
 - [05-S7] *Bohn's New Hand-book of Games* (1851), "Cassino." archive.org `bohnsnewhandboo00hoylgoog` — https://archive.org/details/bohnsnewhandboo00hoylgoog
-- [05-S8] "Trumps" [William Brisbane Dick], *The American Hoyle, or, Gentleman's Hand-book of Games* (New York: Dick & Fitzgerald, 1864), "Cassino" — Terms, Laws 1–16, pp. 218–221. archive.org `americanhoyleorg00dick` — https://archive.org/details/americanhoyleorg00dick
+- [05-S8] "Trumps" [William Brisbane Dick], *The American Hoyle, or, Gentleman's Hand-book of Games* (New York: Dick & Fitzgerald, 4th ed., ©1864; preface Feb. 1867), "Cassino" — Terms, Laws 1–16, pp. 218–221. archive.org `americanhoyleorg00dick` — https://archive.org/details/americanhoyleorg00dick
 - [05-S9] *Cassell's Book of In-door Amusements, Card Games, and Fireside Fun*, 3rd ed. (London: Cassell, Petter, Galpin & Co., n.d.), "Cassino," p. 129 ff. Project Gutenberg #49137 — https://www.gutenberg.org/ebooks/49137
 - [05-S10] Baxter-Wray [W. H. Peel], *Round Games with Cards* (London, 1891), "Cassino," pp. 97–100. Project Gutenberg #27819 — https://www.gutenberg.org/ebooks/27819
 - [05-S11b] R. F. Foster, *Foster's complete Hoyle; an encyclopedia of all the indoor games played at the present day* (London/New York: F. A. Stokes, 1897), "Cassino." archive.org `fosterscomplete00fostgoog` — https://archive.org/details/fosterscomplete00fostgoog
@@ -2838,7 +2930,7 @@ Tools used: digi.kansalliskirjasto.fi REST search and `/page-N.txt` OCR; api.nb.
 
 
 ### Original computation added in the synthesis pass
-- [SIM-ST] Strategy-maxim tests: `research/sim/strategy_tests.py` (variants vs. greedy baseline, duplicate decks; outputs `strategy_tests_2026.json`, `strategy_tests_2027.json`) and `research/sim/strategy_vs_heuristic.py` (variants vs. the one-ply card-counting heuristic; output `strategy_vs_heuristic_31.json`). Rules engine: `research/sim/cassino_sim.py` (pagat standard two-player rules, sweeps scored) [07-S40].
+- [SIM-ST] Strategy-maxim tests: `research/sim/strategy_tests.py` (variants vs. greedy baseline, duplicate decks; outputs `strategy_tests_2026.json`, `strategy_tests_2027.json`) and `research/sim/strategy_vs_heuristic.py` (variants vs. the one-ply card-counting heuristic, same decks for every variant; output `strategy_vs_heuristic_31.json`, with paired differences from plain greedy computed by `research/sim/paired_deltas.py` → `strategy_vs_heuristic_31_paired.json`). Rules engine: `research/sim/cassino_sim.py` (pagat standard two-player rules, sweeps scored) [07-S40].
 
 
 ### Key aliases

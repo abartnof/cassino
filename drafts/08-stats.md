@@ -4,7 +4,7 @@
 - **No published quantitative study of Anglo-American Cassino exists.** There is no AI paper, no complexity estimate and no dealer-advantage figure in arXiv, OpenAlex, CrossRef or the thesis repositories searched [07-S1][07-S30][07-S31][07-S32][07-S34].
 - **Ludii has no fishing game at all.** Its library has no card-game category [07-S33][02-S65].
 - **The closest academic work is on Scopone** (Di Palma & Lanzi, *IEEE Transactions on Games* 10(3):317–332, 2018) [07-S2]:
-  - The dealer's ("deck") team wins 45.7% of matches against 41.7% for the other side, with 12.6% ties, under random play (p = 0.071).
+  - The dealer's ("deck") team wins 45.7% of matches against 41.7% for the other side, with 12.6% ties, under random play (not significant at the 95% level, p = 0.071).
   - The hand team's win rate falls as skill rises: "38.0% of the random strategy, 38.1% of CS, 34.7% of ISMCTS, and 29.5% of MCTS" [07-S2].
   - In the final tournament ISMCTS won 55.8%, against 41.7% for the expert-rule bot [07-S2].
   - Humans won 47.6% against a greedy bot but only 23.8% against ISMCTS-4000 [07-S2].
@@ -27,6 +27,7 @@
 - **YouGov:** its 2023 US survey of 30 card games does not list Casino at all. The only fishing game it lists is Zwickern, which 4% have played [07-S25].
 - **Google Books Ngram:** lower-case "cassino" peaks at 6.50×10⁻⁸ in **1821** and falls about 46-fold by 2019 [07-S26]. "Big Casino" (single s) peaks in 1912, which tracks the American revival [07-S26].
 - **Wikipedia:** see §2.6 for Nordic July seasonality [01-S63]. The table below shows annual pageviews.
+
 #### 8.2.1 Wikipedia pageviews (Wikimedia REST API, user agents, calendar-year totals) [07-S27]
 
 | Article | 2016 | 2020 | 2025 | 2025 per month |
@@ -48,6 +49,7 @@
 | no: Kasino (kortspill) | 29,111 | 16,297 | 23,240 | ~1,937 |
 
 Notes:
+
 - 2020 shows a pandemic bump for several games (Gin rummy, Bastra, Pasur).
 - Finnish Kasino roughly tripled between 2018 and 2020 and stayed high.
 - The Tablanette article only became a real article around 2020–21, which explains its jump.
@@ -73,9 +75,9 @@ Notes:
   - Escoba's remaining table cards must sum to 10, 25, 40, …
 
 ### 8.4 Monte Carlo study of two-player Cassino (original computation, research note 07)
-These are **policy-conditional** results from five policy sets (random, greedy, one-ply heuristic with card counting, PIMC), not equilibrium values [07 §6.12]. The engine implements Pagat's standard rules with sweeps scored [07-S40]. Invariants were checked: 52 cards, 13 spades, 4 aces, 11 or 8 non-sweep points [07-S43].
+These are **policy-conditional** results from four policies (random, greedy, one-ply heuristic with card counting, PIMC), in self-play and mixed matches,, not equilibrium values [07 §6.12]. The engine implements Pagat's standard rules with sweeps scored [07-S40]. Invariants were checked: 52 cards, 13 spades, 4 aces, 11 or 8 non-sweep points [07-S43].
 
-#### 8.4.2 Points per hand by policy (self-play; one "hand" = one full pass of the deck)
+#### 8.4.1 Points per hand by policy (self-play; one "hand" = one full pass of the deck)
 
 | Self-play policy (N hands) | Dealer pts/hand | Non-dealer pts/hand | Dealer − non-dealer [95% CI] | P(dealer wins hand) | P(hand tied) |
 |---|---|---|---|---|---|
@@ -85,9 +87,10 @@ These are **policy-conditional** results from five policy sets (random, greedy, 
 
 - The standard deviation of points per player per hand is about 2.9–3.1. The standard deviation of the dealer − non-dealer difference is about 5.8–6.2 points.
 - Excluding sweeps, the dealer − non-dealer difference is +0.354 (random), −1.236 (greedy) and −0.922 (heuristic) [07-S40].
+- **A 26–26 "cards" tie**, which awards nobody the 3 points for cards, occurs in 4.5% (random), 6.9% (greedy) and 7.1% (heuristic) of hands. The scoreboard has to handle it often [07-S40][07 §6.6].
 
 
-#### 8.4.5 Sweeps
+#### 8.4.2 Sweeps
 
 | Self-play policy | Sweeps per hand (both players) | P(≥1 sweep) | Distribution 0 / 1 / 2 / 3 / 4+ |
 |---|---|---|---|
@@ -100,10 +103,10 @@ These are **policy-conditional** results from five policy sets (random, greedy, 
 - Where sweeps happen (heuristic) [07-S41]:
   - Most come mid-deal: 0.147 per hand on the dealer's 2nd play and 0.121 on the non-dealer's 2nd play.
   - Only 0.065 (dealer) + 0.070 (non-dealer) sweeps per hand happen in the first deal; the other 0.55 happen in deals 2–6.
-- **Sweeps add at most about 0.7–0.9 points per hand (heuristic or greedy), and only about 0.16 under the sweep-averse PIMC style, but they swing games.** Without sweep scoring a game lasts 3.63 hands instead of 3.48 (§6.7).
+- **Sweeps add at most about 0.7–0.9 points per hand (heuristic or greedy), and only about 0.16 under the sweep-averse PIMC style, but they swing games.** Without sweep scoring a game lasts 3.63 hands instead of 3.48 (§8.4.3).
 
 
-#### 8.4.7 Game length to 21 points (deal alternates, first dealer randomised)
+#### 8.4.3 Game length to 21 points (deal alternates, first dealer randomised)
 
 | Matchup (N games) | Mean hands [95% CI] | Hands 2 / 3 / 4 / 5 / 6+ | Winner / loser mean final score |
 |---|---|---|---|
@@ -113,11 +116,11 @@ These are **policy-conditional** results from five policy sets (random, greedy, 
 | greedy vs greedy, no sweeps (20,000) | 3.63 [3.62, 3.64] | 0.8 / 40.0 / 54.5 / 4.7 / 0.1 % | 24.4 / 14.8 |
 | random vs random (20,000) | 3.56 [3.55, 3.57] | 1.5 / 45.1 / 49.6 / 3.8 / 0.1 % | 24.6 / 14.3 |
 
-- Two hands can only reach 21 in about 1–8% of games, because each hand gives at most 11 points plus sweeps.
+- Only 0.6–4.0% of self-play games end after two hands, because each hand gives at most 11 points plus sweeps.
 - **For session design:** at 52 plays per hand, a typical game is about 180 plays.
 - No game ran past 7 hands [07-S40].
 
-#### 8.4.8 Policy comparison (duplicate format: each deck played twice with seats swapped)
+#### 8.4.4 Policy comparison (duplicate format: each deck played twice with seats swapped)
 
 | A vs B | A − B points/hand [95% CI] | P(A wins hand) | P(A wins game to 21) |
 |---|---|---|---|
@@ -125,18 +128,16 @@ These are **policy-conditional** results from five policy sets (random, greedy, 
 | heuristic vs random | +7.34 [7.28, 7.40] | 96.0% | 99.9% (2,000 games) |
 | heuristic vs greedy | +3.79 [3.72, 3.86] | 75.9% | 91.4% (4,000 games) |
 
-Skill dominates luck in Cassino much more than the "simple game" reputation suggests. A modest look-ahead player beats a greedy capture-maximiser in about 9 of 10 games to 21 [07-S40]. Compare Scopone, where the expert rule set beat Greedy by only about 4 percentage points [07-S2].
 
-
-#### 8.4.x Dealer vs non-dealer: an open question
+#### 8.4.5 Dealer vs non-dealer: an open question
 - The per-hand seat effect is small, and its sign depends on the policy [07-S40][07-S43]:
   - random +0.35, PIMC +0.65, heuristic −0.87, greedy −1.15 points per hand (dealer minus non-dealer).
 - Over a whole game it mostly washes out. The first dealer wins 48.4% (greedy) and 48.8% (heuristic) of games to 21 [07-S40].
 - The robust positional fact is that **the dealer takes the end-of-hand residue in 60–77% of hands** under every policy [07-S40][07-S43]. This bears out the advice of 1792 ("In the last Deal, a Court-Card or some other ought to be kept to secure the Advantage of the Cards on the Board" [03-S1]) and of 1897 ("The last trick is usually made by the dealer, who always keeps back a court card" [03-S31]).
 - Scopone research finds a dealer-side advantage that grows with skill [07-S2]. The Cassino simulations do not settle the direction for strong play, so a stronger agent is needed [07 §6.10].
 
-#### 8.4.y Skill vs luck
+#### 8.4.6 Skill vs luck
 - Under duplicate scoring, a one-ply card-counting heuristic beats greedy play by **+3.79 points per hand** and wins **91.4%** of games to 21 [07-S40].
 - In Scopone, by contrast, expert rules beat Greedy by only about 4 percentage points [07-S2].
-- In Cassino, building and card-counting skill matter far more than the game's "child's game" reputation suggests [07 §6.8][04-S7].
+- In Cassino, look-ahead, card counting and building matter far more than the game's reputation as "a child's game" suggests [07 §6.8][04-S28][04-S7].
 - This supports the 1945 assessment that the game "provides wide scope for scientific play and sharp contest of wits" [03-S35].
