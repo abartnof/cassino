@@ -111,3 +111,34 @@
 - **United States.** The game survives mainly through family memory: "My mom taught me this game almost 60 years ago, when I was learning arithmetic" [02-S57]. Several players also report learning it in prison [05-S100][06-S20].
 - **Brazil.** The brief's premise does not hold. A 1996 Brazilian magazine introduced casino as "radicalmente diferente dos carteados mais populares no Brasil" (radically different from the card games most popular in Brazil) [10-S49]. Brazilians play the sum-to-15 **Escopa** instead, brought by Italian immigrants [09-S82].
 - **Market signal.** Cassino's largest Android app has about 166,000 installs. WhatWapp's *Scopa* has about 12.3 million [06-S19][06-S40]. Board Game Arena added Cassino only in April 2025 [06-S31].
+
+### 2.7 Origin claims by Wikipedia edition (from note 01)
+
+| Edition | Claim | Sourcing |
+|---|---|---|
+| en (now) | English, first recorded 1792; Italian origin "often said, without substantiation"; "casino" then meant a summer house or villa | Parlett 2008; Pratesi 1995; Thompson 2015 [01-S1] |
+| en (2006) | "probably descended from the Italian game Scopa" | unsourced [01-S10] |
+| en (pre-2007) | "'Casino' is the official name … 'Cassino' is a common mis-spelling. Source: Official Hoyle Rulebook" | removed [01-S10] |
+| de (2006–2022) | roots in **17th-century France** | removed 2022 [01-S16] |
+| de (now) | England, end of the 18th century | Bermicourt citing Pratesi [01-S16] |
+| ja (2007–2013) | **15th-century France**, as gambling; named after casinos; French pronunciation "kashino" | removed 2013 [01-S25] |
+| ja (now) | resembles Scopa, but no positive evidence; oldest text late-18th-century London; casino (gambling house) is a 19th-century word | pagat [01-S24] |
+| nb (now) | "stammer fra Italia" [comes from Italy], variant of Scopa | unsourced [01-S26] |
+| hu (now) | origin in a **medieval Italian** game, scopa; popular in Hungary in the early 20th century | unsourced [01-S20] |
+| fi (now) | first records in 18th-century England; believed related to Scopa | unsourced [01-S17] |
+| sv (now) | "**av kinesiskt ursprung**" [of Chinese origin]; in Sweden since the early 1800s | general refs; likely derived from Torgny's claim about the *fishing mechanism* [01-S29, 01-S34] |
+| sv (2016–21) | the word *kasino* is an Italian diminutive of *casa* | [01-S30] |
+| it (now) | "gioco di carte inglese" [English card game] | Britannica, pagat [01-S23] |
+| 1868 American Hoyle | "a card game of Italian origin" | primary source [01-S79] |
+| cs Pasúr | "italská hra Cassino" [the Italian game Cassino] | unsourced [01-S62] |
+| CardRules+ (cited by it) | Cassino is the "progenitore" [progenitor] of Scopa and Escoba | web page, unsupported [01-S70] |
+
+- **Spelling:**
+  - en now says "Cassino" is used in Long 1792 and is "the most persistent spelling since … although German sources invariably use the spelling 'Casino'" [01-S1].
+  - Pagat says the reverse: "the earliest sources use the spelling Casino, but a tradition has grown up among later writers to spell it with a double 's'" [01-S64].
+  - The archive.org scan of Long's title page reads "SHORT RULES FOR PLAYING THE GAME OF CASSINO", and the archive metadata gives "cassino" [01-S81]. Hoyle 1796 uses both: the running head "The Game of CASINO" and the text "GAME of CASSINO" [01-S82].
+  - Bermicourt's 2022 talk comment ("Both spellings were used early on, but 'Casino' was first") conflicts with his own later article text [01-S2].
+  - The nb title moved to "Kasino" as the Språkrådet spelling [01-S28].
+
+---
+
