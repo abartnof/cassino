@@ -82,14 +82,21 @@ class Variant(cs.GreedyPolicy):
         caps = [m for m in moves if m[0] == 'C']
         final = st.final_deal()
         if caps:
-            if self.take_played and st.loose:
+            if self.take_played == 'weak' and st.loose:
+                tgt = st.loose[-1] if getattr(st, '_last_trail_player', None) == 1 - p else None
+                if tgt is not None:
+                    best0 = max(self._val(st, p, m) for m in caps)
+                    pref = [m for m in caps if tgt in m[2] and self._val(st, p, m) >= best0 - 0.25]
+                    if pref:
+                        caps = pref
+            elif self.take_played and st.loose:
                 # Long 1792 rule I: take the card the adversary just played in preference
                 tgt = st.loose[-1] if getattr(st, '_last_trail_player', None) == 1 - p else None
                 if tgt is not None:
                     pref = [m for m in caps if tgt in m[2]]
                     if pref:
                         caps = pref
-            if self.hold_face and final and len(st.hands[p]) > 1:
+            if self._holds(st, p) and final and len(st.hands[p]) > 1:
                 nonface = [m for m in caps if RANK[m[1]] <= 10]
                 # keep the face card for last unless a face capture is the only capture
                 if nonface:
@@ -101,7 +108,7 @@ class Variant(cs.GreedyPolicy):
         if not trails:
             return rng.choice(moves)
         cand = list(trails)
-        if self.hold_face and final and len(st.hands[p]) > 1:
+        if self._holds(st, p) and final and len(st.hands[p]) > 1:
             x = [m for m in cand if RANK[m[1]] <= 10]
             if x: cand = x
         if self.avoid_ten:
@@ -116,6 +123,13 @@ class Variant(cs.GreedyPolicy):
         lo = min(key(m[1]) for m in cand)
         cands = [m for m in cand if key(m[1]) <= lo + 1e-9]
         return rng.choice(cands)
+
+    def _holds(self, st, p):
+        if self.hold_face == 'dealer':
+            return p == st.dealer
+        if self.hold_face == 'nondealer':
+            return p != st.dealer
+        return bool(self.hold_face)
 
     def _trail_key(self, st, p):
         if self.trail == 'lowcv':          # simulator baseline: least valuable card
@@ -160,6 +174,11 @@ VARIANTS = {
     'spades_heavy':    dict(spade_bonus=0.5),
     'avoid_ten_trail': dict(avoid_ten=True),
     'avoid_sweep_trail': dict(avoid_sweep=True),
+    'take_played_weak': dict(take_played='weak'),
+    'hold_face_dealer_only': dict(hold_face='dealer'),
+    'hold_face_nondealer_only': dict(hold_face='nondealer'),
+    'long1792_no_take': dict(trail='court_first', avoid_sweep=True, hold_face=True),
+    'long1792_weak_take': dict(trail='court_first', take_played='weak', avoid_sweep=True, hold_face=True),
     'foster_all':      dict(trail='foster', avoid_ten=True, hold_face=True, card_w=0.4),
     'long1792_all':    dict(trail='court_first', take_played=True, avoid_sweep=True, hold_face=True),
 }

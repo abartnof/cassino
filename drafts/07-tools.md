@@ -73,7 +73,7 @@ iOS:
   - South African rules: "Each build has an owner" [02-S4].
   - One open-source implementation draws an owner style for each build and opens a modal to choose its value [06-S57].
 - **The worst failure is inferring intent.**
-  - Paris Pinkney's app made players start "from the middle".
+  - Paris Pinkney's app made players start "from the middle" [06-S20].
   - Users complained: "Controls are so horrible you cannot know whether the app will build or take!" [06-S20].
 - **Rule asymmetry between human and AI** produced the most specific complaints, for example "Can't build on what the bot builds, but the bot can build on what you build" [06-S19].
 

@@ -1,2 +1,15 @@
 baseline_copy {'n_decks': 32000, 'mean_diff_pts_per_hand': 0.0047, 'ci95': [-0.0231, 0.0324], 'variant_sweeps_per_hand': 0.4379, 'baseline_sweeps_per_hand': 0.4349, 'spec': {}}
 trail_foster {'n_decks': 32000, 'mean_diff_pts_per_hand': 0.1585, 'ci95': [0.1301, 0.187], 'variant_sweeps_per_hand': 0.4611, 'baseline_sweeps_per_hand': 0.4638, 'spec': {'trail': 'foster'}}
+trail_court_first {'n_decks': 32000, 'mean_diff_pts_per_hand': 0.3237, 'ci95': [0.2943, 0.3532], 'variant_sweeps_per_hand': 0.4524, 'baseline_sweeps_per_hand': 0.4466, 'spec': {'trail': 'court_first'}}
+trail_psellos {'n_decks': 32000, 'mean_diff_pts_per_hand': 0.058, 'ci95': [0.0301, 0.0859], 'variant_sweeps_per_hand': 0.4425, 'baseline_sweeps_per_hand': 0.435, 'spec': {'trail': 'psellos'}}
+trail_high {'n_decks': 32000, 'mean_diff_pts_per_hand': -0.5712, 'ci95': [-0.6014, -0.5411], 'variant_sweeps_per_hand': 0.3927, 'baseline_sweeps_per_hand': 0.3956, 'spec': {'trail': 'high'}}
+hold_face_last {'n_decks': 32000, 'mean_diff_pts_per_hand': 0.2084, 'ci95': [0.18, 0.2367], 'variant_sweeps_per_hand': 0.4314, 'baseline_sweeps_per_hand': 0.4284, 'spec': {'hold_face': True}}
+take_played {'n_decks': 32000, 'mean_diff_pts_per_hand': -0.1145, 'ci95': [-0.1435, -0.0855], 'variant_sweeps_per_hand': 0.4299, 'baseline_sweeps_per_hand': 0.4321, 'spec': {'take_played': True}}
+cards_first_w04 {'n_decks': 32000, 'mean_diff_pts_per_hand': -0.0135, 'ci95': [-0.0415, 0.0145], 'variant_sweeps_per_hand': 0.4336, 'baseline_sweeps_per_hand': 0.4319, 'spec': {'card_w': 0.4}}
+cards_first_w08 {'n_decks': 32000, 'mean_diff_pts_per_hand': -0.0574, 'ci95': [-0.0857, -0.0292], 'variant_sweeps_per_hand': 0.4332, 'baseline_sweeps_per_hand': 0.4336, 'spec': {'card_w': 0.8}}
+cards_low_w005 {'n_decks': 32000, 'mean_diff_pts_per_hand': -0.0654, 'ci95': [-0.0938, -0.037], 'variant_sweeps_per_hand': 0.4336, 'baseline_sweeps_per_hand': 0.4355, 'spec': {'card_w': 0.05}}
+spades_heavy {'n_decks': 32000, 'mean_diff_pts_per_hand': -0.069, 'ci95': [-0.0973, -0.0407], 'variant_sweeps_per_hand': 0.4344, 'baseline_sweeps_per_hand': 0.4367, 'spec': {'spade_bonus': 0.5}}
+avoid_ten_trail {'n_decks': 32000, 'mean_diff_pts_per_hand': 0.0055, 'ci95': [-0.023, 0.0339], 'variant_sweeps_per_hand': 0.4283, 'baseline_sweeps_per_hand': 0.426, 'spec': {'avoid_ten': True}}
+avoid_sweep_trail {'n_decks': 32000, 'mean_diff_pts_per_hand': -0.0022, 'ci95': [-0.0301, 0.0258], 'variant_sweeps_per_hand': 0.4303, 'baseline_sweeps_per_hand': 0.3872, 'spec': {'avoid_sweep': True}}
+foster_all {'n_decks': 32000, 'mean_diff_pts_per_hand': 0.2992, 'ci95': [0.2696, 0.3288], 'variant_sweeps_per_hand': 0.4487, 'baseline_sweeps_per_hand': 0.4483, 'spec': {'trail': 'foster', 'avoid_ten': True, 'hold_face': True, 'card_w': 0.4}}
+long1792_all {'n_decks': 32000, 'mean_diff_pts_per_hand': 0.4707, 'ci95': [0.4399, 0.5015], 'variant_sweeps_per_hand': 0.4402, 'baseline_sweeps_per_hand': 0.396, 'spec': {'trail': 'court_first', 'take_played': True, 'avoid_sweep': True, 'hold_face': True}}

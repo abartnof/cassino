@@ -475,12 +475,12 @@ Legend for **Status**: **R** = required/regulated by the rules (silence or misst
 | Opponent's unclear build | "**What are you building?**" (implied) | C | 1867: unclear build → opponent "may separate the cards"; Danish: opponent's "pligt at spørge, hvad det er, man bygger" | [05-S8, 05-S43] |
 | Dealer deals the final round | **"Last."** | R/C | Pagat: "The dealer must announce 'last' when dealing the last cards"; BGG user calls the end "how EPIC the 'last' round is" | [05-S1, 05-S74-BGG1156351] |
 | Taking the last cards | (no fixed line) | — | Foster: "The last trick is usually made by the dealer, who always keeps back a court card" | [05-S11] |
-| Sweep / clear | **no traditional English sweep shout found** | — | Sources describe *marking* a sweep (capturing card turned face up "at the bottom of the tricks") rather than a call. Family-variant evidence: Swedish-heritage family playing reverse Cassino says **"Sweep 9"** to warn of a forced sweep | [S11, S1, S92 `[UGC]`] |
+| Sweep / clear | **no traditional English sweep shout found** | — | Sources describe *marking* a sweep (capturing card turned face up "at the bottom of the tricks") rather than a call. Family-variant evidence: Swedish-heritage family playing reverse Cassino says **"Sweep 9"** to warn of a forced sweep | [05-S11, 05-S1, 05-S92] `[UGC]` |
 | Counting at hand end | announce card count; claim spades, Cassinos, aces | R | Foster: "each player counts his cards face downward, and announces the number … then turned face up, and the spades counted and claimed" | [05-S11] |
 | Reaching 21 mid-hand | claim the game ("count out") | R | Foster: "The moment he reaches 21 he should claim the game … If he is mistaken … he loses" | [05-S11] |
 | Challenging an error | challenge "immediately" | R | "every mistake must be challenged immediately"; Foster: before "the next trick is taken in" | [05-S7, 05-S8, 05-S11] |
 | Tuxedo (Cassino variant) | **"Orange!"** | R | must call to score; others can steal it; false call −10 | [05-S12] |
-| Whole-round shutout | "skunking" | D | family usage | [S91 `[UGC]`] |
+| Whole-round shutout | "skunking" | D | family usage | [05-S91] `[UGC]` |
 | Period flavour (public domain) | **"I do long for a game of cassino — that is, in the family way — just for a trifle; — I never lose much, you know."** | — | Mrs. Scatter in Reynolds, *Cheap Living* (1797) | [05-S5] |
 | Period flavour | "Their table was superlatively stupid. Scarcely a syllable was uttered that did not relate to the game" | — | Austen 1813 on Miss De Bourgh's cassino table | [05-S6] |
 
@@ -519,7 +519,7 @@ Legend for **Status**: **R** = required/regulated by the rules (silence or misst
 | Moment | Line(s) | Translation | Status | Source |
 |---|---|---|---|---|
 | Sweep | **"¡Escoba!"** | "Broom!" | C — rules text calls it an "escoba cantada" (a called escoba) | [05-S51] |
-| Claiming opponent's missed 15 | **"¡Soplo!"** / **"¡Asoplo!"** | "Blow!" (cf. huffing in draughts) | D | [S52 `[UGC]`] |
+| Claiming opponent's missed 15 | **"¡Soplo!"** / **"¡Asoplo!"** | "Blow!" (cf. huffing in draughts) | D | [05-S52] `[UGC]` |
 | Uruguayan Chorizo declarations | **"¡Flor!"**, **"¡Escalera!"**, **"¡Chorizo!"**, **"¡Báciga!"** | combo names | R (declared "immediately before playing the first of their three cards") | [05-S83] |
 
 #### 6.4e Spanish — Cuarenta (Ecuador) — the richest documented bark set

@@ -1,0 +1,28 @@
+{
+ "take_played_weak": {
+  "n_decks": 160,
+  "mean_diff_pts_per_hand": -0.1781,
+  "ci95": [
+   -0.5667,
+   0.2104
+  ],
+  "variant_sweeps_per_hand": 0.4406,
+  "baseline_sweeps_per_hand": 0.4688,
+  "spec": {
+   "take_played": "weak"
+  }
+ },
+ "hold_face_dealer_only": {
+  "n_decks": 160,
+  "mean_diff_pts_per_hand": 0.2875,
+  "ci95": [
+   -0.1204,
+   0.6954
+  ],
+  "variant_sweeps_per_hand": 0.4031,
+  "baseline_sweeps_per_hand": 0.4031,
+  "spec": {
+   "hold_face": "dealer"
+  }
+ }
+}

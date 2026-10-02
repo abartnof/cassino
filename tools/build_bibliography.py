@@ -20,6 +20,10 @@ for f in sorted(glob.glob('research/[01][0-9]-*.md')):
     out.append(f"(Full note: `research/{os.path.basename(f)}`)\n\n")
     out.append(body.strip() + "\n")
 out.append('''
+### Original computation added in the synthesis pass
+- [SIM-ST] Strategy-maxim tests: `research/sim/strategy_tests.py` (variants vs. greedy baseline, duplicate decks; outputs `strategy_tests_2026.json`, `strategy_tests_2027.json`) and `research/sim/strategy_vs_heuristic.py` (variants vs. the one-ply card-counting heuristic; output `strategy_vs_heuristic_31.json`). Rules engine: `research/sim/cassino_sim.py` (pagat standard two-player rules, sweeps scored) [07-S40].
+''')
+out.append('''
 ### Key aliases
 - [05-S74] = the BoardGameGeek thread group in note 05 (Casino, BGG id 18121), itemised above as [05-S74-BGG…].
 - [08-S46a], [08-S46b] = items (a) and (b) of [08-S46]; [08-S47a], [08-S47b], [08-S47c] = items (a)–(c) of [08-S47]; [08-S30b] = second item of [08-S30]; [08-S11b] style suffixes follow the same convention.
