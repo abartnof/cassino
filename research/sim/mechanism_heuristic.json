@@ -1,0 +1,35 @@
+{
+ "policy": "heuristic",
+ "n_hands": 4000,
+ "seed": 11,
+ "sweeps_per_hand_by_role_and_play_index": {
+  "dealer:1": 0.083,
+  "dealer:3": 0.1465,
+  "dealer:5": 0.08,
+  "dealer:7": 0.0522,
+  "nondealer:0": 0.0798,
+  "nondealer:2": 0.1207,
+  "nondealer:4": 0.0858,
+  "nondealer:6": 0.0375
+ },
+ "captures_per_hand_by_role_and_play_index": {
+  "dealer:1": 3.188,
+  "dealer:3": 2.6002,
+  "dealer:5": 2.0065,
+  "dealer:7": 1.8235,
+  "nondealer:0": 3.7207,
+  "nondealer:2": 2.994,
+  "nondealer:4": 1.817,
+  "nondealer:6": 1.175
+ },
+ "sweeps_per_hand_deal1_vs_later": {
+  "dealer:deal1": 0.0655,
+  "dealer:deal2-6": 0.2963,
+  "nondealer:deal1": 0.0698,
+  "nondealer:deal2-6": 0.254
+ },
+ "scoring_cards_captured_in_play_per_hand": {
+  "nondealer": 1.9532,
+  "dealer": 1.1995
+ }
+}

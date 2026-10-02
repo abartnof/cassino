@@ -1,0 +1,39 @@
+{
+ "cassino_distinct_deals_log10": 49.964,
+ "cassino_first_decision_opponent_hands": 135751,
+ "pasur_P_jack_in_initial_pool": 0.2812632745405855,
+ "scopa_P_3plus_kings_on_table": [
+  "29/18278",
+  0.0015866068497647444
+ ],
+ "escoba_P_table_sums_15": [
+  3120,
+  91390,
+  0.034139402560455195
+ ],
+ "escoba_P_table_sums_30": [
+  2492,
+  91390,
+  0.027267753583543056
+ ],
+ "escoba_deck_total_mod_15": 10,
+ "scopone10_P_next_player_can_scopa_given_group_size": {
+  "1": [
+   "146/203",
+   0.7192118226600985
+  ],
+  "2": [
+   "49/87",
+   0.5632183908045977
+  ],
+  "3": [
+   "1/3",
+   0.3333333333333333
+  ],
+  "4": [
+   "0",
+   0.0
+  ]
+ },
+ "cassino_P_table_4_distinct_ranks": 0.6761104441776711
+}

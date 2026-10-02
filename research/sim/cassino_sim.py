@@ -431,17 +431,16 @@ class GreedyPolicy:
         return rng.choice(moves)
 
 
-def _best_capture_value_on(loose, builds, card):
-    """Greedy capture value for `card` on a hypothetical table
-    (loose: list, builds: list of (value, cards)). Returns (value, takes_build_value_or_0)
-    or (None, 0) if no capture is possible."""
-    r = RANK[card]
+def _best_capture_table_part(loose, builds, r):
+    """Greedy capture value (excluding the capturing card itself) for a card of
+    rank r on a hypothetical table (loose: list, builds: list of (value, cards)).
+    Returns (value, build_value_taken_or_0), or (None, 0) if no capture."""
     best = None
     best_b = 0
     if r > 10:
         for f in loose:
             if RANK[f] == r:
-                val = CV[card] + CV[f]
+                val = CV[f]
                 if len(loose) == 1 and not builds:
                     val += W_SWEEP
                 if best is None or val > best:
@@ -458,14 +457,14 @@ def _best_capture_value_on(loose, builds, card):
         if not caps:
             caps = [()]
         for u in caps:
-            val = CV[card] + bval + sum(CV[x] for x in u)
+            val = bval + sum(CV[x] for x in u)
             if len(u) == len(loose) and len(builds) == 1:
                 val += W_SWEEP
             if best is None or val > best:
                 best, best_b = val, r
     else:
         for u in caps:
-            val = CV[card] + sum(CV[x] for x in u)
+            val = sum(CV[x] for x in u)
             if len(u) == len(loose) and not builds:
                 val += W_SWEEP
             if best is None or val > best:
@@ -565,14 +564,16 @@ class HeuristicPolicy:
             took = 0
             any_cap = False
             for c in hand:
-                if c not in cache:
-                    cache[c] = _best_capture_value_on(loose, bl, c)
-                val, bv = cache[c]
-                if val is None:
+                r = RANK[c]
+                if r not in cache:
+                    cache[r] = _best_capture_table_part(loose, bl, r)
+                tv, bv = cache[r]
+                if tv is None:
                     continue
+                val = CV[c] + tv
                 if opp_last:
-                    # capturing with the final card takes the whole residue
-                    val = CV[c] + table_val + (W_SWEEP if False else 0.0)
+                    # capturing with the final card also takes the whole residue
+                    val = CV[c] + table_val
                 if not any_cap or val > best:
                     best, took, any_cap = val, bv, True
             if opp_last and not any_cap:
