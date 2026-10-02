@@ -167,4 +167,236 @@ Citation keys `[Sn]` → see **Sources** at the end. The rules-variation table f
 - America: calling/building earliest in print "tentatively... New York 1866" (Parlett: Dick & Fitzgerald 1868); the old game called "Set-Back or Rounce Cassino"; 1892 American Hoyle has "21-Point Casino" and suggests scoring sweeps as they occur; Foster 1897 names Royal and Spade Casino and lists "Cassino-America" as a national game. USPCC 1900: Royal Casino with 11/12-pip cards (J13 Q14 K15 A1/16). Ostrow 1945: "This game is a hardy perennial whose popularity never wanes"; Spade Royal; **Diamond Casino** (3 cards dealt; 1 each for cards, majority of diamonds, 7♦, sweeps; 2 for all four 7s or 6s or Aces). Morehead *Modern Hoyle* 1944: "In the average home Casino is known as a children's game, but among gamblers it is known as the finest two-handed game of skill". Scarne: "greatest in popularity prior to the advent of Gin Rummy". [S30]
 - Austria/Hungary: dealing by three and capturing a table card "by two in their hands (this being a unique feature)". [S30]
 
-<!-- SECTION C and later appended below -->
+
+---
+
+## C. RULES-VARIATION TABLE (for an options menu)
+
+Legend: **Default** = suggested default for an "Anglo-American Classic" preset (pagat [S1] unless noted). Each row lists the attested alternatives with sources.
+
+| # | Rule / option | Default (classic) | Attested alternatives (source) |
+|---|---|---|---|
+| 1 | Players / partnerships | 2; 3–4 solo; 4 as 2v2 [S1] | 5 players: remove 2♥2♦2♣, 5 cards last deal [S37][S39]; up to 6 (Dick 1867) [S36]; California 2,3,4,6 [S37] |
+| 2 | Direction | Clockwise [S1] | Counter-clockwise: Dominican, Swazi, Diloti 4p [S3][S4][S9] |
+| 3 | Deal pattern | 4 each + 4 table, in twos [S1][S31] | Singly (Dick 1867; "some players") [S36][S1]; 3-card deals (Diamond, Hungarian) [S30][S3]; Draw Cassino refill after each play [S31][S32]; Suipi 8-card hands [S39]; Swazi: all cards dealt, 4 cut to table [S4] |
+| 4 | "Last" announcement | Dealer says "last" [S1] | "cards" [S37]; "sistan"/"båt" [S5]; sound cue in software [S47] |
+| 5 | Court-card values | No numeric value; pair only [S1] | Royal: J11 Q12 K13 [S3][S31][S32]; USPCC 11/12-spot packs: J13 Q14 K15 [S32]; Zwicker dual values [S8] |
+| 6 | Ace value | 1 [S1] | 1 or 14 (Royal) [S3][S32]; 14 in hand/1 on table (Finnish, Krypkasino) [S5][S6]; "sometimes... 14 each" [S31] |
+| 7 | Cassino dual values | none | 2♠ = 2/15, 10♦ = 10/16 (Finnish; German 1810; Mulle; BGG house rule; Reddit "kasino kryp") [S5][S36][S54][S56][S63]; Buckeye: 10♦ = 10/11 [S37] |
+| 8 | Pairing court cards | Take only one matching court card [S1][S47][S41] | Take all matching (Britannica/Parlett; Foster; Denexa; California) [S33][S31][S40][S37]; take one or three (never two) [S39]; Royal: any number [S39] |
+| 9 | Pairing numerals | Take all same-rank cards + any disjoint sums [S1][S32] | Scopa-style "single match beats sum" (Scopa/Escoba family) [S10][S12]; BGG reviewer: capture card ≥ each captured card [S57] |
+| 10 | Forced capture | Not compulsory; may trail a capturing card [S1][S47] | Must capture with a capturing card if played (Scopa/Escoba/Basra) [S10][S12][S15]; may not trail a card that could capture (Denexa) [S40]; must take matching loose cards (Dominican) [S3]; misère forms force full capture [S6][S53] |
+| 11 | Build must include a hand card | Yes [S1] | Table-only builds allowed: pagat variant, Swazi [S1][S4]; BGG "What's on the table is always fair game" [S59] |
+| 12 | Must hold capturing card | Yes [S1][S31][S32] | Penalty −5 if violated (Finnish) [S53]; build broken & opponents retract [S31][S32]; Michigan −2 [S37]; old Zwicker: not required [S8] |
+| 13 | Announce build value aloud | Required ("building 5") [S1] | Required with penalty: unnamed builds may be separated by others [S32]; optional (Diloti, Seres) [S9][S53] |
+| 14 | Single build raise by hand card | Yes, any player [S1][S31] | Only opponent's build (Dominican, Swazi, Diloti) [S3][S4][S9]; not in succession, alternately (Dick 1867) [S36]; own raise OK only holding both cards [S32] |
+| 15 | Table cards in raising a single build | No [S1][S31][S32][S63] | Yes if hand card also contributes (pagat variant) [S1]; Cats at Cards allows [S39] |
+| 16 | Multiple (double/"natural") builds | Allowed; value fixed [S1][S31] | Called "calling" in USPCC/Dick/playingcarddecks [S32][S36][S43]; group/"family"/"soy" (Diloti) [S9]; "protected" if topped with same rank [S61] |
+| 17 | Build counts as a card for combos/extension | No [S1][S59] | Yes (pagat variant; Dick 1867; Wikipedia 2019) [S1][S36][S37]; Diloti variant [S9] |
+| 18 | Multiple builds of same value at once | Not addressed by pagat; BGG players say legal [S58] | Forbidden: Swazi, *Cassino!* iOS, Wikipedia Variant 3; BGA enforces [S4][S58][S37] |
+| 19 | Several builds by one player | Allowed (second build) [S1][S31][S32] | Swazi 2p first half: max one build [S4] |
+| 20 | Owner may trail | No [S1][S31][S47] | Yes (pagat variant; Swazi; South Africa 2nd phase) [S1][S4]; Variant 2 must take/add next turn [S37] |
+| 21 | Build for partner | Not part of pagat core rules (listed only as a variant) [S1]; explicitly forbidden by Cats at Cards [S39] | Allowed: Foster, USPCC, pagat variant ("building 9 for partner"), Zwicker [S31][S32][S1][S8]; only when provable (Dominican var., Swazi) [S3][S4] |
+| 22 | Building with court cards | Never [S59][S61] | Royal yes [S3]; "Trailing-royals" natural building [S37] |
+| 23 | Sweeps | Variant in pagat; standard in Foster/USPCC/Britannica (1 pt) [S1][S31][S32][S33] | None (Royal per many; California; Swazi) [S3][S37][S4]; cancel between sides [S31][S3][S5]; not when ≥18/≥10 pts [S3][S5]; not in last deal [S5]; 2 pts (Michigan) [S37]; first-turn sweep 2 pts (Hungarian) [S3] |
+| 24 | Last-card sweep | Counts only if a genuine full capture [S1][S31] | Never (Scopa) [S10]; never after last deal (Finnish) [S5] |
+| 25 | Residue (cards left) | To last capturer, not a sweep [S1][S31] | +1 point "sistan" (Swedish) [S5]; 2 for cards + 1 last capture [S1]; court card played last takes them (Long 1792) [S36]; nobody (Haitian, Cuarenta) [S39][S13]; dealer's team (Tablić) [S17] |
+| 26 | Points: cards / spades | 3 / 1 [S1][S31] | 2 / 2 (Wippen; Swazi split ties; family) [S1][S4][S61]; 1 / 2 (Swedish/Finnish) [S5]; 1 (CT/NY) [S1]; ≥5 spades =1 (S. Africa) [S4]; Överspader (1 per spade over 6) [S5]; thresholds 27+/7+ [S45][S60]; bonus per card >35 / spade >10 [S61] |
+| 27 | Points: 10♦ / 2♠ / aces | 2 / 1 / 1 each [S1] | 3 / 2 (CT/NY) [S1]; Spade Cassino every spade 1, J♠ +1 (24 total, to 61) [S1][S31][S32] |
+| 28 | Ties for cards/spades | Nobody scores [S1] | Split 1–1 (Swazi) [S4]; postponed to next round (Finnish) [S53]; most spades breaks a 26–26 (Portuguese) [S37] |
+| 29 | Target | 21 [S1][S32][S33] | 11 (difference scoring; lurch <6 doubles) [S1][S31][S36]; each deal a game [S31][S32]; 16 (Nordic) [S5]; 50 [S1]; 61 (Spade) [S31]; 6 (Royal, wiki) [S37]; best-of-7 [S61] |
+| 30 | Near-target restrictions | None [S3] | Dominican 18/19/20 (or Soto from 16) [S3] |
+| 31 | Count-out / claim | Optional [S1] | Claim mid-hand, wrong claim loses (Foster; Dick 1880; Cats) [S31][S36][S39]; order cards, spades, big, little, aces ♠♣♥♦, sweeps [S31][S32][S1] |
+| 32 | Skunk / all 11 | — | +1 point, or instant win [S37] |
+| 33 | Extra play modes | — | Draw, Royal Draw (fail to draw → draw two) [S32]; Pluck [S37][S39]; misère (Krypkasino, Misäärikasino, Lazy/Laisto, Give-away) [S6][S53][S61][S30]; capture-pile stealing (Swazi, Steal Pile) [S4][S61]; solo vs automaton [S61] |
+
+---
+
+## D. Other modern / reference rules sources
+
+### D.1 Foster's Complete Hoyle (R. F. Foster, 1897) — the classic American "Hoyle" text [S31]
+- Character: "Like Euchre, Cassino is eminently respectable, and is one of the few games of cards that are unhesitatingly admitted to the domestic circle." [S31]
+- Scorekeeping: "the score may be kept with counters, on a sheet of paper, or on a cribbage board." Positions: players on dealer's right and left are "the pone, and the eldest hand". [S31]
+- Deal: four each "in two rounds of two at a time, giving two to the table just before helping himself in each round". [S31]
+- **Pairing takes all**: "He holds an Eight, and there are one or two Eights on the table. He plays the Eight from his hand, and then gathers in all of them." Combining is for non-court cards only. Pairs and combinations "may be taken in together". [S31]
+- **Spoken build calls**: player "may place the 2 on the 7, announcing the total value; "Nine," which will notify other players that those two cards cannot be separated"; raising: "announcing the total value, "Ten.""; double builds announced "Two Sevens" and "Two Nines". [S31]
+- **Raising your own build**: allowed if you hold the cards for both builds — "Some players imagine that a player cannot increase his own build in this manner... but there is no reason why a player should be denied a privilege which is freely granted to his adversary." Foster repeats this in his general laws: "It is a common error among Cassino players to hold that a player cannot build on his own build, but that his adversary may do so... This is manifestly unfair". [S31]
+- Builds can only be changed by hand cards: "no combination of cards once announced, and left on the table, can be changed, except by the addition of a card from the hand of some player." [S31]
+- **Builder's obligation**: "Any player who has made a build is obliged either to win it, when it is next his turn to play, or to win something else, or to make another build." [S31]
+- **Partners**: partners "may take in one another's builds, or may make builds which can be won by the card declared in the partner's hand" — e.g. building Little Cassino on a 6 and calling "two Eights" on the strength of partner's 8-build. [S31]
+- Sweeps "usually marked by leaving the cards with which they are made face upward at the bottom of the tricks"; "Sweeps made by opposite sides are sometimes turned down to cancel one another." [S31]
+- Trailing advice: "it is usually the best policy to play the smaller cards, except Aces and Little Cassino". [S31]
+- Last trick: residue goes to the last taker, not a sweep unless it would have been anyway; "The last trick is usually made by the dealer, who always keeps back a court card if he has one". [S31]
+- Penalties: building without the capturing card → build broken up, opponents may retract subsequent plays. Errors in taking in "must be challenged and proved before the next trick is taken in... because only the last trick gathered can be seen." [S31]
+- **Showing** at the end: "each player counts his cards face downward, and announces the number"; total of claims must equal eleven. Old scoring 11 up with lurch (opponent under 6 = double game); "The common method is to count every hand a game". [S31]
+- **Twenty-one point Cassino**: count-out order "Cards first, then Spades, Big Cassino, Little Cassino, Aces, and Sweeps" (aces ♠ ♣ ♥ ♦). "It is better to agree to count out... The moment he reaches 21 he should claim the game... If he is mistaken... he loses"; if nobody claims and both are out, play on to 32, then 43 etc. [S31]
+- **Suggestions for Good Play**: remember played cards, esp. "Aces, Eights, Nines, and Tens"; prefer combinations containing spades; don't trail spades; "If three Aces have been taken in, play the fourth"; take the adversary's trailed cards and his build in preference to your own; "build on his build at every opportunity"; avoid trailing cards that make Ten with table cards while Big Cassino is out; "Go for "cards" in preference to everything else"; with a 9 and 2 2 5 7 on the table, take 2 2 5 rather than 2 7; "It is considered bad policy to take in three court cards, as it stops all sweeps when the fourth appears." [S31]
+- Royal Cassino: J11 Q12 K13, "The aces are sometimes valued at 14 each." Spade Cassino: every spade 1, J♠ extra 1 → 24 points; pegged on a cribbage board as made, 61 game. Draw Cassino: refill to four from a slightly spread stock. [S31]
+
+### D.2 USPCC, *The Official Rules of Card Games — Hoyle Up-to-Date* (US Playing Card Co., Cincinnati; edition copyrighted through 1943) [S32]
+- Same 11-point scheme incl. 1 per sweep. Plays: take in combinations ("a nine will take all the nines on the table and also an eight and ace, seven and two, etc"); build; **call** — "if he holds two fours, and a third four, or a three and an ace, or two twos are on the board, he may play one of his fours on those on the board, calling it "fours," and take them on his next turn... It will be seen that a build can be built higher, but a call cannot". [S32]
+- "A player cannot raise his own build, unless he has the cards to take in both the first and the second build." May make a second build/call or other capture before taking the first build, "otherwise he must take in his first build at his next turn". [S32]
+- "Builds may be raised with cards from the hand only; never with cards from the board." **Penalty tied to speech**: "Builder or caller must name the denomination of the build or call, otherwise any other player may separate and use such cards of it as he chooses." [S32]
+- Two ways to settle: each deal a game, or 21 with count-out order cards, spades, Big Casino, Little Cassino, aces (♠ ♣ ♥ ♦), sweeps. Partners may take each other's tricks and build for the card "declared in partner's hand". [S32]
+- Royal Cassino: J11 Q12 K13, A 1/14; "A still better and more scientific game" with 11- and 12-spot packs (J13 Q14 K15 A 1/16). **Royal Draw Cassino**: draw after each play; failing to draw → "must draw two cards" next turn. Spade Cassino: A♠, J♠, 2♠ count 2 each, 61 game on a cribbage board. [S32]
+
+### D.3 Encyclopaedia Britannica, "Casino (card game)", by David Parlett [S33]
+- "a card game for two to four players, best played with two". Two-player deal: two to opponent, two face up to the table, two to dealer, repeated. [S33]
+- Aim: "to capture cards from the table, especially spades, aces, big casino (10 of diamonds), and little casino (2 of spades)." [S33]
+- **Pairing takes all**: "Pairing—that is, by taking all other table cards of the same rank as itself. It is the only way face (court) cards can be taken." [S33]
+- Building: "a card is played to the table to form an announced combination that can be captured by another hand card on the next turn"; "A numerical build, however, can be extended." Sweep "earns a bonus point"; "A player unable or unwilling to capture must trail". [S33]
+- Scoring: "1 point for each sweep, ace, and little casino, 2 points for big casino, 1 point for taking the most spades, and 3 points for taking the most cards (unless tied). Game is 11 or 21 points." [S33]
+- Parlett's own website (parlettgames.uk) has no Cassino page; its Laugh and Lie Down page calls that game (Willughby, c.1665) "the earliest known example of a European game of the Fishing family (Cassino, Scopa, etc), which may be of Chinese origin"; terms pair, "prial ("pair royal")", "mournival"; players who can no longer capture "lay down" and the others "are supposed to laugh at you". Parlett glossary: "fish (1) In Fishing games, to capture a card or cards by matching their face values." [S34][S35]
+
+### D.4 Wikipedia "Cassino (card game)" — current and 2019 revisions [S36][S37]
+- Current article: "Cassino, sometimes spelt Casino, is an English card game"; "often said, without substantiation, to be of Italian origin". First recorded 1792; Mrs. Scatter's line "I do long for a game of Cassino" in Frederick Reynolds' *Cheap Living* (1797). 1795 Vienna/Prague rules used English terms "sweep" and "lurch". German 1810 variant: courts 11/12/13, aces 1 or 14, Great Cassino 10 or 16, Little Cassino 2 or 15 (Lady Sarah Nicolas 1846: "Great Cassino takes sixteen. Little Cassino – fifteen. Every Ace – fourteen."). [S36]
+- Spelling claim conflicts with pagat/Pratesi: Wikipedia now says "The spelling "Cassino" is used in the earliest rules of 1792 and is the most persistent spelling". [S36] (vs [S1][S30])
+- English Cassino after Long (1792): court card played last takes the remaining cards; game 11 with difference scoring; under 6 = "lurched". Dick ("Trumps") 1864 first "building up"; 1867 "calling" e.g. "Fives"; simple build call "Five"; "Build and Call" e.g. "Eights"; "Players may not build on their own build in succession, but only alternately". Twenty-one Point Cassino first in Dick's 1880 *Modern Pocket Hoyle*: sweeps "scored as they are taken"; erroneous claim loses. Diamond Cassino "cross between Cassino and Scopa". [S36]
+- 2019 revision (rev. 928360023, flagged "more citations needed") lists folk variants not in current text: three **owner-obligation variants** (Variant 1 "not permitted to trail" — "Hoyle recommends variant 1"; Variant 2 must take or add to the build next turn; Variant 3 only one build of any value); "The dealer announces "cards" when dealing the last cards"; nicknames "big ten", "good ten", "little deuce", "good two", "spy two"; **All 11 points** = extra point or "skunk"; trailing the five of spades sweeps (one variation); **sudden-death** sweep scoring; **Michigan** variant (defaulting on a build costs 2 points; sweeps 2); all four court cards may be gathered to avoid an **"orphan"**; **Initial Pairs** granted to first player; five-player Cassino (remove 2♥ 2♦ 2♣); **Buckeye Cassino** (10♦ = 10 or 11, "poking fun at... Big Ten Conference"); **Trailing-royals**; **Pluck Cassino** (once per deal "pluck" a non-point table card); **Portuguese Cassino** (to 31; 10♦ "manina"; sweep "clearance"; 26-26 → most spades gets cards points); **California Cassino** (multiple court cards paired at once; no sweeps; each player deals twice). [S37] (Gambiter.com reproduces this older text verbatim but with vandalised lines such as "Madeirense" — not reliable [S38].)
+
+### D.5 Hobby / rules sites
+- **Cats at Cards** (© 2015): two-player deal "two face down cards to his opponent, two face up cards to the center... two face down cards to himself"; dealer of the sixth deal "should announce "Last""; court cards "can only be taken in groups of one or three such matching cards" (so two Jacks on table → only one taken); count-out "call for a "count out""; sweep card "at a 90 degree angle"; **partnership: "They may not attempt to build a total for a card rank that they do not hold in their own hand, but which they think their partner might have."** Variants: **Suipi** (Samoa; "Sweepy"; 8-card hands; "He must loudly announce "Suipi!""), Draw, Kontsina, Spathi (Albania), Diloti, Royal ("a player can take any number of equally ranked cards with a royalty card"), Haitian Cássino (uncaptured cards at end belong to nobody; most cards wins), Swedish Kassino, Mulle, Finnish Kasino, Spade, California, 3/4/5-player, Pluck, African, Shaniss (Somali; Drake-Brockman 1912), Stealing Bundles, Zwickern, Bella Donna (Malta), Bella Donna Ħalliel, Laugh and Lie Down. [S39]
+- **Denexa Games blog** (playing-card maker, Norman OK): "The spelling with two S's is the traditional spelling... Its name is sometimes hypercorrected to Casino"; non-dealer leads; **"A player may not simply trail if they are able to capture something with that card"**; pairing "captures all other cards of that rank"; calls "Building seven", "Building eights", "Building fives"; "Further building must continue in the manner it was started"; game 11 or 21. [S40]
+- **GameRules.com**: close paraphrase of pagat (face card captures only one; "building six"; dealer "must announce "last""; 21 points); adds Royal tip "It is tempting in Royal Casino to hold the aces for longer so that you may make a 14 build." [S41]
+- **Game Rules Guru**: "It is sometimes misspelled as "cassino."" (opposite of Denexa); multiples on table "you can take all of them"; "A player must always announce that they are making a build (in this case by saying "building seven")"; dealer "must announce "last""; sweep marked by a face-up card. [S42]
+- **PlayingCardDecks.com** (John Taylor): **Calling** — "a player can place one of their 5s onto the middle 5 and say they are calling 5". [S43]
+- **BarGames101**: claims "most Western countries play with what is known as Royal Cassino rules. With these rules, the picture cards have no numerical value" — a terminology error (Royal = courts *have* values) worth noting as typical web confusion. [S44]
+- **Psellos Cassino** (web/iOS app): offers Traditional, Royal and Casual modes; "230-year-old"; Most cards "(27+)", Most spades "(7+)"; trailing "prohibited if you have an active build"; Casual = just capture more cards. [S45] Strategy page: trail higher cards early, lower cards later ("trail middle-valued cards (between sevens and jacks, say)"); **"9% rule"** — at the start "your opponent is holding 4/44, or around 9%, of the unseen cards", so P(opponent has ≥1 of a rank) ≈ 9% × unseen copies; worked expected-value example (capture now EV 3 vs build EV 2.6); "build only if you get more than 1 extra point"; track face cards and aces; the AI "doesn't try to guess your cards based on the plays you choose to make". [S46]
+- **SpiteNET Cassino** (Windows, v3.0.0): face card captures only one; build types; "You cannot Trail a card if you have created a Build"; **UX: "A sound is played after the last deal so that everyone is aware that it is the last hand of the round"**; played card "placed slightly above the table until the End Turn button has been clicked"; sweeps shown in status bar; build piles display numbers. [S47]
+- **Board Game Arena** "Cassino - Quick Rules" (BGA help wiki): pairing "matches the rank of one or more cards"; build call "Building 7"; "An opponent can "steal" a build by increasing its value (only for "single" builds)"; most cards/spades 0 if tied. [S48]
+- **Dan…on games! blog (2011)** — strategy tricks: "Saving your Ten" (if opponent trailed and left Big Casino, he has no Ten — leave it and build to it); "The Decoy" (build a ten with non-point cards to draw out an opponent's Ten before risking Little Casino); "The Trailing Build"; "your first priority should be to save any point cards"; confirms a five-card multiple 7-build in one move is legal. [S49]
+- **cardgames.io** has no Cassino; its 2025 Escoba implementation relabels court cards with their capture values ("to make counting to 15 a bit easier"), offers a Spanish/French deck toggle in the options menu, and makes the escoba trick "glow with a yellow tint" — design precedents. [S50]
+- **Games4All Cassino** (Android, 10K+ downloads) describes itself as "Cassino (also known as Casino or California Cassino)". [S51]
+- **Byggkasino** (Wikipedia): Swedish "Build Casino" — Kasino plus building; refs Glimne *Kortspelshandboken* (2016). [S52]
+- **Cristian Seres' Finnish Kasino page** (2013 archive, linked by pagat): optional call **"Building Queen"**; −5 penalty for building without the capturing card; "Misäärikasino" (misère: forced capture, opponent chooses the combination, 'double sweep' 2 points); "Rakennuskasino" (with builds) "lacks the charm of normal Kasino because it is possible to build on the special cards"; strategy: "Avoid laying a card which makes a combination of 14, 15 or 16"; "Consentrate on spades, they are worth two points." [S53]
+- **Mulle (vingel8.neocities.org)**: grandmother's rules; mulle = card captures its identical twin alone; option 2♠ = 2/15 and 10♦ = 10/16. [S54]
+
+### D.6 BoardGameGeek: "Casino" (id 18121) [S55]
+- BGG data (geekdo API, fetched 2 Oct 2026): year "1800", 2–4 players, 30 min, age 10; designer "(Uncredited)", publisher "(Public Domain)"; mechanics Hand Management, Set Collection; families "Card Games: Fishing", "Digital Implementations: Board Game Arena", "TV Shows: Quick Draw McGraw"; video games "Casino Card Game Deluxe", "Cassino!". Stats: 400 ratings, average 6.276, Bayes 5.60, weight 1.36 (33 votes), 265 owned, 87 want-to-play, 4,757 logged plays, 68,665 views. Description claims Casino is "based on the traditional Italian game Scopa" (contradicted by Pratesi [S30]). [S55]
+- Forums: Rules 5 threads/27 posts; Variants 7/11; General 3/17; Reviews 1/3; Strategy 0. [S56]
+- **Review (2005)**: calls "announced as 'Building x'" and "'building xes'"; "The cards in your hand are not yours until you have captured them"; "If three kings have been taken and you are dealt the fourth king, playing it will ensure no more sweeps occur"; "Sometimes you can bluff by trailing instead of building, since building annnounces your next move"; "could readily be taught to a child of 7". A 2021 reply: "My mom taught me this game almost 60 years ago, when I was learning arithmetic. She used a house rule where the jack, queen, and king counted as 11, 12, and 13". [S57]
+- **Rules thread "Increasing opponent's build to match an existing build?" (Sept 2025–June 2026)**: BGA blocked raising an opponent's 7-build to 8 while the player already had an 8-build; posters: "I've played for more than 60 years with dozens of other players, and never encountered anyone who thought it should not be allowed"; iOS *Cassino!* (Michael Dokken) rule quoted: "There cannot be more than one build of the same value on the field at the same time"; another learned "from Parlett's book, which was rather brief and vague". [S58]
+- **"Can you Do BOTH a Single Build & a Multiple Build in the Same Turn?" (2017)**: one experienced player answers yes to building from multiple loose table cards; "Absolutely Not" to treating a build as a numeral in a combination capture ("This is one of the reasons why you build"); yes to multiple builds if you hold both capturing cards; sweeps "are a variant and we play with them every single time"; court cards "Never part of a build. Ever." Another player: "I don't like it [sweeps]... there is virtually no skill in getting a sweep"; Casino "has an almost equal luck to skill level". The OP documents a book error (Harwood, *Learn to Play the 200 Best-Ever Card Games*, 2008) mislabelling single vs multiple builds. [S59]
+- **"how to play - reward 5gg" (2014)**: pagat criticised for "TOO much detail and usage of unfamiliar terms"; a quoted grandparents.com text: "he can place the 6 on the 2 and declare, "building eight.""; "a player with a 9 and Ace could build Ace, 6, and 2 and declare "building nine.""; scoring thresholds "Majority of cards (27 or more)... Majority of spades (7 or more)... if no one achieves the minimum number, the points are not awarded" (which differs from "most" in 3-player games). [S60]
+- **Variants forum**: "Card and spades bonuses" (1 per card after the 35th, 1 per spade after the 10th; clear marked with a non-point card turned over; "Building on face cards is NOT allowed" — cannot call a "Kings" build); family scoring "Most cards: 2 (can be split) Most spades: 2" and a build is "'protected' by either having multiple builds in the pile... or it is topped with a card of the same rank"; parents play "'World Series' best-of-7's"; **Cabin variant (mökki)** with cancellation; **"Lazy Casino (Laisto Casino)"** misère where opponents choose your forced capture; "4 stack variation" (only four table piles, cards may cover others — "blocking was a major strategy"); a **solo variant** (AI plays two dealt cards, never builds); **Steal Pile** (face-up capture piles stealable). [S61]
+- Players' comparison with Scopa (2013): Casino "offer[s] more options during play, as Scopa doesn't have builds"; "The scoring system is much easier to remember in Cassino". App discovery: searching "Casino" in the App Store "just yields a list of gambling apps" — search "Cassino". [S62]
+
+### D.7 Reddit (r/cardgames, via Arctic Shift archive API) [S63]
+- "Four Player Cassino" (2019): "Very little information is available for the team game"; reply "we always play solo Cassino". [S63]
+- "Cassino - build question" (Apr 2025): can a 2 from hand plus a loose 3 raise an A+2 3-build to 8? Answer: no — "you can't increase the value of a build by using both a card from your hand along with another card from the table" citing pagat Example B. [S63]
+- "Cassino - scoring process" (Apr 2025): asks how to track sweeps and spades in progress ("Is it allowed to stack or track your spades separately so you can see if you have yet won seven?") — an unmet scorekeeping need. [S63]
+- "What variant of Cassino would this be?" (Oct 2025): Swedish family game **"kasino kryp"** (≈ Krypkasino): 2♠ = 2/15, 10♦ = 10/16; forced sweep announced by **"Sweep 9"**; 1 per spade, 1 per ace, 2 each for the Cassinos, 5 per sweep; first to 52 loses. [S63]
+- "disadvantage going third?" (2015): "It does punish you a little to go third... Good strategy for going third, is not to build early in the deck. Wait until half or more of the deck is gone. Plus count cards." [S63]
+- "Casino card game question" (2021): "You can call another player's build but there would be no point, because the opponent would be able to take the pile in the next turn." [S63]
+- 2024 Kickstarter "Scopa United" claims to unite Scopa-family variants "(barsra, pitsi, casino, and many more!)" with bonus/action cards. [S63]
+
+### D.8 Sources searched but not usable
+- bicyclecards.com: no Cassino page now (404 for /how-to-play/cassino, /casino); Wayback CDX shows only 404s for draw/royal/spade-cassino (2016). [S64]
+- Ludii (ludii.games / GitHub Ludeme/Ludii): no Cassino .lud found — `details.php?keyword=Cassino` returns no game; repo `Common/res/lud` has only board/dominoes/math/puzzle etc. Claim that Ludii formalised Cassino **[UNVERIFIED — not found]**. [S65]
+- wikiHow, Masters Traditional Games (403), officialgamerules.org (403), BGG HTML (403; API used instead), Reddit direct (blocked; archive used), Quora (only an unrelated "32-card casino" question surfaced). [S64]
+
+---
+
+## E. Things players SAY (calls, announcements, jargon) — consolidated
+- **Building calls (English)**: "building 5"/"building eight"/"building nine" [S1][S41][S42][S60]; "Building x" / "building xes" [S57]; "Nine", "Ten", "Two Sevens", "Two Nines" [S31]; "Building eights", "Building fives" [S40]; "Five", "Fives", "Eights" (Dick 1867) [S36]; "fours" (call) [S32]; "calling 5" [S43]; "Building Queen" (Finnish Royal, optional) [S53]; "building 9 for partner" [S1]; "13 for partner" [S8]; "for partner" (Dominican) [S3]; "two Eights" for partner [S31]. German: "8er-Build" ansagen [S29].
+- **Deal calls**: "last" [S1][S41][S42]; "cards" [S37]; "sistan"/"båt" (Swedish) [S5][S6]; "Letzte Runde" [S29].
+- **Capture/sweep slang**: "steal" a build [S1]; "cash" (ace takes ace) [S1]; "clear" [S1][S61]; "Sweep"; "Wip" (Flemish) [S1]; "tabbe", "tabbe på 9" / "sweep for a nine" [S5][S6]; "mökki"/"Cabin" [S5][S61]; "virados" [S3]; "Suipi!" (loudly) [S39]; "Zwick" ("tweak") [S8]; "xeri" [S9]; "orange" (Tuxedo) [S3]; "Sweep 9" [S63]; "chow" [S4]; "drifting" [S4]; "krypa" [S6]; "dejado"/"pisado" (opponents point out missed captures) [S3].
+- **Card names**: Big Casino / Good Ten / Big Ten / "big ten"; Little Casino / Good Two / Little deuce / "spy two" [S1][S4][S37]; storan / lillan [S5]; diez de casino / dos de casino [S3]; Small/Big Kasino [S5]; Pingel (2♠, Zwicker) [S8]; Cardinal (10♦, old Zwicker) [S8]; "manina" (10♦, Portuguese) [S37].
+- **Game-end calls**: claiming/"count out" [S31][S39]; "Ausz!", "Ausz vagyok!", "Kint vagyok!" (Hungarian) [S3]; "per shodam" (Pasur) [S14]; "chiamarsi fuori" (Scopa) [S10]; "lurch", "skunk" [S31][S37].
+- **Positions**: "pone", "eldest hand" [S31].
+- **Table manners**: Foster: errors must be challenged before the next trick is taken [S31]; Zwicker: partner may not point out missed captures [S8]; Cuarenta: snapped caída flourish and forehead taunt [S13]; Basra experts keep cards in "a constant state of movement" [S15]; Laugh and Lie Down: others laugh at the player who lays down [S34].
+
+## F. Strategy digest (Casino-specific, with sources)
+1. Card memory: track aces, 8s, 9s, 10s and courts [S31][S46]; play the last ace when three are gone [S31]; fourth king kills sweeps [S57].
+2. Priorities: save point cards first [S49]; "Go for "cards" in preference to everything else" [S31]; prefer combos with spades; don't trail spades [S31][S5].
+3. Trailing: trail high early, low late (Psellos) vs trail small but not aces/Little Cassino (Foster) — a real disagreement [S46][S31]; trail ranks already played [S5]; trailing instead of building can bluff [S57].
+4. Building: compute EV; 9% rule [S46]; build on opponent's builds [S31]; decoy builds with non-point cards [S49]; going third: delay building [S63]; building less valuable with more players [S37].
+5. Inference: a build left standing means the opponent lacks that rank [S61]; opponent trailing past Big Casino means no Ten [S49].
+6. Endgame: dealer holds back a court card for the last capture [S1][S31]; avoid taking three courts [S31].
+7. Sweep defence: leave captures that do not set up a sweep; leave ≥11 total (Scopone/Pasur rule of thumb) [S11][S14]; deliberately leave a card to deny a tabbe [S5].
+8. Royal: hoard aces for 14-builds [S41]; build monopolies on high values (Swazi) [S4].
+
+## G. Key ambiguities & disagreements (summary)
+- **Spelling**: Casino earliest (pagat, Pratesi) [S1][S30] vs Cassino earliest/traditional (Wikipedia, Denexa) [S36][S40] vs "misspelled as cassino" (Game Rules Guru) [S42]. Pratesi notes "Cassino" "is said to be a printing mistake" [S30].
+- **Origin**: Italian (BGG; older Wikipedia "probably descended from... Scopa") [S55][S37] vs no Italian evidence (Pratesi, pagat, current Wikipedia) [S30][S1][S36]; Morehead's "French gambling games of the 15th century" [S30].
+- **Court-card pairing** (one vs all vs one-or-three), **forced capture**, **raising own build**, **table cards in raises**, **same-value builds**, **builds as cards**, **owner trailing**, **building for partner**, **sweeps on/off/cancel**, **targets**, **cards/spades thresholds** — see table rows 8–31.
+- **Hoyle authority**: older Wikipedia claims "Hoyle recommends variant 1" [S37]; Foster's actual text says the builder must win it or "win something else, or... make another build" [S31].
+- **Pagat vs BGA**: BGA's pagat-based implementation forbade a raise many players consider legal [S58].
+
+---
+
+## Sources
+- [S1] John McLeod, "Casino", pagat.com, last updated 6 May 2026. https://www.pagat.com/fishing/casino.html
+- [S2] McLeod, "Card Games: Fishing Games" index, pagat.com (updated 24 June 2025). https://www.pagat.com/fishing/
+- [S3] McLeod, "Royal Casino" (Dominican, North America, Haiti, Tuxedo, Hungarian), pagat.com (updated 3 Jan 2023). https://www.pagat.com/fishing/royal_casino.html
+- [S4] McLeod, "African Casino" (Swazi, Sotho, South African), pagat.com (updated 1 Sept 2026). https://www.pagat.com/fishing/african_casino.html
+- [S5] McLeod, "Nordic Casino" (Swedish Kasino, Mulle, Finnish Kasino), pagat.com (updated 29 May 2017). https://www.pagat.com/fishing/nordic_casino.html
+- [S6] McLeod, "Krypkasino", pagat.com (updated 1 Sept 2026). https://www.pagat.com/fishing/krypkasino.html
+- [S7] McLeod, "Stealing Bundles", pagat.com. https://www.pagat.com/fishing/bundle.html
+- [S8] McLeod, "Zwicker", pagat.com (updated 1 Sept 2026). https://www.pagat.com/fishing/zwicker.html
+- [S9] McLeod, "Diloti", pagat.com (2018). https://www.pagat.com/fishing/diloti.html
+- [S10] McLeod, "Scopa" (incl. Chkobba, Hurrikan), pagat.com (updated 3 Sept 2025). https://www.pagat.com/fishing/scopa.html
+- [S11] McLeod, "Scopone", pagat.com. https://www.pagat.com/fishing/scopone.html
+- [S12] McLeod, "Escoba", pagat.com. https://www.pagat.com/fishing/escoba.html
+- [S13] McLeod, "Cuarenta", pagat.com. https://www.pagat.com/fishing/cuarenta.html
+- [S14] McLeod, "Pâsur", pagat.com. https://www.pagat.com/fishing/pasur.html
+- [S15] McLeod, "Basra", pagat.com. https://www.pagat.com/fishing/basra.html
+- [S16] McLeod, "Xeri", pagat.com. https://www.pagat.com/fishing/xeri.html
+- [S17] McLeod, "Tablić, Tabinet", pagat.com. https://www.pagat.com/fishing/tablic.html
+- [S18] McLeod, "Snitch'ems", pagat.com (updated 8 Apr 2026). https://www.pagat.com/fishing/snitchems.html
+- [S19] McLeod, "Laugh and Lie Down", pagat.com. https://www.pagat.com/fishing/laugh.html
+- [S20] McLeod, "Seep", pagat.com. https://www.pagat.com/fishing/seep.html
+- [S21] McLeod, "Kontsina", pagat.com. https://www.pagat.com/fishing/kontsina.html
+- [S22] McLeod, "Cirulla", pagat.com. https://www.pagat.com/fishing/cirulla.html
+- [S23] McLeod, "Cau Robat", pagat.com. https://www.pagat.com/fishing/cau.html
+- [S24] McLeod, "Ronda", pagat.com. https://www.pagat.com/fishing/ronda.html
+- [S25] McLeod, "Porrazo", pagat.com. https://www.pagat.com/fishing/porrazo.html
+- [S26] McLeod, "Eléwénjewé", pagat.com. https://www.pagat.com/fishing/elewenjewe.html
+- [S27] McLeod, "Žandari", pagat.com. https://www.pagat.com/fishing/zandari.html
+- [S28] McLeod, "Shlla'at", pagat.com. https://www.pagat.com/fishing/shllaat.html (also consulted: chorizo, cicera, pishti, mitaines, hockey, gharat, chinten pages under https://www.pagat.com/fishing/)
+- [S29] McLeod, "Casino" (German edition), pagat.com. https://www.pagat.com/de/fishing/casino.html
+- [S30] Franco Pratesi, "Casino from Nowhere, to Vaguely Everywhere" (dated 09.10.1994; publ. *The Playing-Card* XXIV/1, 1995, pp. 6–11), PDF at naibi.net linked from pagat. https://www.naibi.net/A/57-CASINO%20-Z.pdf
+- [S31] R. F. Foster, *Foster's Complete Hoyle: An Encyclopedia of Games* (New York: Stokes, 1897), "Cassino" pp. 478–485 and general laws; Project Gutenberg #53881. https://www.gutenberg.org/cache/epub/53881/pg53881.txt
+- [S32] United States Playing Card Co., *The Official Rules of Card Games — Hoyle Up-to-Date* (Cincinnati; copyright dates to 1943), "Cassino" pp. 185–188; archive.org in.ernet.dli.2015.174022. https://archive.org/download/in.ernet.dli.2015.174022/2015.174022.The-Official-Rules-Of-A-Card-Games_djvu.txt
+- [S33] David Parlett, "Casino (card game)", *Encyclopaedia Britannica* online (via WebFetch). https://www.britannica.com/topic/casino-card-game
+- [S34] David Parlett, "Laugh and Lie Down", Historic Card Games. https://www.parlettgames.uk/histocs/laughand.html
+- [S35] David Parlett, Historic Card Games glossary. https://www.parlettgames.uk/histocs/glossary.html
+- [S36] Wikipedia, "Cassino (card game)", current revision (raw, fetched 2 Oct 2026). https://en.wikipedia.org/wiki/Cassino_(card_game)
+- [S37] Wikipedia, "Cassino (card game)", revision 928360023 of 28 Nov 2019. https://en.wikipedia.org/w/index.php?oldid=928360023
+- [S38] Gambiter.com, "Cassino - card game" (mirror of older Wikipedia, partly vandalised). https://gambiter.com/cards/Cassino_card_game.html
+- [S39] CatsAtCards.com, "How To Play Cassino" (© 2015). https://www.catsatcards.com/Games/Cassino.html
+- [S40] Denexa Games blog, "Cassino". https://www.denexa.com/blog/cassino/
+- [S41] GameRules.com, "Casino Card Game Rules". https://gamerules.com/rules/casino-card-game/
+- [S42] Game Rules Guru, "Casino". https://gamerulesguru.com/casino.shtml
+- [S43] John Taylor, "How to play Casino", PlayingCardDecks.com. https://playingcarddecks.com/blogs/how-to-play/casino-game-rules
+- [S44] BarGames101, "Cassino Card Game". https://bargames101.com/cassino-card-game/
+- [S45] Psellos, "Cassino Rules" (via WebFetch). https://psellos.com/cassino/rules.html
+- [S46] Psellos, "Cassino Strategy". http://psellos.com/cassino/strategy.html
+- [S47] SpiteNET, "Cassino by SpiteNET — How to Play", About, Screen Shots. http://www.spitenet.com/Cassino/play.htm
+- [S48] Board Game Arena help wiki, "Gamehelpcassino" (raw). https://en.doc.boardgamearena.com/Gamehelpcassino
+- [S49] Dan…on games!, "Cassino tips and tricks" (19 Dec 2011). https://danongames.wordpress.com/2011/12/19/cassino-tips-and-tricks/
+- [S50] CardGames.io, "Escoba" (2025) and site index. https://cardgames.io/escoba/
+- [S51] Games4All, "Cassino" Google Play listing. https://play.google.com/store/apps/details?id=org.games4all.android.games.cassino.prod
+- [S52] Wikipedia, "Byggkasino". https://en.wikipedia.org/wiki/Byggkasino
+- [S53] Cristian Seres, "Kasino in English" (korttipelit.net, Wayback 7 Mar 2013). https://web.archive.org/web/20130307135755/www.korttipelit.net/Kasino_in_English
+- [S54] "Mulle", vingel8.neocities.org (updated 2018-04-18). https://vingel8.neocities.org/mulle
+- [S55] BoardGameGeek, "Casino" (id 18121) item data via api.geekdo.com/api/geekitems and /api/dynamicinfo (2 Oct 2026). https://boardgamegeek.com/boardgame/18121/casino
+- [S56] BGG forums list and Rules thread 1585503 "Rule modification" (2016–2026), via api.geekdo.com. https://boardgamegeek.com/thread/1585503
+- [S57] BGG review thread 85266 "A simple and elegant card game" (2005; replies 2021–22). https://boardgamegeek.com/thread/85266
+- [S58] BGG thread 3574955 "Increasing opponent's build to match an existing build?" (2025–26). https://boardgamegeek.com/thread/3574955
+- [S59] BGG thread 1893693 "Can you Do BOTH a Single Build & a Multiple Build in the Same Turn?" (2017). https://boardgamegeek.com/thread/1893693
+- [S60] BGG thread 1221271 "how to play - reward 5gg" (2014; quotes grandparents.com). https://boardgamegeek.com/thread/1221271
+- [S61] BGG Variants threads 122955, 597527, 433043, 1156351, 2988271, 90163, 3239537 and Rules thread 703492. https://boardgamegeek.com/thread/122955 (etc.)
+- [S62] BGG General threads 952175 "This vs. Scopa?", 826479 "iOS app for Casino?", 1204559. https://boardgamegeek.com/thread/952175
+- [S63] Reddit r/cardgames posts cb2buo (2019), 1jy1diy, 1jzk7gs (Apr 2025), 1o7oazc (Oct 2025), 3438h8 (2015), ouqa3m (2021), 1e0mqof (2024), retrieved via Arctic Shift API. https://www.reddit.com/r/cardgames/comments/1o7oazc/
+- [S64] Failed/blocked fetches: bicyclecards.com (404), Wayback CDX for bicyclecards (only 404 captures), wikihow.com (blocked), mastersofgames.com (403), officialgamerules.org (403).
+- [S65] Ludii: https://ludii.games/details.php?keyword=Cassino ; GitHub API listing of Ludeme/Ludii `Common/res/lud`.
+
+## Gaps / leads not followed
+- Bicycle (bicyclecards.com) has no current Cassino page; try older Wayback captures under other URLs or USPCC print editions (1900 *Card Games and How to Play Them*, cited by Pratesi).
+- Parlett's own book texts (*Oxford Guide*, *Penguin Book of Card Games*, *A History of Card Games*) not consulted here — BGG users call Parlett's rules "brief and vague".
+- wikiHow, Masters Games, officialgamerules.org, Quora blocked/not found; Reddit only partially searched (archive API timeouts on r/boardgames, r/fiftytwocards).
+- BGA's game options for Cassino (gamepanel 500 error) and the YouTube tutorial cited in BGG thread 3574955 (https://youtu.be/6rftQLsv6Uk?t=244) not examined; the *Cassino!* iOS rules (Michael Dokken) and Pocket Cassino app not fetched.
+- Ludii: no Cassino found; check Ludii's card-game support or the DLP database if still claimed.
+- Andrew Saint-Remy's Haitian Casino video (linked from pagat, https://www.youtube.com/watch?v=-UaCbzqbTu4) not viewed.
+- Pagat sub-pages read in full: Casino, Royal, African, Nordic, Krypkasino, Bundles, Zwicker, Diloti, Scopa, Scopone, Escoba, Cuarenta, Pâsur, Basra, Xeri, Tablić, Snitch'ems, Laugh; others (Seep, Cirulla, Ronda, Porrazo etc.) only skimmed for calls and key rules.
