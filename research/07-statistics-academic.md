@@ -10,18 +10,26 @@ Scope: statistical, mathematical, computational and academic work on **Cassino/C
    - **Scopone:** Di Palma & Lanzi, *IEEE Transactions on Games* 2018, plus the 2014 master's thesis behind it [S2][S3][S4].
    - **Pasur:** Baghal, arXiv 2025, which uses GPU counterfactual regret minimisation [S5].
    - **Scopa:** included as the "fishing" representative in the 2026 *Valet* benchmark of 21 traditional card games [S8].
-2. **Seat advantage depends on the game structure and on player skill, so the team should measure it rather than assume it.**
+2. **Seat advantage depends on the game structure and on how people play, so the team should measure it rather than assume it.**
    - In 4-player Scopone, the dealer's team wins more often, and the advantage grows with player strength. The hand team's win rate in self-play falls from 38.0% (random) to 34.7% (ISMCTS) to 29.5% (cheating MCTS) [S2].
-   - In my simulation of 2-player Cassino (pagat rules), the **non-dealer** scores more per hand whenever play is better than random: −0.87 points/hand for the dealer with the heuristic policy and −1.15 with the greedy policy. Random play gives the dealer +0.35 (ORIGINAL COMPUTATION, §6.3).
-   - The 52-card hand is played as 6 deals of 4 cards, and the non-dealer leads every deal with a fresh hand of 4 against whatever the dealer's forced last card left on the table. The dealer's compensations are the end-of-hand residue (taken in 60–72% of hands) and more sweeps.
-3. **Under competent play, sweeps are common in Cassino.** With heuristic self-play there are 0.69 sweeps per hand and at least one sweep in 45.5% of hands. Under random play the figures fall to 0.045 sweeps and 4.1% (ORIGINAL COMPUTATION, §6.5). The UI and audio for a sweep ("clear") will fire often.
+   - In my simulation of 2-player Cassino (pagat rules) the seat effect is small and its **sign depends on playing style**. Dealer − non-dealer points per hand by policy (ORIGINAL COMPUTATION, §6.3, §6.10):
+     - random: +0.35
+     - PIMC: +0.65
+     - heuristic: −0.87
+     - greedy: −1.15
+   - The one robust positional fact is that **the dealer takes the end-of-hand residue in 60–77% of hands** under every policy. That supports the classic advice to hold back a face card for the last play [S21][S23].
+3. **How often sweeps happen depends heavily on playing style.**
+   - Per hand: 0.045 under random play, 0.16 under PIMC, 0.69 under the heuristic and 0.86 under greedy play.
+   - At least one sweep per hand: 4.1%, 13%, 45.5% and 51.2% respectively.
+   - The more careful PIMC player rarely leaves a sweepable table (ORIGINAL COMPUTATION, §6.5, §6.10).
+   - Against casual human players the sweep ("clear") UI will fire often; against careful AI, rarely.
 4. **A game to 21 lasts 3–4 hands**, i.e. 156–208 card plays. Heuristic self-play averages 3.48 hands, with 95% of games taking 3 or 4. Without sweep points the average is 3.63 hands. The winner averages about 24.6 points and the loser about 15.3 (ORIGINAL COMPUTATION, §6.7).
 5. **"Most cards" ties at 26–26 happen in about 7% of hands under sensible play** (4.5% under random play). The scoreboard must handle the "no one scores the 3 points" case often (ORIGINAL COMPUTATION, §6.6).
 6. **The game is shallow per move but deep overall, and simple AI is already strong.**
    - Branching averages about 4.5 legal moves per decision (maximum seen: 101). A Knuth-estimator size of the full-information tree for one fixed deal is about 10^28 leaves, and there are about 10^50 distinct deals (ORIGINAL COMPUTATION, §6.9).
    - A one-ply card-counting heuristic beats greedy play by +3.8 points per hand and wins 91% of games to 21 (§6.8).
-   - In Scopone, published results show that a greedy beginner strategy is "stronger than one might expect": it wins 39.8% against expert-rule bots that win about 44% [S2]. A hobby Scopa engine reports that deeper search, tuned weights and opponent modelling all gave null results beyond a cheap PIMC search [S20].
-   - For the game, cheap AI (heuristic or PIMC) is enough for difficulty tiers.
+   - In Scopone, published results show that a greedy beginner strategy is "stronger than one might expect": in a round-robin of rule-based bots its overall win rate was 39.8%, against 44.4% and 44.0% for the two expert-rule bots [S2]. A hobby Scopa engine reports that deeper search, tuned weights and opponent modelling all gave null results beyond a cheap PIMC search [S20].
+   - For the game, cheap AI is enough for difficulty tiers. A caution: naive PIMC with greedy rollouts was weaker than the one-ply heuristic (−2.05 points per hand, §6.10), so search-based AI needs good playout policies.
 7. **Popularity proxies:**
    - Casino is the **8th most-visited rules page on pagat.com** in July, August and September 2026 [S24].
    - The English Wikipedia "Cassino (card game)" article got about 41,000 views in 2025, against about 117,000 for "Scopa" and about 256,000 for "Cribbage" [S27].
@@ -315,7 +323,7 @@ Notes:
 
 ### 5.5 Finnish and Nordic surveys
 
-- No published survey with Kasino percentages was found. The only lead was a commercial Finnish card-games site claiming a "small-scale survey" in which "Paskahousu, Kasino, Sika, Tuppi, Ginirommi, Seiska ja Mustamaija" were the most popular. This came from a search-engine summary that I did not fetch myself: **[UNVERIFIED — not found in fetched sources]**.
+- No published survey with Kasino percentages was found. The only lead was a web-search result summary (not a fetched page). It described a commercial Finnish card-games site's informal "small-scale survey" listing Paskahousu, Kasino, Sika, Tuppi, Ginirommi, Seiska and Mustamaija as popular light games. **[UNVERIFIED — not found in fetched sources]**
 
 ---
 
@@ -324,6 +332,11 @@ Notes:
 **Citation for every number in this section:**
 - Scripts: `research/sim/cassino_sim.py` (engine and policies), `research/sim/run_experiments.py` (experiments; output `research/sim/results.json`), `research/sim/mechanism.py` (seat-effect mechanism; outputs `research/sim/mechanism_*.json`), `research/sim/pimc.py` (PIMC robustness check; outputs `research/sim/pimc_*.json`), and `research/sim/combinatorics.py` (exact enumerations; output `research/sim/combinatorics_out.json`) [S40–S43].
 - Reproduce with `cd research/sim && python3 run_experiments.py` (seed 20261002; about 17 minutes on 2 cores). The invariant tests are in `research/sim/test_invariants.py`.
+- Other runs:
+  - `python3 mechanism.py heuristic 4000 11` (also `greedy 10000 12` and `random 10000 13`);
+  - `python3 pimc.py self 300 101` and `python3 pimc.py self 300 202`;
+  - `python3 pimc.py heuristic 100 303` and `python3 pimc.py heuristic 100 404`;
+  - `python3 combinatorics.py`.
 
 ### 6.1 Rules implemented (from pagat's Casino page [S23])
 
@@ -368,8 +381,19 @@ Notes:
 
 ### 6.3 Dealer vs non-dealer: who has the edge, and why
 
-- **Result:** under any non-random policy, the **non-dealer** gains about 0.9–1.2 points per hand.
-- **The seat matters even in mixed matches.** In duplicate matches (same deck, seats swapped), heuristic beat greedy by +2.60 points per hand when heuristic dealt, and by +4.98 when greedy dealt [S40].
+- **Result:** the size and sign of the seat effect depend on the policies.
+- **Self-play, dealer − non-dealer points per hand** [S40][S43]:
+  - random: +0.35 [+0.29, +0.42]
+  - PIMC: +0.65 [+0.19, +1.10] (600 hands)
+  - heuristic: −0.87 [−0.95, −0.79]
+  - greedy: −1.15 [−1.20, −1.09]
+- **Mixed duplicate matches.** The seat effect is estimated as half the difference between "A − B when A deals" and "A − B when B deals" [S40][S43]:
+  - heuristic/greedy: −1.19 (heuristic beat greedy by +2.60 points per hand when heuristic dealt, and by +4.98 when greedy dealt);
+  - PIMC/heuristic: −0.11, consistent with zero;
+  - greedy/random: −0.03;
+  - heuristic/random: −0.06.
+- **Conclusion:** in 2-player Cassino the seat is worth at most about ±1 point per hand (≤10% of the 11 points), and **no direction is established for strong play**.
+- The non-dealer-advantage mechanism described below applies to "hold-back" styles: greedy and heuristic players that keep aces and casinos until they can capture.
 - **Over a whole game the seat effect mostly washes out**, because the deal alternates. In 20,000 greedy games, the first dealer won 48.4% [47.7, 49.1]. In 5,000 heuristic games it won 48.8% [47.4, 50.2] [S40].
 - **Dealer's compensations:**
   - Takes the end-of-hand residue in 60.5% (random), 64.1% (greedy) and **72.0% (heuristic)** of hands.
@@ -394,7 +418,7 @@ Notes:
   - The dealer's forced last card is then exposed to the non-dealer's fresh 4-card hand.
   - The non-dealer's own forced last card faces only the dealer's single remaining card, and then the non-dealer's own fresh hand.
   - The per-play capture counts above fit this explanation.
-  - **This is a property of these policies plus the 4-card deal structure. It is not a proven property of optimal play** (see the PIMC check, §6.10).
+  - **This is a property of these policies plus the 4-card deal structure. It is not a property of optimal play.** The PIMC agent, which plays differently and makes far fewer sweeps, shows the opposite sign (§6.10).
 - **Comparison:** in Scopone (one 9-card deal, dealer always last) the dealer's side is favoured, and increasingly so with skill [S2]. Scopone's single 9-card deal leaves no leader-of-each-deal advantage for the non-dealing side to exploit, which may explain the opposite direction. That is an inference.
 
 ### 6.4 Distribution of the 11 points
@@ -421,12 +445,13 @@ Heuristic self-play, both seats combined, per hand [S40]:
 | random | 0.045 | 4.1% | 95.9 / 3.8 / 0.3 / 0.03 / 0 % |
 | greedy | 0.859 | 51.2% | 48.8 / 28.8 / 14.2 / 5.4 / 2.9 % |
 | heuristic | 0.693 | 45.5% | 54.5 / 29.1 / 11.1 / 3.7 / 1.6 % |
+| PIMC (600 hands, [S43]) | 0.158 | 13.0% | — |
 
 - The non-dealer can sweep on the very first play of a hand in only **~1.45%** of deals: 1.43% (random), 1.47% (greedy), 1.46% (heuristic). This depends almost entirely on the deal [S40].
 - Where sweeps happen (heuristic) [S41]:
   - Most come mid-deal: 0.147 per hand on the dealer's 2nd play and 0.121 on the non-dealer's 2nd play.
   - Only 0.065 (dealer) + 0.070 (non-dealer) sweeps per hand happen in the first deal; the other 0.55 happen in deals 2–6.
-- **Even under good play sweeps add only about 0.7 points per hand, but they swing games.** Without sweep scoring a game lasts 3.63 hands instead of 3.48 (§6.7).
+- **Sweeps add at most about 0.7–0.9 points per hand (heuristic or greedy), and only about 0.16 under the sweep-averse PIMC style, but they swing games.** Without sweep scoring a game lasts 3.63 hands instead of 3.48 (§6.7).
 
 ### 6.6 "Cards" ties (26–26)
 
@@ -468,7 +493,28 @@ Skill dominates luck in Cassino much more than the "simple game" reputation sugg
 
 ### 6.10 Robustness check with a stronger agent (PIMC)
 
-PIMC_PLACEHOLDER
+**PIMC agent:** for each legal move, 8 sampled worlds × greedy rollouts to the end of the hand; choose the move with the best mean point differential (`pimc.py`) [S43]. I ran 2 × 300 self-play hands (seeds 101 and 202) and 2 × 100 duplicate decks against the heuristic (seeds 303 and 404).
+
+| Metric (PIMC self-play, 600 hands) | Value [95% CI] |
+|---|---|
+| Dealer / non-dealer points per hand | 5.79 / 5.14 |
+| Dealer − non-dealer | **+0.65** [+0.19, +1.10]; +0.60 excluding sweeps |
+| P(dealer wins hand) / P(hand tied) | 54.8% / 3.3% |
+| Sweeps per hand (dealer + non-dealer) | 0.103 + 0.055 = **0.158**; P(≥1 sweep) = 13.0% |
+| P(cards tie 26–26) | 7.7% |
+| Dealer takes residue | **77.2%** |
+| Dealer aces per hand | 2.01 [1.92, 2.10] |
+
+- **Strength:** PIMC with greedy rollouts is *weaker* than the one-ply heuristic. PIMC − heuristic = −2.05 [−2.50, −1.60] points per hand (200 decks, seats swapped); PIMC wins 32.3% of hands [S43]. The likely cause is that the greedy rollouts never build and trail naively, which biases PIMC's evaluations. Tartaluca21 report a similar ceiling for PIMC-style Scopa engines [S20].
+- **What PIMC changes:**
+  - It avoids leaving sweepable tables: 0.16 sweeps per hand against 0.69 for the heuristic.
+  - It does not show the aces asymmetry: dealer aces 2.01 against 1.71 for the heuristic.
+  - The dealer advantage reappears, carried by the residue (77%).
+- **Bottom line:** whether the dealer or the non-dealer is better off in 2-player Cassino is **not settled** by these agents. Settling it needs a stronger agent, e.g. ISMCTS with heuristic playouts or CFR on an abstraction (see Gaps).
+- **Policy-independent facts across all five policy sets:**
+  - The dealer takes the residue 60–77% of the time.
+  - The first-play sweep chance is about 1.4–1.5% (where measured).
+  - Cards ties occur 4.5–7.7% of the time.
 
 ### 6.11 Exact combinatorics (all ORIGINAL COMPUTATION, `combinatorics.py`) [S42]
 
@@ -493,14 +539,21 @@ PIMC_PLACEHOLDER
 
 ## 7. Implications for the video game (derived from the above)
 
-- **Show the seat effect honestly and alternate the deal.** Per-hand results are seat-biased by about 1 point. Over a full game to 21 the first dealer's win rate is 48–49% under the tested policies (§6.3).
+- **Alternate the deal; do not hard-code a "dealer advantage" into the AI's beliefs.**
+  - The per-hand seat effect is at most about ±1 point, and its sign depends on playing style.
+  - Over a full game to 21 the first dealer's win rate is 48–49% under the tested policies (§6.3, §6.10).
+  - The robust positional fact is the dealer's last-play/residue edge (60–77%). An AI should hold back a face card for the final play [S21][S23].
 - **Difficulty tiers come almost for free:**
   - Random play loses about 99% of games.
   - Greedy play is a natural "beginner" level that humans can beat (compare Scopone humans: 47.6% wins against Greedy [S2]).
   - The look-ahead heuristic beats greedy 91% of the time.
-  - Search-based AI (PIMC or ISMCTS) is the "expert" tier.
+  - Search-based AI (ISMCTS, or PIMC with good playouts) is the natural "expert" tier. My naive PIMC with greedy rollouts was weaker than the heuristic (§6.10).
   - Scopone research found ISMCTS harder for humans than expert rule bots [S2]. A Scopa hobby engine found little gain from more search than about 10 ms of PIMC [S20].
-- **Expect frequent events:** about 0.7 sweeps per hand, a 26–26 tie every about 14 hands, and the residue in every hand (about 3.3 cards on average under sensible play). The scoring screen should state who took the last cards and why.
+- **Expect frequent events:**
+  - 0.16–0.86 sweeps per hand depending on style.
+  - A 26–26 tie roughly every 13–22 hands.
+  - The residue in every hand: about 3.3 cards on average under heuristic or greedy play, and about 8 under random play.
+  - The scoring screen should state who took the last cards and why.
 - **Partner-AI caution:** in team variants, strong bots can puzzle human partners [S2].
 
 ---
@@ -523,7 +576,8 @@ PIMC_PLACEHOLDER
   - 4-player partnership Cassino.
   - Royal and Nordic variants.
   - An ISMCTS agent.
-  - Larger PIMC samples.
+  - Larger PIMC samples, and PIMC with heuristic rollouts (too slow in pure Python here).
+  - A stronger agent to settle the sign of the dealer/non-dealer effect (§6.10).
   - Sensitivity of the seat effect to the card weights.
 
 ---
