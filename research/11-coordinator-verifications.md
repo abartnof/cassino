@@ -72,6 +72,24 @@ While combining notes 01–10, I found claims that disagreed with each other. I 
 - Under the name "Royal Cassino" it appears in Foster 1897 [03 S23].
 - "Royal Draw Cassino" is in print by 1898 [03 S24], not first in 1911 as Wikipedia says.
 
+## V9. Where the classical strategy maxims came from: the poem's "General Rules", merged with Long in 1793
+- **Conflict noted by note 08:** Long (1792) says the pair trap "ought only to be done when the Fourth Card is out" [V-S1, p. 8, image `evidence/long1792_p7_sweep_point.jpg` and page n7]. The *Sporting Magazine* (1793) says "this method of playing is not to be adopted, when the fourth card is out" [08-S2]. Note 08 judges Long logically correct [08 §3.6].
+- **Primary evidence that the classical maxims come from the poem:** the 1793 poem has eleven numbered "General Rules and Directions for Playing the Game of Casino" [V-S2, OCR lines ~500–720]. They include, verbatim or nearly so:
+  - "remember how many Tens, Aces, and Deuces have been played, and whether two Court Cards of the same Sort were turned up at first on the Board";
+  - "never fail to put down Court Cards in Preference to others";
+  - "When you are Dealer, and the Cards are all dealt out, keep a Court Card back to ensure the Sweep";
+  - "having the Great Casino in your Hand, (the other three Tens being out) you should prefer putting down a small Card, which, by Combination, makes the Number Ten";
+  - "put the smaller Cards from your Hand first; as, by reserving the larger, you may take up many by Combination";
+  - "The Spades are worth little Consideration … the Desire of taking Spades should never bias your Play";
+  - "If three Aces are out, you should generally put down the fourth Ace the first Card you play";
+  - "If you have in your Hand one Ace and the Little Casino, and you must put down one, put down the latter";
+  - "If the Great Casino and an Ace are on the Board … take up the Aces in Preference";
+  - "The general Rule is, not to leave on the Board one Card only, or such Cards as, by Combination, may be taken with one Card", with the listed exceptions;
+  - "Do not risk the clearing of the Board when your Adversaries have scored Four, lest they save their Lurch" [V-S2].
+- **The *Sporting Magazine* (vol. III, Nov–Dec 1793) is a merged text.** It prints Long's laws ("Six points gained save the lurch") and Long's pair-trick wording ("you must not, in this case, cover the trick, by putting the cards together, the adversary being at liberty to take them, if he can") [V-S7, OCR lines 11132–11134, 16707–16721]. It then reproduces the poem's General Rules, with the lurch threshold changed from "Four" to "five" to fit Long's six-point lurch: "should never be departed from when your adversaries have scored five, lest they save their lurch; and especially when they have scored nine or ten" [V-S7, OCR lines 16849–16858].
+- **Resolution:** the pair-trick contradiction is a slip in the 1793 merged compilation. Long's original condition (only when the fourth card is out) is what Hoyle kept: "When you hold a pair, lay down one of them, unless when there is both a similar card on the table, and the fourth is not yet out" [03-S6].
+- **Consequence:** the "Hoyle maxims" copied from 1796 to 1929 [08 §0] combine the poem's strategic rules with Long's laws. Most of the classical strategic advice in English therefore traces back to a single anonymous 1792/93 verse pamphlet [V-S2][V-S7][03-S5].
+
 ---
 
 ## Sources
@@ -81,4 +99,5 @@ While combining notes 01–10, I found claims that disagreed with each other. I 
 - **[V-S4]** W. B. Dick, *The American Card Player* (New York: Dick & Fitzgerald, entered 1866). archive.org `americancardplay00dick`, OCR lines 402 and 7155–7162. https://archive.org/details/americancardplay00dick
 - **[V-S5]** "Trumps", *The Modern Pocket Hoyle* (New York: Dick & Fitzgerald, ©1868). archive.org `modernpockethoy00dickgoog`, OCR lines 12033 and 12205.
 - **[V-S6]** *Das neue Königliche l'Hombre … Casino &c.* (1797), "Das Casino-Spiel" / "Gesetze des Casino-Spiels", pp. 316–330. archive.org `10431610bsb`, OCR (`_djvu.txt`) lines ~15505–15944. https://archive.org/details/10431610bsb
+- **[V-S7]** *The Sporting Magazine*, vol. III (London, Nov 1793 – Jan 1794), "Rules and Instructions for playing the Game of Cassino" and "Further Rules". archive.org `sportingmagazine03londuoft`, OCR (`_djvu.txt`) lines ~11060–11140 and 16680–16860. https://archive.org/details/sportingmagazine03londuoft
 - Cross-references such as "[03 S15]" point to the numbered sources in research notes 01–10 in this folder.

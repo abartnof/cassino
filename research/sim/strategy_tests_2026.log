@@ -1,0 +1,2 @@
+baseline_copy {'n_decks': 32000, 'mean_diff_pts_per_hand': 0.0047, 'ci95': [-0.0231, 0.0324], 'variant_sweeps_per_hand': 0.4379, 'baseline_sweeps_per_hand': 0.4349, 'spec': {}}
+trail_foster {'n_decks': 32000, 'mean_diff_pts_per_hand': 0.1585, 'ci95': [0.1301, 0.187], 'variant_sweeps_per_hand': 0.4611, 'baseline_sweeps_per_hand': 0.4638, 'spec': {'trail': 'foster'}}
