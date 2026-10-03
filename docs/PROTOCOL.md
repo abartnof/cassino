@@ -108,6 +108,8 @@ client cannot show more than the person at the table could know.
 | `scores`, `target` | The game's totals before this hand, and 21 |
 | `events` | Everything that has happened, in order (see below) |
 | `can_undo`, `aids`, `error` | |
+| `error_code` | Why the last command was refused, as a code: an `Illegal` reason (`not_holding`, `does_not_split`, …) or `not_a_move`, `game_over`, `hand_over`, `hand_not_over`, `nothing_to_undo`, `bad_setting`, `watching` |
+| `saved`, `record_version` | The sitting as text, to keep across a reload (see "Saving and restoring") |
 | `unseen` | The counting aid: `{aces, big_casino, little_casino, spades, cards}` that you cannot see |
 | `sweep_values` | The values a single card could sweep the table with |
 | `record` | The commands taken from your seat, `*` for forced moves |
@@ -137,6 +139,29 @@ Each event has `kind`, `hand`, `text` (one sentence ready to show) and
 | `game_ends` | `you_won`, `totals` |
 | `verdict` | `quality` (`dubious`/`blunder`), `better` (a move), `loss` (points) |
 
+## Saving and restoring
+
+`state.saved` is the whole sitting as text: a header (the record's version,
+the seed, the rules, the skill, the aids), then one command a line, `*` for
+a move the table made for the person:
+
+```
+cassino record v1
+seed 21
+rules royal aces14=1 sweeps=1
+skill 3
+aids hints=0 explain=1 play_forced=0
+take 8S 8D
+next
+*trail 7H
+```
+
+A page keeps it and hands it to `cassino_restore` on reload. Restoring
+replays the commands with the aids on, so the notes come back. It is refused
+if the record was made by another version of the engine's play (the first
+line), if a command no longer fits, or if a move marked `*` was not the only
+one. A build's target is always recorded by its lowest card.
+
 ## The hint
 
 The `hint` query answers `null` unless hints are on and it is your turn.
@@ -165,6 +190,7 @@ The module exports, with no `wasm-bindgen`:
 | `cassino_step() -> 0/1` | One step of a watched game; renders the state |
 | `cassino_offer(len)` | Renders the offer for the selection just written |
 | `cassino_hint()` | Renders the hint |
+| `cassino_restore(len) -> 0/1` | Restores the sitting from the saved text just written; on refusal the old sitting stays and the rendered JSON is `{"error": ...}` |
 | `cassino_render()` | Renders the state again |
 | `cassino_out() -> ptr`, `cassino_out_len() -> len` | The last rendered JSON |
 

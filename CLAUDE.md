@@ -14,10 +14,10 @@ Standing rules:
   `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and
   `cargo test`, prints a one-line summary, and exits non-zero on any
   failure. **Never pipe it** (`bin/gate | tail` reports tail's status, not
-  the gate's), and start multi-step shell commands with `set -e` (a heredoc
-  ends an `&&` chain at its closing line, so a commit after one runs
-  regardless). Broken builds were committed three times before these two
-  rules.
+  the gate's), and in a multi-step shell command write `bin/gate || exit 1`
+  before the commit. `set -e` has no effect in Claude Code's shell, and a
+  heredoc ends an `&&` chain at its closing line, so a commit after one runs
+  regardless. Broken builds were committed four times before this rule.
 - **Simulations stop when the signal is clear.** Run in batches, look between
   them, and stop when the effect crosses an O'Brien–Fleming boundary fixed
   before the first batch; otherwise report the interval at the last look

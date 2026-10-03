@@ -201,6 +201,51 @@ pub enum Illegal {
     HandIsOver,
 }
 
+impl Illegal {
+    /// The reason as a code a client can test.
+    pub fn code(&self) -> &'static str {
+        match self {
+            Illegal::NotInHand => "not_in_hand",
+            Illegal::ControllerCannotTrail => "controller_cannot_trail",
+            Illegal::NothingTaken => "nothing_taken",
+            Illegal::CannotCaptureAs(_) => "cannot_capture_as",
+            Illegal::NotOnTable => "not_on_table",
+            Illegal::PartOfABuild => "part_of_a_build",
+            Illegal::BuildOfAnotherValue { .. } => "build_of_another_value",
+            Illegal::DoesNotSplit(_) => "does_not_split",
+            Illegal::CourtTakesOne => "court_takes_one",
+            Illegal::CourtHasNoValue => "court_has_no_value",
+            Illegal::NotHolding(_) => "not_holding",
+            Illegal::NoSuchBuild => "no_such_build",
+            Illegal::MultipleIsFixed => "multiple_is_fixed",
+            Illegal::LooseCannotRaise => "loose_cannot_raise",
+            Illegal::BuildNeedsTableCards => "build_needs_table_cards",
+            Illegal::DoesNotMake(_) => "does_not_make",
+            Illegal::LeavesBuildUnguarded(_) => "leaves_build_unguarded",
+            Illegal::HandIsOver => "hand_is_over",
+        }
+    }
+}
+
+/// The move with its target build named by the build's lowest card, as the
+/// generator names it: one move, one text, however the target was named.
+pub fn canonical(table: &Table, mv: Move) -> Move {
+    match mv {
+        Move::Build {
+            card,
+            value,
+            onto: Some(o),
+            loose,
+        } => Move::Build {
+            card,
+            value,
+            onto: table.build_of(o).map(Build::name).or(Some(o)),
+            loose,
+        },
+        other => other,
+    }
+}
+
 impl fmt::Display for Illegal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {

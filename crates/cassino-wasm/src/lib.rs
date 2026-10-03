@@ -434,6 +434,12 @@ pub fn state(session: &Session) -> String {
             ]),
         ),
         ("error", or_null(session.error().map(text))),
+        ("error_code", or_null(session.error_code().map(text))),
+        (
+            "record_version",
+            cassino_core::session::RECORD_VERSION.to_string(),
+        ),
+        ("saved", text(&session.saved().to_text())),
         (
             "unseen",
             object(&[
@@ -458,6 +464,11 @@ pub fn state(session: &Session) -> String {
 
 fn error(why: &str) -> String {
     object(&[("error", text(why))])
+}
+
+/// A sitting restored from the text of its `Saved` record.
+pub fn restore(text: &str) -> Result<Session, String> {
+    Session::restore(&cassino_core::session::Saved::parse(text)?)
 }
 
 /// The offer for a selection, `"<hand card> [table cards…]"`, as JSON: the
@@ -710,6 +721,24 @@ pub mod ffi {
     pub extern "C" fn cassino_hint() {
         let json = SESSION.with(|s| s.borrow().as_ref().map_or_else(|| "null".to_string(), hint));
         OUT.with(|out| *out.borrow_mut() = json.into_bytes());
+    }
+
+    /// Restores a sitting from the saved text in the `len` bytes just
+    /// written; 1 if it fitted. Otherwise the old sitting stays, and the
+    /// rendered JSON is `{"error": …}`.
+    #[no_mangle]
+    pub extern "C" fn cassino_restore(len: usize) -> u32 {
+        match super::restore(&input(len)) {
+            Ok(session) => {
+                SESSION.with(|s| *s.borrow_mut() = Some(session));
+                render();
+                1
+            }
+            Err(why) => {
+                OUT.with(|out| *out.borrow_mut() = super::error(&why).into_bytes());
+                0
+            }
+        }
     }
 
     /// Renders the state again (after an offer or a hint).
@@ -1035,7 +1064,7 @@ mod tests {
             );
             assert_eq!(
                 got, n[5],
-                "{line}: the game plays differently. If that is intended, bump session::RECORD_VERSION and regenerate tests/golden.txt"
+                "{line}: the final state differs. If intended, regenerate tests/golden.txt (and if play changed, not just the state's shape, bump session::RECORD_VERSION)"
             );
             checked += 1;
         }
@@ -1070,6 +1099,31 @@ mod tests {
                 scripted(game, aces, sweeps, skill, seed)
             );
         }
+    }
+
+    #[test]
+    fn a_sitting_is_saved_as_text_and_restored() {
+        let mut s = sit_down(1, 1, 1, 3000, 21);
+        assert!(s.send("set explain on"));
+        for _ in 0..10 {
+            if s.prompt() != Prompt::Play {
+                break;
+            }
+            let m = s.candidates()[0].to_string();
+            assert!(s.send(&m));
+        }
+        let v = parse(&state(&s));
+        let text = v["saved"].as_str().unwrap().to_string();
+        assert_eq!(v["record_version"], cassino_core::session::RECORD_VERSION);
+        let again = restore(&text).unwrap();
+        assert_eq!(state(&again), state(&s), "restored exactly");
+        assert!(restore("cassino record v999\nseed 1").is_err());
+        let refused = {
+            let mut t = sit_down(0, 0, 1, 3000, 7);
+            t.send("frobnicate");
+            parse(&state(&t))
+        };
+        assert_eq!(refused["error_code"], "not_a_move");
     }
 
     #[test]

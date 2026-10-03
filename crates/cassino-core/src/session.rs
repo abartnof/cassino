@@ -163,6 +163,103 @@ pub struct Item {
 /// game.
 pub const RECORD_VERSION: u32 = 1;
 
+/// Everything needed to restore a sitting: the record's version, the seed,
+/// the settings, the aids and the commands. Its text form is what a page
+/// keeps across a reload, and what "Copy game record" hands over.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Saved {
+    pub version: u32,
+    pub seed: u64,
+    pub settings: Settings,
+    pub aids: Aids,
+    pub record: Vec<String>,
+}
+
+impl Saved {
+    /// The text form: a header of five lines, then one command a line.
+    pub fn to_text(&self) -> String {
+        let r = self.settings.rules;
+        let bit = |b: bool| u8::from(b);
+        let mut lines = vec![
+            format!("cassino record v{}", self.version),
+            format!("seed {}", self.seed),
+            format!(
+                "rules {} aces14={} sweeps={}",
+                if r.game == crate::rules::Game::Royal {
+                    "royal"
+                } else {
+                    "classic"
+                },
+                bit(r.aces_fourteen),
+                bit(r.sweeps)
+            ),
+            format!("skill {}", self.settings.skill),
+            format!(
+                "aids hints={} explain={} play_forced={}",
+                bit(self.aids.hints),
+                bit(self.aids.explain),
+                bit(self.aids.play_forced)
+            ),
+        ];
+        lines.extend(self.record.iter().cloned());
+        lines.join("\n")
+    }
+
+    pub fn parse(text: &str) -> Result<Saved, String> {
+        let mut lines = text.lines();
+        let mut header = |prefix: &str| -> Result<String, String> {
+            let line = lines
+                .next()
+                .ok_or(format!("the record ends before its {prefix}"))?;
+            line.strip_prefix(prefix)
+                .map(str::to_string)
+                .ok_or(format!("expected {prefix:?}, found {line:?}"))
+        };
+        let version: u32 = header("cassino record v")?
+            .parse()
+            .map_err(|_| "not a record version")?;
+        let seed: u64 = header("seed ")?.parse().map_err(|_| "not a seed")?;
+        let rules_line = header("rules ")?;
+        let words: Vec<&str> = rules_line.split_whitespace().collect();
+        let flag = |w: Option<&&str>, key: &str| -> Result<bool, String> {
+            match w.and_then(|w| w.strip_prefix(key)) {
+                Some("1") => Ok(true),
+                Some("0") => Ok(false),
+                _ => Err(format!("expected {key}0 or {key}1")),
+            }
+        };
+        let game = match words.first() {
+            Some(&"classic") => crate::rules::Game::Classic,
+            Some(&"royal") => crate::rules::Game::Royal,
+            _ => return Err("expected rules classic or royal".into()),
+        };
+        let rules = Rules {
+            game,
+            aces_fourteen: flag(words.get(1), "aces14=")?,
+            sweeps: flag(words.get(2), "sweeps=")?,
+        };
+        let skill: f64 = header("skill ")?.parse().map_err(|_| "not a skill")?;
+        let aids_line = header("aids ")?;
+        let a: Vec<&str> = aids_line.split_whitespace().collect();
+        let aids = Aids {
+            hints: flag(a.first(), "hints=")?,
+            explain: flag(a.get(1), "explain=")?,
+            play_forced: flag(a.get(2), "play_forced=")?,
+        };
+        let record = lines
+            .filter(|l| !l.trim().is_empty())
+            .map(|l| l.trim().to_string())
+            .collect();
+        Ok(Saved {
+            version,
+            seed,
+            settings: Settings { rules, skill },
+            aids,
+            record,
+        })
+    }
+}
+
 pub struct Session {
     seed: u64,
     settings: Settings,
@@ -172,6 +269,7 @@ pub struct Session {
     events: Vec<Event>,
     aids: Aids,
     error: Option<String>,
+    error_code: Option<&'static str>,
     /// The sitting before each of the person's decisions, for undo. The
     /// opponent's decisions are pure functions of the position, so the game,
     /// the events, the record and the items are all there is to restore.
@@ -214,6 +312,7 @@ impl Session {
             events: Vec::new(),
             aids: Aids::default(),
             error: None,
+            error_code: None,
             snapshots: Vec::new(),
             items: Vec::new(),
             next_id: 1,
@@ -331,14 +430,46 @@ impl Session {
     /// reloads a game. Entries marked `*` were made by the table and are made
     /// again; a record that replays differently is refused.
     pub fn replay(seed: u64, settings: Settings, record: &[String]) -> Result<Session, String> {
-        let mut session = Session::new(seed, settings);
-        for entry in record {
+        Session::restore(&Saved {
+            version: RECORD_VERSION,
+            seed,
+            settings,
+            aids: Aids::default(),
+            record: record.to_vec(),
+        })
+    }
+
+    /// What restores this sitting.
+    pub fn saved(&self) -> Saved {
+        Saved {
+            version: RECORD_VERSION,
+            seed: self.seed,
+            settings: self.settings,
+            aids: self.aids,
+            record: self.record.clone(),
+        }
+    }
+
+    /// Restores a sitting: refused if the record was made by another version
+    /// of the engine's play, if a command no longer fits, or if a move
+    /// marked as forced was not the only one. The aids are on while it
+    /// replays (so the notes come back), forced moves aside.
+    pub fn restore(saved: &Saved) -> Result<Session, String> {
+        if saved.version != RECORD_VERSION {
+            return Err(format!(
+                "the record was made by version {} of the engine's play, and this is version {RECORD_VERSION}",
+                saved.version
+            ));
+        }
+        let mut session = Session::new(saved.seed, saved.settings);
+        session.aids = Aids {
+            play_forced: false,
+            ..saved.aids
+        };
+        for entry in &saved.record {
             let fits = match entry.strip_prefix('*') {
                 Some(made) => match Move::parse(made) {
-                    Ok(mv)
-                        if session.prompt() == Prompt::Play
-                            && session.game.hand().check(&mv).is_ok() =>
-                    {
+                    Ok(mv) if session.prompt() == Prompt::Play && session.candidates() == [mv] => {
                         session.record.push(entry.clone());
                         session.play_move(Seat::South, mv);
                         session.advance();
@@ -351,35 +482,52 @@ impl Session {
             if !fits {
                 return Err(format!(
                     "the record does not fit at {entry:?}: {}",
-                    session.error().unwrap_or("refused")
+                    session.error().unwrap_or("not the only move")
                 ));
             }
         }
-        if session.record != record {
+        if session.record != saved.record {
             return Err("the record replays differently: it was made by another version".into());
         }
+        session.aids = saved.aids;
         Ok(session)
+    }
+
+    /// Why the last command was refused, as a code a client can test: the
+    /// `Illegal` reason's name for a move the rules forbid, else
+    /// `not_a_move`, `not_your_turn`, `game_over`, `hand_over`,
+    /// `nothing_to_undo`, `bad_setting` or `watching`.
+    pub fn error_code(&self) -> Option<&'static str> {
+        self.error_code
     }
 
     /// Carries out one command. A command the rules forbid is refused, the
     /// sitting is left as it was, and `error` says why.
     pub fn send(&mut self, command: &str) -> bool {
         self.error = None;
+        self.error_code = None;
         match self.execute(command.trim()) {
             Ok(()) => true,
-            Err(why) => {
+            Err((code, why)) => {
                 self.error = Some(why);
+                self.error_code = Some(code);
                 false
             }
         }
     }
 
-    fn execute(&mut self, command: &str) -> Result<(), String> {
+    fn execute(&mut self, command: &str) -> Result<(), (&'static str, String)> {
+        let refuse = |code: &'static str, why: &str| Err((code, why.to_string()));
         if self.watching() && !command.starts_with("set ") {
-            return Err("Nobody sits at this table: it is being watched.".into());
+            return refuse(
+                "watching",
+                "Nobody sits at this table: it is being watched.",
+            );
         }
         if command == "undo" {
-            let snap = self.snapshots.pop().ok_or("There is nothing to undo.")?;
+            let Some(snap) = self.snapshots.pop() else {
+                return refuse("nothing_to_undo", "There is nothing to undo.");
+            };
             self.game = snap.game;
             self.events.truncate(snap.events);
             self.record.truncate(snap.record);
@@ -388,17 +536,19 @@ impl Session {
             return Ok(());
         }
         if let Some(rest) = command.strip_prefix("set ") {
-            let (aid, state) = rest.split_once(' ').ok_or("set <aid> on|off")?;
+            let Some((aid, state)) = rest.split_once(' ') else {
+                return refuse("bad_setting", "set <aid> on|off");
+            };
             let on = match state {
                 "on" => true,
                 "off" => false,
-                _ => return Err("set <aid> on|off".into()),
+                _ => return refuse("bad_setting", "set <aid> on|off"),
             };
             match aid {
                 "hints" => self.aids.hints = on,
                 "explain" => self.aids.explain = on,
                 "play_forced" => self.aids.play_forced = on,
-                _ => return Err(format!("no aid called {aid}")),
+                _ => return refuse("bad_setting", &format!("No aid is called {aid}.")),
             }
             if on && aid == "play_forced" {
                 self.advance();
@@ -407,7 +557,7 @@ impl Session {
         }
         if command == "next" {
             if self.prompt() != Prompt::NextHand {
-                return Err("There is no hand to deal now.".into());
+                return refuse("hand_not_over", "There is no hand to deal now.");
             }
             self.snapshot();
             self.record.push("next".into());
@@ -417,12 +567,17 @@ impl Session {
             return Ok(());
         }
         match self.prompt() {
-            Prompt::Over => return Err("The game is over.".into()),
-            Prompt::NextHand => return Err("The hand is over: deal the next one.".into()),
+            Prompt::Over => return refuse("game_over", "The game is over."),
+            Prompt::NextHand => return refuse("hand_over", "The hand is over: deal the next one."),
             Prompt::Play => {}
         }
-        let mv = Move::parse(command)?;
-        self.game.hand().check(&mv).map_err(|why| why.to_string())?;
+        let mv = match Move::parse(command) {
+            Ok(mv) => moves::canonical(self.game.hand().table(), mv),
+            Err(why) => return Err(("not_a_move", why)),
+        };
+        if let Err(why) = self.game.hand().check(&mv) {
+            return Err((why.code(), why.to_string()));
+        }
         self.snapshot();
         self.record.push(mv.to_string());
         self.play_move(Seat::South, mv);
@@ -922,6 +1077,102 @@ mod tests {
         assert_eq!(again.events(), s.events());
         assert_eq!(again.view(), s.view());
         assert!(Session::replay(11, settings(), &["trail ZZ".to_string()]).is_err());
+    }
+
+    #[test]
+    fn a_saved_sitting_restores_with_its_aids_and_its_notes() {
+        let mut s = Session::new(13, settings());
+        assert!(s.send("set explain on"));
+        assert!(s.send("set play_forced on"));
+        for _ in 0..80 {
+            match s.prompt() {
+                Prompt::Play => assert!(s.send(&s.candidates().last().unwrap().to_string())),
+                Prompt::NextHand => assert!(s.send("next")),
+                Prompt::Over => break,
+            }
+        }
+        let saved = s.saved();
+        assert_eq!(saved.version, RECORD_VERSION);
+        let text = saved.to_text();
+        assert_eq!(Saved::parse(&text), Ok(saved.clone()), "{text}");
+        let again = Session::restore(&saved).unwrap();
+        assert_eq!(again.events(), s.events(), "the notes come back");
+        assert_eq!(again.aids(), s.aids());
+        // Another version's record is refused.
+        let old = Saved {
+            version: RECORD_VERSION + 1,
+            ..saved.clone()
+        };
+        assert!(Session::restore(&old).err().unwrap().contains("version"));
+    }
+
+    #[test]
+    fn a_move_marked_forced_must_have_been_the_only_one() {
+        let s = Session::new(13, settings());
+        let first = s.candidates();
+        assert!(first.len() > 1);
+        let tampered = Saved {
+            record: vec![format!("*{}", first[0])],
+            ..s.saved()
+        };
+        assert!(Session::restore(&tampered).is_err());
+    }
+
+    #[test]
+    fn a_build_target_is_recorded_by_its_lowest_card() {
+        // Find a turn where the person can build onto a build of two or more
+        // cards, name it by its highest card, and see the record canonical.
+        for seed in 0..200 {
+            let mut s = Session::new(seed, settings());
+            for _ in 0..40 {
+                if s.prompt() != Prompt::Play {
+                    break;
+                }
+                let onto = s.candidates().into_iter().find_map(|m| match m {
+                    Move::Build { onto: Some(o), .. } => Some((m, o)),
+                    _ => None,
+                });
+                if let Some((m, o)) = onto {
+                    let build = s.view().table.build_of(o).unwrap().cards;
+                    let highest = build.iter().last().unwrap();
+                    let Move::Build {
+                        card, value, loose, ..
+                    } = m
+                    else {
+                        unreachable!()
+                    };
+                    let typed = Move::Build {
+                        card,
+                        value,
+                        onto: Some(highest),
+                        loose,
+                    };
+                    assert!(s.send(&typed.to_string()), "{}", s.error().unwrap_or(""));
+                    assert_eq!(s.record().last().unwrap(), &m.to_string(), "canonical");
+                    return;
+                }
+                assert!(s.send(&s.candidates()[0].to_string()));
+            }
+        }
+        panic!("no build onto a build found");
+    }
+
+    #[test]
+    fn refusals_carry_a_code() {
+        let mut s = Session::new(7, settings());
+        assert!(!s.send("frobnicate"));
+        assert_eq!(s.error_code(), Some("not_a_move"));
+        let theirs = s.game().hand().hand_of(Seat::North).first().unwrap();
+        assert!(!s.send(&format!("trail {theirs}")));
+        assert_eq!(s.error_code(), Some("not_in_hand"));
+        assert!(!s.send("next"));
+        assert_eq!(s.error_code(), Some("hand_not_over"));
+        assert!(!s.send("undo"));
+        assert_eq!(s.error_code(), Some("nothing_to_undo"));
+        assert!(!s.send("set wishes on"));
+        assert_eq!(s.error_code(), Some("bad_setting"));
+        assert!(s.send(&s.candidates()[0].to_string()));
+        assert_eq!(s.error_code(), None);
     }
 
     #[test]
