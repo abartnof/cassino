@@ -353,6 +353,36 @@ def check_welcome(browser, failures):
     page.context.close()
 
 
+def check_aid_toggles(browser, failures):
+    """On a desktop, the hints and the explanations are toggled under the
+    cards (on a phone, in the settings only): hints on lights a hint;
+    explanations on opens the game log."""
+    page = open_page(browser, "seed=7&speed=6", calm=True)
+    settle(page)
+    bar = page.locator(".aid-toggles")
+    if not bar.is_visible():
+        failures.append("no hint and explanation toggles under the cards")
+        page.context.close()
+        return
+    bar.locator('[data-aid="hints"]').click()
+    page.wait_for_timeout(300)
+    settle(page)
+    if not page.evaluate("window.cassino3d.state().aids.hints") or page.evaluate("window.cassino3d.hint()") is None:
+        failures.append("the hints toggle did not turn hints on")
+    bar.locator('[data-aid="explain"]').click()
+    page.wait_for_timeout(300)
+    if not page.evaluate("window.cassino3d.state().aids.explain") or not page.locator(".game-log").is_visible():
+        failures.append("the explanations toggle did not turn them on and open the log")
+    if not page.evaluate("window.cassino3d.prefs().aids.hints"):
+        failures.append("the hints toggle was not kept in the settings")
+    page.context.close()
+    phone = open_page(browser, "seed=7&speed=6", viewport={"width": 390, "height": 844}, calm=True)
+    settle(phone)
+    if phone.locator(".aid-toggles").is_visible():
+        failures.append("the hint and explanation toggles shown on a phone, where the settings hold them")
+    phone.context.close()
+
+
 def check_tutorial(browser, failures):
     """The tutorial: the introduction as the game begins, holding the table;
     then, playing on, a page of the teaching ladder at its moment; and the
@@ -662,6 +692,7 @@ def main() -> int:
         check_badges(browser, failures)
         check_trackers(browser, failures)
         check_welcome(browser, failures)
+        check_aid_toggles(browser, failures)
         check_tutorial(browser, failures)
         check_phone(browser, failures)
         page = open_page(browser, "seed=11&skill=4&manual", calm=True)

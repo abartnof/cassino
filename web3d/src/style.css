@@ -344,6 +344,20 @@ md-dialog {
   color: var(--md-sys-color-on-surface-variant);
 }
 
+/* The hints and the explanations toggled at the foot of the controls, on a
+   desktop only (a phone has them in the settings). */
+.aid-toggles {
+  flex-basis: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
+}
+.aid-toggles[hidden],
+html.upright .aid-toggles,
+html.sideways .aid-toggles {
+  display: none;
+}
+
 /* The aids' line under the prompt, the cards still out under the score, and
    the trackers turned off. */
 .controls .aid-line {

@@ -107,6 +107,30 @@ export function createChrome(root, on) {
   const gear = el("md-icon-button", { class: "settings-open", title: "Settings", "aria-label": "Settings", onclick: () => settings.show() }, icon("settings"));
   const bar = el("header", { class: "surface bar" }, el("span", { class: "brand" }, "Cassino"), fresh, hint, undo, again, log, help, gear);
 
+  // ---- the hints and the explanations, under the cards -----------------------
+
+  // On a desktop, the two aids most often wanted are toggled at the foot of
+  // the controls, under your hand (a phone keeps them in the settings, where
+  // they are too). The explanations are told in the game log, so turning
+  // them on opens it.
+  const aidToggle = (name, label) => el("md-outlined-segmented-button", { "data-aid": name, label });
+  const aidSet = el(
+    "md-outlined-segmented-button-set",
+    { multiselect: true, "aria-label": "Help at the table" },
+    aidToggle("hints", "Hints"),
+    aidToggle("explain", "Explanations"),
+  );
+  aidSet.addEventListener("segmented-button-set-selection", (e) => {
+    const { button, selected } = e.detail;
+    on.aid(button.dataset.aid, selected);
+    if (button.dataset.aid === "explain" && selected && !log.selected) {
+      log.selected = true;
+      on.log(true);
+    }
+  });
+  const aidBar = el("div", { class: "aid-toggles" }, aidSet);
+  root.querySelector(".controls")?.append(aidBar);
+
   // ---- settings ------------------------------------------------------------
   const row = (title, words, control) =>
     el("label", { class: "setting" }, el("span", { class: "setting-text" }, el("span", { class: "setting-title" }, title), el("span", { class: "setting-words" }, words)), control);
@@ -324,6 +348,7 @@ export function createChrome(root, on) {
     // The aids as the person set them (a watched game has none of its own:
     // the table review's T14).
     for (const s of settings.querySelectorAll("md-switch[data-aid]")) s.selected = Boolean(state?.watching ? prefs.aids[s.dataset.aid] : (state?.aids?.[s.dataset.aid] ?? prefs.aids[s.dataset.aid]));
+    for (const b of aidSet.querySelectorAll("[data-aid]")) b.selected = Boolean(state?.aids?.[b.dataset.aid] ?? prefs.aids[b.dataset.aid]);
     for (const s of settings.querySelectorAll("md-switch[data-pref]")) s.selected = Boolean(prefs[s.dataset.pref]);
     // The tutorial shows the builds' values: the switch holds on with it.
     const values = settings.querySelector('md-switch[data-pref="buildValues"]');
@@ -344,6 +369,7 @@ export function createChrome(root, on) {
         : "This game's seed is shown when it is over: the same seed deals the same cards, so it would show your opponent's hand now.";
     const watching = Boolean(state?.watching);
     hint.hidden = watching || replaying || !state?.aids?.hints;
+    aidBar.hidden = watching || replaying;
     hint.disabled = state?.prompt !== "play" || busy; // not while cards move (T10)
     again.disabled = !last.canAgain || busy;
     again.hidden = replaying;
