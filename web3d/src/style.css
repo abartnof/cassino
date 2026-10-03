@@ -379,8 +379,37 @@ md-dialog {
 .move-bar[hidden] {
   display: none;
 }
+/* The moves: large filled buttons, solid even when dimmed, as tall as the
+   page measures there is room for (--move-h). */
+.move-bar .chips {
+  display: flex;
+  gap: 14px;
+}
+.move-bar md-filled-button {
+  --md-filled-button-container-height: var(--move-h, 44px);
+  --md-filled-button-container-shape: calc(var(--move-h, 44px) / 2);
+  --md-filled-button-label-text-size: calc(var(--move-h, 44px) * 0.38);
+  --md-filled-button-label-text-weight: 600;
+  --md-filled-button-leading-space: calc(var(--move-h, 44px) * 0.62);
+  --md-filled-button-trailing-space: calc(var(--move-h, 44px) * 0.62);
+  --md-filled-button-disabled-container-color: #e1e3e8;
+  --md-filled-button-disabled-container-opacity: 1;
+  --md-filled-button-disabled-label-text-color: #6f747c;
+  --md-filled-button-disabled-label-text-opacity: 1;
+  min-width: calc(var(--move-h, 44px) * 3.2);
+}
 .move-bar .sum {
   margin: 0;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  height: var(--move-h, 44px);
+  padding: 0 calc(var(--move-h, 44px) * 0.45);
+  border-radius: calc(var(--move-h, 44px) / 2);
+  font-size: calc(var(--move-h, 44px) * 0.36);
+  font-weight: 600;
+  background: #e1e3e8;
+  color: #1b1f24;
 }
 html:not(.upright):not(.sideways) .move-bar {
   position: fixed;

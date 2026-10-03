@@ -26,7 +26,7 @@ import { badgesOn, choosePlay, dailySeed, loadPrefs, welcomeWanted, loadSeries, 
 import { recordGame, seriesLine } from "./series.js";
 import { createScene } from "./scene.js";
 import { celebrationOf, trackers } from "./scorebug.js";
-import { EMPTY, choose, chipsOf, itemState, pick, selectionOf, selectionText, sweepWarning, valuesSaid, whyNot } from "./selection.js";
+import { EMPTY, choose, chipsOf, itemState, moveBarFit, pick, selectionOf, selectionText, sweepWarning, valuesSaid, whyNot } from "./selection.js";
 import { chooseSurface } from "./surfaces.js";
 import { chunk, countPace, heard, speech } from "./talk.js";
 import { commandsBetween, prefix, stops } from "./replay.js";
@@ -597,18 +597,24 @@ async function main() {
     const points = cards.flatMap((m) => cardCorners(m.pose).map((c) => director.toScreen(c)));
     const ys = points.map((p) => p.y);
     const xs = points.map((p) => p.x);
-    return { top: Math.min(...ys), bottom: Math.max(...ys), right: Math.max(...xs) };
+    // How far up the screen a card chosen from it stands (layout.js lifts
+    // it 1.6 cm along its own length).
+    const m = cards[0];
+    const up = new Vector3(0, 1, 0).applyQuaternion(m.pose.quaternion).multiplyScalar(1.6);
+    const tip = new Vector3(0, CARD.height / 2, 0).applyQuaternion(m.pose.quaternion).add(m.pose.position);
+    const lift = director.toScreen(tip).y - director.toScreen(tip.clone().add(up)).y;
+    return { top: Math.min(...ys), bottom: Math.max(...ys), right: Math.max(...xs), lift };
   }
-  // The move bar, just under the table's first row (its near edge, a
-  // build's fan included), above your hand and a card chosen from it: where
-  // a move is chosen from. It stays put as the table fills, the rows
-  // growing away from you.
+  // The move bar, filling the space between the table's first row (its
+  // near edge, a build's fan included) and your hand, clear of a card
+  // chosen from it: where a move is chosen from (selection.js moveBarFit).
+  // It stays put as the table fills, the rows growing away from you.
   function placeMoveBar() {
     if (!desktop()) return;
     const near = director.toScreen(new Vector3(ZONES.middle.x, 0, ZONES.middle.z + CARD.height / 2 + ZONES.stack.dz)).y;
     const hand = yourHandOnScreen();
-    const top = hand ? hand.top : director.handEdge("you").y;
-    overlay.placeMoveBar(Math.min(near + 14, top - 24));
+    const fit = moveBarFit({ near, top: hand ? hand.top : director.handEdge("you").y, lift: hand ? hand.lift : 0 });
+    overlay.placeMoveBar(fit.y, fit.h);
   }
   // Where a line is said from: by the speaker's hand; yours, on a desktop,
   // beside it, the move bar being above it.

@@ -192,13 +192,16 @@ Material Design 3, from piquet's shell.
   for below the hand after each choice): the running sum and Take, Build
   and Trail are always there on your turn, each lit with its move when the
   choice makes one (as many of a kind as it makes) and dimmed under its
-  plain name when not (`selection.js` `moveBar`). On a desktop the bar sits
-  just under the table's first row, above your hand and a card chosen from
-  it, and stays put as the table fills (the rows grow away from you; the
-  middle was moved four centimetres further off to make room, and a chosen
-  card stands 1.6 cm out of the hand, not 2.2); your own words are then
-  said beside your hand, the tail pointing back at it. On a phone the bar
-  is a row of the controls.
+  plain name when not (`selection.js` `moveBar`). They are large filled
+  buttons, solid even when dimmed (play-testing: they are there for the
+  play, no need to hide them). On a desktop the bar fills the space
+  between the table's first row and your hand, clear of a card chosen from
+  it, as tall as there is room for, 40 to 84 px (`moveBarFit`), and stays
+  put as the table fills (the rows grow away from you; the middle was
+  moved six centimetres further off to make room, and a chosen card stands
+  1.6 cm out of the hand, not 2.2); your own words are then said beside
+  your hand, the tail pointing back at it. On a phone the bar is a row of
+  the controls.
 - **The score HUD**, from the designer's handoff (the spec and its approved
   reference implementation are commit c484091; the reference's numbers are
   the source of truth, and `hud.js` and `style.css` port them). A dark card

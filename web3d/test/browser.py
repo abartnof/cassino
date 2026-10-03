@@ -184,7 +184,7 @@ def play_by_clicking(page, failures, moves_made):
         settle(page)
     if moves_made in (6, 20):
         shot(page, f"t2-choosing-{moves_made}")
-    chip = page.locator(f'md-assist-chip[data-move="{move}"]')
+    chip = page.locator(f'.move-bar [data-move="{move}"]')
     if chip.count() != 1:
         failures.append(f"no chip for {move}; chips {page.evaluate('window.cassino3d.chips()')}")
         return False
@@ -267,7 +267,7 @@ def check_badges(browser, failures):
         # Pressed, then looked at frame by frame while the trail moves (the
         # badges are placed as each frame is drawn), until it lands.
         samples = page.evaluate(f"""() => new Promise((done) => {{
-            document.querySelector('md-assist-chip[data-move="{move}"]').click();
+            document.querySelector('.move-bar [data-move="{move}"]').click();
             const seen = [];
             const look = () => {{
                 const busy = window.cassino3d.busy();
@@ -471,8 +471,8 @@ def check_move_bar(browser, failures):
     table and your hand."""
     page = open_page(browser, "seed=2&skill=1&speed=6", calm=True)
     settle(page)
-    chips = page.locator(".move-bar md-assist-chip")
-    labels = [chips.nth(i).get_attribute("label") or chips.nth(i).evaluate("c => c.label") for i in range(chips.count())]
+    chips = page.locator(".move-bar [data-kind]")
+    labels = [chips.nth(i).inner_text().strip() for i in range(chips.count())]
     if labels != ["Take", "Build", "Trail"] or page.evaluate("window.cassino3d.chips()"):
         failures.append(f"the move bar with nothing chosen: {labels}, lit {page.evaluate('window.cassino3d.chips()')}")
     s = page.evaluate("window.cassino3d.state()")
@@ -602,7 +602,7 @@ def check_settings(browser, failures):
     shot(page, "t6-hint")
     page.locator("md-icon-button.hint").click()
     settle(page)
-    chip = page.locator(f'md-assist-chip[data-move="{hint["move"]}"]')
+    chip = page.locator(f'.move-bar [data-move="{hint["move"]}"]')
     if chip.count() != 1:
         failures.append(f"settings: the hint's move {hint['move']} is not offered once chosen: {page.evaluate('window.cassino3d.chips()')}")
         return
@@ -701,7 +701,7 @@ def strip(page, name, move, frames=16, step=150):
         for code in [words[1]] + table_cards(move):
             click_card(page, code)
             page.evaluate("window.cassino3d.skip()")
-        chip = page.locator("md-assist-chip").filter(has_text="Take")
+        chip = page.locator(".move-bar [data-move]").filter(has_text="Take")
         chip.first.click()
     images = []
     for _ in range(frames):

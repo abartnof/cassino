@@ -10,8 +10,7 @@
 // It draws what it is given and reports what is pressed; it holds no rules.
 
 import "@material/web/button/filled-button.js";
-import "@material/web/chips/assist-chip.js";
-import "@material/web/chips/chip-set.js";
+import "@material/web/button/filled-button.js";
 import "@material/web/iconbutton/icon-button.js";
 import { trackerTable } from "./scorebug.js";
 import { moveBar } from "./selection.js";
@@ -38,7 +37,7 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
       <p class="prompt" aria-live="polite"></p>
       <p class="note" aria-live="polite"></p>
       <p class="aid-line" hidden></p>
-      <div class="move-bar" hidden><div class="sum" hidden></div><md-chip-set class="chips" aria-label="Your move"></md-chip-set></div>
+      <div class="move-bar" hidden><div class="sum" hidden></div><div class="chips" role="group" aria-label="Your move"></div></div>
       <md-filled-button class="next" hidden>Next hand</md-filled-button>
       <md-filled-button class="again" hidden>New game</md-filled-button>
       <md-outlined-button class="replay" hidden>Replay with both hands</md-outlined-button>
@@ -101,19 +100,21 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
     const moves = offered.map((c) => `${c.kind}|${c.label}|${c.move ?? ""}`).join("\n");
     if (chipSet.dataset.moves !== moves) {
       chipSet.dataset.moves = moves;
+      // Filled buttons, large and opaque (play-testing: they are there for
+      // the play, no need to hide them), dimmed but still solid when not.
       chipSet.replaceChildren(
         ...offered.map((c) => {
-          const chip = document.createElement("md-assist-chip");
-          chip.label = c.label;
-          chip.classList.add(c.kind);
+          const button = document.createElement("md-filled-button");
+          button.textContent = c.label;
+          button.dataset.kind = c.kind;
           if (!c.enabled) {
-            chip.disabled = true;
-            return chip;
+            button.disabled = true;
+            return button;
           }
-          chip.dataset.move = c.move;
-          if (c.call) chip.title = c.call;
-          chip.addEventListener("click", () => onChip(c));
-          return chip;
+          button.dataset.move = c.move;
+          if (c.call) button.title = c.call;
+          button.addEventListener("click", () => onChip(c));
+          return button;
         }),
       );
     }
@@ -397,11 +398,12 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
     log,
     hudSlot: $(".hud-slot"),
     said: () => [...afloat.querySelectorAll(".dialogue")].map((d) => ({ who: d.classList.contains("you") ? "you" : "them", words: d.textContent })),
-    chips: () => [...chipSet.children].filter((c) => !c.disabled).map((c) => c.label),
+    chips: () => [...chipSet.children].filter((c) => !c.disabled).map((c) => c.textContent),
     // Where the move bar is to sit on a desktop, between the table and your
     // hand (the page measures it as the cards are drawn).
-    placeMoveBar(y) {
+    placeMoveBar(y, h) {
       bar.style.setProperty("--move-bar-y", `${Math.round(y)}px`);
+      bar.style.setProperty("--move-h", `${Math.round(h)}px`);
     },
   };
 }

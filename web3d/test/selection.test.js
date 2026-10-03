@@ -2,7 +2,7 @@
 // (docs/TABLE3D.md section 8).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { EMPTY, chipsOf, choose, itemState, moveBar, pick, selectionText } from "../src/selection.js";
+import { EMPTY, chipsOf, choose, itemState, moveBar, moveBarFit, pick, selectionText } from "../src/selection.js";
 
 test("tapping a hand card chooses it, and again lets it go", () => {
   const a = choose(EMPTY, "3H");
@@ -129,4 +129,13 @@ test("the move bar: Take, Build and Trail always there, lit when the choice make
     ],
     "each kind in its place, as many of it as the choice makes",
   );
+});
+
+test("the move bar fills the space between the table and your hand, clear of a card chosen", () => {
+  // Table cards end at 340 px; your hand's top at 460; a chosen card stands 26 px up.
+  const fit = moveBarFit({ near: 340, top: 460, lift: 26 });
+  assert.equal(fit.y, (340 + 460 - 26) / 2, "centred in what is left");
+  assert.equal(fit.h, 94 - 2 * 7, "as tall as it, less a margin each side");
+  assert.equal(moveBarFit({ near: 340, top: 600, lift: 26 }).h, 84, "never more than 84 px");
+  assert.equal(moveBarFit({ near: 340, top: 380, lift: 26 }).h, 40, "never less than 40");
 });
