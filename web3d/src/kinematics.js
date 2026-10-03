@@ -138,10 +138,13 @@ export function layDown(from, to, { clearance, ease = minimumJerk, turnBy = 0.85
 // first instant, slowing as it comes free -- and then it is tossed onto its
 // spot (toss). The toss begins a little before the tug has finished, so the
 // card never stops dead between the two.
-export function pull(from, to, { tug = 0.6 * CARD.height, tugShare = 0.3, overlap = 0.1 } = {}) {
+//
+// Cassino's change: `clearance` is handed on to the toss, for a table whose
+// middle lies further from the hand than piquet's trick did.
+export function pull(from, to, { tug = 0.6 * CARD.height, tugShare = 0.3, overlap = 0.1, clearance } = {}) {
   const out = new Vector3(0, 1, 0).applyQuaternion(from.quaternion).multiplyScalar(tug);
   const clear = { position: from.position.clone().add(out), quaternion: from.quaternion.clone() };
-  const carry = toss(clear, to);
+  const carry = toss(clear, to, { clearance });
   const carryFrom = tugShare - overlap;
   const snap = (u) => 1 - (1 - u) ** 3; // at full speed at once, easing as it comes clear
   return (t) => {
@@ -363,4 +366,35 @@ export function beforeFlip(target, toward) {
     position: target.position.clone().addScaledVector(outward, -(2 * half + CARD.thickness)),
     quaternion: turn.multiply(target.quaternion.clone()),
   };
+}
+
+// Cassino's own (not in piquet): a squared heap of cards carried as one rigid
+// block and set down on `tos` -- a capture gathered and turned over into its
+// taker's pile. The block flies as the bottom card is tossed (toss), turning
+// over on the way, every other card held to it where it lay; over the whole
+// flight each card eases onto its own place, so the block lands on the pile
+// exactly, small turns and all. A block turned over lands with its order
+// reversed, so `tos` should be too.
+export function carryBlock(froms, tos, options = {}) {
+  const base = froms[0];
+  const lead = toss(base, tos[0], options);
+  const inverse = base.quaternion.clone().invert();
+  return froms.map((from, i) => {
+    const offset = from.position.clone().sub(base.position).applyQuaternion(inverse); // in the bottom card's frame
+    const turn = inverse.clone().multiply(from.quaternion); // its attitude relative to the bottom card
+    const rigid = {
+      position: tos[0].position.clone().add(offset.clone().applyQuaternion(tos[0].quaternion)),
+      quaternion: tos[0].quaternion.clone().multiply(turn),
+    };
+    const shift = tos[i].position.clone().sub(rigid.position);
+    const settle = rigid.quaternion.clone().invert().multiply(tos[i].quaternion);
+    return (t) => {
+      const p = lead(t);
+      const s = minimumJerk(Math.min(1, Math.max(0, t)));
+      return {
+        position: p.position.clone().add(offset.clone().applyQuaternion(p.quaternion)).addScaledVector(shift, s),
+        quaternion: p.quaternion.clone().multiply(turn).multiply(new Quaternion().slerp(settle, s)),
+      };
+    };
+  });
 }

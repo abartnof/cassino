@@ -367,3 +367,37 @@ test("a card bobs up out of the hand along its own length, and falls back into p
   assert.ok(speedAt(path, 0.001) > speedAt(path, 0.2), "flicked up");
   assert.ok(speedAt(path, 0.97) > speedAt(path, 0.8), "and falls back faster and faster");
 });
+
+// Cassino's own: a gathered capture carried into its taker's pile.
+import { carryBlock } from "../src/kinematics.js";
+
+test("a squared heap is carried as one rigid block, turning over into a pile", () => {
+  const STEP = CARD.thickness + 0.02;
+  const heap = Array.from({ length: 5 }, (_, i) => lying({ x: -6, z: -7, height: 0.02 + i * STEP }));
+  // Face down on a pile of three, the heap's top card now at the bottom.
+  const pile = (i) => lying({ x: 34, z: 6, height: 0.02 + (3 + i) * STEP, faceUp: false, yaw: (i - 2) * DEG });
+  const tos = heap.map((_, j) => pile(heap.length - 1 - j));
+  const paths = carryBlock(heap, tos);
+  paths.forEach((path, j) => {
+    assert.ok(near(path(0).position, heap[j].position) && sameTurn(path(0).quaternion, heap[j].quaternion), `card ${j} starts where it lay`);
+    assert.ok(near(path(1).position, tos[j].position) && sameTurn(path(1).quaternion, tos[j].quaternion), `card ${j} lands on its place`);
+  });
+  for (const t of T) {
+    for (const path of paths) assert.ok(lowest(path(t)) >= -EPS, `nothing passes through the table (t=${t})`);
+    // Rigid on the way: the cards keep their distances from one another, but
+    // for the last settling onto the pile's own small turns.
+    if (t <= 0.5) {
+      const d = paths[0](t).position.distanceTo(paths[4](t).position);
+      assert.ok(Math.abs(d - 4 * STEP) < 0.02, `the block holds together (t=${t}): ${d}`);
+    }
+    // And the cards never pass through one another: each stays on its own
+    // side of the next, along the block's own normal.
+    if (t > 0 && t < 1) {
+      const a = paths[1](t);
+      const b = paths[2](t);
+      const gap = b.position.clone().sub(a.position).dot(normal(a));
+      assert.ok(gap > 0, `card 2 stays above card 1 in the block's frame (t=${t})`);
+    }
+  }
+  assert.ok(normal(paths[0](1)).y < -0.999, "it lands face down");
+});

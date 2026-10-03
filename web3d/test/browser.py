@@ -12,8 +12,10 @@ so no GPU is needed. The page is opened from a file:// URL.
 From piquet web3d/test/browser.py @ 254cb3c (its helpers). Checks what only a
 browser can show: that the page makes **no network request of any kind** (it
 is one file and must work offline), that it draws a lit table with its cards,
-and that nothing is ever written to the console in error. Later phases add a
-game played by clicking (docs/TABLE3D.md section 10).
+that a whole game can be played by clicking, and that nothing is ever written
+to the console in error. With a screenshot directory it also saves strips of
+a gather and of a sweep, frame by frame on the table's own clock (?manual), to
+read back by eye (docs/TABLE3D.md section 10, T3).
 """
 
 import io
@@ -75,6 +77,11 @@ def check_drawn(page, failures, where=""):
         failures.append(f"the canvas is mostly black {where} -- WebGL may have failed")
 
 
+def settle(page):
+    """Wait for the cards to come to rest."""
+    page.wait_for_function("!window.cassino3d.busy()", timeout=60_000)
+
+
 def click_card(page, code):
     point = page.evaluate("(c) => window.cassino3d.screenPoint(c)", code)
     if point is None:
@@ -96,6 +103,7 @@ def table_cards(move):
 
 def play_by_clicking(page, failures, moves_made):
     """One decision, made the way a person makes it."""
+    settle(page)
     s = page.evaluate("window.cassino3d.state()")
     if s["prompt"] == "next_hand":
         page.locator("md-filled-button.next").click()
@@ -105,6 +113,7 @@ def play_by_clicking(page, failures, moves_made):
     move = s["moves"][moves_made % len(s["moves"])]
     played = move.split()[1].split("=")[0] if move.split()[0] != "build" else move.split()[2]
     click_card(page, played)
+    settle(page)
     # One card of each table item: a build is picked whole.
     items = {c["card"]: i["id"] for i in s["table"] for c in i["cards"]}
     done = set()
@@ -113,6 +122,7 @@ def play_by_clicking(page, failures, moves_made):
             continue
         done.add(items[code])
         click_card(page, code)
+        settle(page)
     if moves_made in (6, 20):
         shot(page, f"t2-choosing-{moves_made}")
     chip = page.locator(f'md-assist-chip[data-move="{move}"]')
@@ -123,12 +133,40 @@ def play_by_clicking(page, failures, moves_made):
     return True
 
 
+def strip(page, name, move, frames=16, step=150):
+    """A capture chosen by clicking on a still table, then played out frame
+    by frame on the table's own clock, the frames tiled into one image.
+    Without a move, the opening deal."""
+    if move:
+        page.evaluate("window.cassino3d.skip()")
+        words = move.split()
+        for code in [words[1]] + table_cards(move):
+            click_card(page, code)
+            page.evaluate("window.cassino3d.skip()")
+        chip = page.locator("md-assist-chip").filter(has_text="Take")
+        chip.first.click()
+    images = []
+    for _ in range(frames):
+        page.evaluate(f"window.cassino3d.tick({step})")
+        img = canvas_image(page)
+        w, h = img.size
+        images.append(img.crop((0, int(0.12 * h), w, int(0.8 * h))).resize((w * 2 // 5, int(0.68 * h) * 2 // 5)))
+    if SHOTS:
+        cols = 4
+        fw, fh = images[0].size
+        sheet = Image.new("RGB", (fw * cols, fh * ((len(images) + cols - 1) // cols)), "white")
+        for i, img in enumerate(images):
+            sheet.paste(img, ((i % cols) * fw, (i // cols) * fh))
+        SHOTS.mkdir(parents=True, exist_ok=True)
+        sheet.save(SHOTS / f"{name}.png")
+
+
 def main() -> int:
     failures = []
     with sync_playwright() as p:
         browser = p.chromium.launch(executable_path="/usr/bin/chromium", args=["--use-angle=swiftshader"])
-        page = open_page(browser)
-        page.wait_for_timeout(500)
+        page = open_page(browser, "seed=7&speed=6")
+        settle(page)
         check_drawn(page, failures, "at the start")
         shot(page, "t1-table")
         meshes = page.evaluate("window.cassino3d.meshes()")
@@ -150,6 +188,21 @@ def main() -> int:
         check_offline(page, failures)
         if page.errors:
             failures.append(f"console errors: {page.errors[:5]}")
+        # The gather and the sweep, frame by frame (seeds found to open with
+        # them: a pair and a sum taken with 9C; all four cards with 10C).
+        page = open_page(browser, "seed=11&manual")
+        strip(page, "t3-deal", None, frames=12, step=180)
+        for name, query, move in [
+            ("t3-gather", "seed=11&manual", "take 9C 6S 3H 9H"),
+            ("t3-sweep", "seed=112&manual", "take TC 2S 3S 7D 8C"),
+        ]:
+            page = open_page(browser, query)
+            strip(page, name, move)
+            if page.errors:
+                failures.append(f"console errors in {name}: {page.errors[:5]}")
+            end = page.evaluate("window.cassino3d.state()")
+            if not any(e["kind"] == "played" and e["move"].startswith("take") for e in end["events"]):
+                failures.append(f"{name}: the capture was not made")
         browser.close()
     for f in failures:
         print("FAIL:", f)

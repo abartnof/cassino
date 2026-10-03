@@ -100,11 +100,28 @@ test("an item keeps its place when another arrives after it", () => {
 
 test("sweep cards lie face up and crosswise in the pile", () => {
   const s = state({ hand: ["AS"], holds: 1, undealt: 0, piles: [10, 6], sweeps: [1, 0] });
-  const slots = layout(s, { sweeps: { you: ["7C"], them: [] } });
+  const slots = layout(s, { sweeps: { you: [{ code: "7C", at: 9 }], them: [] } });
   const sweep = slots.find((x) => x.code === "7C");
   assert.equal(sweep.zone, "your-pile");
   assert.equal(sweep.faceUp, true);
+  assert.equal(sweep.index, 9);
   assert.equal(slots.filter((x) => x.zone === "your-pile").length, 10, "the sweep card is one of the pile's cards");
+});
+
+test("a sweep lies where it was laid: later captures cover it, its ends showing", () => {
+  const s = state({ hand: ["AS"], holds: 1, undealt: 0, piles: [12, 6], sweeps: [2, 0] });
+  const slots = layout(s, { sweeps: { you: [{ code: "7C", at: 3 }, { code: "9D", at: 8 }], them: [] } });
+  const pile = slots.filter((x) => x.zone === "your-pile").sort((a, b) => a.index - b.index);
+  assert.deepEqual(pile.map((x) => x.index), [...Array(12).keys()]);
+  for (let i = 1; i < pile.length; i++) assert.ok(pile[i].pose.position.y > pile[i - 1].pose.position.y, "each card above the one before");
+  const [first, second] = ["7C", "9D"].map((c) => slots.find((x) => x.code === c));
+  assert.ok(first.pose.position.y < pile[11].pose.position.y, "covered by what came after");
+  assert.notEqual(first.pose.position.x, second.pose.position.x, "each a little along from the last");
+  // The plain cards keep their keys as sweeps are laid on them.
+  assert.deepEqual(
+    pile.filter((x) => !x.code).map((x) => x.key),
+    [...Array(10).keys()].map((i) => `your-pile:${i}`),
+  );
 });
 
 test("the stock lies at the dealer's left", () => {
@@ -126,19 +143,26 @@ import { existsSync, readFileSync } from "node:fs";
 import { loadEngine } from "../src/engine.js";
 import { sweepCards } from "../src/layout.js";
 
-test("sweep cards come from the events of the hand under way", () => {
-  const played = (you, c, hand = 2) => ({ kind: "played", you, card: { card: c }, hand });
+test("sweep cards come from the events of the hand under way, at their height in the pile", () => {
+  const played = (you, c, hand = 2, taken = 1) => ({ kind: "played", you, card: { card: c }, hand, type: "take", taken: Array(taken).fill({}) });
   const events = [
     played(true, "7C", 1),
     { kind: "swept", you: true, hand: 1 },
-    played(false, "9D"),
+    played(false, "9D", 2, 2),
     { kind: "swept", you: false, hand: 2 },
     played(true, "2H"),
+    { ...played(false, "5S"), type: "trail" },
     played(false, "KS"),
     { kind: "swept", you: false, hand: 2 },
   ];
-  assert.deepEqual(sweepCards(events, 2), { you: [], them: ["9D", "KS"] });
-  assert.deepEqual(sweepCards(events, 1), { you: ["7C"], them: [] });
+  assert.deepEqual(sweepCards(events, 2), {
+    you: [],
+    them: [
+      { code: "9D", at: 2 },
+      { code: "KS", at: 4 },
+    ],
+  });
+  assert.deepEqual(sweepCards(events, 1), { you: [{ code: "7C", at: 1 }], them: [] });
 });
 
 const WASM = new URL("../../target/wasm32-unknown-unknown/release/cassino_wasm.wasm", import.meta.url);
@@ -153,7 +177,13 @@ test("real games lay out 52 cards at every step, faces only where seen", { skip:
       assert.equal(new Set(slots.map((s) => s.key)).size, 52);
       const seen = new Set([...state.hand.map((c) => c.card), ...state.table.flatMap((i) => i.cards.map((c) => c.card))]);
       const sweeps = sweepCards(state.events, state.hand_number);
-      for (const c of [...sweeps.you, ...sweeps.them]) seen.add(c);
+      for (const who of ["you", "them"]) {
+        assert.equal(sweeps[who].length, state.piles[who].sweeps, `${who} sweeps, seed ${seed} step ${n}`);
+        for (const s of sweeps[who]) {
+          assert.ok(s.at < state.piles[who].cards, "a sweep lies in its holder's pile");
+          seen.add(s.code);
+        }
+      }
       for (const s of slots) {
         if (s.code) assert.ok(seen.has(s.code), `${s.code} shown in ${s.zone}`);
       }

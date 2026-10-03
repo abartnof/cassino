@@ -96,22 +96,29 @@ checks that no mesh in the opponent's hand or the stock carries a face.
 
 ## 6. Choreography: how things get there
 
-`choreograph(prev, next)` turns the events since the last state into a
-timeline; every timeline ends exactly at `layout(next)` (the test).
+`choreograph(prev, next, placement, view)` turns the events since the last
+state into a timeline (`choreography.js`, after piquet's). A reducer replays
+the events into the states between, each laid out by `layout`, so every
+stage runs between two true layouts; a final settle lands everything on
+`layout(next)` whatever happened, and an undo or a new game is one direct
+transition. The tests hold the reducer to the engine's own states (a watched
+game steps one move at a time), and every timeline of real games to its
+layout, its faces, no leak, and no card through the table.
 
 | Event | Motion |
 |---|---|
-| `dealt` | In twos from the stock: two to the non-dealer, two to the table (first deal), two to the dealer, twice. The sixth deal's dealer says "Last." |
-| `played`, trail | The card leaves the hand, arcs and is laid on its slot |
-| `played`, build | The card arcs onto its first loose card (or the target build) and the other loose cards slide in under it; the badge appears or changes |
-| `played`, capture | **The gather**: the card lands on the first group, the groups slide together in narration order (`groups`), and the whole lot sweeps into the capturer's pile |
-| `swept` | The capturing card turns face up and lies crosswise in the pile; a short celebration |
-| `residue` | The last cards slide to the last capturer's pile |
-| `scored` | The count ritual (§8) |
+| `dealt` | In twos off the top of the stock, each card straight to where it will rest: two to the elder, two face up to the table (the first deal), two to the dealer, and round again. Yours turn to face you as they rise, and show their faces. A new hand first collects every card into the stock at the new dealer's left, the highest first, a face-up card turning over on its way |
+| `played`, trail | The card is tugged out of the hand, arcs a little above it and falls to its slot at the end of the grid; the grid moves up to make room |
+| `played`, build | The loose cards it takes in are pushed together on the first of them and the card is laid on top; a raised build takes the card and then the loose cards on top of it |
+| `played`, capture | **The gather**: the card lands on the first group it takes, a moment to see it, the other groups are pushed onto it in narration order (`groups`), and the heap is turned over into the capturer's pile as one rigid block (`kinematics.carryBlock`) |
+| `swept` | The capturing card is held up a moment, facing you ("Clear!"), and laid crosswise in the pile once the heap is in: at the height it was laid, so later captures cover its middle and its ends still show (the Swedish tally) |
+| `residue` | The last cards gathered as a capture is, item by item, into the last capturer's pile |
+| `scored` | The count ritual (§8), in T4 |
 
-Your opponent's moves are staged as in shipped apps that players praise: the
-card is lifted, the cards it will take light up, then they go (`DESIGN.md`
-§12.3).
+Your opponent's moves are staged as in shipped apps that players praise
+(`DESIGN.md` §12.3): a pause before each (`think`), and after their card
+lands on what it takes, a longer look before the gather (`look`). Lighting
+up the cards it takes, during that look, is for T6.
 
 ## 7. Table talk
 
@@ -173,6 +180,12 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   clicks in the browser test.
 - **T3. Motion.** The choreography of §6, ending exactly at the layout.
   Accept: choreography node tests; a strip of screenshots of a gather.
+  **Done**: `choreography.js`, `director.js` (piquet's render-on-demand
+  loop, taking states), `kinematics.carryBlock`; the opening deal played
+  out; a tap while the cards move lands them; `?speed=` and `?manual` (the
+  clock moved by hand, for stills). The browser test plays a whole game by
+  clicking with the motion on, and saves strips of the deal, a gather and a
+  sweep (`t3-deal`, `t3-gather`, `t3-sweep`).
 - **T4. The score and the count.** Score, trackers, the count ritual, the
   end of the game.
 - **T5. Table talk.** The phrase bank and the dialogue boxes.

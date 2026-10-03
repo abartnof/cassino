@@ -10,7 +10,8 @@
 A measured four-rung opponent with a skill dial; explanations, hints and the
 selection interface; the session and its JSON protocol; a 334 KB module that
 plays a whole game in Node at 10–16 ms a command, byte for byte as the native
-build does. 228 tests, all passing (`bin/gate`).
+build does. 229 Rust tests and 101 Node tests of the table, all passing
+(`bin/gate`).
 
 **Reviewed.** A full code review by a separate agent
 (`docs/reviews/2026-10-03-engine.md`) found one rules-level hole and seven
@@ -54,6 +55,13 @@ legal move. RULES.md now says each held card answers for one build value.
   last deal for the game (`measurements/README.md`).
 - **Determinism**: golden games (`crates/cassino-wasm/tests/golden.txt`)
   checked natively and through the module in Node.
+- **The 3D table** (`web3d/`, plan and phases in `docs/TABLE3D.md`): one
+  offline page of about 3 MB, piquet's scene, cards and motion copied with
+  origin headers. Done: T0 the scaffold, T1 the state laid out, T2 a move
+  chosen by tapping, T3 the motion (the deal in twos, trails, builds, the
+  gather of a capture turned over into its pile, sweeps held up and laid
+  crosswise). A whole game is played by clicking in an offline browser
+  test. Next: T4, the score and the count.
 
 ## Settled decisions
 
@@ -97,6 +105,7 @@ legal move. RULES.md now says each held card answers for one build value.
   native and wasm byte for byte; a Node smoke test.
 - [ ] 9. **The 3D table**, adapted from piquet's: art for 52 cards, the
   middle-of-the-table layout, builds, the cribbage board, the table talk.
+  Phases T0–T9 in `docs/TABLE3D.md`; T0–T3 done.
 - [ ] 10. **Teaching**: tutorial pages, on-screen help.
 
 ## Working conventions

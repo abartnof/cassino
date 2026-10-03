@@ -118,42 +118,48 @@ function middle(items, picked) {
   return slots;
 }
 
-// A player's captures: a squared pile face down, the sweep cards crosswise
-// in it, face up, each offset a little from the last (the Swedish tally).
-function pileOf(who, count, sweepCards) {
+// A player's captures: a squared pile face down, in the order they went in.
+// Each sweep's card lies crosswise in it, face up, at the height it was laid,
+// so later captures cover its middle and its ends still show, each a little
+// along from the last (the Swedish tally). Plain cards are keyed by their
+// place among the plain ones, which a sweep laid on them does not change.
+function pileOf(who, count, sweeps) {
   const zone = who === "you" ? ZONES.yourPile : ZONES.theirPile;
   const name = who === "you" ? "your-pile" : "their-pile";
-  const plain = Math.max(0, count - sweepCards.length);
+  const side = who === "you" ? 1 : -1;
+  const crosswise = new Map(sweeps.filter((s) => s.at < count).map((s, k) => [s.at, { code: s.code, k }]));
   const slots = [];
-  for (let i = 0; i < plain; i++) {
-    slots.push({
-      key: `${name}:${i}`,
-      zone: name,
-      index: i,
-      code: null,
-      faceUp: false,
-      item: null,
-      pose: lying({ x: zone.x, z: zone.z, height: REST + i * STEP, faceUp: false, yaw: jitter(`${name}${i}`, 2) }),
-    });
+  let plain = 0;
+  for (let i = 0; i < count; i++) {
+    const sweep = crosswise.get(i);
+    if (sweep) {
+      slots.push({
+        key: sweep.code,
+        zone: name,
+        index: i,
+        code: sweep.code,
+        faceUp: true,
+        item: null,
+        pose: lying({
+          x: zone.x - side * sweep.k * zone.sweepStep,
+          z: zone.z + side * (CARD.height / 2 - CARD.width / 4),
+          height: REST + i * STEP,
+          yaw: 90 * DEG,
+        }),
+      });
+    } else {
+      slots.push({
+        key: `${name}:${plain}`,
+        zone: name,
+        index: i,
+        code: null,
+        faceUp: false,
+        item: null,
+        pose: lying({ x: zone.x, z: zone.z, height: REST + i * STEP, faceUp: false, yaw: jitter(`${name}${plain}`, 2) }),
+      });
+      plain++;
+    }
   }
-  sweepCards.slice(0, count).forEach((code, k) => {
-    // Crosswise, part showing past the pile's edge toward its holder.
-    const side = who === "you" ? 1 : -1;
-    slots.push({
-      key: code,
-      zone: name,
-      index: plain + k,
-      code,
-      faceUp: true,
-      item: null,
-      pose: lying({
-        x: zone.x - side * k * zone.sweepStep,
-        z: zone.z + side * (CARD.height / 2 - CARD.width / 4),
-        height: REST + (plain + k) * STEP,
-        yaw: 90 * DEG,
-      }),
-    });
-  });
   return slots;
 }
 
@@ -182,14 +188,20 @@ export function layout(state, { chosen = null, picked = [], sweeps = { you: [], 
 }
 
 // The sweep cards of the hand under way, by who made them: the card of each
-// capture that swept, from the events (each `swept` follows its `played`).
+// capture that swept (each `swept` follows its `played`), and `at`, how many
+// of its holder's captured cards lay beneath it, counted from the events.
 export function sweepCards(events, hand) {
   const out = { you: [], them: [] };
+  const pile = { you: 0, them: 0 };
   let last = null;
   for (const e of events) {
     if (e.hand !== hand) continue;
-    if (e.kind === "played") last = e;
-    if (e.kind === "swept" && last) out[e.you ? "you" : "them"].push(last.card.card);
+    const who = e.you ? "you" : "them";
+    if (e.kind === "played") {
+      last = e;
+      if (e.type === "take") pile[who] += e.taken.length + 1;
+    }
+    if (e.kind === "swept" && last) out[who].push({ code: last.card.card, at: pile[who] - 1 });
   }
   return out;
 }
