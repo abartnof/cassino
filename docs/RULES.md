@@ -34,7 +34,7 @@ its settings:
 |---|---|---|---|
 | Game | Classic, Royal | Classic | Royal changes only the card values (rule 1) |
 | Aces count 1 or 14 | off, on | off | Royal only. Parlett's variation [01-S1], standard in pagat's North American Royal [02-S3] |
-| Score sweeps | on, off | on | Both games. Royal "is often played without a score for sweeps" [02-S3] |
+| Score sweeps | on, off | off | Both games. A variant on pagat's Casino page, standard in Foster [02-S1][02-S31]; Royal "is often played without a score for sweeps" [02-S3]. Off by default since the first play-testing |
 
 Everything else is one rule, implemented once.
 

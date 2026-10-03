@@ -96,7 +96,7 @@ legal move. RULES.md now says each held card answers for one build value.
 | Decision | Choice | Reasoning |
 |---|---|---|
 | The games | Two-player **Classic** and **Royal** Cassino, chosen at the start | the user; `RULES.md` |
-| Settings | "Aces count 1 or 14" (Royal only, off) and "Score sweeps" (on) | `RULES.md`, "Authority" |
+| Settings | "Aces count 1 or 14" (Royal only, off) and "Score sweeps" (off since the first play-testing) | `RULES.md`, "Authority" |
 | Rule authority | pagat.com, Casino and Royal Casino | `RULES.md` |
 | Language | **Rust from the first line**; no Python oracle | `DESIGN.md` §4 |
 | What replaces the oracle | A brute-force reference move generator, the worked examples, invariants | `DESIGN.md` §4, §13 |

@@ -15,7 +15,7 @@ import "@material/web/select/select-option.js";
 import "@material/web/switch/switch.js";
 import "@material/web/labs/segmentedbutton/outlined-segmented-button.js";
 import "@material/web/labs/segmentedbuttonset/outlined-segmented-button-set.js";
-import { SKILLS, SPEEDS } from "./prefs.js";
+import { DEFAULTS, SKILLS, SPEEDS } from "./prefs.js";
 import { PATTERNS } from "./surfaces.js";
 
 // Simple stroked icons, piquet's, drawn for its page.
@@ -115,7 +115,7 @@ export function createChrome(root, on) {
   };
 
   // The next game's rules.
-  let rules = { game: "classic", aces14: false, sweeps: true };
+  let rules = { ...DEFAULTS.rules };
   const segment = (value, label) => el("md-outlined-segmented-button", { "data-game": value, label });
   const gameSet = el("md-outlined-segmented-button-set", { class: "game-set", "aria-label": "The game" }, segment("classic", "Classic"), segment("royal", "Royal"));
   gameSet.addEventListener("segmented-button-set-selection", (e) => {

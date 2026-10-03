@@ -565,7 +565,7 @@ def main() -> int:
         strip(page, "t3-deal", None, frames=12, step=180)
         for name, query, move in [
             ("t3-gather", "seed=11&skill=4&manual", "take 9C 6S 3H 9H"),
-            ("t3-sweep", "seed=112&skill=4&manual", "take TC 2S 3S 7D 8C"),
+            ("t3-sweep", "seed=112&skill=4&manual&sweeps", "take TC 2S 3S 7D 8C"),
         ]:
             page = open_page(browser, query)
             strip(page, name, move)

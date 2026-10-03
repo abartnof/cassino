@@ -43,6 +43,19 @@ test("the scoring board is gone: a setting kept for it is forgotten", () => {
   assert.equal("pegboard" in DEFAULTS, false);
 });
 
+test("sweeps are off by default; the old default kept before then is not a choice", () => {
+  assert.equal(DEFAULTS.rules.sweeps, false);
+  const store = memory();
+  // Kept before the default changed: every setting was saved, defaults too.
+  store.setItem("cassino.prefs", JSON.stringify({ rules: { game: "royal", aces14: false, sweeps: true }, skill: 2 }));
+  assert.deepEqual(loadPrefs(store).rules, { game: "royal", aces14: false, sweeps: false });
+  assert.equal(loadPrefs(store).skill, 2, "the rest kept as it was");
+  // Chosen since: kept.
+  savePrefs(store, { ...loadPrefs(store), rules: { game: "classic", aces14: false, sweeps: true } });
+  assert.equal(loadPrefs(store).rules.sweeps, true);
+  assert.equal(withUrl(DEFAULTS, new URLSearchParams("sweeps")).rules.sweeps, true);
+});
+
 test("the skill dial runs from 1 to 4 in halves", () => {
   assert.deepEqual(SKILLS.map((s) => s.value), [1, 1.5, 2, 2.5, 3, 3.5, 4]);
   assert.ok(SKILLS.every((s) => s.words.length > 0));

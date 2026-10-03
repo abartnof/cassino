@@ -5,11 +5,17 @@
 // data): the page then simply starts from the defaults.
 
 const PREFS = "cassino.prefs";
+// What is kept is every setting, defaults too: the version says which
+// defaults it was kept under, so a default changed since (sweeps, version
+// 2) is not taken for the person's choice.
+const VERSION = 2;
 const SITTING = "cassino.sitting";
 const SERIES = "cassino.series";
 
 export const DEFAULTS = Object.freeze({
-  rules: Object.freeze({ game: "classic", aces14: false, sweeps: true }),
+  // Sweeps scored only if chosen: pagat's Casino has them as a variant, and
+  // play-testing preferred the game without them (docs/RULES.md).
+  rules: Object.freeze({ game: "classic", aces14: false, sweeps: false }),
   skill: 3,
   speed: 1,
   surface: "random",
@@ -80,7 +86,7 @@ export function loadPrefs(store) {
     rules: {
       game,
       aces14: game === "royal" && r.aces14 === true,
-      sweeps: isBool(r.sweeps) ? r.sweeps : DEFAULTS.rules.sweeps,
+      sweeps: isBool(r.sweeps) && kept.v >= 2 ? r.sweeps : DEFAULTS.rules.sweeps,
     },
     skill: SKILLS.some((s) => s.value === kept.skill) ? kept.skill : DEFAULTS.skill,
     speed: Number.isFinite(kept.speed) && kept.speed > 0 ? kept.speed : DEFAULTS.speed,
@@ -98,7 +104,7 @@ export function loadPrefs(store) {
 }
 
 export function savePrefs(store, prefs) {
-  write(store, PREFS, JSON.stringify(prefs));
+  write(store, PREFS, JSON.stringify({ ...prefs, v: VERSION }));
 }
 
 // The URL's say, over what was kept: for tests, and links that set a game.
@@ -106,6 +112,7 @@ export function withUrl(prefs, params) {
   const out = { ...prefs, rules: { ...prefs.rules } };
   if (params.has("game")) out.rules.game = params.get("game") === "royal" ? "royal" : "classic";
   if (params.has("aces14")) out.rules.aces14 = out.rules.game === "royal";
+  if (params.has("sweeps")) out.rules.sweeps = true;
   if (params.has("nosweeps")) out.rules.sweeps = false;
   const skill = Number(params.get("skill"));
   if (params.has("skill") && skill >= 1 && skill <= 4) out.skill = skill;
