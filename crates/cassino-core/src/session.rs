@@ -175,6 +175,8 @@ pub struct Session {
     snapshots: Vec<Snapshot>,
     items: Vec<Item>,
     next_id: u32,
+    /// Watching two computer players: South's player.
+    watched: Option<Opponent>,
 }
 
 #[derive(Clone)]
@@ -190,6 +192,10 @@ impl Session {
     /// Sits down: the cut is made, the first hand dealt, and if the opponent
     /// leads, its first move made.
     pub fn new(seed: u64, settings: Settings) -> Session {
+        Session::start(seed, settings, None)
+    }
+
+    fn start(seed: u64, settings: Settings, watched: Option<Opponent>) -> Session {
         let (game, opening) = Game::new(settings.rules, seed);
         let opponent_seed = Rng::stream(seed, purpose::agent(Seat::North.index())).next_u64();
         let mut session = Session {
@@ -204,6 +210,7 @@ impl Session {
             snapshots: Vec::new(),
             items: Vec::new(),
             next_id: 1,
+            watched,
         };
         let cuts = session.game.cuts().to_vec();
         for (i, cut) in cuts.iter().enumerate() {
@@ -212,33 +219,96 @@ impl Session {
             } else {
                 ""
             };
+            let verb = if session.watching() { "cuts" } else { "cut" };
+            let text = format!(
+                "{} {verb} {}; {}, {}.{again}",
+                session.subject(Seat::South),
+                cut.south.label(),
+                session.object(Seat::North),
+                cut.north.label()
+            );
             session.tell(
                 EventKind::Cut {
                     yours: cut.south,
                     theirs: cut.north,
                 },
-                format!(
-                    "You cut {}; your opponent, {}.{again}",
-                    cut.south.label(),
-                    cut.north.label()
-                ),
+                text,
             );
         }
-        let you = session.game.first_dealer() == Seat::South;
+        let dealer = session.game.first_dealer();
+        let deals = if !session.watching() && dealer == Seat::South {
+            "deal"
+        } else {
+            "deals"
+        };
+        let text = format!("Low deals: {} {deals} first.", session.object(dealer));
         session.tell(
-            EventKind::FirstDealer { you },
-            format!(
-                "Low deals: {} first.",
-                if you {
-                    "you deal"
-                } else {
-                    "your opponent deals"
-                }
-            ),
+            EventKind::FirstDealer {
+                you: dealer == Seat::South,
+            },
+            text,
         );
         session.tell_hand(&Table::new(), None, opening.as_slice());
         session.advance();
         session
+    }
+
+    /// Two computer players to be watched, South at `skills[0]` and North at
+    /// `skills[1]`: advance it with [`Session::step`]. The narration names
+    /// them South and North.
+    pub fn watch(seed: u64, rules: Rules, skills: [f64; 2]) -> Session {
+        let south_seed = Rng::stream(seed, purpose::agent(Seat::South.index())).next_u64();
+        let settings = Settings {
+            rules,
+            skill: skills[1],
+        };
+        Session::start(seed, settings, Some(Skill(skills[0]).opponent(south_seed)))
+    }
+
+    /// Whether this is a watched game between two computer players.
+    pub fn watching(&self) -> bool {
+        self.watched.is_some()
+    }
+
+    /// Makes the next move of a watched game, or deals its next hand, and
+    /// tells it. False once the game is over, or if nobody is being watched.
+    pub fn step(&mut self) -> bool {
+        let Some(mut south) = self.watched else {
+            return false;
+        };
+        match self.prompt() {
+            Prompt::Over => return false,
+            Prompt::NextHand => {
+                let opening = self.game.next_hand().expect("between hands");
+                self.tell_hand(&Table::new(), None, opening.as_slice());
+            }
+            Prompt::Play => {
+                let mv = south.choose(&self.view());
+                self.play_move(Seat::South, mv);
+            }
+        }
+        self.advance();
+        true
+    }
+
+    /// A player as the subject of a sentence.
+    fn subject(&self, seat: Seat) -> &'static str {
+        match (self.watching(), seat) {
+            (true, Seat::South) => "South",
+            (true, Seat::North) => "North",
+            (false, Seat::South) => "You",
+            (false, Seat::North) => "Your opponent",
+        }
+    }
+
+    /// A player inside a sentence.
+    fn object(&self, seat: Seat) -> &'static str {
+        match (self.watching(), seat) {
+            (true, Seat::South) => "South",
+            (true, Seat::North) => "North",
+            (false, Seat::South) => "you",
+            (false, Seat::North) => "your opponent",
+        }
     }
 
     /// Rebuilds a sitting from its seed, settings and record: how a client
@@ -289,6 +359,9 @@ impl Session {
     }
 
     fn execute(&mut self, command: &str) -> Result<(), String> {
+        if self.watching() && !command.starts_with("set ") {
+            return Err("Nobody sits at this table: it is being watched.".into());
+        }
         if command == "undo" {
             let snap = self.snapshots.pop().ok_or("There is nothing to undo.")?;
             self.game = snap.game;
@@ -384,7 +457,7 @@ impl Session {
             self.items.clear();
         }
         self.tell_hand(&before, Some(&observer), events.as_slice());
-        if seat == Seat::South && self.aids.explain {
+        if seat == Seat::South && self.aids.explain && !self.watching() {
             let rating = advice::rate(&observer, &mv);
             if rating.quality != Quality::Sound {
                 let loss = rating.best_value - rating.value;
@@ -486,44 +559,36 @@ impl Session {
     /// `observer` South's view then (for the explain aid's notes).
     fn tell_hand(&mut self, before: &Table, observer: Option<&View>, events: &[hand::Event]) {
         let rules = self.settings.rules;
-        let who = |seat: Seat| {
-            if seat == Seat::South {
-                "You"
-            } else {
-                "Your opponent"
-            }
-        };
+        let person = !self.watching();
         for e in events {
             match *e {
                 hand::Event::Dealt { deal, last } => {
                     if deal == 1 {
                         self.lay_out();
                     }
-                    let you_deal = self.game.hand().dealer() == Seat::South;
-                    let mut text = format!("Deal {deal} of 6.");
-                    if last {
-                        text = format!(
-                            "{} deals the last cards: \"Last.\"",
-                            who(self.game.hand().dealer())
-                        );
-                    }
+                    let dealer = self.game.hand().dealer();
+                    let text = if last {
+                        format!("{} deals the last cards: \"Last.\"", self.subject(dealer))
+                    } else {
+                        format!("Deal {deal} of 6.")
+                    };
                     self.tell(
                         EventKind::Dealt {
                             deal,
                             last,
-                            you_deal,
+                            you_deal: dealer == Seat::South,
                         },
                         text,
                     );
                 }
                 hand::Event::Played { seat, mv } => {
-                    let said = if seat == Seat::South {
+                    let said = if person && seat == Seat::South {
                         words::advise(&rules, before, &mv)
                     } else {
                         words::describe(&rules, before, &mv)
                     };
                     let call = words::call(&rules, before, &mv);
-                    let mut text = format!("{} {said}.", who(seat));
+                    let mut text = format!("{} {said}.", self.subject(seat));
                     if let Some(c) = &call {
                         text += &format!(" \"{c}\"");
                     }
@@ -537,7 +602,7 @@ impl Session {
                         },
                         text,
                     );
-                    if let (true, Some(observer)) = (self.aids.explain, observer) {
+                    if let (true, true, Some(observer)) = (self.aids.explain, person, observer) {
                         let notes = advice::notes(observer, seat, &mv)
                             .iter()
                             .map(|n| words::note_text(&rules, n, Seat::South))
@@ -546,11 +611,12 @@ impl Session {
                     }
                 }
                 hand::Event::Swept { seat } => {
+                    let text = format!("{} swept the table.", self.subject(seat));
                     self.tell(
                         EventKind::Swept {
                             you: seat == Seat::South,
                         },
-                        format!("{} swept the table.", who(seat)),
+                        text,
                     );
                 }
                 hand::Event::Cash { seat } => {
@@ -562,13 +628,30 @@ impl Session {
                     );
                 }
                 hand::Event::Clinched { seat, what } => {
-                    let note = advice::Note::Clinched { seat, what };
+                    let text = if person {
+                        words::note_text(
+                            &rules,
+                            &advice::Note::Clinched { seat, what },
+                            Seat::South,
+                        )
+                    } else {
+                        match what {
+                            Clinch::Cards => format!(
+                                "{} has 27 cards: most cards, and its 3 points.",
+                                self.subject(seat)
+                            ),
+                            Clinch::Spades => format!(
+                                "{} has seven spades: the spades point.",
+                                self.subject(seat)
+                            ),
+                        }
+                    };
                     self.tell(
                         EventKind::Clinched {
                             you: seat == Seat::South,
                             what,
                         },
-                        words::note_text(&rules, &note, Seat::South),
+                        text,
                     );
                 }
                 hand::Event::Residue { seat, cards } => {
@@ -577,11 +660,7 @@ impl Session {
                         Some(s) => format!(
                             "The last cards, {}, go to {}: the last to capture.",
                             cards.labels(),
-                            if s == Seat::South {
-                                "you"
-                            } else {
-                                "your opponent"
-                            }
+                            self.object(s)
                         ),
                         None => "Nobody captured, so the last cards go to nobody.".to_string(),
                     };
@@ -596,9 +675,10 @@ impl Session {
                 hand::Event::Scored(breakdown) => {
                     let (yours, theirs) =
                         (breakdown.points(Seat::South), breakdown.points(Seat::North));
+                    let (a, b) = (self.object(Seat::South), self.object(Seat::North));
                     self.tell(
                         EventKind::Scored { breakdown },
-                        format!("The count: you {yours}, your opponent {theirs}."),
+                        format!("The count: {a} {yours}, {b} {theirs}."),
                     );
                     let totals = self.game.scores();
                     self.tell(
@@ -607,16 +687,13 @@ impl Session {
                             theirs: u32::from(theirs),
                             totals,
                         },
-                        format!("Game: you {}, your opponent {}.", totals[0], totals[1]),
+                        format!("Game: {a} {}, {b} {}.", totals[0], totals[1]),
                     );
                     if let Some(winner) = self.game.winner() {
                         let you_won = winner == Seat::South;
                         let (w, l) = (totals[winner.index()], totals[winner.other().index()]);
-                        let text = if you_won {
-                            format!("You win the game, {w} to {l}.")
-                        } else {
-                            format!("Your opponent wins the game, {w} to {l}.")
-                        };
+                        let win = if person && you_won { "win" } else { "wins" };
+                        let text = format!("{} {win} the game, {w} to {l}.", self.subject(winner));
                         self.tell(EventKind::GameEnds { you_won, totals }, text);
                     }
                 }
@@ -943,6 +1020,37 @@ mod tests {
             }
             assert!(s.send(&s.candidates()[0].to_string()));
         }
+    }
+
+    #[test]
+    fn a_watched_game_steps_to_its_end_with_the_seats_named() {
+        let mut s = Session::watch(8, Rules::ROYAL, [2.0, 4.0]);
+        assert!(s.watching());
+        let mut steps = 0;
+        while s.step() {
+            steps += 1;
+            assert!(steps < 2_000);
+            assert_items_match(&s);
+        }
+        assert_eq!(s.prompt(), Prompt::Over);
+        assert!(steps > 48);
+        assert!(
+            s.events()
+                .iter()
+                .all(|e| !e.text.contains("You") && !e.text.contains("your opponent")),
+            "named by seat"
+        );
+        assert!(s.events().iter().any(|e| e.text.starts_with("South ")));
+        assert!(s.events().iter().any(|e| e.text.starts_with("North ")));
+        let mut again = Session::watch(8, Rules::ROYAL, [2.0, 4.0]);
+        while again.step() {}
+        assert_eq!(again.events(), s.events(), "a seed fixes the game");
+        assert!(!s.step());
+        assert!(
+            !Session::new(8, settings()).step(),
+            "a person's game is not stepped"
+        );
+        assert!(!s.send("trail 7H"), "nobody sits at a watched table");
     }
 
     #[test]
