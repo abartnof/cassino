@@ -135,6 +135,12 @@ html, body {
   margin: 0;
   color: #1a1c20;
 }
+/* A long line (the game's result and the series) wraps in the middle of the
+   window, clear of the aids' panel at the foot of the left. */
+.controls .prompt {
+  max-width: min(100%, 520px);
+  margin: 0 auto;
+}
 .controls .note {
   color: #8c1d18;
   min-height: 1.2em;
@@ -1018,7 +1024,7 @@ html.sideways .game-log {
 /* A narrower window across (a tablet held sideways): the controls start to
    the right of the aids' panel, so it never covers the prompt (the table
    review's T11). */
-@media (max-width: 1240px) {
+@media (max-width: 1300px) {
   html:not(.upright):not(.sideways) .controls {
     padding-left: 392px;
   }
