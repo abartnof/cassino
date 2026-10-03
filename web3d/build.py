@@ -126,6 +126,9 @@ def main() -> int:
     parser.add_argument("--art", choices=["webp", "svg"], default="webp",
                         help="ship the card art rasterised (webp, the default) or as vectors (svg), "
                              "which writes web3d/cassino3d-svg.html instead")
+    parser.add_argument("--check", action="store_true",
+                        help="build in memory and fail if the committed page differs (bin/gate): "
+                             "the build is deterministic, so a difference means a stale page")
     args = parser.parse_args()
     out = OUT if args.art == "webp" else OUT.with_name("cassino3d-svg.html")
     wasm = build_wasm()
@@ -143,6 +146,11 @@ def main() -> int:
         "/*ART*/": cards,
         "/*WORDS*/": words,
     })
+    if args.check:
+        if not out.exists() or out.read_text() != page:
+            print(f"{out.relative_to(ROOT)} is out of date: run python3 web3d/build.py and commit it")
+            return 1
+        return 0
     out.write_text(page)
 
     size = len(page.encode())

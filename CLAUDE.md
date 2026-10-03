@@ -12,8 +12,11 @@ Standing rules:
   current as work lands.
 - **The gate before every commit**: `bin/gate && git commit ...`. It runs
   `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and
-  `cargo test`, prints a one-line summary, and exits non-zero on any
-  failure. **Never pipe it** (`bin/gate | tail` reports tail's status, not
+  `cargo test`, then (with `web3d/node_modules` present) builds the wasm
+  module, runs the table's Node tests and checks that the committed page,
+  `web3d/cassino3d.html`, is built from the current sources (rebuild it with
+  `python3 web3d/build.py` and commit it with any engine or table change).
+  It prints a one-line summary and exits non-zero on any failure. **Never pipe it** (`bin/gate | tail` reports tail's status, not
   the gate's), and in a multi-step shell command write `bin/gate || exit 1`
   before the commit. `set -e` has no effect in Claude Code's shell, and a
   heredoc ends an `&&` chain at its closing line, so a commit after one runs

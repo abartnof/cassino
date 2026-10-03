@@ -35,6 +35,13 @@ if [ -d web3d/node_modules ]; then
     exit 1
   fi
   node_passed=$(echo "$node_out" | grep -oE "^# pass [0-9]+" | awk '{print $3}')
+  # The committed page is the game itself: it must be built from these
+  # sources (the build is deterministic).
+  if ! out=$(python3 web3d/build.py --check 2>&1); then
+    echo "$out" | tail -3 >&2
+    echo "gate: FAILED: the built page is stale" >&2
+    exit 1
+  fi
   passed="$passed + $node_passed in Node"
 fi
 echo "gate: ok ($passed tests passed)"
