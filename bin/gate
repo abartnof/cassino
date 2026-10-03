@@ -20,8 +20,15 @@ if ! out=$(cargo test --quiet 2>&1); then
   exit 1
 fi
 passed=$(echo "$out" | grep -oE "test result: ok\. [0-9]+ passed" | awk '{s += $4} END {print s}')
-# The table's pure modules, in Node (web3d/test), once its libraries are in.
+# The table's pure modules, in Node (web3d/test), once its libraries are in,
+# against the engine as it is now: the module is built first, so no test that
+# needs it skips or runs against an old one (the table review's Q2).
 if [ -d web3d/node_modules ]; then
+  if ! out=$(cargo build --quiet --release -p cassino-wasm --lib --target wasm32-unknown-unknown 2>&1); then
+    echo "$out" | head -20 >&2
+    echo "gate: FAILED: building the wasm module" >&2
+    exit 1
+  fi
   if ! node_out=$(cd web3d && node --test test/ 2>&1); then
     echo "$node_out" | grep -E "not ok|Error|expected|actual" | head -40 >&2
     echo "gate: FAILED: web3d node tests" >&2
