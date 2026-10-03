@@ -30,7 +30,7 @@ import { chooseSurface } from "./surfaces.js";
 import { speech } from "./talk.js";
 import { pageDue, parseTutorial } from "./tutorial.js";
 import TUTORIAL_TEXT from "../tutorial.md";
-import { CARD, ZONES, ZONES_PORTRAIT } from "./units.js";
+import { CARD, PORTRAIT_BELOW, ZONES, ZONES_PORTRAIT } from "./units.js";
 
 /* global WASM_BASE64, ART, WORDS */
 
@@ -372,18 +372,29 @@ async function main() {
   // between the HUD (and the aids' panel under it) and the controls; held
   // sideways, between the HUD's column and the controls' (framing.js). The
   // strips are measured as the overlay lays itself out.
+  // The overlay's arrangement follows the framing's own rule (the window's
+  // shape, framing.js), set as a class on <html> for the CSS, so the two
+  // never disagree (the table review's T1: an upright tablet had the
+  // desktop's overlay over a phone's framing).
   const sideways = window.matchMedia("(orientation: landscape) and (max-height: 500px)");
-  const upright = window.matchMedia("(orientation: portrait) and (max-width: 700px)");
+  const isUpright = () => !sideways.matches && window.innerWidth / Math.max(1, window.innerHeight) < PORTRAIT_BELOW;
+  function arrange() {
+    document.documentElement.classList.toggle("upright", isUpright());
+    document.documentElement.classList.toggle("sideways", sideways.matches);
+  }
+  arrange();
   function fitStrips() {
+    arrange();
     const rect = (sel) => document.querySelector(sel).getBoundingClientRect();
     const panel = document.querySelector(".aids-panel");
     const hud = rect(".info");
-    panel.style.top = upright.matches ? `${hud.bottom + 6}px` : "";
+    const upright = isUpright();
+    panel.style.top = upright ? `${hud.bottom + 6}px` : "";
     if (sideways.matches) {
       stage.setStrips({ top: 0, foot: 0, left: hud.right + 8, right: window.innerWidth - rect(".controls").left + 8, raised: 0 });
       return;
     }
-    const top = (upright.matches && !panel.hidden ? panel.getBoundingClientRect().bottom : hud.bottom) + 6;
+    const top = (upright && !panel.hidden ? panel.getBoundingClientRect().bottom : hud.bottom) + 6;
     const foot = window.innerHeight - Math.min(rect(".controls").top, rect(".bar").top) + 6;
     stage.setStrips({ top, foot, raised: 0 });
   }
@@ -506,6 +517,7 @@ async function main() {
       return m ? { zone: m.zone, code: m.code } : null;
     },
     busy: () => director.busy() || stage.reframing(),
+    strips: () => stage.strips(),
     skip: () => director.skip(),
     tick: (ms) => director.tick(ms),
   };

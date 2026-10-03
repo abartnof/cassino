@@ -917,92 +917,91 @@ md-dialog {
   font-weight: 600;
 }
 
-/* ---- a phone held upright ---------------------------------------------------
+/* ---- a window held upright (a phone, a tablet) -----------------------------
    The HUD across the top, as its design intends, with the aids' panel under
    it (its top set by the page); the controls above a bar of icons at the
-   foot. The table is framed in the band between (framing.js). */
-@media (orientation: portrait) and (max-width: 700px) {
-  .info {
-    top: 8px;
-    left: 8px;
-    width: calc(100vw - 16px);
-    z-index: 2;
-  }
-  .bar {
-    top: auto;
-    bottom: 8px;
-    left: 8px;
-    right: 8px;
-    justify-content: space-around;
-    padding: 2px 6px;
-  }
-  .brand {
-    display: none;
-  }
-  /* Room kept for the prompt, a hint and a row of chips, so they come and
-     go without the table being framed again under a finger. */
-  .controls {
-    bottom: 60px;
-    min-height: 128px;
-    box-sizing: border-box;
-    align-content: flex-end;
-    padding: 6px 10px 8px;
-  }
-  .aids-panel {
-    left: 8px;
-    bottom: auto;
-    width: calc(100vw - 16px);
-    padding: 8px 12px;
-  }
-  .game-log {
-    top: 196px;
-    left: 8px;
-    right: 8px;
-    width: auto;
-    max-height: 40vh;
-    z-index: 3;
-  }
-  .dialogue {
-    font-size: 16px;
-    padding: 7px 14px 8px;
-  }
+   foot. The table is framed in the band between (framing.js). The page sets
+   `upright` on <html> by the framing's own rule (the window's shape), so the
+   overlay and the camera always agree. */
+html.upright .info {
+  top: 8px;
+  left: 8px;
+  width: min(calc(100vw - 16px), 480px);
+  z-index: 2;
+}
+html.upright .bar {
+  top: auto;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  justify-content: space-around;
+  padding: 2px 6px;
+}
+html.upright .brand {
+  display: none;
+}
+/* Room kept for the prompt, a hint and a row of chips, so they come and
+   go without the table being framed again under a finger. */
+html.upright .controls {
+  bottom: 60px;
+  min-height: 128px;
+  box-sizing: border-box;
+  align-content: flex-end;
+  padding: 6px 10px 8px;
+}
+html.upright .aids-panel {
+  left: 8px;
+  bottom: auto;
+  width: min(calc(100vw - 16px), 480px);
+  padding: 8px 12px;
+}
+html.upright .game-log {
+  top: 196px;
+  left: 8px;
+  right: 8px;
+  width: auto;
+  max-height: 40vh;
+  z-index: 3;
+}
+html.upright .dialogue {
+  font-size: 16px;
+  padding: 7px 14px 8px;
 }
 
-/* ---- a phone held sideways -----------------------------------------------------
-   The HUD down the left, the controls down the right, the table between. */
-@media (orientation: landscape) and (max-height: 500px) {
-  .info {
-    top: 8px;
-    left: 8px;
-    width: min(300px, 38vw);
-  }
-  .hud {
-    padding: 14px 14px 10px;
-  }
-  .aids-panel {
-    display: none;
-  }
-  .bar {
-    top: 8px;
-    right: 8px;
-  }
-  .brand {
-    display: none;
-  }
-  .controls {
-    top: 64px;
-    left: auto;
-    right: 8px;
-    bottom: 8px;
-    width: min(220px, 28vw);
-    flex-direction: column;
-    flex-wrap: nowrap;
-    justify-content: flex-end;
-    padding: 8px;
-  }
-  .game-log {
-    top: 64px;
-    right: calc(min(220px, 28vw) + 16px);
-    max-height: calc(100vh - 80px);
-  }
+/* ---- a phone held sideways ---------------------------------------------------
+   The HUD down the left, the controls down the right, the table between
+   (`sideways` on <html>, set by the page). */
+html.sideways .info {
+  top: 8px;
+  left: 8px;
+  width: min(300px, 38vw);
+}
+html.sideways .hud {
+  padding: 14px 14px 10px;
+}
+html.sideways .aids-panel {
+  display: none;
+}
+html.sideways .bar {
+  top: 8px;
+  right: 8px;
+}
+html.sideways .brand {
+  display: none;
+}
+html.sideways .controls {
+  top: 64px;
+  left: auto;
+  right: 8px;
+  bottom: 8px;
+  width: min(220px, 28vw);
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  padding: 8px;
+}
+html.sideways .game-log {
+  top: 64px;
+  right: calc(min(220px, 28vw) + 16px);
+  max-height: calc(100vh - 80px);
 }

@@ -232,6 +232,21 @@ def check_phone(browser, failures):
         failures.append(f"phone: only {made} decisions made by tapping")
     if page.errors:
         failures.append(f"phone: console errors {page.errors[:5]}")
+    # A tablet held upright, and a tall desktop window: the stacked table,
+    # framed in a band the overlay truly leaves, and playable by tapping.
+    for vp in ({"width": 768, "height": 1024}, {"width": 900, "height": 1100}):
+        page = open_page(browser, "seed=7&speed=8&skill=2", viewport=vp)
+        settle(page)
+        strips = page.evaluate("window.cassino3d.strips()")
+        band = vp["height"] - strips["top"] - strips["foot"]
+        if band < 0.4 * vp["height"]:
+            failures.append(f"upright {vp}: the table's band is {band} px ({strips})")
+        made = 0
+        while made < 4 and play_by_clicking(page, failures, made + 400):
+            made += 1
+        if made < 4:
+            failures.append(f"upright {vp}: only {made} decisions made by tapping")
+        shot(page, f"t8-upright-{vp['width']}")
     page = open_page(browser, "seed=7&speed=8&skill=2", viewport={"width": 844, "height": 390})
     settle(page)
     made = 0
