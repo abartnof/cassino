@@ -354,8 +354,14 @@ it in a mirrored measurement or be deleted. A first draft, to be measured:
 5. **Searcher.** Determinized search over sampled worlds for deals 1–5, and
    the exact solver for the last deal (§11.2).
 
-**Erraticism** and **style** (aggressive builder, cautious trailer,
-sweep-hunter) follow piquet. A style chooses among near-equal options, and is
+**The player scales the opponent up and down.** The skill setting runs from
+the bottom rung to the top. Between rungs, **erraticism** gives finer steps:
+on each decision it may slip the opponent down a rung, drawing from the
+agent's own random stream so the cards never change. The setting can change
+between games, and from the next hand during one. Each setting's strength is
+measured, so the labels tell the truth.
+
+**Style** (aggressive builder, cautious trailer, sweep-hunter) follows piquet. A style chooses among near-equal options, and is
 calibrated to be EV-neutral. The opponent is "your opponent" in anything a
 player reads, never a proper name.
 
@@ -382,6 +388,32 @@ away. The review's PIMC results are policy-conditional starting points [07
 
 - **Always mirrored pairs.** The same deck is played twice with the seats
   swapped. Piquet's unmirrored harness disagreed with itself by five sigma.
+- **Sequential, with the stopping rule fixed before the data.** This is a
+  standing rule of the repository, from the user: "if you have a clear signal
+  coming through, your sample size can be rather small". Every simulation
+  runs in batches and looks at its own signal between them. It stops as soon
+  as the answer is clear, rather than running a fixed large count.
+  - **Peeking has a price, and the boundaries pay it.** Stopping whenever
+    p < 0.05 at any look inflates false alarms well past 5%. So each run
+    fixes, before its first batch:
+    - the batch size;
+    - the maximum number of looks;
+    - the **O'Brien–Fleming boundary** for that many looks at a two-sided 5%
+      (for four looks: |z| ≥ 4.05, 2.86, 2.34, 2.02).
+
+    Piquet's `bin/partie-sequential` did exactly this. It stopped at its
+    second look of four, after 200 pairs instead of 400.
+  - **A clear effect stops the run early** when the boundary is crossed. Its
+    size and interval are reported.
+  - **No clear effect by the last look** ends the run with the estimate and
+    its 95% interval. That interval bounds how large any difference can be,
+    which is a finding too.
+  - **The rule lives in the code.** The harness (`tournament.rs`) implements
+    the batches, the looks and the boundaries, so a new experiment gets them
+    by default. Each run's record states the plan it was held to.
+- **Beware the maximum of noisy estimates.** Choosing the best of several
+  variants by their measured means overstates the winner. A chosen variant is
+  confirmed on fresh seeds (piquet's lesson).
 - **Ratings by Bradley-Terry over a ladder**, and **the anatomy of a hand**
   (captures, builds, sweeps and residue by rung) to see *why* a rung wins.
 - **Classic and Royal are measured separately.** The review notes that

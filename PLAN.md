@@ -32,7 +32,8 @@
 | Scoring | An ordered event log; totals derived | `DESIGN.md` §8 |
 | Evaluation | Broken down by category from the start, for explanations | `DESIGN.md` §12.4 |
 | Opponent | A measured capability ladder; the last deal solved exactly | `DESIGN.md` §11 |
-| Measurement | Mirrored pairs, always; Classic and Royal separately | `DESIGN.md` §11.4 |
+| Measurement | Mirrored pairs, always; sequential with fixed O'Brien–Fleming boundaries; Classic and Royal separately | `DESIGN.md` §11.4 |
+| Opponent strength | A skill setting the player raises and lowers: the ladder's rungs, with erraticism between them | `DESIGN.md` §11.1 |
 | Page | One self-contained HTML file, well under 10 MB | the user |
 | Sound | None | as piquet |
 
@@ -68,6 +69,16 @@
   brings it in.
 - **Consult the user before anything that spends money**, and before any long
   compute run, with a runtime and cost estimate in hand.
+- **Simulations stop when the signal is clear.** Batches, looks between them,
+  and an O'Brien–Fleming boundary fixed before the first batch: a clear
+  effect ends the run early, and the last look reports the interval
+  (`docs/DESIGN.md` §11.4). The user: "if you have a clear signal coming
+  through, your sample size can be rather small".
+
+## Open for the user
+
+1. **A `LICENSE` file.** `Cargo.toml` says MIT, as piquet and bezique do; the
+   file itself, with its copyright line, is the user's to add.
 
 ## Notes for a future session
 
