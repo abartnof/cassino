@@ -138,6 +138,11 @@ pub fn by_name(name: &str, rng: Rng) -> Option<Box<dyn Agent>> {
         "greedy" => by_level(2, rng),
         "counter" => by_level(3, rng),
         "searcher" => by_level(4, rng),
+        "search-game" => {
+            let mut s = SearchAgent::new(rng);
+            s.game_aware = true;
+            Box::new(s)
+        }
         other if other.contains('e') && other.starts_with(|c: char| c.is_ascii_digit()) => {
             let (level, erraticism) = other.split_once('e')?;
             let level: u8 = level.parse().ok().filter(|l| (1..=TOP).contains(l))?;
