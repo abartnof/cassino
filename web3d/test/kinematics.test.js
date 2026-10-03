@@ -189,7 +189,9 @@ test("a slide stays flat on the table and stops dead at the end", () => {
     assert.ok(normal(path(t)).y > 0.999);
   }
   const speed = (t) => path(Math.min(1, t + 1e-4)).position.distanceTo(path(t).position) / 1e-4;
-  assert.ok(speed(0) > 20, "it starts at speed, having been pushed");
+  // Flicked, as a finger slides a card over: off at four times its mean
+  // speed (14 cm: 56 cm in its whole time), then a long glide to a stop.
+  assert.ok(speed(0) > 3.9 * 14, `a jerk at the start: ${speed(0).toFixed(1)}`);
   assert.ok(speed(1 - 1e-4) < 0.05, "and friction stops it");
 });
 

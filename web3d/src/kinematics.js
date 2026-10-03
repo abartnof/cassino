@@ -8,7 +8,7 @@
 // card at or above it, and the tests hold each one to that.
 
 import { Euler, Matrix4, Quaternion, Vector3 } from "three";
-import { evenly, friction, minimumJerk, snap } from "./easing.js";
+import { evenly, flick, friction, minimumJerk, snap } from "./easing.js";
 import { CARD } from "./units.js";
 
 const UP = new Vector3(0, 1, 0);
@@ -307,12 +307,12 @@ export function flipPile(poses, { toward, riseShare = 1 / 1.6, crest = 0.3 } = {
   });
 }
 
-// Pushed across the table and let go: slowing evenly under friction to a
-// dead stop. It rides `lift` above the table at the middle of its way and
+// Slid across the table by a finger: flicked off at speed, and gliding to a
+// dead stop (`flick`; piquet's slowed evenly under friction). It rides `lift` above the table at the middle of its way and
 // settles onto its place, so it passes over whatever it crosses rather than
 // through it -- two cards at one height fight over which is drawn, and the
 // ink and the shading break up (the user: "one card should always be on top").
-export function slide(from, to, { ease = friction, lift = 0 } = {}) {
+export function slide(from, to, { ease = flick, lift = 0 } = {}) {
   return (t) => {
     const s = ease(t);
     const u = Math.min(1, Math.max(0, t));

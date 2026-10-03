@@ -21,6 +21,14 @@ export function snap(t) {
   return 1 - (1 - u) * (1 - u) * (1 - u);
 }
 
+// A card slid over by a finger (play-testing: "initial jerks, just like
+// someone sliding a card over"): off at four times its mean speed, then a
+// long glide to a dead stop.
+export function flick(t) {
+  const u = clamp01(t);
+  return 1 - (1 - u) ** 4;
+}
+
 // Something pushed and let go, sliding to a stop against constant friction:
 // it decelerates evenly from its starting speed and stops exactly at the end.
 export function friction(t) {
