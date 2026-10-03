@@ -4,8 +4,8 @@
 // state and sends back commands, and holds no rules. The plan is
 // docs/TABLE3D.md. A move is chosen by tapping (selection.js); every change
 // of state is played out on the cards by the director (director.js,
-// choreography.js); the score, the trackers, and each hand's count said line
-// by line on the score sheet as its cards turn up (scorebug.js, overlay.js);
+// choreography.js); the score HUD, its popups timed to the sweeps and to
+// the count as its cards turn up (hud.js), and the trackers (scorebug.js);
 // what is said at the table, in boxes by each speaker's hand (talk.js,
 // dialogue.js); and the settings, the aids and the sitting kept across a
 // reload (chrome.js, prefs.js).
@@ -17,10 +17,11 @@ import { createDeck } from "./deck.js";
 import { createDialogue } from "./dialogue.js";
 import { createDirector } from "./director.js";
 import { decodeBase64, loadEngine } from "./engine.js";
+import { createHud, hudEvents, ledgerOf } from "./hud.js";
 import { createOverlay } from "./overlay.js";
 import { dailySeed, loadPrefs, loadSitting, savePrefs, saveSitting, withUrl } from "./prefs.js";
 import { createScene } from "./scene.js";
-import { countLines, countOf, history, period, scoreAfter, standing, trackers } from "./scorebug.js";
+import { trackers } from "./scorebug.js";
 import { EMPTY, choose, chipsOf, itemState, pick, selectionOf, selectionText, whyNot } from "./selection.js";
 import { chooseSurface } from "./surfaces.js";
 import { speech } from "./talk.js";
@@ -103,6 +104,16 @@ async function main() {
     later: (ms, fn) => director.at(ms, fn),
   });
 
+  const hud = createHud(overlay.hudSlot, { later: (ms, fn) => director.at(ms, fn) });
+  const seats = () => (state.watching ? { you: "South", them: "North" } : { you: "You", them: "Opp" });
+  // The HUD and the panel's names, shown at once from the state.
+  function scoreShown() {
+    const who = seats();
+    hud.reset(ledgerOf(state), { you: who.you, opp: who.them });
+    overlay.names(who);
+    overlay.trackers(trackers(state));
+  }
+
   const keep = () => savePrefs(store, prefs);
   const chrome = createChrome(document.getElementById("overlay"), {
     newGame: () => newGame(),
@@ -153,9 +164,8 @@ async function main() {
       dialogue.stop();
       state = sent.state;
       sel = EMPTY;
-      if (!countOf(state)) overlay.hideSheet();
       director.advance(state);
-      scoreboard();
+      scoreShown();
       persist();
       refresh();
     },
@@ -178,7 +188,6 @@ async function main() {
   function newGame({ seed = randomSeed(), watch = false } = {}) {
     director.cancelTimed();
     overlay.hush();
-    overlay.hideSheet();
     dialogue.stop();
     state = watch
       ? engine.watch({ ...prefs.rules, skills: [prefs.skill, prefs.skill], seed })
@@ -187,11 +196,10 @@ async function main() {
     sel = EMPTY;
     offer = null;
     message = null;
-    overlay.names(watch ? { you: "South", them: "North" } : { you: "You", them: "Your opponent" });
     const dealt = !params.has("nodeal");
     const timing = director.restart(state, { dealt, waits: dealt ? openingTalk(state) : {} });
     if (dealt) talk(state, 0, timing);
-    scoreboard();
+    scoreShown();
     persist();
     refresh();
   }
@@ -203,10 +211,8 @@ async function main() {
     sel = EMPTY;
     offer = null;
     overlay.placeBadges([]);
-    if (state.hand_number !== before.hand_number || state.seed !== before.seed) overlay.hideSheet();
     const timing = director.advance(state);
-    if (timing.count) tellCount(timing.count);
-    else scoreboard();
+    playScore(before.events.length, timing);
     talk(state, before.events.length, timing);
     persist();
     refresh();
@@ -257,42 +263,19 @@ async function main() {
 
   // ---- the score ------------------------------------------------------------
 
-  // The score as it stands, and the sheet complete if the hand is over.
-  function scoreboard() {
-    const now = standing(state);
-    overlay.score({ ...now.after, target: now.target, period: period(state) });
-    overlay.trackers(trackers(state));
-    const lines = countLines(countOf(state));
-    if (!lines.length) return;
-    overlay.openCount(`The count · hand ${state.hand_number}`);
-    lines.forEach((l) => overlay.countLine(l));
-    closeCount();
-  }
-
-  // A hand's count, told as the cards turn up: the sheet opens, each line
-  // is written down as it is said and the score ticks with it, and then the
-  // hand's points and the game's.
-  function tellCount(count) {
-    const now = standing(state);
-    const lines = countLines(countOf(state));
-    const at = (ms, fn) => director.at(Math.max(0, ms), fn);
-    overlay.score({ ...now.before, target: now.target, period: period(state) });
-    const pace = count.lines.length > 1 ? count.lines[1] - count.lines[0] : 500;
-    at(count.lines[0] - pace / 2, () => overlay.openCount(`The count · hand ${state.hand_number}`));
-    lines.forEach((l, i) =>
-      at(count.lines[i], () => {
-        overlay.countLine(l);
-        overlay.score({ ...scoreAfter(now.before, lines, i + 1), target: now.target, period: period(state) });
-      }),
-    );
-    at((count.lines.at(-1) ?? 0) + pace, closeCount);
-  }
-  function closeCount() {
-    const ends = state.events.findLast((e) => (e.kind === "hand_ends" || e.kind === "game_ends") && e.hand === state.hand_number);
-    const hand = state.events.findLast((e) => e.kind === "hand_ends" && e.hand === state.hand_number);
-    const who = state.watching ? ["South", "North"] : ["you", "your opponent"];
-    const text = hand ? `This hand: ${who[0]} ${hand.yours}, ${who[1]} ${hand.theirs}.` : "";
-    overlay.closeCount({ text: ends?.kind === "game_ends" ? `${text} ${ends.text}` : text, rows: history(state.events) });
+  // The HUD's events, each at its moment: a sweep's point as the sweep is
+  // seen, the count's lines as their cards turn up, the hand's end after
+  // its count, and a new hand's live block as it is dealt.
+  function playScore(since, { beats, count }) {
+    const at = (ms, fn) => director.at(Math.max(0, ms ?? 0), fn);
+    state.events.forEach((e, k) => {
+      if (k >= since && e.kind === "dealt" && e.deal === 1) at(beats[k], () => hud.dealt());
+    });
+    const pace = count && count.lines.length > 1 ? count.lines[1] - count.lines[0] : 600;
+    for (const e of hudEvents(state, since)) {
+      const ms = e.line !== undefined && count ? (count.lines[e.line] ?? (count.lines.at(-1) ?? 0) + pace) : beats[e.at];
+      at(ms, () => (e.end ? hud.endHand() : hud.score(e)));
+    }
   }
 
   // A badge just above each build's top card, once the cards are still.
@@ -386,9 +369,8 @@ async function main() {
   const restored = kept ? engine.restore(kept) : null;
   if (restored?.ok && restored.state.prompt !== "over") {
     state = restored.state;
-    overlay.names({ you: "You", them: "Your opponent" });
     director.restart(state);
-    scoreboard();
+    scoreShown();
     refresh();
   } else {
     newGame({ watch: params.has("watch") });
@@ -404,9 +386,8 @@ async function main() {
     meshes: () => director.meshes.length,
     faces: () => director.meshes.filter((m) => m.userData.code).map((m) => m.userData.code),
     chips: () => overlay.chips(),
-    sheet: () => overlay.sheet(),
     said: () => overlay.said(),
-    scores: () => overlay.scores(),
+    hud: () => ({ shown: hud.shown(), totals: hud.totals(), hands: hud.hands(), idle: hud.idle() }),
     hint: () => hint,
     screenPoint: (code) => director.screenPoint(code),
     busy: () => director.busy(),

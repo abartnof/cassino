@@ -140,17 +140,46 @@ Material Design 3, from piquet's shell.
   sum shows; chips offer exactly what the selection makes (`offer.moves`:
   *Take*, *Build 8*, *Build 8s*, *Trail*). A card that cannot join says why
   on tap (`offer.why_not`).
-- **The score**: piquet's broadcast-style score (two numbers that tick),
-  first; the 21-hole pegboard (`DESIGN.md` §12.2) as a 3D object later, the
-  gap between a player's pegs the last hand's points.
-- **Trackers** (each a toggle): cards towards 27, spades towards 7, aces and
-  Casinos taken, sweeps; cards still out (`state.unseen`); the sweep warning
-  (`state.sweep_values`).
+- **The score HUD**, from the designer's handoff (the spec and its approved
+  reference implementation are commit c484091; the reference's numbers are
+  the source of truth, and `hud.js` and `style.css` port them). A dark card
+  at the top left, neutral greys only, the system font, tabular numerals:
+  - two **segmented lines** to 21, yours above, in groups of five with a
+    wider finish; a segment is reached (6 px), the cursor (12 px) or
+    unreached (4 px). The lines never slide: scoring lights the next
+    segments in a wave (each flares to 20 px at 38% of 760 ms, 70 ms apart)
+    and dims the old cursor. Only the lines' tones tell the players apart;
+  - the **scores**, with a **chevron** between them. When a player scores,
+    a **popup** rolls in over their score ("Big Casino +2", the word left,
+    the points at twice its size), the number ticks up beneath it, and after
+    1.7 s the score rolls back with a pop;
+  - the chevron opens the **ledger**: every hand's six lines in the
+    counting order (most cards, most spades, Big Casino, Little Casino,
+    aces, sweeps), its subtotal under them, "Hand N · live" for the hand
+    under way, and the total. One level, no further toggles;
+  - three springs, sampled for CSS `linear()`: fast spatial (damping 0.6,
+    stiffness 800), default spatial (0.75, 380), effects (1.0, 1600).
+    Reduced motion collapses every duration.
+
+  The model is a per-hand ledger derived from the events (`ledgerOf`), and
+  the totals from it. Choices made in integrating it: a sweep's point
+  shows as the sweep is made (when sweeps are scored), so the running total
+  includes the live hand's sweeps and the count does not show them again;
+  the count's aces come as one popup a player, at the first ace's line;
+  popups queue one side at a time (about 2 s each), and a hand joins the
+  ledger once its popups have played; the line stops at 21 but the scores
+  go past it; the card names keep the game's spelling (Big Casino). Not
+  carried over from the spec, as it says: no 18-20 endgame zone, no marks
+  under the scores. Our own aids keep to their own panel (below).
+- **Trackers** (each a toggle), in a panel of the HUD's palette at the foot
+  of the left: cards towards 27, spades towards 7, aces and Casinos taken,
+  sweeps; cards still out (`state.unseen`). The sweep warning
+  (`state.sweep_values`) is a line under the prompt.
 - **The count ritual**: at the end of a hand, the lines of `scored.count` one
-  at a time in Foster's order, each with its points, written on the score
-  sheet as each ace and Casino turns up out of its taker's pile into a row
-  (`layout.js` lays out a counted hand; the choreography's `count` stage
-  times each card to its line).
+  at a time in Foster's order: each ace and Casino turns up out of its
+  taker's pile into a row (`layout.js` lays out a counted hand; the
+  choreography's `count` stage times each card to its line), the HUD's
+  popups tell each line's points, and the winner of each line chants it.
 - **Settings**: Classic or Royal, aces 1 or 14, sweeps, the skill dial (1 to
   4 in halves), the aids, Large Text, watch mode, a new game, copy the game
   record (`state.saved`), the daily deal (seeded from the date).
@@ -189,13 +218,12 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   clicking with the motion on, and saves strips of the deal, a gather and a
   sweep (`t3-deal`, `t3-gather`, `t3-sweep`).
 - **T4. The score and the count.** Score, trackers, the count ritual, the
-  end of the game. **Done**: the bug (two numbers in the build badges'
-  colours, the period, bars toward 21) with each player's trackers under
-  their number (`scorebug.js`, pure and node-tested); at the end of a hand,
-  each ace and Casino the count names turned up out of its taker's pile
-  into a count row as its line is written on the score sheet, the score
-  ticking with it; the sheet keeps every hand's points and the game's. The
-  browser test checks the sheet and the score at every hand's end.
+  end of the game. **Done**: at the end of a hand, each ace and Casino the
+  count names turned up out of its taker's pile into a count row as its
+  line is told; trackers (`scorebug.js`, pure and node-tested). The score
+  was first a broadcast's bug and a paper score sheet; both gave way to the
+  designer's HUD (§8, `hud.js`), whose model is node-tested against real
+  games and whose totals the browser test checks at every hand's end.
 - **T5. Table talk.** The phrase bank and the dialogue boxes. **Done**:
   `web3d/tools/phrases.py` (the bank, each phrase in at least two wordings
   with its source; `--check` keeps `docs/PHRASES.md` and `words.json` in

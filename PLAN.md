@@ -10,7 +10,7 @@
 A measured four-rung opponent with a skill dial; explanations, hints and the
 selection interface; the session and its JSON protocol; a 334 KB module that
 plays a whole game in Node at 10–16 ms a command, byte for byte as the native
-build does. 230 Rust tests and 125 Node tests of the table, all passing
+build does. 230 Rust tests and 128 Node tests of the table, all passing
 (`bin/gate`).
 
 **Reviewed.** A full code review by a separate agent
@@ -60,15 +60,15 @@ legal move. RULES.md now says each held card answers for one build value.
   origin headers. Done: T0 the scaffold, T1 the state laid out, T2 a move
   chosen by tapping, T3 the motion (the deal in twos, trails, builds, the
   gather of a capture turned over into its pile, sweeps held up and laid
-  crosswise), T4 the score (a broadcast's bug with live trackers) and the
-  count (each ace and Casino turned up as its line is written on the score
-  sheet), T5 the table talk (a sourced phrase bank, `docs/PHRASES.md`; the
+  crosswise), T4 the score and the count (each ace and Casino turned up as
+  its line is told; live trackers), T5 the table talk (a sourced phrase bank, `docs/PHRASES.md`; the
   house rules agreed aloud before the deal, the build calls, "Last.",
   "Clear!", the count chanted), T6 settings and aids (rules, skill, today's
   deal, watch mode, hints, explanations in a game log, undo, the sitting
   kept across a reload, the credits on screen). A whole game is played by
-  clicking in an offline browser test. Next: T7, teaching. The user will
-  supply a HUD design for the score; the bug stays as it is until then.
+  clicking in an offline browser test. The score is the designer's HUD
+  (segmented lines to 21, the broadcast-swap popup, the per-hand ledger;
+  `docs/TABLE3D.md` §8). Next: T7, teaching.
 
 ## Settled decisions
 

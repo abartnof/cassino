@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
-import { countLines, countOf, history, lineCard, lineLabel, period, scoreAfter, standing, trackers } from "../src/scorebug.js";
+import { countLines, countOf, lineCard, lineLabel, trackers } from "../src/scorebug.js";
 import { loadEngine } from "../src/engine.js";
 
 const line = (item, who, points, suit = null) => ({ item, suit, who, points });
@@ -17,13 +17,6 @@ test("the count's lines in words, and the cards they name", () => {
   assert.equal(lineCard(line("big_casino", "you", 2)), "TD");
   assert.equal(lineCard(line("little_casino", "you", 1)), "2S");
   assert.equal(lineCard(line("spades", "you", 1)), null);
-});
-
-test("the score ticks line by line from the totals before the hand", () => {
-  const lines = [line("cards", "you", 3), line("spades", "them", 1), line("big_casino", "you", 2)];
-  assert.deepEqual(scoreAfter({ you: 10, them: 12 }, lines, 0), { you: 10, them: 12 });
-  assert.deepEqual(scoreAfter({ you: 10, them: 12 }, lines, 2), { you: 13, them: 13 });
-  assert.deepEqual(scoreAfter({ you: 10, them: 12 }, lines, 3), { you: 15, them: 13 });
 });
 
 test("trackers follow the captures, and a clinch settles a point for both", () => {
@@ -49,40 +42,23 @@ test("trackers follow the captures, and a clinch settles a point for both", () =
   assert.equal(get("you", "sweeps").n, 2);
 });
 
-test("the period: the hand, and the deal of six", () => {
-  assert.equal(period({ hand_number: 2, deal: 3 }), "Hand 2 · Deal 3 of 6");
-});
-
 const WASM = new URL("../../target/wasm32-unknown-unknown/release/cassino_wasm.wasm", import.meta.url);
 
-test("over real games: the count adds up to the totals, and the sheet keeps every hand", { skip: !existsSync(WASM) && "build the module first" }, async () => {
+test("over real games: a count at every hand's end, naming the cards it counts", { skip: !existsSync(WASM) && "build the module first" }, async () => {
   const engine = await loadEngine(readFileSync(WASM));
   for (const seed of [3, 4]) {
     let state = engine.start({ game: seed === 4 ? "royal" : "classic", skill: 2, seed });
-    let hands = 0;
     for (let n = 0; state.prompt !== "over"; n++) {
       if (state.prompt === "play") {
         assert.equal(countOf(state), null, "no count while the hand is played");
-        const s = standing(state);
-        assert.deepEqual(s.before, s.after);
         state = engine.send(state.moves[(n * 5) % state.moves.length]).state;
         continue;
       }
-      // The hand is over: its count, line by line, makes the new totals.
-      const scored = countOf(state);
-      assert.ok(scored, `seed ${seed}: a count at the end of hand ${state.hand_number}`);
-      const lines = countLines(scored);
-      const s = standing(state);
-      assert.deepEqual(scoreAfter(s.before, lines, lines.length), s.after);
+      const lines = countLines(countOf(state));
+      assert.ok(lines.length, `seed ${seed}: a count at the end of hand ${state.hand_number}`);
       for (const l of lines) if (["ace", "big_casino", "little_casino"].includes(l.item)) assert.ok(l.code);
-      hands++;
-      assert.equal(history(state.events).length, hands);
       state = engine.send("next").state;
     }
-    const sheet = history(state.events);
-    assert.deepEqual(sheet.at(-1).totals, state.scores);
-    const scored = countOf(state);
-    const s = standing(state);
-    assert.deepEqual(scoreAfter(s.before, countLines(scored), countLines(scored).length), s.after);
+    assert.ok(countOf(state));
   }
 });

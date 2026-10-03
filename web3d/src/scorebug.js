@@ -1,11 +1,11 @@
-// The score, the trackers and the count (docs/TABLE3D.md section 8): pure
-// functions of the protocol's state, so the page only draws what these say.
+// The count and the trackers (docs/TABLE3D.md section 8): pure functions of
+// the protocol's state, so the page only draws what these say. (The score
+// itself is the HUD's, hud.js.)
 //
 // Cassino scores only at the end of a hand, in the count; during the hand
 // the news is in the captures, which the trackers follow: cards towards 27,
 // spades towards 7, the aces, the two Casinos and the sweeps (DESIGN.md
-// §12.3). The idea of a broadcast's score, two numbers that tick, is
-// piquet's (scorebug.js @ 254cb3c); the rest is cassino's own.
+// §12.3).
 
 const SUIT_NAME = { S: "spades", H: "hearts", D: "diamonds", C: "clubs" };
 
@@ -47,23 +47,6 @@ export function countLines(scored) {
   return (scored?.count.lines ?? []).map((line) => ({ ...line, label: lineLabel(line), code: lineCard(line) }));
 }
 
-// Where the game stands: the totals before this hand's count (`before`) and
-// after it (`after`; the same, until the hand is over), the target, the
-// hand and the deal.
-export function standing(state) {
-  const ends = (state.events ?? []).findLast((e) => e.kind === "hand_ends" && e.hand === state.hand_number);
-  const after = { you: state.scores.you, them: state.scores.them };
-  const before = ends ? { you: ends.totals.you - ends.yours, them: ends.totals.them - ends.theirs } : { ...after };
-  return { before, after, target: state.target, hand: state.hand_number, deal: state.deal };
-}
-
-// The totals once the first `k` lines of the count have been said.
-export function scoreAfter(before, lines, k) {
-  const score = { ...before };
-  for (const line of lines.slice(0, k)) score[line.who] += line.points;
-  return score;
-}
-
 // What each player has captured this hand, item by item, for the trackers:
 // `n` of `of` where there is a goal (27 cards, 7 spades: past it, the point
 // is clinched), `have` for a single card, and `lost` once the other player
@@ -89,17 +72,4 @@ export function trackers(state) {
     ];
   }
   return out;
-}
-
-// The score sheet: a row for each hand finished, with the game's totals.
-export function history(events) {
-  return (events ?? [])
-    .filter((e) => e.kind === "hand_ends")
-    .map((e) => ({ hand: e.hand, you: e.yours, them: e.theirs, totals: { ...e.totals } }));
-}
-
-// The period, as a broadcast puts its quarter: the hand, and the deal of six.
-export function period(state) {
-  if (!state.deal) return `Hand ${state.hand_number}`;
-  return `Hand ${state.hand_number} · Deal ${state.deal} of 6`;
 }

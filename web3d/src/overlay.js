@@ -1,10 +1,11 @@
 // The overlay: the 2D surfaces floating over the table, in Material Design 3
 // (docs/TABLE3D.md section 8): the prompt, the chips that offer what a
 // selection makes, the running sum, the "why not?" line, the next hand and
-// the end of the game; the badges over the builds; the score, as a
-// broadcast's bug, with each player's trackers under their number; the
-// score sheet, where each hand's count is written down line by line; and
-// what is said at the table, in boxes by each speaker's hand.
+// the end of the game; the badges over the builds; at the top left, a slot
+// for the score HUD (hud.js); at the foot of the left, the aids' panel (each
+// player's captures, the cards still out); under the top bar, the game log;
+// and what is said at the table, in boxes by each speaker's hand. Each sits
+// clear of the table's corners: the HUD ends above your opponent's pile.
 //
 // It draws what it is given and reports what is pressed; it holds no rules.
 
@@ -18,19 +19,13 @@ export function createOverlay(root, { onChip, onNext, onNewGame, later = (ms, fn
   root.innerHTML = `
     <div class="badges"></div>
     <div class="afloat"></div>
-    <header class="bug" aria-label="The score">
-      <div class="side you"><span class="side-name">You</span><span class="side-num"><span class="n">0</span></span><span class="goal-bar"><i></i></span><ul class="tally" aria-label="Your captures"></ul></div>
-      <div class="period"></div>
-      <div class="side them"><span class="side-name">Your opponent</span><span class="side-num"><span class="n">0</span></span><span class="goal-bar"><i></i></span><ul class="tally" aria-label="Your opponent's captures"></ul></div>
-    </header>
-    <p class="out" hidden></p>
+    <div class="info"><div class="hud-slot"></div></div>
+    <section class="aids-panel" hidden aria-label="Captures and the cards still out">
+      <div class="tally-row you"><span class="who">You</span><ul class="tally" aria-label="Your captures"></ul></div>
+      <div class="tally-row them"><span class="who">Opp</span><ul class="tally" aria-label="Your opponent's captures"></ul></div>
+      <p class="out" hidden></p>
+    </section>
     <aside class="game-log" hidden aria-label="The game log"><h2>Game log</h2><ol></ol></aside>
-    <aside class="sheet" hidden aria-live="polite">
-      <h2 class="sheet-title"></h2>
-      <ol class="count-lines"></ol>
-      <p class="sheet-total"></p>
-      <table class="history"><thead><tr><th>Hand</th><th class="you">You</th><th class="them">Opp.</th></tr></thead><tbody></tbody></table>
-    </aside>
     <section class="controls">
       <p class="prompt" aria-live="polite"></p>
       <p class="note" aria-live="polite"></p>
@@ -91,39 +86,24 @@ export function createOverlay(root, { onChip, onNext, onNewGame, later = (ms, fn
     );
   }
 
-  // ---- the score ---------------------------------------------------------
+  // ---- the aids' panel ----------------------------------------------------
 
-  const sides = {};
-  for (const who of ["you", "them"]) {
-    const node = root.querySelector(`.bug .side.${who}`);
-    sides[who] = { node, n: node.querySelector(".n"), fill: node.querySelector(".goal-bar i"), tally: node.querySelector(".tally"), shown: null };
-  }
-  const periodNode = $(".period");
+  const panel = $(".aids-panel");
+  const rows = { you: panel.querySelector(".tally-row.you"), them: panel.querySelector(".tally-row.them") };
+  const outLine = $(".out");
+  let showing = { trackers: true, unseen: false };
+  const fit = () => {
+    rows.you.hidden = rows.them.hidden = !showing.trackers;
+    panel.hidden = !showing.trackers && outLine.hidden;
+  };
 
-  // The two numbers, the bars filling toward the target, and the period. A
-  // number that goes up bumps as it changes.
-  function score({ you, them, target, period: when }) {
-    for (const [who, value] of [
-      ["you", you],
-      ["them", them],
-    ]) {
-      const side = sides[who];
-      if (side.shown !== null && value > side.shown) replay(side.n, "bump");
-      side.shown = value;
-      side.n.textContent = String(value);
-      side.fill.style.width = `${Math.min(100, (100 * value) / target)}%`;
-      side.node.querySelector(".goal-bar").title = value >= target ? `${target} reached` : `${target - value} to go to ${target}`;
-    }
-    periodNode.replaceChildren(el("span", { class: "period-when" }, when), el("span", { class: "period-to" }, `to ${target}`));
-  }
-
-  // Each player's captures this hand, under their number: cards toward 27,
-  // spades toward 7, aces, the Casinos, sweeps. A point that is theirs for
-  // certain (a clinch, a Casino taken) is filled in; a point clinched by
-  // the other player is struck through.
+  // Each player's captures this hand: cards toward 27, spades toward 7,
+  // aces, the Casinos, sweeps. A point that is theirs for certain (a clinch,
+  // a Casino taken) is filled in; a point clinched by the other player is
+  // struck through.
   function trackers(t) {
     for (const who of ["you", "them"]) {
-      sides[who].tally.replaceChildren(
+      rows[who].querySelector(".tally").replaceChildren(
         ...t[who].map((x) => {
           const has = x.have !== undefined;
           const toward = x.of && x.n < x.of && !x.done && !x.lost;
@@ -135,25 +115,30 @@ export function createOverlay(root, { onChip, onNext, onNewGame, later = (ms, fn
       );
     }
   }
+  function showTrackers(on) {
+    showing.trackers = on;
+    fit();
+  }
 
-  // Who sits where: "You" and "Your opponent", or South and North when two
-  // computer players are watched.
+  // Who sits where: "You" and "Opp", or South and North when two computer
+  // players are watched.
   function names({ you, them }) {
-    sides.you.node.querySelector(".side-name").textContent = you;
-    sides.them.node.querySelector(".side-name").textContent = them;
+    rows.you.querySelector(".who").textContent = you;
+    rows.them.querySelector(".who").textContent = them;
   }
 
   // The cards you have not seen (the counting aid), or nothing.
-  const outLine = $(".out");
   function unseen(u) {
     outLine.hidden = !u;
-    if (!u) return;
-    const parts = [];
-    if (u.aces.length) parts.push(u.aces.map((c) => c.label).join(" "));
-    if (u.big_casino) parts.push("10♦");
-    if (u.little_casino) parts.push("2♠");
-    parts.push(`${u.spades} spade${u.spades === 1 ? "" : "s"}`, `${u.cards} card${u.cards === 1 ? "" : "s"}`);
-    outLine.textContent = `Still out: ${parts.join(" · ")}`;
+    if (u) {
+      const parts = [];
+      if (u.aces.length) parts.push(u.aces.map((c) => c.label).join(" "));
+      if (u.big_casino) parts.push("10♦");
+      if (u.little_casino) parts.push("2♠");
+      parts.push(`${u.spades} spade${u.spades === 1 ? "" : "s"}`, `${u.cards} card${u.cards === 1 ? "" : "s"}`);
+      outLine.textContent = `Still out: ${parts.join(" · ")}`;
+    }
+    fit();
   }
 
   // ---- the game log ------------------------------------------------------
@@ -171,41 +156,6 @@ export function createOverlay(root, { onChip, onNext, onNewGame, later = (ms, fn
       ),
     );
     logList.lastElementChild?.scrollIntoView({ block: "end" });
-  }
-
-  // ---- the score sheet ---------------------------------------------------
-
-  const sheet = $(".sheet");
-  const linesNode = $(".count-lines");
-  const sheetTotal = $(".sheet-total");
-  const historyBody = sheet.querySelector(".history tbody");
-
-  // A hand's count begins: the sheet opens on a clean page.
-  function openCount(title) {
-    sheet.hidden = false;
-    $(".sheet-title").textContent = title;
-    linesNode.replaceChildren();
-    sheetTotal.textContent = "";
-    replay(sheet, "arrive");
-  }
-  // One line of the count, as it is said: what, whose, how many points.
-  function countLine(line) {
-    const whose = line.who === "you" ? "You" : "Opponent";
-    linesNode.append(
-      el("li", { class: `count-line ${line.who}` }, el("span", { class: "what" }, line.label), el("span", { class: "who" }, whose), el("span", { class: "points" }, `+${line.points}`)),
-    );
-  }
-  // The hand's points and the game's, and every hand so far.
-  function closeCount({ text, rows }) {
-    sheetTotal.textContent = text;
-    historyBody.replaceChildren(
-      ...rows.map((r) =>
-        el("tr", {}, el("td", {}, String(r.hand)), el("td", { class: "you" }, `${r.you} · ${r.totals.you}`), el("td", { class: "them" }, `${r.them} · ${r.totals.them}`)),
-      ),
-    );
-  }
-  function hideSheet() {
-    sheet.hidden = true;
   }
 
   // ---- what is said at the table ------------------------------------------
@@ -247,20 +197,14 @@ export function createOverlay(root, { onChip, onNext, onNewGame, later = (ms, fn
     placeBadges,
     say,
     hush,
-    said: () => [...afloat.querySelectorAll(".dialogue")].map((d) => ({ who: d.classList.contains("you") ? "you" : "them", words: d.textContent })),
-    score,
     trackers,
+    showTrackers,
     names,
     unseen,
     log,
-    showTrackers: (on) => root.querySelector(".bug").classList.toggle("no-tally", !on),
-    openCount,
-    countLine,
-    closeCount,
-    hideSheet,
+    hudSlot: $(".hud-slot"),
+    said: () => [...afloat.querySelectorAll(".dialogue")].map((d) => ({ who: d.classList.contains("you") ? "you" : "them", words: d.textContent })),
     chips: () => [...chipSet.children].map((c) => c.label),
-    sheet: () => ({ open: !sheet.hidden, lines: [...linesNode.children].map((li) => li.textContent), total: sheetTotal.textContent }),
-    scores: () => ({ you: Number(sides.you.n.textContent), them: Number(sides.them.n.textContent) }),
   };
 }
 
@@ -280,13 +224,6 @@ function el(tag, attrs = {}, ...children) {
   for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
   node.append(...children.filter((c) => c !== null && c !== undefined));
   return node;
-}
-
-// Restart a CSS animation on an element.
-function replay(node, cls) {
-  node.classList.remove(cls);
-  void node.offsetWidth;
-  node.classList.add(cls);
 }
 
 function promptText(state, chips) {

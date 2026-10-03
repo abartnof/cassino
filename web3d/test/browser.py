@@ -115,10 +115,19 @@ def play_by_clicking(page, failures, moves_made):
         HEARD.add(line["words"])
     s = page.evaluate("window.cassino3d.state()")
     if s["prompt"] in ("next_hand", "over"):
+        if s["hand_number"] == 1:
+            page.wait_for_timeout(500)
+            shot(page, "t4-count")  # the HUD's popups under way
         check_count(page, s, failures)
     if s["prompt"] == "next_hand":
         if s["hand_number"] == 1:
-            shot(page, "t4-count")
+            page.locator(".hud-chev").click()
+            page.wait_for_timeout(1200)
+            shot(page, "t4-ledger")
+            if page.locator(".hud-chev").get_attribute("aria-expanded") != "true":
+                failures.append("the HUD's chevron did not open the ledger")
+            page.locator(".hud-chev").click()
+            page.wait_for_timeout(600)
         page.locator("md-filled-button.next").click()
         return True
     if s["prompt"] != "play":
@@ -147,16 +156,16 @@ def play_by_clicking(page, failures, moves_made):
 
 
 def check_count(page, s, failures):
-    """At the end of a hand: the sheet holds the count, line by line, and
-    the score shows the new totals."""
-    page.wait_for_function("window.cassino3d.sheet().total !== ''", timeout=20_000)
-    sheet = page.evaluate("window.cassino3d.sheet()")
-    scored = [e for e in s["events"] if e["kind"] == "scored" and e["hand"] == s["hand_number"]][-1]
-    if len(sheet["lines"]) != len(scored["count"]["lines"]):
-        failures.append(f"hand {s['hand_number']}: the sheet has {len(sheet['lines'])} lines, the count {len(scored['count']['lines'])}")
-    scores = page.evaluate("window.cassino3d.scores()")
-    if scores != s["scores"]:
-        failures.append(f"hand {s['hand_number']}: the score shows {scores}, the game is {s['scores']}")
+    """At the end of a hand, once the HUD's popups have played: it shows the
+    game's totals, and its ledger has a counted hand for each hand played."""
+    page.wait_for_function("window.cassino3d.hud().idle", timeout=30_000)
+    hud = page.evaluate("window.cassino3d.hud()")
+    totals = {"you": s["scores"]["you"], "opp": s["scores"]["them"]}
+    if hud["totals"] != totals or hud["shown"] != totals:
+        failures.append(f"hand {s['hand_number']}: the HUD shows {hud['shown']} (totals {hud['totals']}), the game is {totals}")
+    counted = len([e for e in s["events"] if e["kind"] == "scored"])
+    if hud["hands"] != counted:
+        failures.append(f"hand {s['hand_number']}: the HUD's ledger has {hud['hands']} hands, {counted} were counted")
 
 
 def check_settings(browser, failures):

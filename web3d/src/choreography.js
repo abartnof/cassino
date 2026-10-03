@@ -54,7 +54,7 @@ export const TIMING = Object.freeze({
   dealCard: 300,
   dealPair: 170, // two at a time: one pair after another
   dealSecond: 50, // and the second card of a pair just behind the first
-  countLine: 700, // the count, line by line
+  countLine: 1000, // the count, line by line: the HUD's popups and the chant keep up
   countCard: 520, // a counted card turned up out of the pile into the count row
   collect: 480, // every card back to the stock for a new hand
   collectStagger: 12,
