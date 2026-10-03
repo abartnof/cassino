@@ -4,7 +4,11 @@
 //! Casino); the reasoning behind the structure is in `docs/DESIGN.md`.
 
 pub mod cards;
+pub mod moves;
 pub mod rng;
 pub mod rules;
 pub mod sums;
 pub mod table;
+
+#[cfg(test)]
+mod reference;
