@@ -538,6 +538,66 @@ pub fn check(
     guarded(rules, table, rest, me, mv)
 }
 
+/// The groups a legal capture takes, for narration and animation
+/// (`docs/DESIGN.md` §7.4): single cards that pair first, then whole builds,
+/// then sums from the fewest cards up. Deterministic, so the table talk and
+/// the cards' flight always agree.
+pub fn groups(rules: &Rules, table: &Table, mv: &Move) -> Vec<CardSet> {
+    let Move::Capture { card, value, taken } = *mv else {
+        return Vec::new();
+    };
+    let builds: Vec<CardSet> = table
+        .builds
+        .iter()
+        .filter(|b| taken.contains_all(b.cards))
+        .map(|b| b.cards)
+        .collect();
+    let mut loose = builds.iter().fold(taken, |acc, &b| acc - b);
+    if rules.pairs_only(card) {
+        return vec![loose];
+    }
+    let singles: Vec<CardSet> = loose
+        .iter()
+        .filter(|&c| rules.build_value(c) == Some(value))
+        .map(CardSet::single)
+        .collect();
+    for s in &singles {
+        loose = loose - *s;
+    }
+    let mut sums = smallest_partition(rules, loose, value).unwrap_or_default();
+    // Fewest cards first; among equals, the one with the highest card first.
+    let top = |g: &CardSet| {
+        g.iter()
+            .filter_map(|c| rules.build_value(c))
+            .max()
+            .unwrap_or(0)
+    };
+    sums.sort_by(|a, b| {
+        a.len()
+            .cmp(&b.len())
+            .then(top(b).cmp(&top(a)))
+            .then(a.cmp(b))
+    });
+    singles.into_iter().chain(builds).chain(sums).collect()
+}
+
+/// A split of `set` into groups of `v`, trying the smallest groups first.
+fn smallest_partition(rules: &Rules, set: CardSet, v: u8) -> Option<Vec<CardSet>> {
+    let Some(lowest) = set.first() else {
+        return Some(Vec::new());
+    };
+    let mut options: Vec<CardSet> = subsets_summing(rules, set, v)
+        .into_iter()
+        .filter(|g| g.contains(lowest))
+        .collect();
+    options.sort_by_key(|g| (g.len(), *g));
+    options.into_iter().find_map(|g| {
+        let mut rest = smallest_partition(rules, set - g, v)?;
+        rest.push(g);
+        Some(rest)
+    })
+}
+
 /// Makes a move already known to be legal.
 pub fn apply(rules: &Rules, table: &mut Table, hand: &mut CardSet, me: Seat, mv: &Move) -> Played {
     let card = mv.card();
@@ -954,6 +1014,54 @@ mod tests {
     #[test]
     fn w20_trailing_a_card_that_could_capture() {
         pos(Rules::CLASSIC, "5D", "5C").assert_legal("trail 5C");
+    }
+
+    // ------------------------------------------------- narration groups
+
+    #[test]
+    fn groups_pair_first_then_builds_then_the_smallest_sums() {
+        let p = pos(Rules::CLASSIC, "AC 2D 3H 5S 6C 8D", "8S");
+        let g = groups(&p.rules, &p.table, &mv("take 8S 8D 6C 2D 5S 3H"));
+        assert_eq!(g, vec![set("8D"), set("2D 6C"), set("3H 5S")]);
+        let g = groups(&p.rules, &p.table, &mv("take 8S 8D 5S 2D AC"));
+        assert_eq!(g, vec![set("8D"), set("AC 2D 5S")]);
+        let q = pos(Rules::CLASSIC, "[9: 6S 3H] 5D 4C 9D", "9C");
+        let g = groups(&q.rules, &q.table, &mv("take 9C 6S 3H 5D 4C 9D"));
+        assert_eq!(g, vec![set("9D"), set("6S 3H"), set("5D 4C")]);
+        let c = pos(Rules::CLASSIC, "QS QH", "QD");
+        assert_eq!(
+            groups(&c.rules, &c.table, &mv("take QD QH")),
+            vec![set("QH")]
+        );
+        assert!(groups(&c.rules, &c.table, &mv("trail QD")).is_empty());
+    }
+
+    #[test]
+    fn groups_always_partition_the_capture() {
+        for rules in [Rules::CLASSIC, Rules::ROYAL, ROYAL_14] {
+            for seed in 0..300 {
+                let (table, hand) = reference::random_position(&rules, seed);
+                for m in legal_moves(&rules, &table, hand, Seat::South) {
+                    if let Move::Capture { value, taken, card } = m {
+                        let g = groups(&rules, &table, &m);
+                        let union = g.iter().fold(CardSet::EMPTY, |a, &b| a | b);
+                        assert_eq!(union, taken, "{m}");
+                        assert_eq!(
+                            g.iter().map(|x| x.len()).sum::<u32>(),
+                            taken.len(),
+                            "{m}: disjoint"
+                        );
+                        for grp in &g {
+                            let is_build = table.builds.iter().any(|b| b.cards == *grp);
+                            let sums =
+                                crate::sums::value_sum(&rules, *grp) == Some(u32::from(value));
+                            let pairs = rules.pairs_only(card) && grp.len() == 1;
+                            assert!(is_build || sums || pairs, "{m}: {grp}");
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // ------------------------------------------------- beyond the examples
