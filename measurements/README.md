@@ -58,3 +58,29 @@ reverted).
 The flat weights stay. A principled model of the value of a card was no
 better, and at its own level worse, than the constants: piquet's lesson that
 measuring beats reasoning, again.
+
+## The anatomy of a hand
+
+`cargo run --release --bin anatomy A B N`: where each agent's points come
+from, per hand, averaged over both seats of N mirrored pairs (Classic).
+
+| Per hand | counter | greedy | | searcher | counter |
+|---|---|---|---|---|---|
+| points | 7.64 | 4.03 | | 6.41 | 4.83 |
+| cards captured | 29.6 | 22.5 | | 27.1 | 24.9 |
+| most cards (share) | 0.73 | 0.21 | | 0.56 | 0.34 |
+| spades | 7.4 | 5.6 | | 6.8 | 6.2 |
+| aces | 2.46 | 1.54 | | 2.19 | 1.80 |
+| sweeps | 0.58 | 0.26 | | 0.34 | 0.19 |
+| new builds | 2.04 | 0 | | 2.30 | 1.80 |
+| own builds taken in / lost | 1.77 / 0.27 | — | | 2.06 / 0.29 | 1.48 / 0.27 |
+| residue cards | 2.14 | 0.99 | | 2.04 | 0.93 |
+
+(300 pairs for counter–greedy, 100 for searcher–counter; 2026-10-03.)
+
+- **The counter's edge is building.** It makes about two builds a hand and
+  keeps 87% of them, which greedy, never building, cannot answer. It wins
+  most cards nearly three hands in four.
+- **The searcher's edge is the end of the hand.** It takes twice the
+  residue: the exact last-deal solver wins the last capture. It also builds
+  a little more, and sweeps more.
