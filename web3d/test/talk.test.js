@@ -3,7 +3,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { speech } from "../src/talk.js";
+import { countPace, speech } from "../src/talk.js";
+import { GAP, TURN, createDialogue, saying } from "../src/dialogue.js";
 import { loadEngine } from "../src/engine.js";
 
 const WORDS = JSON.parse(readFileSync(new URL("../words.json", import.meta.url)));
@@ -199,4 +200,20 @@ test("over real games every phrase asked for is in the bank", { skip: !existsSyn
     }
   }
   for (const kind of ["build", "last", "take", "count"]) assert.ok([...asked].some((p) => p.startsWith(kind)), `nothing said for ${kind}`);
+});
+
+test("the count's pace, from what is said: the words before the chant, and each line's length", () => {
+  const plan = createDialogue({ groups: {}, texts: {} }, () => 0).plan;
+  const lines = [
+    { who: "you", phrase: "residue", at: 4, words: "And the rest are mine." },
+    { who: "them", phrase: "count-cards-tie", at: 5, words: "The cards are a tie." },
+    { who: "you", phrase: "count-spades", at: 5, line: 0, words: "Spades." },
+    { who: "them", phrase: "count-ace-S", at: 5, line: 1, words: "The ace of spades." },
+    { who: "them", phrase: "count-big-casino", at: 5, line: 2, words: "Big Casino." },
+  ];
+  const pace = countPace(lines, plan);
+  assert.equal(pace.lead, saying("The cards are a tie.") + TURN, "the tie said before the first line");
+  assert.deepEqual(pace.gaps, [saying("Spades.") + TURN, saying("The ace of spades.") + GAP, saying("Big Casino.")]);
+  assert.equal(countPace(lines.slice(0, 1), plan), null, "no count, no pace");
+  assert.equal(countPace(lines.filter((l) => l.phrase !== "count-cards-tie"), plan).lead, 0);
 });

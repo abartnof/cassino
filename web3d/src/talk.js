@@ -125,3 +125,21 @@ export function speech(state, since = 0) {
   });
   return out;
 }
+
+// The count's pace, from what is to be said (lines with their words, as the
+// dialogue's `words` gives them) and the dialogue's `plan`: `lead`, the
+// time taken by what is said at the count's moment before the chant (a tie
+// on the cards); `gaps[i]`, from line i of the chant to the next, or to its
+// end for the last. The choreography turns each counted card up, and the
+// sheet is written, as its line is said. Null with no count among them.
+export function countPace(lines, plan) {
+  const first = lines.findIndex((l) => l.line !== undefined);
+  if (first < 0) return null;
+  const from = lines.findIndex((l) => l.at === lines[first].at);
+  const said = plan(lines.slice(from).map((l) => ({ ...l, delay: 0 })));
+  const chant = said.filter((l) => l.line !== undefined);
+  return {
+    lead: chant[0].ms - said[0].ms,
+    gaps: chant.map((l, i) => (i + 1 < chant.length ? chant[i + 1].ms - l.ms : l.end - l.ms)),
+  };
+}

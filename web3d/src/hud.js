@@ -97,6 +97,24 @@ export function hudEvents(state, since = 0) {
   return out;
 }
 
+// Whose popup each line of a count brings ("you", "opp"), or null: the
+// sweeps were shown as they were made, and a player's aces come together on
+// the first of them. The count is paced so that a player's next popup waits
+// for the last (choreography.js), and each comes as its line is said.
+export function popupsOf(lines) {
+  const told = new Set();
+  return lines.map((l) => {
+    const side = sideOf(l.who === "you");
+    const cat = CAT_OF[l.item];
+    if (cat === "sweeps") return null;
+    if (cat === "aces") {
+      if (told.has(side)) return null;
+      told.add(side);
+    }
+    return side;
+  });
+}
+
 // ---- the widget --------------------------------------------------------------
 
 const HAND_H = 170;
@@ -105,7 +123,7 @@ const POPUP_MS = 1700;
 const TICK_MS = 70;
 const TICK_FROM = 90;
 const POP_AT = 1900;
-const POPUP_BUSY = 1960; // a side's popup, the return included, before its next
+export const POPUP_BUSY = 1960; // a side's popup, the return included, before its next
 
 function el(tag, attrs = {}, ...children) {
   const node = document.createElement(tag);

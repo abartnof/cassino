@@ -3,7 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
-import { CATS, blank, handTotal, hudEvents, ledgerOf, ledgerTotals, segmentState } from "../src/hud.js";
+import { CATS, POPUP_BUSY, blank, handTotal, hudEvents, ledgerOf, ledgerTotals, popupsOf, segmentState } from "../src/hud.js";
 import { loadEngine } from "../src/engine.js";
 
 const line = (item, who, points, suit = null) => ({ item, suit, who, points });
@@ -179,4 +179,18 @@ test("the widget: a hand's late popups stay in that hand, and the next hand's li
   assert.deepEqual(hud.shown(), { you: 10, opp: 1 });
   assert.ok(hud.idle());
   delete globalThis.document;
+});
+
+test("the count's popups, line by line: whose popup each line brings, the aces one a player", () => {
+  const lines = [
+    { item: "cards", who: "them", points: 3 },
+    { item: "spades", who: "them", points: 1 },
+    { item: "big_casino", who: "you", points: 2 },
+    { item: "ace", who: "them", suit: "S", points: 1 },
+    { item: "ace", who: "them", suit: "H", points: 1 },
+    { item: "ace", who: "you", suit: "D", points: 1 },
+    { item: "sweeps", who: "you", points: 2 },
+  ];
+  assert.deepEqual(popupsOf(lines), ["opp", "opp", "you", "opp", null, "you", null]);
+  assert.ok(POPUP_BUSY > 1000);
 });

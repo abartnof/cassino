@@ -120,10 +120,16 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
     stage.render();
   }
 
-  function animate(prev, next, waits = {}) {
+  // `pace`: the count paced by what is said (talk.js countPace), in ms;
+  // not at the Instant speed, where nothing waits for the talk.
+  function animate(prev, next, waits = {}, pace = null) {
     timeline.skip(); // anything still moving lands first
     const scaled = Object.fromEntries(Object.entries(waits).map(([k, ms]) => [k, ms * timeline.speed]));
-    const result = choreograph(prev, next, placement, view(), { waits: scaled });
+    const paced =
+      pace && timeline.speed <= 10
+        ? { ...pace, lead: pace.lead * timeline.speed, gaps: pace.gaps.map((ms) => ms * timeline.speed), busy: (pace.busy ?? 0) * timeline.speed }
+        : null;
+    const result = choreograph(prev, next, placement, view(), { waits: scaled, pace: paced });
     placement = result.placement;
     state = next;
     const start = now();
@@ -266,9 +272,9 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
       settle(before);
       return animate(before, after);
     },
-    // The next state, animated from this one.
-    advance(next) {
-      return animate(state, next);
+    // The next state, animated from this one; `pace`, the count's, if any.
+    advance(next, { pace = null } = {}) {
+      return animate(state, next, {}, pace);
     },
     // The same state seen differently: a card chosen, table cards picked.
     rearrange() {

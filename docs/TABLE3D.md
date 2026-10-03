@@ -149,6 +149,18 @@ letter; `docs/PHRASES.md` is generated from it. The talk is kind
 (play-testing asked for it kid-friendly): nothing said belittles anyone, and
 a test keeps a list of unkind words out of the bank.
 
+**Each line at its moment** (play-testing asked that the words time up to
+the cards). A line is said when its event is seen: a move as its card
+lands; a deal as the dealer begins it ("Last." while dealing the last
+cards); the last cards as they are gathered; "Clear!" as the sweep's card
+is held up and "Cash." as the ace lands on the ace, within the capture
+(the choreography's `moments`), not once the heap is in. Lines are said in
+the order of their moments. The count is paced by what is said: the page
+chooses the words first (`talk.js` `countPace`), and each counted card
+turns up, and the score's popup comes, as its line is said; a player's
+next popup waits for the last (`hud.js` `popupsOf`), so a line that
+brings one waits too. At the Instant speed nothing waits for the talk.
+
 ## 8. The overlay
 
 Material Design 3, from piquet's shell.

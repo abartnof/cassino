@@ -335,6 +335,8 @@ export function match(current, target) {
 
 class Plan {
   constructor(placement, view) {
+    this.moments = {}; // moments within a stage, for what is said (beats)
+    this.pace = null; // the count's pace, from what is said
     this.now = placement.map((m) => ({ ...m }));
     this.view = view;
     this.clock = 0;
@@ -584,6 +586,7 @@ class Plan {
       heap.push(card);
       const slot = { key: played.code, zone: "middle", index: 0, code: played.code, pose };
       t = Math.max(t, this.move(card.id, slot, pull(this.now[card.id].pose, pose, PLAYED), start, TIMING.play));
+      this.moments.landed = t; // "Cash." as the ace lands on the ace
       if (who === "them") this.marks.push({ ids: groups.flat().map((m) => m.id), at: t, until: t + TIMING.look });
       t += who === "them" ? TIMING.look : TIMING.beat;
     }
@@ -594,6 +597,7 @@ class Plan {
       const side = who === "you" ? 1 : -1;
       const centre = new Vector3(base.x, 13, base.z + side * 6);
       held = fan({ count: 1, centre, facing: centre.clone().add(new Vector3(0, 0, 300)), tilt: (15 * Math.PI) / 180 })[0];
+      this.moments.held = t; // "Clear!" as the card is held up
       this.move(card.id, this.via(card.id, held), pickUp(this.now[card.id].pose, held, { toward: TOWARD[who] }), t, TIMING.show * 0.6);
       t += TIMING.show * 0.3;
     }
@@ -629,9 +633,21 @@ class Plan {
   // top). `this.count` keeps each line's moment, for the score sheet.
   count({ state, event }) {
     const target = this.layout(state);
-    let t = Math.max(this.clock, this.end) + TIMING.beat;
+    // Paced by what is said (`pace`, from the page): the words before the
+    // chant (a tie on the cards) and each line's own length, so the cards
+    // turn up, and the sheet is written, as each line is said.
+    // And a player's popup on the score (`popups`, whose each line brings;
+    // `busy`, how long one lasts) holds that player's next line back.
+    const pace = this.pace ?? {};
+    let t = Math.max(this.clock, this.end) + Math.max(TIMING.beat, pace.lead ?? 0);
     const lines = [];
-    for (const line of event.count.lines) {
+    const free = {};
+    for (const [i, line] of event.count.lines.entries()) {
+      const side = pace.popups?.[i];
+      if (side) {
+        t = Math.max(t, free[side] ?? t);
+        free[side] = t + (pace.busy ?? 0);
+      }
       lines.push(t);
       const code = lineCard(line);
       const slot = code && target.find((x) => x.code === code && x.zone.endsWith("count"));
@@ -641,7 +657,7 @@ class Plan {
           this.now.filter((m) => m.zone === PILE[line.who] && !m.code).sort((a, b) => b.index - a.index)[0];
         if (mesh) this.move(mesh.id, slot, toss(mesh.pose, slot.pose), t, TIMING.countCard);
       }
-      t += TIMING.countLine;
+      t += Math.max(TIMING.countLine, pace.gaps?.[i] ?? 0);
     }
     this.counted = { at: event.at, lines };
     this.clock = t;
@@ -654,12 +670,17 @@ class Plan {
 }
 
 // Stages whose moment is their start: the cards collected are heard as they
-// begin to move, and the count as it begins. Every other stage's moment is
-// when it has landed.
-const HEARD_AT_START = new Set(["collect", "count"]);
+// begin to move, the count as it begins, a deal as the dealer begins it
+// ("Last." is said while dealing the last cards), and the last cards
+// gathered to the last capturer as they are gathered. Every other stage's
+// moment is when it has landed; a sweep and cash, which move no cards of
+// their own, are heard at their moments within the capture (`moments`).
+const HEARD_AT_START = new Set(["collect", "count", "deal", "residue"]);
+const HEARD_WITHIN = { swept: "held", cash: "landed" };
 
 export function choreograph(prev, next, placement, view = {}, options = {}) {
   const plan = new Plan(placement, view);
+  plan.pace = options.pace ?? null;
   const stages = stagesBetween(prev, next);
   // Held back: an event no sooner than its wait, and all after it with it
   // (the house rules agreed aloud before the opening deal). From piquet's.
@@ -670,8 +691,9 @@ export function choreograph(prev, next, placement, view = {}, options = {}) {
     for (const stage of stages) {
       plan.clock = Math.max(plan.clock, waitFor(stage.at));
       const start = plan.clock;
+      plan.moments = {};
       plan[stage.kind](stage);
-      marks.push({ at: stage.at, start, end: Math.max(plan.clock, plan.end), early: HEARD_AT_START.has(stage.kind) });
+      marks.push({ at: stage.at, start, end: Math.max(plan.clock, plan.end), early: HEARD_AT_START.has(stage.kind), moments: plan.moments });
     }
   }
   plan.direct(next); // settle: exactly layout(next), whatever came before
@@ -681,6 +703,7 @@ export function choreograph(prev, next, placement, view = {}, options = {}) {
   const beats = {};
   let done = 0;
   let m = 0;
+  let within = {}; // the moments within the last stage that had its own
   for (let k = prev ? prev.events.length : 0; k < next.events.length; k++) {
     done = Math.max(done, waitFor(k));
     const own = [];
@@ -689,8 +712,10 @@ export function choreograph(prev, next, placement, view = {}, options = {}) {
       else done = Math.max(done, marks[m].end);
       m++;
     }
-    beats[k] = own.length ? (own[0].early ? own[0].start : own[own.length - 1].end) : done;
+    const moment = within[HEARD_WITHIN[next.events[k].kind]];
+    beats[k] = own.length ? (own[0].early ? own[0].start : own[own.length - 1].end) : (moment ?? done);
     for (const mark of own) done = Math.max(done, mark.end);
+    if (own.length) within = own[own.length - 1].moments ?? {};
   }
   return { ...result, beats };
 }

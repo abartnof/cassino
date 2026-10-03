@@ -19,7 +19,7 @@ import { createDialogue } from "./dialogue.js";
 import { createDirector } from "./director.js";
 import { facesFor, jumboTextures, phoneHere } from "./faces.js";
 import { decodeBase64, loadEngine } from "./engine.js";
-import { createHud, hudEvents, ledgerOf } from "./hud.js";
+import { POPUP_BUSY, createHud, hudEvents, ledgerOf, popupsOf } from "./hud.js";
 import { createOverlay } from "./overlay.js";
 import { badgeText, badgeTitle, badgesShown } from "./badges.js";
 import { badgesOn, choosePlay, dailySeed, loadPrefs, welcomeWanted, loadSeries, loadSitting, savePrefs, saveSeries, saveSitting, withUrl } from "./prefs.js";
@@ -28,7 +28,7 @@ import { createScene } from "./scene.js";
 import { trackers } from "./scorebug.js";
 import { EMPTY, choose, chipsOf, itemState, pick, selectionOf, selectionText, sweepWarning, valuesSaid, whyNot } from "./selection.js";
 import { chooseSurface } from "./surfaces.js";
-import { speech } from "./talk.js";
+import { countPace, speech } from "./talk.js";
 import { commandsBetween, prefix, stops } from "./replay.js";
 import { pageDue, parseTutorial } from "./tutorial.js";
 import TUTORIAL_TEXT from "../tutorial.md";
@@ -332,9 +332,15 @@ async function main() {
     sel = EMPTY;
     offer = null;
     badgeFrom = before;
-    const timing = director.advance(state);
+    // The words chosen first, so the count can be paced by them.
+    // The count paced by them, and by the score's popups.
+    const said = dialogue.words(speech(state, before.events.length));
+    const talkPace = countPace(said, dialogue.plan);
+    const scored = state.events.slice(before.events.length).find((e) => e.kind === "scored");
+    const pace = talkPace && scored ? { ...talkPace, popups: popupsOf(scored.count.lines), busy: POPUP_BUSY } : null;
+    const timing = director.advance(state, { pace });
     playScore(before.events.length, timing);
-    talk(state, before.events.length, timing);
+    talk(state, before.events.length, timing, said);
     if (state.prompt === "over") countGame();
     persist();
     refresh();
@@ -490,10 +496,15 @@ async function main() {
       director.drop("talk");
       dialogue.skip();
     }
-    const lines = said.map((l) => ({
-      ...l,
-      delay: l.line !== undefined && count ? count.lines[l.line] : (beats[l.at] ?? 0),
-    }));
+    // In the order they come: a line's moment can fall inside an earlier
+    // event's motion ("Cash." as the ace lands, before the heap is carried
+    // in), and is not held back behind what is said at the end of it.
+    const lines = said
+      .map((l) => ({
+        ...l,
+        delay: l.line !== undefined && count ? count.lines[l.line] : (beats[l.at] ?? 0),
+      }))
+      .sort((a, b) => a.delay - b.delay);
     dialogue.say(lines, (line, words, ms) => director.at(ms, () => overlay.say(line.who, words, director.handEdge(line.who)), "talk"));
   }
 

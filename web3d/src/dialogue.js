@@ -23,10 +23,10 @@
 
 import { createBags } from "./bag.js";
 
-const GAP = 90; // ms between one speaker's lines
-const TURN = 280; // ms when the other speaks
+export const GAP = 90; // ms between one speaker's lines
+export const TURN = 280; // ms when the other speaks
 // How long a line takes to say: about as long as a person takes.
-const saying = (words) => 250 + 65 * (words || "").length;
+export const saying = (words) => 250 + 65 * (words || "").length;
 
 export function createDialogue(bank, clock = () => performance.now()) {
   const pick = createBags();
