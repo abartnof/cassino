@@ -52,13 +52,14 @@ tokens are piquet's, generated from one seed colour with Google's Material
 Color Utilities.
 
 The page's own icons (undo, settings, the game log, the hint) are simple
-strokes drawn for piquet's page and reused. Five come from **Material
+strokes drawn for piquet's page and reused. Seven come from **Material
 Symbols** (Outlined, weight 400, 24 px), by **Google**,
 <https://github.com/google/material-design-icons>, Apache License 2.0: *add*
-(the plus for a new game) and *help* (the question mark) in the top bar, and
-*arrow_back*, *arrow_forward* and *close* on the tutorial's pages. Their SVG
-paths are copied into `web3d/src/chrome.js`; no icon font is fetched or
-bundled.
+(the plus for a new game) and *help* (the question mark) in the top bar,
+*arrow_back*, *arrow_forward* and *close* on the tutorial's pages, and
+*expand_less* and *expand_more* on the fold of the trackers' panel. Their
+SVG paths are copied into `web3d/src/chrome.js` and `web3d/src/overlay.js`;
+no icon font is fetched or bundled.
 
 ## Software in the page
 

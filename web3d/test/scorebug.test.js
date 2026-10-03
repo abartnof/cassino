@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
-import { countLines, countOf, lineCard, lineLabel, trackers } from "../src/scorebug.js";
+import { countLines, countOf, lineCard, lineLabel, trackerTable, trackers } from "../src/scorebug.js";
 import { loadEngine } from "../src/engine.js";
 
 const line = (item, who, points, suit = null) => ({ item, suit, who, points });
@@ -40,6 +40,43 @@ test("trackers follow the captures, and a clinch settles a point for both", () =
   assert.equal(get("you", "big_casino").have, true);
   assert.equal(get("them", "little_casino").have, true);
   assert.equal(get("you", "sweeps").n, 2);
+});
+
+test("the trackers as a table: a column for each point, a row for each player, a tip on each", () => {
+  const state = {
+    hand_number: 1,
+    rules: { sweeps: false },
+    piles: {
+      you: { cards: 27, spades: 3, aces: 1, big_casino: true, little_casino: false, sweeps: 0 },
+      them: { cards: 10, spades: 0, aces: 0, big_casino: false, little_casino: false, sweeps: 0 },
+    },
+    events: [{ kind: "clinched", hand: 1, you: true, what: "cards" }],
+  };
+  const table = trackerTable(trackers(state));
+  assert.deepEqual(table.columns.map((c) => c.head), ["Cards", "Spades", "Aces", "10♦", "2♠"], "no sweeps column when sweeps are not scored");
+  assert.ok(table.columns.every((c) => c.tip.length > 20), "every column says what it counts and what it scores");
+  assert.match(table.columns[0].tip, /27/);
+  assert.deepEqual(table.rows.map((r) => r.name), ["You", "Opp"]);
+  const cell = (who, key) => table.rows.find((r) => r.who === who).cells.find((c) => c.key === key);
+  // Values only in the cells; the meaning is in the headers and the tips.
+  assert.equal(cell("you", "cards").text, "27");
+  assert.equal(cell("you", "spades").text, "3");
+  assert.equal(cell("you", "big_casino").text, "✓");
+  assert.equal(cell("them", "big_casino").text, "–");
+  assert.equal(cell("you", "cards").look, "won");
+  assert.equal(cell("them", "cards").look, "lost");
+  assert.equal(cell("them", "big_casino").look, "lost", "the other player has it");
+  assert.equal(cell("them", "little_casino").look, "none", "still out");
+  assert.equal(cell("them", "spades").look, "none");
+  assert.match(cell("you", "cards").tip, /most cards is yours/i);
+  assert.match(cell("them", "cards").tip, /10 cards/);
+  assert.match(cell("you", "spades").tip, /4 more/, "how far from certain");
+  assert.equal(cell("them", "big_casino").tip, "You took Big Casino.");
+  assert.match(cell("them", "little_casino").tip, /not taken yet/i);
+  // A watched game names its seats.
+  const watched = trackerTable(trackers(state), { watching: true });
+  assert.deepEqual(watched.rows.map((r) => r.name), ["South", "North"]);
+  assert.match(watched.rows[1].cells[0].tip, /^North has taken 10 cards/);
 });
 
 const WASM = new URL("../../target/wasm32-unknown-unknown/release/cassino_wasm.wasm", import.meta.url);

@@ -181,8 +181,15 @@ Material Design 3, from piquet's shell.
   carried over from the spec, as it says: no 18-20 endgame zone, no marks
   under the scores. Our own aids keep to their own panel (below).
 - **Trackers** (each a toggle), in a panel of the HUD's palette at the foot
-  of the left: cards towards 27, spades towards 7, aces and Casinos taken,
-  sweeps; cards still out (`state.unseen`). The sweep warning is a line
+  of the left, headed "Captured this hand", which folds to its heading (open
+  by default; kept as left): a table with a column for each point (Cards,
+  Spades, Aces, 10♦, 2♠, and Sweeps when they score) and a row for each
+  player, only the value in each cell (`scorebug.js` `trackerTable`). A
+  point certain to be a player's (27 cards, 7 spades, a Casino taken) is
+  filled in; one that is the other's is dimmed. Every header and cell has
+  a tip: what the column counts and scores, and in the cell how far the
+  player is from making a point certain. Then the cards still out
+  (`state.unseen`). The sweep warning is a line
   under the prompt: before a move, when a chip's move would leave your
   opponent a table to sweep (the offer's `leaves_sweep`), and otherwise
   what would clear the table now (`state.sweep_values`).

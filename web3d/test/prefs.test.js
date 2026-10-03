@@ -66,6 +66,13 @@ test("build values: off by default, kept when chosen, and always on with the tut
   assert.equal(loadPrefs(store).buildValues, true);
 });
 
+test("the trackers' panel starts open, and stays as it was left", () => {
+  assert.equal(DEFAULTS.trackersOpen, true);
+  const store = memory();
+  savePrefs(store, { ...DEFAULTS, trackersOpen: false });
+  assert.equal(loadPrefs(store).trackersOpen, false);
+});
+
 test("the skill dial runs from 1 to 4 in halves", () => {
   assert.deepEqual(SKILLS.map((s) => s.value), [1, 1.5, 2, 2.5, 3, 3.5, 4]);
   assert.ok(SKILLS.every((s) => s.words.length > 0));

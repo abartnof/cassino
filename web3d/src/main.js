@@ -124,7 +124,7 @@ async function main() {
     rested: () => {
       badgeFrom = state; // from here, a move starts from this table
       placeBadges();
-      overlay.trackers(trackers(state));
+      overlay.trackers(trackers(state), state.watching);
       show();
       if (state.watching) watchOn();
       else if (replay) replayOn();
@@ -145,6 +145,8 @@ async function main() {
     onReplay: (what) => replayDo(what),
     // A badge tapped is its build tapped.
     onBadge: (id) => tapped(director.placement().find((m) => m.item === id) ?? null),
+    // The trackers' panel folded or opened: kept for next time.
+    onFold: (open) => change({ trackersOpen: open }),
     later: (ms, fn) => director.at(ms, fn, "linger"),
   });
 
@@ -157,9 +159,8 @@ async function main() {
     const who = seats();
     const seen = { ...state, events: state.events.slice(0, upTo) };
     hud.reset(ledgerOf(seen), { you: who.you, opp: who.them });
-    overlay.names(who);
     const none = { cards: 0, spades: 0, aces: 0, big_casino: false, little_casino: false, sweeps: 0 };
-    overlay.trackers(trackers(upTo < state.events.length ? { ...seen, piles: { you: none, them: none } } : state));
+    overlay.trackers(trackers(upTo < state.events.length ? { ...seen, piles: { you: none, them: none } } : state), state.watching);
   }
 
   // A setting changed: in what is shown and in what is saved.
@@ -586,6 +587,7 @@ async function main() {
       drawLog();
     }
     overlay.showTrackers(prefs.trackers);
+    overlay.setOpen(prefs.trackersOpen);
     chrome.sync(prefs, state, { busy, canAgain: Boolean(lastMove) && !replay, replaying: Boolean(replay) });
   }
 

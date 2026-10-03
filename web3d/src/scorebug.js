@@ -73,3 +73,53 @@ export function trackers(state) {
   }
   return out;
 }
+
+// The trackers as a table (the aids' panel): a column for each point, with
+// its header and a tip saying what it counts and what it scores; a row for
+// each player; in each cell only the value, its look ("won": the point is
+// theirs for certain; "lost": it is the other player's; "none": nothing
+// yet), and a tip in words. `watching`: the seats are South and North.
+const COLUMNS = {
+  cards: { head: "Cards", tip: "Cards taken this hand. Most cards scores 3 points; 27 of the 52 makes it certain." },
+  spades: { head: "Spades", tip: "Spades taken this hand. Most spades scores 1 point; 7 of the 13 makes it certain." },
+  aces: { head: "Aces", tip: "Aces taken this hand: a point each." },
+  big_casino: { head: "10♦", tip: "Big Casino, the ten of diamonds: 2 points to whoever takes it." },
+  little_casino: { head: "2♠", tip: "Little Casino, the two of spades: 1 point to whoever takes it." },
+  sweeps: { head: "Sweeps", tip: "Sweeps made this hand, each clearing the table: a point each." },
+};
+const GOAL = { cards: { of: 27, word: "cards", point: "most cards" }, spades: { of: 7, word: "spades", point: "most spades" } };
+
+export function trackerTable(t, { watching = false } = {}) {
+  const seats = watching
+    ? { you: { name: "South", who: "South", has: "has", own: "South's" }, them: { name: "North", who: "North", has: "has", own: "North's" } }
+    : { you: { name: "You", who: "You", has: "have", own: "yours" }, them: { name: "Opp", who: "Your opponent", has: "has", own: "your opponent's" } };
+  const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+  const columns = t.you.map((x) => ({ key: x.key, ...COLUMNS[x.key] }));
+  const rows = ["you", "them"].map((who) => {
+    const other = who === "you" ? "them" : "you";
+    const me = seats[who];
+    const cells = t[who].map((x) => {
+      if (x.have !== undefined) {
+        const theirs = t[other].find((y) => y.key === x.key).have;
+        const name = x.key === "big_casino" ? "Big Casino" : "Little Casino";
+        const tip = x.have ? `${me.who} took ${name}.` : theirs ? `${seats[other].who} took ${name}.` : `${name} is not taken yet.`;
+        return { key: x.key, text: x.have ? "✓" : "–", look: x.have ? "won" : theirs ? "lost" : "none", tip };
+      }
+      const look = x.done ? "won" : x.lost ? "lost" : x.n ? "" : "none";
+      let tip;
+      const goal = GOAL[x.key];
+      if (goal) {
+        const taken = `${me.who} ${me.has} taken ${plural(x.n, goal.word.slice(0, -1), goal.word)}`;
+        tip = x.done
+          ? `${taken}: ${goal.point} is ${me.own}.`
+          : x.lost
+            ? `${taken}; ${goal.point} is ${seats[other].own}.`
+            : `${taken}; ${goal.of - x.n} more ${goal.of - x.n === 1 ? "makes" : "make"} ${goal.point} certain.`;
+      } else if (x.key === "aces") tip = `${me.who} ${me.has} taken ${plural(x.n, "ace")}: ${plural(x.n, "point")}.`;
+      else tip = `${me.who} ${me.has} made ${plural(x.n, "sweep")}: ${plural(x.n, "point")}.`;
+      return { key: x.key, text: String(x.n), look, tip };
+    });
+    return { who, name: me.name, tip: watching ? `${me.own} captures this hand` : who === "you" ? "Your captures this hand" : "Your opponent's captures this hand", cells };
+  });
+  return { columns, rows };
+}

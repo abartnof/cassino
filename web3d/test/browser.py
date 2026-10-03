@@ -291,6 +291,32 @@ def check_badges(browser, failures):
     page.context.close()
 
 
+def check_trackers(browser, failures):
+    """The trackers' panel: a header's tip shows when pointed at (nothing
+    lies over the panel), and the panel folds to its heading and stays
+    folded across a reload."""
+    page = open_page(browser, "seed=7&speed=100", calm=True)
+    settle(page)
+    try:
+        page.locator(".tracker-table thead th.spades").hover(timeout=5000)
+        page.wait_for_timeout(200)
+        tip = page.locator(".tip")
+        if not tip.is_visible() or "Spades" not in tip.inner_text():
+            failures.append("no tip on the trackers' Spades header")
+    except Exception as e:  # something lies over the panel
+        failures.append(f"the trackers' panel could not be pointed at: {str(e).splitlines()[0]}")
+    page.locator(".aids-fold").click()
+    page.wait_for_timeout(200)
+    if page.locator(".tracker-table").is_visible():
+        failures.append("the trackers' panel did not fold")
+    page.reload()
+    page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
+    settle(page)
+    if page.locator(".tracker-table").is_visible() or not page.locator(".aids-title").is_visible():
+        failures.append("the trackers' panel did not stay folded across a reload")
+    page.context.close()
+
+
 def check_tutorial(browser, failures):
     """The tutorial: the introduction as the game begins, holding the table;
     then, playing on, a page of the teaching ladder at its moment; and the
@@ -598,6 +624,7 @@ def main() -> int:
         # them: a pair and a sum taken with 9C; all four cards with 10C).
         check_settings(browser, failures)
         check_badges(browser, failures)
+        check_trackers(browser, failures)
         check_tutorial(browser, failures)
         check_phone(browser, failures)
         page = open_page(browser, "seed=11&skill=4&manual", calm=True)

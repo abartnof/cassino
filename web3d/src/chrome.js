@@ -344,7 +344,7 @@ function creditItems() {
     ),
     item(
       "Material Design 3",
-      "The controls follow Google's Material Design 3 (m3.material.io), through Material Web 2.5.0 (Apache License 2.0, © Google LLC) and Lit 3.3.3 (BSD 3-Clause, © Google LLC), with tslib 2.8.1 (0BSD, © Microsoft). The plus and question-mark icons are Material Symbols (Apache License 2.0, © Google LLC).",
+      "The controls follow Google's Material Design 3 (m3.material.io), through Material Web 2.5.0 (Apache License 2.0, © Google LLC) and Lit 3.3.3 (BSD 3-Clause, © Google LLC), with tslib 2.8.1 (0BSD, © Microsoft). The plus, question-mark, arrow, close and fold icons are Material Symbols (Apache License 2.0, © Google LLC).",
     ),
     item("three.js", "The table is drawn with three.js 0.186.1: MIT License, © 2010–2026 three.js authors."),
     item(

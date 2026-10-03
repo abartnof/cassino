@@ -12,20 +12,25 @@
 import "@material/web/button/filled-button.js";
 import "@material/web/chips/assist-chip.js";
 import "@material/web/chips/chip-set.js";
+import "@material/web/iconbutton/icon-button.js";
+import { trackerTable } from "./scorebug.js";
 
 // `later(ms, fn)` runs `fn` after `ms` on the table's clock (director.at),
 // so a box lingers as long as the table runs, and holds when it is held.
-export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () => {}, onBadge = () => {}, later = (ms, fn) => setTimeout(fn, ms) }) {
+export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () => {}, onBadge = () => {}, onFold = () => {}, later = (ms, fn) => setTimeout(fn, ms) }) {
   root.innerHTML = `
     <div class="badges"></div>
     <div class="afloat"></div>
     <div class="info"><div class="hud-slot"></div></div>
     <p class="focus-told" aria-live="polite"></p>
     <section class="aids-panel" hidden aria-label="Captures and the cards still out">
-      <div class="tally-row you"><span class="who">You</span><ul class="tally" aria-label="Your captures"></ul></div>
-      <div class="tally-row them"><span class="who">Opp</span><ul class="tally" aria-label="Your opponent's captures"></ul></div>
-      <p class="out" hidden></p>
+      <div class="aids-head"><h2 class="aids-title">Captured this hand</h2></div>
+      <div class="aids-body">
+        <table class="tracker-table"><thead><tr></tr></thead><tbody></tbody></table>
+        <p class="out" hidden></p>
+      </div>
     </section>
+    <div class="tip" role="tooltip" hidden></div>
     <aside class="game-log" hidden aria-label="The game log"><h2>Game log</h2><ol></ol></aside>
     <section class="controls">
       <p class="prompt" aria-live="polite"></p>
@@ -136,43 +141,97 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
   // ---- the aids' panel ----------------------------------------------------
 
   const panel = $(".aids-panel");
-  const rows = { you: panel.querySelector(".tally-row.you"), them: panel.querySelector(".tally-row.them") };
+  const table = panel.querySelector(".tracker-table");
+  const title = panel.querySelector(".aids-title");
+  const body = panel.querySelector(".aids-body");
   const outLine = $(".out");
-  let showing = { trackers: true, unseen: false };
+  let showing = { trackers: true, unseen: false, open: true };
+  // Folded to its heading, or open; the heading says what is in it.
+  const fold = el("md-icon-button", { class: "aids-fold", toggle: true }, chevron("less"), chevron("more"));
+  fold.lastChild.setAttribute("slot", "selected");
+  fold.addEventListener("change", () => {
+    showing.open = !fold.selected;
+    fit();
+    onFold(showing.open);
+  });
+  panel.querySelector(".aids-head").append(fold);
   const fit = () => {
-    rows.you.hidden = rows.them.hidden = !showing.trackers;
+    table.hidden = !showing.trackers;
+    body.hidden = !showing.open;
+    panel.classList.toggle("folded", !showing.open);
+    fold.selected = !showing.open;
+    fold.setAttribute("aria-label", showing.open ? "Fold the panel" : "Open the panel");
+    fold.title = showing.open ? "Fold the panel" : "Open the panel";
+    title.textContent = showing.trackers ? "Captured this hand" : "Still out";
     panel.hidden = !showing.trackers && outLine.hidden;
   };
 
-  // Each player's captures this hand: cards toward 27, spades toward 7,
-  // aces, the Casinos, sweeps. A point that is theirs for certain (a clinch,
-  // a Casino taken) is filled in; a point clinched by the other player is
-  // struck through.
-  function trackers(t) {
-    for (const who of ["you", "them"]) {
-      rows[who].querySelector(".tally").replaceChildren(
-        ...t[who].map((x) => {
-          const has = x.have !== undefined;
-          const toward = x.of && x.n < x.of && !x.done && !x.lost;
-          const text = has ? x.label : toward ? `${x.label} ${x.n}/${x.of}` : `${x.label} ${x.n}`;
-          const won = x.done || (has && x.have);
-          const cls = ["tracker", x.key, won ? "won" : "", x.lost ? "lost" : "", has && !x.have ? "none" : "", !has && !x.n ? "none" : ""];
-          return el("li", { class: cls.filter(Boolean).join(" "), title: trackerTitle(x) }, text);
-        }),
-      );
-    }
+  // Each player's captures this hand, as a table (scorebug.js): a column
+  // for each point, a row for each player, only the value in each cell. A
+  // point that is theirs for certain (a clinch, a Casino taken) is filled
+  // in; one that is the other player's is dimmed. Every header and cell
+  // has its tip.
+  function trackers(t, watching = false) {
+    const { columns, rows } = trackerTable(t, { watching });
+    table.tHead.rows[0].replaceChildren(
+      el("td", {}),
+      ...columns.map((c) => el("th", { scope: "col", class: c.key, "data-tip": c.tip, tabindex: "0" }, c.head)),
+    );
+    table.tBodies[0].replaceChildren(
+      ...rows.map((r) =>
+        el(
+          "tr",
+          { class: r.who },
+          el("th", { scope: "row", "data-tip": r.tip }, r.name),
+          ...r.cells.map((c) => el("td", { class: [c.key, c.look].filter(Boolean).join(" "), "data-tip": c.tip }, c.text)),
+        ),
+      ),
+    );
   }
   function showTrackers(on) {
     showing.trackers = on;
     fit();
   }
-
-  // Who sits where: "You" and "Opp", or South and North when two computer
-  // players are watched.
-  function names({ you, them }) {
-    rows.you.querySelector(".who").textContent = you;
-    rows.them.querySelector(".who").textContent = them;
+  function setOpen(open) {
+    showing.open = open;
+    fit();
   }
+
+  // The tip: what a header or a cell means, shown above it while the
+  // pointer rests on it or it has the keyboard's focus; a tap shows it a
+  // while (no pointer rests on a phone).
+  const tipBox = $(".tip");
+  let tipFor = null;
+  let tipTimer = null;
+  function showTip(target) {
+    clearTimeout(tipTimer);
+    tipFor = target;
+    tipBox.textContent = target.dataset.tip;
+    tipBox.hidden = false;
+    const r = target.getBoundingClientRect();
+    const w = tipBox.offsetWidth;
+    const h = tipBox.offsetHeight;
+    const x = Math.min(Math.max(r.left + r.width / 2 - w / 2, 8), window.innerWidth - w - 8);
+    const above = r.top - h - 8;
+    tipBox.style.left = `${x}px`;
+    tipBox.style.top = `${above >= 8 ? above : r.bottom + 8}px`;
+  }
+  function hideTip(target) {
+    if (target && target !== tipFor) return;
+    tipFor = null;
+    tipBox.hidden = true;
+  }
+  const tipOf = (e) => e.target.closest?.("[data-tip]");
+  panel.addEventListener("pointerover", (e) => tipOf(e) && e.pointerType === "mouse" && showTip(tipOf(e)));
+  panel.addEventListener("pointerout", (e) => tipOf(e) && e.pointerType === "mouse" && hideTip(tipOf(e)));
+  panel.addEventListener("focusin", (e) => tipOf(e) && showTip(tipOf(e)));
+  panel.addEventListener("focusout", (e) => tipOf(e) && hideTip(tipOf(e)));
+  panel.addEventListener("click", (e) => {
+    const target = tipOf(e);
+    if (!target) return;
+    showTip(target);
+    tipTimer = setTimeout(() => hideTip(target), 3500);
+  });
 
   // The cards you have not seen (the counting aid), or nothing.
   function unseen(u) {
@@ -262,7 +321,7 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
     tell,
     trackers,
     showTrackers,
-    names,
+    setOpen,
     unseen,
     log,
     hudSlot: $(".hud-slot"),
@@ -271,14 +330,21 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
   };
 }
 
-function trackerTitle(x) {
-  if (x.have !== undefined) return x.key === "big_casino" ? "Big Casino: 2 points" : "Little Casino: 1 point";
-  if (x.done) return `${x.label}: the point is clinched`;
-  if (x.lost) return `${x.label}: the point is the other player's`;
-  if (x.key === "cards") return "Cards: 27 or more wins 3 points";
-  if (x.key === "spades") return "Spades: 7 or more wins 1 point";
-  if (x.key === "aces") return "Aces: 1 point each";
-  return "Sweeps: 1 point each";
+// Material Symbols' expand less and more (Apache License 2.0, Google;
+// CREDITS.md), for the panel's fold.
+const CHEVRONS = {
+  less: "m296-345-56-56 240-240 240 240-56 56-184-184-184 184Z",
+  more: "M480-345 240-585l56-56 184 184 184-184 56 56-240 240Z",
+};
+function chevron(which) {
+  const node = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  node.setAttribute("viewBox", "0 -960 960 960");
+  node.setAttribute("aria-hidden", "true");
+  node.setAttribute("class", "icon symbol");
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", CHEVRONS[which]);
+  node.append(path);
+  return node;
 }
 
 // An element, its attributes and its children.
