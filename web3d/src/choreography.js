@@ -24,6 +24,8 @@
 //   options    { waits }: { eventIndex: ms } holds an event back until then,
 //              and everything after it with it.
 //   count      { at, lines }: a hand's count, the moment of each line.
+//   marks      [{ ids, at, until }]: meshes lit a while (the cards your
+//              opponent's capture takes, while you look).
 //
 // The structure is piquet's choreography.js @ 254cb3c (the reducer, the
 // matching of meshes to slots, the plan and its settle); the stages are
@@ -335,6 +337,7 @@ class Plan {
     this.end = 0;
     this.motions = [];
     this.free = new Map(); // when each mesh is next free to move
+    this.marks = []; // cards lit a while: { ids, at, until }
   }
 
   // A motion for a mesh, never overlapping the motion before it.
@@ -563,13 +566,15 @@ class Plan {
     // The first group squared where it lies, while the card is on its way.
     let t = start;
     for (const mesh of groups[0]) t = Math.max(t, into(mesh, start, TIMING.gather));
-    // The card laid on it, its face shown as it leaves the hand.
+    // The card laid on it, its face shown as it leaves the hand. Your
+    // opponent's: the cards it takes light up while you look.
     const card = played?.mesh ?? null;
     if (card) {
       const pose = heapPose(heap.length);
       heap.push(card);
       const slot = { key: played.code, zone: "middle", index: 0, code: played.code, pose };
       t = Math.max(t, this.move(card.id, slot, pull(this.now[card.id].pose, pose, PLAYED), start, TIMING.play));
+      if (who === "them") this.marks.push({ ids: groups.flat().map((m) => m.id), at: t, until: t + TIMING.look });
       t += who === "them" ? TIMING.look : TIMING.beat;
     }
     // A sweep's card held up, facing you, over its taker's side of the table.
@@ -634,7 +639,7 @@ class Plan {
   }
 
   result() {
-    return { motions: this.motions, placement: this.now, duration: Math.max(this.clock, this.end), count: this.counted ?? null };
+    return { motions: this.motions, placement: this.now, duration: Math.max(this.clock, this.end), count: this.counted ?? null, marks: this.marks };
   }
 }
 

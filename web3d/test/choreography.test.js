@@ -311,3 +311,41 @@ test("the count: each counted card is turned up at its line's moment", { skip },
     break;
   }
 });
+
+test("your opponent's capture: the cards it takes light up while you look, before they go", () => {
+  const before = position({ hand: ["8S", "KD"], table: [[1, ["8H"]], [2, ["5C"]], [3, ["3D"]], [4, ["QH"]]], holds: 3, events: [{ kind: "dealt", hand: 1, text: "Deal 3 of 6." }] });
+  const played = {
+    kind: "played",
+    hand: 1,
+    text: "Your opponent takes.",
+    you: false,
+    move: "take 8C 8H 5C 3D",
+    card: card("8C"),
+    type: "take",
+    value: 8,
+    taken: ["8H", "5C", "3D"].map(card),
+    groups: [["8H"], ["5C", "3D"]].map((g) => g.map(card)),
+    call: null,
+  };
+  const after = {
+    ...before,
+    events: [...before.events, played],
+    opponent_holds: 2,
+    table: [{ id: 4, cards: [card("QH")], build: null }],
+    piles: { you: { cards: 0, sweeps: 0 }, them: { cards: 4, sweeps: 0 } },
+  };
+  const placement = initialPlacement(before);
+  const result = playOut(before, after, placement, "their capture");
+  assert.equal(result.marks.length, 1);
+  const [mark] = result.marks;
+  const ids = (codes) => codes.map((c) => placement.find((m) => m.code === c).id).sort();
+  assert.deepEqual([...mark.ids].sort(), ids(["8H", "5C", "3D"]));
+  const landed = result.motions.find((m) => m.reveal?.code === "8C");
+  assert.ok(mark.at >= landed.delay + landed.duration - 1e-9, "lit once their card has landed");
+  const firstGone = Math.min(...result.motions.filter((m) => ids(["5C", "3D"]).includes(m.id)).map((m) => m.delay));
+  assert.ok(mark.until <= firstGone + 1e-9, "and until they go");
+  // Your own captures light nothing: you chose them.
+  const mine = { ...played, you: true, card: card("8S"), move: "take 8S 8H 5C 3D" };
+  const yours = { ...after, events: [...before.events, mine], hand: [card("KD")], opponent_holds: 3, piles: { you: { cards: 4, sweeps: 0 }, them: { cards: 0, sweeps: 0 } } };
+  assert.equal(playOut(before, yours, placement, "your capture").marks.length, 0);
+});

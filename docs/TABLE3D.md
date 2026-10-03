@@ -117,8 +117,9 @@ layout, its faces, no leak, and no card through the table.
 
 Your opponent's moves are staged as in shipped apps that players praise
 (`DESIGN.md` §12.3): a pause before each (`think`), and after their card
-lands on what it takes, a longer look before the gather (`look`). Lighting
-up the cards it takes, during that look, is for T6.
+lands on what it takes, a longer look before the gather (`look`), while
+the cards it takes light up (the choreography's `marks`, lit by the
+director on the table's clock).
 
 ## 7. Table talk
 

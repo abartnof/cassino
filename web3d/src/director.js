@@ -141,6 +141,17 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
         start,
       );
     }
+    // Cards lit a while, on the same clock: drawn again as they light and
+    // as they go back.
+    for (const mark of result.marks ?? []) {
+      const light = (line) => () => {
+        for (const id of mark.ids) deck.decorate(meshes[id], { line });
+        moving = true;
+        wake();
+      };
+      schedule({ at: start + mark.at / timeline.speed, gate: false, fn: light("hint") });
+      schedule({ at: start + mark.until / timeline.speed, gate: false, fn: light("plain") });
+    }
     const beats = {};
     for (const [k, ms] of Object.entries(result.beats)) beats[k] = ms / timeline.speed;
     const count = result.count ? { at: result.count.at, lines: result.count.lines.map((ms) => ms / timeline.speed) } : null;
