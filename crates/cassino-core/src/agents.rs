@@ -114,7 +114,7 @@ impl Agent for GreedyAgent {
 }
 
 /// The highest level of opponent.
-pub const TOP: u8 = 3;
+pub const TOP: u8 = 4;
 
 /// The opponent at `level` (1 to [`TOP`]), drawing any choices it makes at
 /// random from `rng`.
@@ -123,8 +123,31 @@ pub fn by_level(level: u8, rng: Rng) -> Box<dyn Agent> {
         1 => Box::new(RandomAgent::new(rng)),
         2 => Box::new(GreedyAgent),
         3 => Box::new(crate::counter::CounterAgent::new(rng)),
+        4 => Box::new(crate::search::SearchAgent::new(rng)),
         _ => panic!("no level {level}: 1 to {TOP}"),
     }
+}
+
+/// An agent by name, for experiments: the levels' agents and the
+/// searcher's playout policies (`search-greedy`, `search-counter`).
+pub fn by_name(name: &str, rng: Rng) -> Option<Box<dyn Agent>> {
+    use crate::search::{Policy, SearchAgent};
+    let agent: Box<dyn Agent> = match name {
+        "legal" => by_level(1, rng),
+        "greedy" => by_level(2, rng),
+        "counter" => by_level(3, rng),
+        "searcher" => by_level(4, rng),
+        other => {
+            let mut s = SearchAgent::new(rng);
+            s.policy = match other.strip_prefix("search-")? {
+                "greedy" => Policy::Greedy,
+                "counter" => Policy::Counter,
+                _ => return None,
+            };
+            Box::new(s)
+        }
+    };
+    Some(agent)
 }
 
 /// What the opponent at `level` does, in a phrase for a menu.
@@ -133,6 +156,7 @@ pub fn describe(level: u8) -> &'static str {
         1 => "plays any legal card",
         2 => "takes the best capture in sight, and never builds",
         3 => "remembers every card and looks one move ahead",
+        4 => "plays each idea out to the end of the deal, and solves the last deal exactly",
         _ => "",
     }
 }
@@ -219,6 +243,24 @@ mod tests {
         assert_eq!(by_level(1, Rng::seeded(1)).name(), "legal");
         assert_eq!(by_level(2, Rng::seeded(1)).name(), "greedy");
         assert_eq!(by_level(3, Rng::seeded(1)).name(), "counter");
+        assert_eq!(by_level(4, Rng::seeded(1)).name(), "searcher");
+    }
+
+    #[test]
+    fn agents_by_name() {
+        for name in [
+            "legal",
+            "greedy",
+            "counter",
+            "searcher",
+            "search-greedy",
+            "search-counter",
+        ] {
+            assert!(by_name(name, Rng::seeded(1)).is_some(), "{name}");
+        }
+        for bad in ["", "search-", "search-deal", "search-oracle"] {
+            assert!(by_name(bad, Rng::seeded(1)).is_none(), "{bad}");
+        }
     }
 
     #[test]

@@ -13,6 +13,7 @@ pub mod observation;
 pub mod rng;
 pub mod rules;
 pub mod scoring;
+pub mod search;
 pub mod solver;
 pub mod sums;
 pub mod table;

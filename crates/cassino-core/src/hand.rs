@@ -358,6 +358,11 @@ impl Hand {
         last_capturer: Option<Seat>,
         undealt: &[Card],
     ) -> Hand {
+        assert_eq!(
+            undealt.len() % 8,
+            0,
+            "two players are dealt eight cards a round"
+        );
         let later: CardSet = undealt.iter().copied().collect();
         let out = hands[0] | hands[1] | table.cards() | piles[0] | piles[1];
         assert!(

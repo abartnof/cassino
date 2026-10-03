@@ -26,12 +26,18 @@ use cassino_core::tournament::{
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let usage = "measure A B [--rules classic|royal|royal14] [--unit hand|game] [--batch N] [--looks K] [--seed S] [--out FILE]";
-    let level = |s: Option<&String>| -> u8 {
-        s.and_then(|v| v.parse().ok())
-            .filter(|l| (1..=agents::TOP).contains(l))
-            .unwrap_or_else(|| panic!("{usage}: levels are 1 to {}", agents::TOP))
+    // A level (1 to TOP) or an agent's name (agents::by_name).
+    let agent_name = |s: Option<&String>| -> String {
+        let s = s.unwrap_or_else(|| panic!("{usage}"));
+        match s.parse::<u8>() {
+            Ok(l) if (1..=agents::TOP).contains(&l) => {
+                ["legal", "greedy", "counter", "searcher"][l as usize - 1].to_string()
+            }
+            _ if agents::by_name(s, cassino_core::rng::Rng::seeded(0)).is_some() => s.clone(),
+            _ => panic!("{usage}: a level 1 to {} or an agent's name", agents::TOP),
+        }
     };
-    let (a, b) = (level(args.first()), level(args.get(1)));
+    let (a, b) = (agent_name(args.first()), agent_name(args.get(1)));
     let mut rules = Rules::CLASSIC;
     let mut games = false;
     let mut plan = Plan {
@@ -65,23 +71,18 @@ fn main() {
         }
         i += 2;
     }
-    let factory = |level: u8| {
+    let factory = |name: String| {
         move |seed: u64, seat: Seat| -> Box<dyn Agent> {
-            agents::by_level(level, agent_rng(seed, seat))
+            agents::by_name(&name, agent_rng(seed, seat)).expect("checked above")
         }
     };
-    let (fa, fb) = (factory(a), factory(b));
+    let (fa, fb) = (factory(a.clone()), factory(b.clone()));
     let unit = if games {
         "games won less lost per pair"
     } else {
         "points per pair of hands"
     };
-    println!(
-        "level {a} ({}) against level {b} ({}), {:?}: {unit}",
-        agents::describe(a),
-        agents::describe(b),
-        rules
-    );
+    println!("{a} against {b}, {rules:?}: {unit}");
     println!(
         "plan: batches of {}, at most {} looks, boundaries {:?}, first seed {first_seed}",
         plan.batch,
@@ -121,7 +122,7 @@ fn main() {
     );
     match report.verdict {
         Verdict::Clear { look, n, mean, se } => println!(
-            "CLEAR at look {look} ({n} pairs): level {a} {} level {b} by {:.3} ± {:.3}",
+            "CLEAR at look {look} ({n} pairs): {a} {} {b} by {:.3} ± {:.3}",
             if mean > 0.0 { "beats" } else { "loses to" },
             mean.abs(),
             se
