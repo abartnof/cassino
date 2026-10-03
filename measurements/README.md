@@ -41,3 +41,20 @@ Units:
 | 2026-10-03 | 4 at erraticism 0.5, one-rung slips (skill 3.5) | 4 searcher | Classic | hand | 50 × 4 | **Clear at look 3**, 150 pairs: loses by 2.03 ± 0.52. Skill 3.5 sits between the rungs, as it should |
 | 2026-10-03 | skill 3.5, decisions drawn from a hash of the view | 3 counter | Classic | hand | 50 × 4 | **Clear at look 4**, 200 pairs: beats by 1.19 ± 0.43 (seeds from 9,000,000) |
 | 2026-10-03 | skill 3.5, decisions drawn from a hash of the view | 4 searcher | Classic | hand | 50 × 4 | **Clear at look 2**, 100 pairs: loses by 2.26 ± 0.59. Still between the rungs |
+
+## Card weights that follow the piles
+
+The worth of one more card and one more spade (`worth.rs`) is flat, 0.2 and
+0.15. A model prices them by the chance of carrying a total across the
+majority, each card still to come an even chance (code in commit 468e3a6,
+reverted).
+
+| Date | A | B | Rules | Unit | Plan | Result |
+|---|---|---|---|---|---|---|
+| 2026-10-03 | counter, dynamic weights | 3 counter | Classic | hand | 100 × 4 | **Clear at look 4**, 400 pairs: *loses* by 0.41 ± 0.17 |
+| 2026-10-03 | counter, dynamic weights scaled to the flat level at the start | 3 counter | Classic | hand | 100 × 4 | No clear difference after 400 pairs: −0.26, 95% interval −0.57 to +0.05 |
+| 2026-10-03 | searcher, dynamic weights | 4 searcher | Classic | hand | 50 × 4 | No clear difference after 200 pairs: +0.24, 95% interval −0.33 to +0.81 |
+
+The flat weights stay. A principled model of the value of a card was no
+better, and at its own level worse, than the constants: piquet's lesson that
+measuring beats reasoning, again.
