@@ -82,7 +82,15 @@ def main() -> int:
         page = open_page(browser)
         page.wait_for_timeout(500)
         check_drawn(page, failures, "at the start")
-        shot(page, "t0-table")
+        shot(page, "t1-table")
+        meshes = page.evaluate("window.cassino3d.meshes()")
+        if meshes != 52:
+            failures.append(f"expected 52 cards on the table, found {meshes}")
+        st = page.evaluate("window.cassino3d.state()")
+        seen = {c["card"] for c in st["hand"]} | {c["card"] for i in st["table"] for c in i["cards"]}
+        faces = set(page.evaluate("window.cassino3d.faces()"))
+        if not faces <= seen:
+            failures.append(f"faces shown that the person cannot see: {sorted(faces - seen)}")
         check_offline(page, failures)
         if page.errors:
             failures.append(f"console errors: {page.errors[:5]}")

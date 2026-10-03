@@ -55,74 +55,26 @@ export const CAMERA_PORTRAIT = Object.freeze({
 // Narrower than this, the table is laid out for a phone held upright.
 export const PORTRAIT_BELOW = 0.85;
 
-// Where everything rests (docs/TABLE3D.md section 6), in centimetres on the
-// table. Hands are fans floating before their holders; the rest lies flat.
+// Where everything rests at the cassino table (docs/TABLE3D.md section 5),
+// in centimetres on the table. Hands are fans floating before their holders;
+// the rest lies flat. Replaces piquet's zones: the middle of the table is the
+// game here, not the tricks.
 export const ZONES = Object.freeze({
-  // 5.6 degrees a card leaves 1.6 cm of each showing at this radius -- twice
-  // the corner index -- and keeps a full hand in suits clear of the prompt.
-  //
-  // Both hands are held as people hold cards: at 75 degrees to the table,
-  // leaning back 15 from upright toward their holder (the user: "the hands are
-  // sort of tilted away from the player at ~75 degrees").
-  yourHand: Object.freeze({ centre: Object.freeze([0, 16, 26]), radius: 16, spread: 5.6, groupGap: 2.6, lean: 15 }),
+  // Both hands held as piquet's are: at 75 degrees to the table, leaning back
+  // 15 from upright toward their holder.
+  yourHand: Object.freeze({ centre: Object.freeze([0, 16, 26]), radius: 16, spread: 5.6, lean: 15 }),
   theirHand: Object.freeze({ centre: Object.freeze([0, 12, -22]), radius: 16, spread: 5.2, lean: 15 }),
-  ribbon: Object.freeze({ x: 20, z: -6, spacing: 1.3 }), // the pack spread for the cut, top card at the right
-  yourCut: Object.freeze({ x: -5, z: 4 }),
-  theirCut: Object.freeze({ x: 5, z: -16 }),
-  talon: Object.freeze({ x: -15, z: -9 }),
-  // Your discards, and where you hold them up when you look at them.
-  yourDiscards: Object.freeze({ x: -25, z: -1, peek: Object.freeze({ centre: Object.freeze([-21, 12, 14]), radius: 10, spread: 9 }) }),
-  theirDiscards: Object.freeze({ x: -25, z: -18 }),
-  yourPlay: Object.freeze({ x: 0.6, z: -4 }), // your card in a trick, nearer you
-  theirPlay: Object.freeze({ x: -0.6, z: -13 }), // theirs, turned to face them
-  // Won tricks shingled to the right, clear of your hand.
-  yourTricks: Object.freeze({ x: 10, z: -5, span: 18 }),
-  theirTricks: Object.freeze({ x: 10, z: -17, span: 18 }),
-  // Only in passing, while dealing: the pack squared in front of the dealer,
-  // and the pile dealt before each player.
-  pack: Object.freeze({ you: Object.freeze({ x: -7, z: 0 }), them: Object.freeze({ x: -7, z: -16 }) }),
-  dealt: Object.freeze({ you: Object.freeze({ x: 5, z: 0 }), them: Object.freeze({ x: 5, z: -17 }) }),
-});
-
-// The same table for a phone held upright, seen from its own lower eye:
-// everything drawn in within about 20 cm either side, and stacked down the
-// table instead of spread across it -- their hand; their discards and their
-// won tricks in one row; the talon and the trick; your discards and your
-// won tricks; your hand -- so the cards stay big enough to read on a narrow
-// screen, and nothing lies behind your hand.
-export const ZONES_PORTRAIT = Object.freeze({
-  // Held up at 50 degrees rather than 75, so the eye sees the faces nearly
-  // square on and the hand reads large.
-  // The fan spans 29 degrees on a wide arc whatever the sort -- the cards
-  // spread to fill it, up to 9.5 degrees apart, where a short hand's cards
-  // all but stop overlapping -- so it takes the screen's width however many
-  // cards are left, and shows more of each card (layout.js).
-  yourHand: Object.freeze({ centre: Object.freeze([0, 10, 36]), radius: 36, spread: 9.5, span: 29, groupGap: 2, lean: 40 }),
-  theirHand: Object.freeze({ centre: Object.freeze([0, 6, -16]), radius: 14, spread: 3.8, lean: 15 }),
-  ribbon: Object.freeze({ x: 16.5, z: -3, spacing: 1.05 }),
-  yourCut: Object.freeze({ x: -5, z: 6.5 }),
-  theirCut: Object.freeze({ x: 5, z: -12.5 }),
-  talon: Object.freeze({ x: -15, z: -3.5 }),
-  yourDiscards: Object.freeze({ x: -16, z: 7, peek: Object.freeze({ centre: Object.freeze([-7, 10, 13]), radius: 9, spread: 9 }) }),
-  theirDiscards: Object.freeze({ x: -17, z: -14 }),
-  yourPlay: Object.freeze({ x: 5, z: -2.5 }),
-  theirPlay: Object.freeze({ x: -1.5, z: -4.5 }),
-  yourTricks: Object.freeze({ x: -8, z: 7, span: 22 }),
-  theirTricks: Object.freeze({ x: -8, z: -14, span: 22 }),
-  pack: Object.freeze({ you: Object.freeze({ x: 9, z: 5 }), them: Object.freeze({ x: 9, z: -11 }) }),
-  dealt: Object.freeze({ you: Object.freeze({ x: -2, z: 5 }), them: Object.freeze({ x: -2, z: -13 }) }),
-  // Size follows importance (the user: "my hand, what's face-up on the table
-  // (so i can see what's common knowledge). those should be largest.
-  // anything else is basically symbolic of what's unknown, so those can be
-  // smaller"): the face-down cards small; your hand and the face-up cards
-  // as they are, and the room the small ones give up lets the eye come in on
-  // them. (Larger than life was tried: the motions' clearances are a card's,
-  // and a card drawn larger dipped through the table on its way.)
-  scale: Object.freeze({
-    "their-hand": 0.55,
-    talon: 0.6,
-    "their-discards": 0.6,
-    "your-discards": 0.6,
-    pack: 0.75,
-  }),
+  // The middle: items on a grid in arrival order, filling rows from the
+  // centre line outward, at most `columns` to a row.
+  middle: Object.freeze({ x: 0, z: -7, columns: 6, gapX: 1.8, gapZ: 2.2 }),
+  // A build's cards, each laid a little down and to the right of the last,
+  // so every index shows.
+  stack: Object.freeze({ dx: 0.9, dz: 1.3 }),
+  // Each player's captures, squared and face down at their right; sweep
+  // cards crosswise in the pile, each offset a little from the last.
+  yourPile: Object.freeze({ x: 34, z: 6, sweepStep: 1.4 }),
+  theirPile: Object.freeze({ x: -34, z: -20, sweepStep: 1.4 }),
+  // The stock, at the dealer's left: yours on your left, theirs on their left
+  // (your right).
+  stock: Object.freeze({ you: Object.freeze({ x: -34, z: 6 }), them: Object.freeze({ x: 34, z: -20 }) }),
 });
