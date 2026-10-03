@@ -64,8 +64,10 @@ export const ZONES = Object.freeze({
   // 15 from upright toward their holder.
   yourHand: Object.freeze({ centre: Object.freeze([0, 16, 26]), radius: 16, spread: 5.6, lean: 15 }),
   theirHand: Object.freeze({ centre: Object.freeze([0, 12, -22]), radius: 16, spread: 5.2, lean: 15 }),
-  // The middle: items on a grid in arrival order, filling rows from the
-  // centre line outward, at most `columns` to a row.
+  // The middle: items on a grid in arrival order, at most `columns` to a
+  // row, the first row nearest you and later rows away from you: a row
+  // nearer than this would lie under your floating hand, as the eye sees
+  // it, and could not be tapped.
   middle: Object.freeze({ x: 0, z: -7, columns: 6, gapX: 1.8, gapZ: 2.2 }),
   // A build's cards, each laid a little down and to the right of the last,
   // so every index shows.

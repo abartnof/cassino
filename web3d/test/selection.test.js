@@ -1,0 +1,64 @@
+// Choosing a move: the hand card, the table cards, the chips
+// (docs/TABLE3D.md section 8).
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { EMPTY, choose, pick, selectionText, chipsOf, itemState } from "../src/selection.js";
+
+test("tapping a hand card chooses it, and again lets it go", () => {
+  const a = choose(EMPTY, "3H");
+  assert.equal(a.chosen, "3H");
+  assert.equal(choose(a, "3H").chosen, null);
+  assert.equal(selectionText(EMPTY), "");
+});
+
+test("choosing another card starts the table afresh", () => {
+  const a = pick(choose(EMPTY, "3H"), ["AC"]);
+  assert.deepEqual(a.picked, ["AC"]);
+  const b = choose(a, "3S");
+  assert.equal(b.chosen, "3S");
+  assert.deepEqual(b.picked, []);
+});
+
+test("tapping a table item picks it whole, and again lets it go", () => {
+  const a = choose(EMPTY, "9C");
+  const b = pick(a, ["6S", "3H"]); // a build of nine
+  assert.deepEqual(b.picked.slice().sort(), ["3H", "6S"]);
+  assert.equal(selectionText(b), "9C 6S 3H");
+  const c = pick(b, ["3H", "6S"]);
+  assert.deepEqual(c.picked, []);
+  assert.equal(pick(EMPTY, ["AC"]), EMPTY, "nothing picked before a hand card is chosen");
+});
+
+test("chips: take first, then builds by value, then trail", () => {
+  const offer = {
+    moves: [
+      { move: "trail 3H", chip: { kind: "trail", label: "Trail" }, said: "trail 3♥", call: null },
+      { move: "build 6 3H 2D AC", chip: { kind: "build", label: "Build 6", value: 6 }, said: "build six", call: "Building six." },
+      { move: "take 3H 2D AC", chip: { kind: "take", label: "Take" }, said: "take", call: null },
+      { move: "build 3 3H 2D AC", chip: { kind: "build", label: "Build 3s", value: 3 }, said: "build threes", call: "Building threes." },
+    ],
+  };
+  assert.deepEqual(chipsOf(offer).map((c) => c.label), ["Take", "Build 3s", "Build 6", "Trail"]);
+  assert.equal(chipsOf(offer)[0].move, "take 3H 2D AC");
+  assert.deepEqual(chipsOf({ error: "It is not your turn." }), []);
+});
+
+test("an ace's two capture values become two chips", () => {
+  const offer = {
+    moves: [
+      { move: "take AC=14 KS AH", chip: { kind: "take", label: "Take", value: 14 } },
+      { move: "take AC AH", chip: { kind: "take", label: "Take", value: 1 } },
+    ],
+  };
+  assert.deepEqual(chipsOf(offer).map((c) => c.label), ["Take as 1", "Take as 14"]);
+});
+
+test("each table card is picked, addable, refused or idle", () => {
+  const sel = pick(choose(EMPTY, "9C"), ["4D"]);
+  const offer = { can_add: [{ card: "5S" }], why_not: [{ card: { card: "KH" }, reason: "No." }] };
+  assert.equal(itemState("4D", offer, sel), "picked");
+  assert.equal(itemState("5S", offer, sel), "addable");
+  assert.equal(itemState("KH", offer, sel), "refused");
+  assert.equal(itemState("2C", offer, sel), "idle");
+  assert.equal(itemState("4D", null, EMPTY), "idle");
+});

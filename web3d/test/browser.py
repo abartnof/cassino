@@ -75,6 +75,54 @@ def check_drawn(page, failures, where=""):
         failures.append(f"the canvas is mostly black {where} -- WebGL may have failed")
 
 
+def click_card(page, code):
+    point = page.evaluate("(c) => window.cassino3d.screenPoint(c)", code)
+    if point is None:
+        raise AssertionError(f"no card {code} to click")
+    page.mouse.click(point["x"], point["y"])
+
+
+def table_cards(move):
+    """The table cards a move uses, from its text: what a capture takes; the
+    loose cards and the target of a build (`on X` names a card in it)."""
+    words = move.split()
+    if words[0] == "trail":
+        return []
+    if words[0] == "take":
+        return words[2:]
+    rest = words[3:]
+    return [w for w in rest if w != "on"]
+
+
+def play_by_clicking(page, failures, moves_made):
+    """One decision, made the way a person makes it."""
+    s = page.evaluate("window.cassino3d.state()")
+    if s["prompt"] == "next_hand":
+        page.locator("md-filled-button.next").click()
+        return True
+    if s["prompt"] != "play":
+        return False
+    move = s["moves"][moves_made % len(s["moves"])]
+    played = move.split()[1].split("=")[0] if move.split()[0] != "build" else move.split()[2]
+    click_card(page, played)
+    # One card of each table item: a build is picked whole.
+    items = {c["card"]: i["id"] for i in s["table"] for c in i["cards"]}
+    done = set()
+    for code in table_cards(move):
+        if items[code] in done:
+            continue
+        done.add(items[code])
+        click_card(page, code)
+    if moves_made in (6, 20):
+        shot(page, f"t2-choosing-{moves_made}")
+    chip = page.locator(f'md-assist-chip[data-move="{move}"]')
+    if chip.count() != 1:
+        failures.append(f"no chip for {move}; chips {page.evaluate('window.cassino3d.chips()')}")
+        return False
+    chip.click()
+    return True
+
+
 def main() -> int:
     failures = []
     with sync_playwright() as p:
@@ -91,6 +139,14 @@ def main() -> int:
         faces = set(page.evaluate("window.cassino3d.faces()"))
         if not faces <= seen:
             failures.append(f"faces shown that the person cannot see: {sorted(faces - seen)}")
+        # A whole game, played by clicking.
+        made = 0
+        while play_by_clicking(page, failures, made) and made < 400:
+            made += 1
+        end = page.evaluate("window.cassino3d.state()")
+        if end["prompt"] != "over":
+            failures.append(f"the game did not end by clicking: {end['prompt']} after {made} decisions")
+        shot(page, "t2-over")
         check_offline(page, failures)
         if page.errors:
             failures.append(f"console errors: {page.errors[:5]}")

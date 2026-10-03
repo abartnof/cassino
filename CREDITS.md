@@ -43,6 +43,14 @@ BY-SA 3.0**, and the game credits it on screen, not only here.
 The pinned originals, with checksums and measurements, are in
 `web3d/art/source/`.
 
+## Design system
+
+**Material Design 3**, by **Google**: <https://m3.material.io/>. The table's
+controls follow its components, colour system, shape and motion guidance, as
+piquet's do. They are used through `@material/web` (below), and the colour
+tokens are piquet's, generated from one seed colour with Google's Material
+Color Utilities.
+
 ## Software in the page
 
 The single-file page (`web3d/cassino3d.html`; see `docs/TABLE3D.md`) bundles
@@ -53,6 +61,11 @@ script.
 | Package | Version | Licence | Holder |
 |---|---|---|---|
 | three.js | 0.186.1 | MIT | three.js authors |
+| @material/web (Material Design 3 components) | 2.5.0 | Apache-2.0 | Google LLC |
+| lit-html (part of Lit 3.3.3) | 3.3.3 | BSD-3-Clause | Google LLC |
+| @lit/reactive-element (part of Lit) | 2.1.2 | BSD-3-Clause | Google LLC |
+| lit-element (part of Lit) | 4.2.2 | BSD-3-Clause | Google LLC |
+| tslib (TypeScript's helpers, used by Material Web) | 2.8.1 | 0BSD | Microsoft Corporation |
 
 The rules engine and everything else in this repository are the project's
 own.

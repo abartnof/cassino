@@ -74,7 +74,7 @@ function theirHand(count) {
 
 // Where the item at `slot` of `count` lies on the grid: rows of at most
 // `columns`, centred across, the first row at the zone's line and later rows
-// toward you, then away, alternately, so the middle grows evenly.
+// away from you (never toward you, where your hand would hide them).
 export function gridPlace(slot, count) {
   const m = ZONES.middle;
   const rows = Math.ceil(count / m.columns);
@@ -83,9 +83,7 @@ export function gridPlace(slot, count) {
   const col = slot - row * m.columns;
   const pitchX = CARD.width + m.gapX + ZONES.stack.dx * 2;
   const pitchZ = CARD.height + m.gapZ + ZONES.stack.dz * 2;
-  // Rows alternate either side of the first: 0, +1, -1, +2, ...
-  const offset = row === 0 ? 0 : row % 2 === 1 ? (row + 1) / 2 : -row / 2;
-  return { x: m.x + (col - (inRow - 1) / 2) * pitchX, z: m.z + offset * pitchZ };
+  return { x: m.x + (col - (inRow - 1) / 2) * pitchX, z: m.z - row * pitchZ };
 }
 
 function middle(items, picked) {

@@ -82,6 +82,13 @@ test("items on the grid never overlap, however many there are", () => {
   }
 });
 
+test("rows grow away from you, never toward your hand", () => {
+  const codes = ["2S", "3S", "4S", "5S", "6S", "7S", "8S", "9S", "TS", "JS", "QS", "KS", "2H", "3H"];
+  const s = state({ hand: [], table: codes.map((c, i) => [i + 1, [c]]), holds: 0, undealt: 0, piles: [19, 19] });
+  const zs = layout(s).filter((x) => x.zone === "middle").map((x) => x.pose.position.z);
+  assert.ok(Math.max(...zs) <= ZONES.middle.z + 1e-9, "no row nearer you than the first");
+});
+
 test("an item keeps its place when another arrives after it", () => {
   const before = state({ hand: ["AS"], table: [[1, ["3S"]], [2, ["4D"]]] });
   const after = state({ hand: ["AS"], table: [[1, ["3S"]], [2, ["4D"]], [3, ["9C"]]] });
