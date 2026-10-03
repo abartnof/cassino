@@ -123,6 +123,19 @@ layout, its faces, no leak, and no card through the table.
 | `residue` | The last cards gathered as a capture is, item by item, into the last capturer's pile |
 | `scored` | The count ritual (§8), in T4 |
 
+**Every movement starts with a jerk and eases into place** (play-testing
+asked for it of all of them; `kinematics.js`). A card tossed to the table
+leaves at speed, flies a gravity parabola, touches down on its leading
+edge tilted ten degrees, and slides to a stop while its trailing edge falls
+flat under gravity, hinged on the edge that touched. A card or a heap
+leaving the table is peeled off first, its near edge lifted on the far one
+as a fingertip gets under it (`peelOff`; the heap carried to a pile, a
+card turned up from a pile for the count, a face-up card collected). Cards
+moving within a hand snap off and ease into their places (`easing.snap`,
+where piquet's used minimum jerk). Slides start fast and stop against
+friction. The tests hold each path to its profile, and every corner of
+every card above the table throughout.
+
 Your opponent's moves are staged as in shipped apps that players praise
 (`DESIGN.md` §12.3): a pause before each (`think`), and after their card
 lands on what it takes, a longer look before the gather (`look`), while

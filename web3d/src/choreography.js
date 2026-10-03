@@ -35,7 +35,7 @@
 // state it is moving towards lets the person know that card.
 
 import { Vector3 } from "three";
-import { carryBlock, fan, lying, pickUp, pull, rise, slide, toss, transfer } from "./kinematics.js";
+import { carryBlock, fan, lying, peelOff, pickUp, pull, rise, slide, toss, transfer } from "./kinematics.js";
 import { jitter, layout, sweepCards } from "./layout.js";
 import { theirHand } from "./replay.js";
 import { lineCard } from "./scorebug.js";
@@ -407,7 +407,7 @@ class Plan {
     if (onTable(from) && onTable(to)) {
       if (samePlace(from, to)) return { path: slide(from, to), delay: 0, duration: TIMING.resort };
       const faceTurns = new Vector3(0, 0, 1).applyQuaternion(from.quaternion).y * new Vector3(0, 0, 1).applyQuaternion(to.quaternion).y < 0;
-      if (faceTurns) return { path: toss(from, to), delay: 0, duration: TIMING.direct };
+      if (faceTurns) return { path: peelOff(from, (lifted) => toss(lifted, to), { toward: TOWARD.you }), delay: 0, duration: TIMING.direct };
       return { path: slide(from, to, { lift: ride(to) }), delay: 0, duration: TIMING.reflow };
     }
     if (onTable(from)) {
@@ -465,7 +465,15 @@ class Plan {
       const slot = open[k];
       if (!slot) return;
       const faceUp = new Vector3(0, 0, 1).applyQuaternion(mesh.pose.quaternion).y > 0.5;
-      const path = onTable(mesh.pose) && !faceUp ? slide(mesh.pose, slot.pose, { lift: ride(slot.pose) }) : toss(mesh.pose, slot.pose);
+      // A face-up card is peeled off the table toward the stock, where the
+      // dealer's hand is, and tossed.
+      const toward = slot.pose.position.clone().sub(mesh.pose.position).setY(0);
+      const path =
+        onTable(mesh.pose) && !faceUp
+          ? slide(mesh.pose, slot.pose, { lift: ride(slot.pose) })
+          : onTable(mesh.pose)
+            ? peelOff(mesh.pose, (lifted) => toss(lifted, slot.pose), { toward })
+            : toss(mesh.pose, slot.pose);
       this.move(mesh.id, slot, path, start + k * TIMING.collectStagger, TIMING.collect);
     });
     this.clock = Math.max(this.clock, this.end);
@@ -612,9 +620,11 @@ class Plan {
     // The heap turned over into the pile as one: its top card at the bottom.
     const pile = target.filter((s) => s.zone === PILE[who] && !s.code);
     const slots = pile.slice(pile.length - heap.length).reverse();
+    // Peeled up off the table, as the taker's hand gets under it.
     const paths = carryBlock(
       heap.map((m) => this.now[m.id].pose),
       slots.map((s) => s.pose),
+      { peel: TOWARD[who] },
     );
     heap.forEach((mesh, j) => this.move(mesh.id, slots[j], paths[j], t, TIMING.carry));
     t += TIMING.carry;
@@ -655,7 +665,8 @@ class Plan {
         const mesh =
           this.now.find((m) => m.code === code) ??
           this.now.filter((m) => m.zone === PILE[line.who] && !m.code).sort((a, b) => b.index - a.index)[0];
-        if (mesh) this.move(mesh.id, slot, toss(mesh.pose, slot.pose), t, TIMING.countCard);
+        // Peeled off the top of its taker's pile, and tossed into the row.
+        if (mesh) this.move(mesh.id, slot, peelOff(mesh.pose, (lifted) => toss(lifted, slot.pose), { toward: TOWARD[line.who] }), t, TIMING.countCard);
       }
       t += Math.max(TIMING.countLine, pace.gaps?.[i] ?? 0);
     }

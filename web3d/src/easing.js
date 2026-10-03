@@ -13,6 +13,14 @@ export function minimumJerk(t) {
   return u * u * u * (10 - 15 * u + 6 * u * u);
 }
 
+// A hand's quick placing (play-testing: "start with a jerk, ease into
+// placement"): off at three times its mean speed, and easing all the way
+// into place, at rest when it arrives.
+export function snap(t) {
+  const u = clamp01(t);
+  return 1 - (1 - u) * (1 - u) * (1 - u);
+}
+
 // Something pushed and let go, sliding to a stop against constant friction:
 // it decelerates evenly from its starting speed and stops exactly at the end.
 export function friction(t) {

@@ -8,7 +8,7 @@
 // card at or above it, and the tests hold each one to that.
 
 import { Euler, Matrix4, Quaternion, Vector3 } from "three";
-import { evenly, friction, minimumJerk } from "./easing.js";
+import { evenly, friction, minimumJerk, snap } from "./easing.js";
 import { CARD } from "./units.js";
 
 const UP = new Vector3(0, 1, 0);
@@ -101,10 +101,11 @@ function cubic(a, c1, c2, b, s) {
 const clearanceFor = (a, b) => Math.max(3, 0.25 * a.distanceTo(b));
 
 // Hand-guided, from one pose to another, along an arc. Both the travel and the
-// turn follow minimum jerk, and the turn is finished by `turnBy` of the time,
-// so the card arrives already at its final attitude and is set down rather
-// than rotated into place.
-export function transfer(from, to, { clearance, ease = minimumJerk, turnBy = 0.85 } = {}) {
+// turn start with a jerk and ease into place (snap: play-testing asked for
+// it of every movement, where piquet's followed minimum jerk), and the turn
+// is finished by `turnBy` of the time, so the card arrives already at its
+// final attitude and is set down rather than rotated into place.
+export function transfer(from, to, { clearance, ease = snap, turnBy = 0.85 } = {}) {
   const a = from.position.clone();
   const b = to.position.clone();
   const h = clearance ?? clearanceFor(a, b);
@@ -161,42 +162,58 @@ export function pull(from, to, { tug = 0.6 * CARD.height, tugShare = 0.3, overla
 // strong jerks, then end with gravity-like acceleration. that means a lot of
 // motion-easing." So it is thrown, not guided: it leaves at full speed,
 // rises and falls on a parabola -- a cartoon's gravity, strong enough that
-// the arc is only `clearance` high -- turning flat on the way, lands with
-// the speed of its fall, and slides the last little way to a dead stop
-// against friction, its speed along the table unbroken at the touch.
+// the arc is only `clearance` high -- turning on the way, lands with the
+// speed of its fall, and slides the last little way to a dead stop against
+// friction, its speed along the table unbroken at the touch.
+//
+// It touches down on its leading edge, tilted by `settle` (play-testing
+// asked for the peel of a card meeting the table), and as it slides its
+// trailing edge falls flat under gravity, faster and faster, hinged on the
+// leading edge, which stays on the table.
 //
 // The arc is solved exactly: with the top `clearance` above the higher end,
 // in the flight's own time the fall is g = 2(√a + √b)² and the launch
 // 2√a(√a + √b), a and b the drops from the top to each end.
-export function toss(from, to, { clearance, flight = 0.86, turnBy = 0.8 } = {}) {
+export function toss(from, to, { clearance, flight = 0.86, turnBy = 0.8, settle = (10 * Math.PI) / 180 } = {}) {
   const a = from.position.clone();
   const b = to.position.clone();
   // A card that turns over on the way needs the room to turn in.
   const over = new Vector3(0, 0, 1).applyQuaternion(from.quaternion).dot(new Vector3(0, 0, 1).applyQuaternion(to.quaternion)) < 0;
-  const h = Math.max(clearance ?? clearanceFor(a, b), over ? 0.6 * CARD.height : 0);
-  const top = Math.max(a.y, b.y) + h;
-  const [up, down] = [Math.sqrt(top - a.y), Math.sqrt(top - b.y)];
-  const g = 2 * (up + down) ** 2;
-  const launch = 2 * up * (up + down);
-  // Where it touches down, short of its spot by as far as it then slides: a
-  // slide under friction starts at twice its mean speed, so matching the
+  // Where the slide begins, short of its spot by as far as it then slides:
+  // a slide under friction starts at twice its mean speed, so matching the
   // flight's speed along the table fixes the distance.
   const along = new Vector3(b.x - a.x, 0, b.z - a.z);
   const reach = along.length();
   const slid = (reach * (1 - flight)) / (1 + flight);
   if (reach > 0) along.divideScalar(reach);
-  const touch = b.clone().addScaledVector(along, -slid);
+  // The card on the table, `s` of the way along its slide, tilted `angle`
+  // about its leading edge (none for a card dropped straight down).
+  const tilt = reach > 1e-6 ? settle : 0;
+  const { side, half } = tilt ? edgeToward(to, along) : { side: along, half: 0 };
+  const landed = (s, angle) => {
+    const flat = { position: b.clone().addScaledVector(along, -slid * (1 - s)), quaternion: to.quaternion.clone() };
+    if (!angle) return flat;
+    const { pivot, axis } = hingeOf(flat, side, half);
+    return rotateAbout(flat, pivot, axis, angle);
+  };
+  const touch = landed(0, tilt);
+  const c = touch.position;
+  const h = Math.max(clearance ?? clearanceFor(a, b), over ? 0.6 * CARD.height : 0);
+  const top = Math.max(a.y, c.y) + h;
+  const [up, down] = [Math.sqrt(top - a.y), Math.sqrt(top - c.y)];
+  const g = 2 * (up + down) ** 2;
+  const launch = 2 * up * (up + down);
   // The flight carries the jerk; the turn eases in once the card is on its
   // way and out before it lands, so no edge swings into the table.
   const turn = (u) => minimumJerk((u - 0.05) / (turnBy - 0.05));
   return (t) => {
     if (t < flight) {
       const u = t / flight;
-      const position = new Vector3(a.x + (touch.x - a.x) * u, a.y + launch * u - (g * u * u) / 2, a.z + (touch.z - a.z) * u);
-      return { position, quaternion: from.quaternion.clone().slerp(to.quaternion, turn(u)) };
+      const position = new Vector3(a.x + (c.x - a.x) * u, a.y + launch * u - (g * u * u) / 2, a.z + (c.z - a.z) * u);
+      return { position, quaternion: from.quaternion.clone().slerp(touch.quaternion, turn(u)) };
     }
     const u = Math.min(1, (t - flight) / (1 - flight));
-    return { position: touch.clone().lerp(b, friction(u)), quaternion: to.quaternion.clone() };
+    return landed(friction(u), tilt * (1 - u * u));
   };
 }
 
@@ -240,19 +257,20 @@ export function bob(held, lift, { riseShare = 0.28, holdShare = 0.4 } = {}) {
   });
 }
 
-// From the table to a hand: lift the near edge first, hinged on the far one,
-// the way a fingertip gets under a card; then carry it. `toward` points from
-// the card to whoever is picking it up.
-export function pickUp(from, to, { toward, lift = (20 * Math.PI) / 180, liftShare = 0.25 } = {}) {
+// Off the table, peeled: the near edge lifted first, hinged on the far one,
+// the way a fingertip gets under a card, in `share` of the time; then
+// `then(lifted)` takes it on its way. `toward` points from the card to
+// whoever is taking it.
+export function peelOff(from, then, { toward, lift = (16 * Math.PI) / 180, share = 0.18 } = {}) {
   const { side, half } = edgeToward(from, toward.clone().negate()); // the far edge
   const { pivot, axis } = hingeOf(from, side, half);
-  const lifted = rotateAbout(from, pivot, axis, lift);
-  const carry = rise(lifted, to);
-  const snap = (u) => 1 - (1 - u) ** 3; // the fingertip's flick
-  return (t) =>
-    t < liftShare
-      ? rotateAbout(from, pivot, axis, lift * snap(t / liftShare))
-      : carry((t - liftShare) / (1 - liftShare));
+  const rest = then(rotateAbout(from, pivot, axis, lift));
+  return (t) => (t < share ? rotateAbout(from, pivot, axis, lift * snap(t / share)) : rest((t - share) / (1 - share)));
+}
+
+// From the table to a hand: peeled off, then carried up into the grip.
+export function pickUp(from, to, { toward, lift = (20 * Math.PI) / 180, liftShare = 0.25 } = {}) {
+  return peelOff(from, (lifted) => rise(lifted, to), { toward, lift, share: liftShare });
 }
 
 // Turning a card over on the table (the user: "one side must be constrained by
@@ -380,7 +398,22 @@ export function beforeFlip(target, toward) {
 // flight each card eases onto its own place, so the block lands on the pile
 // exactly, small turns and all. A block turned over lands with its order
 // reversed, so `tos` should be too.
-export function carryBlock(froms, tos, options = {}) {
+//
+// With `peel` (the direction toward whoever takes it), the block is first
+// peeled up off the table, hinged on its bottom card's far edge.
+export function carryBlock(froms, tos, { peel, ...options } = {}) {
+  if (peel) {
+    const lift = (14 * Math.PI) / 180;
+    const share = 0.16;
+    const { side, half } = edgeToward(froms[0], peel.clone().negate());
+    const { pivot, axis } = hingeOf(froms[0], side, half);
+    const carried = carryBlock(
+      froms.map((p) => rotateAbout(p, pivot, axis, lift)),
+      tos,
+      options,
+    );
+    return froms.map((from, i) => (t) => (t < share ? rotateAbout(from, pivot, axis, lift * snap(t / share)) : carried[i]((t - share) / (1 - share))));
+  }
   const base = froms[0];
   const lead = toss(base, tos[0], options);
   const inverse = base.quaternion.clone().invert();

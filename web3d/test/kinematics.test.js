@@ -15,6 +15,7 @@ import {
   flipPile,
   layDown,
   lying,
+  peelOff,
   pickUp,
   pose,
   pull,
@@ -51,7 +52,7 @@ test("a face-up card lies upright to the human; yawed half a turn, upright to th
   assert.ok(top(theirs).z > 0.999);
 });
 
-test("a transfer starts and ends where it is told, at rest", () => {
+test("a transfer starts and ends where it is told: it leaves at speed and eases to rest", () => {
   const a = pose([0, 15, 27], new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), -40 * DEG));
   const b = lying({ x: 0, z: 0, height: 0 });
   const path = transfer(a, b);
@@ -59,17 +60,19 @@ test("a transfer starts and ends where it is told, at rest", () => {
   assert.ok(near(path(1).position, b.position));
   assert.ok(sameTurn(path(1).quaternion, b.quaternion));
   const speed = (t) => path(t + 1e-4).position.distanceTo(path(t).position) / 1e-4;
-  assert.ok(speed(0) < 0.01 && speed(1 - 1e-4) < 0.01);
+  const length = T.slice(1).reduce((sum, t, i) => sum + path(t).position.distanceTo(path(T[i]).position), 0);
+  assert.ok(speed(0) > 1.5 * length, "a jerk at the start: faster than its average");
+  assert.ok(speed(1 - 1e-4) < 0.01, "and at rest when it arrives");
 });
 
 test("a transfer arcs over whatever lies between, by at least three centimetres", () => {
   const a = lying({ x: -20, z: 0, height: 0 });
   const b = lying({ x: 20, z: 0, height: 0 });
   const path = transfer(a, b);
-  const mid = path(0.5).position;
-  assert.ok(mid.y >= 0.25 * 40 - EPS, `apex ${mid.y}`); // a quarter of the distance
+  const apex = (p) => Math.max(...T.map((t) => p(t).position.y));
+  assert.ok(apex(path) >= 0.25 * 40 - EPS, `apex ${apex(path)}`); // a quarter of the distance
   const short = transfer(lying({ x: 0, z: 0, height: 0 }), lying({ x: 4, z: 0, height: 0 }));
-  assert.ok(short(0.5).position.y >= 3 - EPS); // never less than 3 cm
+  assert.ok(apex(short) >= 3 - EPS); // never less than 3 cm
 });
 
 test("a transfer has finished turning before it arrives, so the card is set down level", () => {
@@ -161,6 +164,20 @@ test("picking up lifts the near edge first, hinged on the far one", () => {
   assert.ok(Math.min(...nearEdge) > 0.5, "the near edge has lifted");
   assert.ok(near(path(1).position, held.position));
   assert.ok(sameTurn(path(1).quaternion, held.quaternion));
+});
+
+test("a card leaving the table peels: hinged on its far edge, the near edge rising first, then away", () => {
+  const start = lying({ x: 4, z: -6, height: 0.2, faceUp: false });
+  const spot = lying({ x: 30, z: 4, height: 0.4, faceUp: true });
+  const path = peelOff(start, (lifted) => toss(lifted, spot), { toward: new Vector3(0, 0, 1) });
+  assert.ok(near(path(0).position, start.position) && sameTurn(path(0).quaternion, start.quaternion));
+  assert.ok(near(path(1).position, spot.position) && sameTurn(path(1).quaternion, spot.quaternion));
+  const early = cardCorners(path(0.1));
+  const far = early.filter((c) => c.z < -6).map((c) => c.y);
+  const nearEdge = early.filter((c) => c.z > -6).map((c) => c.y);
+  assert.ok(Math.max(...far) < 0.2 + CARD.thickness + 0.05, "the far edge stays down");
+  assert.ok(Math.min(...nearEdge) > 0.5, "the near edge has lifted");
+  for (const t of T) assert.ok(lowest(path(t)) >= 0.2 - EPS, `through what it lay on at t=${t}`);
 });
 
 test("a slide stays flat on the table and stops dead at the end", () => {
@@ -286,7 +303,7 @@ test("a card played is tugged sharply out of the hand along its own length, then
 const speedAt = (path, t, dt = 1e-4) => path(Math.min(1, t + dt)).position.distanceTo(path(Math.max(0, t - dt)).position) / (Math.min(1, t + dt) - Math.max(0, t - dt));
 const fallAt = (path, t, dt = 1e-4) => -(path(Math.min(1, t + dt)).position.y - path(Math.max(0, t - dt)).position.y) / (Math.min(1, t + dt) - Math.max(0, t - dt));
 
-test("a card tossed onto the table leaves at speed, falls faster and faster, and lands flat", () => {
+test("a card tossed onto the table leaves at speed, falls faster and faster, and settles flat from its leading edge", () => {
   const held = pose([5, 16, 26], new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), -15 * DEG));
   const spot = lying({ x: 0.6, z: -4, height: 0.02, yaw: 4 * DEG });
   const path = toss(held, spot);
@@ -298,7 +315,8 @@ test("a card tossed onto the table leaves at speed, falls faster and faster, and
 
   // From the top of its arc to the table, gravity: the fall only quickens.
   const top = T.reduce((best, t) => (path(t).position.y > path(best).position.y ? t : best), 0);
-  const landing = T.find((t) => t > top && path(t).position.y <= spot.position.y + 1e-6);
+  // Touchdown: its lowest corner reaches the table.
+  const landing = T.find((t) => t > top && lowest(path(t)) <= spot.position.y - CARD.thickness / 2 + 1e-6);
   assert.ok(landing !== undefined && landing < 1, "it lands before the end, then slides");
   let last = 0;
   for (let t = top + 0.01; t < landing - 0.005; t += 0.01) {
@@ -306,16 +324,23 @@ test("a card tossed onto the table leaves at speed, falls faster and faster, and
     assert.ok(fall > last, `the fall slowed at t=${t.toFixed(2)}`);
     last = fall;
   }
-  assert.ok(sameTurn(path(landing - 0.01).quaternion, spot.quaternion, 1e-6), "flat before it touches down");
-
-  // Then a short slide, flat on the table, to a dead stop.
-  for (let t = landing; t <= 1; t += 0.01) {
-    assert.ok(Math.abs(path(t).position.y - spot.position.y) < 1e-6, "on the table");
-    assert.ok(sameTurn(path(t).quaternion, spot.quaternion, 1e-6), "flat");
+  // It touches down on its leading edge, tilted, and its trailing edge
+  // falls flat under gravity -- faster and faster -- as it slides.
+  const tilt = (t) => Math.acos(Math.min(1, Math.abs(normal(path(t)).y))) / DEG;
+  assert.ok(tilt(landing) > 6, `tilted as it touches down: ${tilt(landing).toFixed(1)}°`);
+  let drop = 0;
+  for (let t = landing + 0.01; t <= 1; t += 0.01) {
+    assert.ok(Math.abs(lowest(path(t)) - (spot.position.y - CARD.thickness / 2)) < 1e-6, "its leading edge on the table");
+    assert.ok(tilt(t) <= tilt(t - 0.01) + 1e-9, "settling, never rising");
+    const d = tilt(t - 0.01) - tilt(t);
+    assert.ok(d >= drop - 1e-6, `the fall slowed at t=${t.toFixed(2)}`);
+    drop = d;
   }
-  const slid = path(landing).position.distanceTo(spot.position);
+  assert.ok(tilt(1) < 1e-4, "flat at last");
+  const slid = Math.hypot(path(landing).position.x - spot.position.x, path(landing).position.z - spot.position.z);
   assert.ok(slid > 0.3 && slid < 4, `slides ${slid.toFixed(2)} cm`);
-  assert.ok(speedAt(path, 1 - 1e-3) < 0.05 * length, "and stops dead");
+  const flatSpeed = (t, dt = 1e-4) => Math.hypot(path(t).position.x - path(t - dt).position.x, path(t).position.z - path(t - dt).position.z) / dt;
+  assert.ok(flatSpeed(1) < 0.05 * length, "and stops dead along the table, as its trailing edge comes down");
   for (const t of T) assert.ok(lowest(path(t)) >= -EPS, `through the table at t=${t}`);
 });
 
@@ -400,4 +425,11 @@ test("a squared heap is carried as one rigid block, turning over into a pile", (
     }
   }
   assert.ok(normal(paths[0](1)).y < -0.999, "it lands face down");
+  // Peeled up off the table first, as a hand gets under it.
+  const peeled = carryBlock(heap, tos, { peel: new Vector3(0, 0, 1) });
+  const bottom = cardCorners(peeled[0](0.05));
+  assert.ok(Math.min(...bottom.map((c) => c.y)) < 0.02 + 1e-6, "its far edge still on the table");
+  assert.ok(Math.max(...bottom.map((c) => c.y)) > 0.6, "its near edge up");
+  for (const t of T) for (const path of peeled) assert.ok(lowest(path(t)) >= -EPS, `nothing through the table (t=${t})`);
+  peeled.forEach((path, j) => assert.ok(near(path(1).position, tos[j].position) && sameTurn(path(1).quaternion, tos[j].quaternion)));
 });
