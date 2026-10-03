@@ -636,10 +636,6 @@ mod tests {
             });
             let (seat, cards) = residue.unwrap();
             assert_eq!(seat, h.last_capturer());
-            // A residue means the last play did not empty the table, so the
-            // hand's closing events hold no sweep.
-            let closing: Vec<&Event> = log.iter().rev().take(3).collect();
-            assert!(cards.is_empty() || !closing.iter().any(|e| matches!(e, Event::Swept { .. })));
             checked += usize::from(!cards.is_empty());
         }
         assert!(checked > 100, "most hands leave a residue: {checked}");

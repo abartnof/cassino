@@ -1294,32 +1294,68 @@ mod tests {
 
     #[test]
     fn a_trail_goes_to_the_end_and_a_build_takes_its_cards_place() {
-        let mut s = Session::new(2, settings());
-        // Find a position where the person can trail and see it appended.
-        for _ in 0..50 {
-            if s.prompt() != Prompt::Play {
-                assert!(s.send("next"));
-                continue;
-            }
-            let trail = s
-                .candidates()
-                .into_iter()
-                .find(|m| matches!(m, Move::Trail { .. }));
-            if let Some(m) = trail {
-                let count = s.items().len();
-                let next_id = s.items().iter().map(|i| i.id).max().unwrap_or(0);
-                assert!(s.send(&m.to_string()));
-                assert!(s.send("undo"));
-                assert_eq!(s.items().len(), count, "undo restores the items");
-                assert!(s.send(&m.to_string()));
-                let mine = s.items().iter().find(|i| i.cards == vec![m.card()]);
-                if let Some(item) = mine {
-                    assert!(item.id > next_id, "a new id");
+        // Watched games move one move a step, so each move's effect on the
+        // items can be seen alone.
+        let (mut trails, mut builds) = (0, 0);
+        for seed in 0..12 {
+            let mut s = Session::watch(seed, Rules::CLASSIC, [3.0, 3.0]);
+            loop {
+                let before: Vec<Item> = s.items().to_vec();
+                let table = *s.game().hand().table();
+                let top = before.iter().map(|i| i.id).max().unwrap_or(0);
+                let told = s.events().len();
+                if !s.step() {
+                    break;
                 }
-                return;
+                let played = s.events()[told..].iter().find_map(|e| match e.kind {
+                    EventKind::Played { mv, .. } => Some(mv),
+                    _ => None,
+                });
+                let after = s.items();
+                if s.game().hand().is_over() || played.is_none() {
+                    continue;
+                }
+                match played.unwrap() {
+                    Move::Trail { card } => {
+                        let last = after.last().expect("the trailed card");
+                        assert_eq!(last.cards, vec![card], "a trail goes to the end");
+                        assert!(last.id > top, "with a new id");
+                        assert_eq!(&after[..after.len() - 1], &before[..], "nothing else moves");
+                        trails += 1;
+                    }
+                    m @ Move::Build {
+                        onto: None, loose, ..
+                    } => {
+                        let first = before
+                            .iter()
+                            .position(|i| i.cards.len() == 1 && loose.contains(i.cards[0]))
+                            .unwrap();
+                        let laid: CardSet = loose.with(m.card());
+                        assert!(table.loose.contains_all(loose));
+                        let at = after
+                            .iter()
+                            .position(|i| i.cards.iter().copied().collect::<CardSet>() == laid)
+                            .expect("the new build is an item");
+                        assert_eq!(
+                            at, first,
+                            "seed {seed}: a build takes its first card's place"
+                        );
+                        assert!(after[at].id > top);
+                        assert_eq!(
+                            *after[at].cards.last().unwrap(),
+                            m.card(),
+                            "the played card on top"
+                        );
+                        builds += 1;
+                    }
+                    _ => {}
+                }
             }
-            assert!(s.send(&s.candidates()[0].to_string()));
         }
+        assert!(
+            trails > 50 && builds > 10,
+            "{trails} trails, {builds} builds checked"
+        );
     }
 
     #[test]

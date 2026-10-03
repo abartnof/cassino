@@ -259,14 +259,42 @@ mod tests {
 
     #[test]
     fn the_leak_test_catches_a_planted_leak() {
-        // A view that told you the opponent's lowest card would differ
-        // between the two deals: the comparison above has the power to see it.
+        // A view that also carried the opponent's lowest card (the planted
+        // leak) would differ between the two deals: the comparison above has
+        // the power to see such a field.
+        let leaky = |h: &Hand, seat: Seat| (h.view(seat, [0, 0]), h.hand_of(seat.other()).first());
         let (h, _) = Hand::deal(Rules::CLASSIC, Seat::South, shuffled(3));
-        let differs = (0..20).any(|s| {
-            let other = reshuffle_hidden(&h, Seat::South, s);
-            other.hand_of(Seat::North).first() != h.hand_of(Seat::North).first()
+        let caught = (0..20).any(|s| {
+            leaky(&h, Seat::South) != leaky(&reshuffle_hidden(&h, Seat::South, s), Seat::South)
         });
-        assert!(differs);
+        assert!(caught, "the comparison misses a planted leak");
+        // And the honest view passes the same comparison every time.
+        assert!((0..20).all(|s| h.view(Seat::South, [0, 0])
+            == reshuffle_hidden(&h, Seat::South, s).view(Seat::South, [0, 0])));
+    }
+
+    #[test]
+    fn an_opponents_decision_never_depends_on_what_it_cannot_see() {
+        // Every level, from the view alone: redistribute the cards it cannot
+        // see, and its move must not change.
+        use crate::agents::Agent;
+        use crate::opponent::Opponent;
+        for seed in 0..12 {
+            let mut rng = Rng::seeded(seed);
+            let (mut h, _) = Hand::deal(Rules::ROYAL, Seat::South, shuffled(seed + 40));
+            for _ in 0..rng.below(30) {
+                let moves = h.candidates();
+                h.play(&moves[rng.below(moves.len() as u64) as usize])
+                    .unwrap();
+            }
+            let seat = h.to_move().unwrap();
+            let other = reshuffle_hidden(&h, seat, seed + 7);
+            for level in 1..=crate::agents::TOP {
+                let a = Opponent::new(level, 0.0, 99).choose(&h.view(seat, [0, 0]));
+                let b = Opponent::new(level, 0.0, 99).choose(&other.view(seat, [0, 0]));
+                assert_eq!(a, b, "level {level}, seed {seed}");
+            }
+        }
     }
 
     #[test]
