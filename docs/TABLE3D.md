@@ -174,18 +174,24 @@ Material Design 3, from piquet's shell.
   under the scores. Our own aids keep to their own panel (below).
 - **Trackers** (each a toggle), in a panel of the HUD's palette at the foot
   of the left: cards towards 27, spades towards 7, aces and Casinos taken,
-  sweeps; cards still out (`state.unseen`). The sweep warning
-  (`state.sweep_values`) is a line under the prompt.
+  sweeps; cards still out (`state.unseen`). The sweep warning is a line
+  under the prompt: before a move, when a chip's move would leave your
+  opponent a table to sweep (the offer's `leaves_sweep`), and otherwise
+  what would clear the table now (`state.sweep_values`).
 - **The count ritual**: at the end of a hand, the lines of `scored.count` one
   at a time in Foster's order: each ace and Casino turns up out of its
   taker's pile into a row (`layout.js` lays out a counted hand; the
   choreography's `count` stage times each card to its line), the HUD's
   popups tell each line's points, and the winner of each line chants it.
 - **Settings**: Classic or Royal, aces 1 or 14, sweeps, the skill dial (1 to
-  4 in halves), the aids, Large Text, watch mode, a new game, copy the game
+  4 in halves), the match (one game, or a World Series: the best of seven,
+  `series.js`), the aids, Large Text, watch mode, a new game, copy the game
   record (`state.saved`), the daily deal (seeded from the date).
-- **Fairness**: the seed on the score; after the game, a replay with both
-  hands face up.
+- **Fairness**: the game's seed in the settings; after the game, a replay
+  with both hands face up (`replay.js`: the record stepped a decision at a
+  time, forward by sending its commands, back by restoring a prefix; your
+  opponent's hand from the engine's `reveal`, fanned toward you); and the
+  last move seen again from the top bar.
 
 ## 9. Teaching
 

@@ -185,6 +185,37 @@ def play_by_clicking(page, failures, moves_made):
     return True
 
 
+def check_replay(page, failures):
+    """After the game, its replay with both hands face up: stepped forward,
+    your opponent's cards shown; stepped back; and left, the game over as it
+    was."""
+    over = page.evaluate("window.cassino3d.state()")
+    page.locator("md-outlined-button.replay").click()
+    settle(page)
+    r = page.evaluate("window.cassino3d.replay()")
+    if not r or r["k"] != 0 or r["n"] < 10:
+        failures.append(f"replay: did not start at the deal: {r}")
+        return
+    for _ in range(3):
+        page.locator(".replay-next").click()
+        settle(page)
+    s = page.evaluate("window.cassino3d.state()")
+    shown = set(page.evaluate("window.cassino3d.faces()"))
+    mine = {c["card"] for c in s["hand"]} | {c["card"] for i in s["table"] for c in i["cards"]}
+    if len(shown - mine) < s["opponent_holds"]:
+        failures.append(f"replay: your opponent's hand is not face up ({len(shown - mine)} of {s['opponent_holds']})")
+    shot(page, "t9-replay")
+    page.locator(".replay-back").click()
+    settle(page)
+    if page.evaluate("window.cassino3d.replay()")["k"] != 2:
+        failures.append("replay: back did not step back")
+    page.locator(".replay-leave").click()
+    settle(page)
+    back = page.evaluate("window.cassino3d.state()")
+    if page.evaluate("window.cassino3d.replay()") is not None or back["saved"] != over["saved"]:
+        failures.append("replay: leaving did not bring the finished game back")
+
+
 def check_count(page, s, failures):
     """At the end of a hand, once the HUD's popups have played: it shows the
     game's totals, and its ledger has a counted hand for each hand played."""
@@ -435,6 +466,10 @@ def main() -> int:
         # dialogs) of frames in a headless browser.
         browser = p.chromium.launch(executable_path="/usr/bin/chromium", args=["--use-angle=swiftshader", "--disable-gpu-compositing"])
         page = open_page(browser, "seed=7&speed=6")
+        # Played as the first game of a World Series, the best of seven.
+        page.evaluate("localStorage.setItem('cassino.prefs', JSON.stringify({ match: 'best-of-7' }))")
+        page.reload()
+        page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
         settle(page)
         check_drawn(page, failures, "at the start")
         shot(page, "t1-table")
@@ -450,10 +485,24 @@ def main() -> int:
         made = 0
         while play_by_clicking(page, failures, made) and made < 400:
             made += 1
+            if made == 8:
+                # The last move seen again: the cards move, the game does not.
+                settle(page)
+                before = page.evaluate("window.cassino3d.state().saved")
+                # Clicked and looked at in one step: at this speed the move
+                # is over before a separate look could see it.
+                moved = page.evaluate("() => { document.querySelector('md-icon-button.again-last').click(); return window.cassino3d.busy(); }")
+                settle(page)
+                if not moved or page.evaluate("window.cassino3d.state().saved") != before:
+                    failures.append("seeing the last move again did not replay it, or changed the game")
         end = page.evaluate("window.cassino3d.state()")
         if end["prompt"] != "over":
             failures.append(f"the game did not end by clicking: {end['prompt']} after {made} decisions")
         shot(page, "t2-over")
+        series = page.evaluate("window.cassino3d.series()")
+        if series["you"] + series["them"] != 1 or "Series:" not in page.locator(".prompt").inner_text():
+            failures.append(f"the finished game was not counted in the series: {series}")
+        check_replay(page, failures)
         if len(HEARD) < 5 or not any("ast" in w for w in HEARD):
             failures.append(f"too little said at the table: {sorted(HEARD)}")
         check_offline(page, failures)

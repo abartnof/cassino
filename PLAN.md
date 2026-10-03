@@ -10,7 +10,7 @@
 A measured four-rung opponent with a skill dial; explanations, hints and the
 selection interface; the session and its JSON protocol; a 334 KB module that
 plays a whole game in Node at 10–16 ms a command, byte for byte as the native
-build does. 230 Rust tests and 148 Node tests of the table, all passing
+build does. 235 Rust tests and 163 Node tests of the table, all passing
 (`bin/gate`).
 
 **Reviewed.** A full code review by a separate agent
@@ -74,8 +74,16 @@ legal move. RULES.md now says each held card answers for one build value.
   the question mark. T8 phones: a stacked table framed between the HUD and
   the controls, upright or sideways, and Large Text faces fitted to the
   hand. T9 the scoring board: a 21-hole cribbage-style board at the table's
-  edge, the back peg leapfrogging the front at each hand's end. Next: a
-  review of the table's code by a separate agent.
+  edge, the back peg leapfrogging the front at each hand's end.
+- **The table reviewed** (`docs/reviews/2026-10-03-table.md`): one critical
+  finding (an upright tablet's overlay and framing disagreed), four major,
+  fifteen minor, an engine one (undo across a deal) and five on the tests;
+  all fixed, each with a test, and the triage recorded.
+- **Fairness and the match** (DESIGN.md §12.3): the seed shown; after the
+  game, a replay with both hands face up (the engine reveals the deals only
+  once the game is over); the last move seen again; a World Series, the
+  best of seven; the sweep warning before a move (the offer says which
+  move leaves a sweep).
 
 ## Settled decisions
 

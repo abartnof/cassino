@@ -6,6 +6,7 @@
 
 const PREFS = "cassino.prefs";
 const SITTING = "cassino.sitting";
+const SERIES = "cassino.series";
 
 export const DEFAULTS = Object.freeze({
   rules: Object.freeze({ game: "classic", aces14: false, sweeps: true }),
@@ -16,6 +17,8 @@ export const DEFAULTS = Object.freeze({
   faces: "auto",
   // The scoring board at the table's edge.
   pegboard: true,
+  // The match: one game to 21, or a World Series, the best of seven.
+  match: "single",
   // The engine's aids (docs/PROTOCOL.md), and the page's own.
   aids: Object.freeze({ hints: false, explain: false, play_forced: false }),
   undo: false,
@@ -86,6 +89,7 @@ export function loadPrefs(store) {
     surface: typeof kept.surface === "string" ? kept.surface : DEFAULTS.surface,
     faces: ["auto", "classic", "jumbo"].includes(kept.faces) ? kept.faces : DEFAULTS.faces,
     pegboard: isBool(kept.pegboard) ? kept.pegboard : DEFAULTS.pegboard,
+    match: kept.match === "best-of-7" ? "best-of-7" : "single",
     aids: Object.fromEntries(Object.entries(DEFAULTS.aids).map(([k, v]) => [k, isBool(aids[k]) ? aids[k] : v])),
     undo: isBool(kept.undo) ? kept.undo : DEFAULTS.undo,
     trackers: isBool(kept.trackers) ? kept.trackers : DEFAULTS.trackers,
@@ -132,4 +136,20 @@ export function dailySeed(date = new Date()) {
   let h = 2166136261;
   for (const ch of `cassino daily ${day}`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
   return ((h >>> 0) % (2 ** 31 - 1)) + 1;
+}
+
+// The series under way (series.js), checked as the preferences are.
+export function loadSeries(store) {
+  let kept = {};
+  try {
+    kept = JSON.parse(read(store, SERIES) ?? "{}") ?? {};
+  } catch {
+    kept = {};
+  }
+  const count = (n) => (Number.isInteger(n) && n >= 0 && n <= 7 ? n : 0);
+  if (kept.format !== "best-of-7") return { format: "single", you: 0, them: 0, counted: [] };
+  return { format: "best-of-7", you: count(kept.you), them: count(kept.them), counted: Array.isArray(kept.counted) ? kept.counted.filter(Number.isFinite) : [] };
+}
+export function saveSeries(store, series) {
+  write(store, SERIES, JSON.stringify(series));
 }

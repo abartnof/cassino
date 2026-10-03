@@ -37,6 +37,7 @@
 import { Vector3 } from "three";
 import { carryBlock, fan, lying, pickUp, pull, rise, slide, toss, transfer } from "./kinematics.js";
 import { jitter, layout, sweepCards } from "./layout.js";
+import { theirHand } from "./replay.js";
 import { lineCard } from "./scorebug.js";
 import { CARD } from "./units.js";
 
@@ -93,8 +94,11 @@ export function initialPlacement(state, view = {}) {
 }
 
 // A state laid out, its sweep cards taken from its own events.
+// `view.revealed` (the engine's reveal, in the replay after the game) shows
+// your opponent's hand face up in every state between, too.
 function layoutOf(state, view = {}) {
-  return layout(state, { chosen: view.chosen ?? null, picked: view.picked ?? [], sweeps: sweepCards(state.events, state.hand_number), zones: view.zones });
+  const theirs = view.revealed ? theirHand(state, view.revealed) : null;
+  return layout(state, { chosen: view.chosen ?? null, picked: view.picked ?? [], sweeps: sweepCards(state.events, state.hand_number), zones: view.zones, theirs });
 }
 
 // Before the first deal of a sitting: the whole pack squared at the first
@@ -343,7 +347,7 @@ class Plan {
   // A state between, laid out where this view lays things (its zones), but
   // as nobody has chosen anything in it.
   layout(state) {
-    return layoutOf(state, { zones: this.view.zones });
+    return layoutOf(state, { zones: this.view.zones, revealed: this.view.revealed });
   }
 
   // A motion for a mesh, never overlapping the motion before it.

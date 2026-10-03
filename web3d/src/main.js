@@ -22,12 +22,14 @@ import { decodeBase64, loadEngine } from "./engine.js";
 import { createHud, hudEvents, ledgerOf } from "./hud.js";
 import { createOverlay } from "./overlay.js";
 import { createPegboard, pegsOf } from "./pegboard.js";
-import { dailySeed, loadPrefs, loadSitting, savePrefs, saveSitting, withUrl } from "./prefs.js";
+import { dailySeed, loadPrefs, loadSeries, loadSitting, savePrefs, saveSeries, saveSitting, withUrl } from "./prefs.js";
+import { recordGame, seriesLine } from "./series.js";
 import { createScene } from "./scene.js";
 import { trackers } from "./scorebug.js";
-import { EMPTY, choose, chipsOf, itemState, pick, selectionOf, selectionText, whyNot } from "./selection.js";
+import { EMPTY, choose, chipsOf, itemState, pick, selectionOf, selectionText, sweepWarning, valuesSaid, whyNot } from "./selection.js";
 import { chooseSurface } from "./surfaces.js";
 import { speech } from "./talk.js";
+import { commandsBetween, prefix, stops } from "./replay.js";
 import { pageDue, parseTutorial } from "./tutorial.js";
 import TUTORIAL_TEXT from "../tutorial.md";
 import { CARD, PORTRAIT_BELOW, ZONES, ZONES_PORTRAIT } from "./units.js";
@@ -55,6 +57,8 @@ async function main() {
   let saved = loadPrefs(store);
   let prefs = withUrl(saved, params);
   const fixedSeed = Number(params.get("seed")) || null;
+  // The match: a World Series, the best of seven, if chosen (series.js).
+  let series = loadSeries(store);
   const randomSeed = () => fixedSeed ?? Math.floor(Math.random() * 2 ** 31);
 
   let state = null;
@@ -121,13 +125,14 @@ async function main() {
     deck,
     // A phone held upright (or sideways, between columns) lays the table
     // out stacked (units.js ZONES_PORTRAIT).
-    view: () => ({ ...sel, zones: stage.portrait ? ZONES_PORTRAIT : ZONES }),
+    view: () => ({ ...sel, zones: stage.portrait ? ZONES_PORTRAIT : ZONES, revealed: replay?.revealed ?? null }),
     decorate,
     rested: () => {
       placeBadges();
       overlay.trackers(trackers(state));
       show();
       if (state.watching) watchOn();
+      else if (replay) replayOn();
       else introduce();
     },
     manual: params.has("manual"),
@@ -142,6 +147,7 @@ async function main() {
     },
     onNext: () => advance(engine.send("next").state),
     onNewGame: () => newGame(),
+    onReplay: (what) => replayDo(what),
     later: (ms, fn) => director.at(ms, fn, "linger"),
   });
 
@@ -190,6 +196,10 @@ async function main() {
       if (name === "surface") stage.setSurface(chooseSurface({ chosen: value, saved: null }));
       if (name === "faces") showFaces(value);
       if (name === "pegboard") boardShown();
+      if (name === "match") {
+        series = { format: value, you: 0, them: 0, counted: [] };
+        saveSeries(store, series);
+      }
       refresh();
     },
     copy: async (button) => {
@@ -207,6 +217,7 @@ async function main() {
       director.cancelTimed();
       overlay.hush();
       dialogue.stop();
+      lastMove = null;
       state = sent.state;
       sel = EMPTY;
       director.advance(state);
@@ -218,6 +229,14 @@ async function main() {
       if (!hint) return;
       sel = selectionOf(hint.move, state.table);
       refresh();
+    },
+    // The last move seen again (DESIGN.md §12.3, "a 'last turn' replay"):
+    // the cards from where they were, the score and the talk as they are.
+    again: () => {
+      if (!lastMove || director.busy()) return;
+      director.restart(lastMove.before);
+      director.advance(lastMove.after);
+      show();
     },
     log: (open) => {
       logOpen = open;
@@ -231,6 +250,8 @@ async function main() {
   // A new sitting, played or watched, with the next game's rules; the
   // opening deal waits for the house rules to be agreed aloud.
   function newGame({ seed = randomSeed(), watch = false } = {}) {
+    replay = null;
+    lastMove = null;
     director.cancelTimed();
     watchStep = false; // a step pending was cancelled with the rest (review T2)
     overlay.hush();
@@ -268,7 +289,7 @@ async function main() {
     change({ seen: [...prefs.seen, key] });
   }
   function introduce() {
-    if (!prefs.tutorial || chrome.tutorialOpen()) return;
+    if (!prefs.tutorial || replay || chrome.tutorialOpen()) return;
     if (director.held() || director.gatePending()) return; // a page is up, closing, or coming
     const key = pageDue(state, prefs.seen, tutorialSince);
     tutorialSince = state.events.length;
@@ -279,9 +300,13 @@ async function main() {
     director.gate(0, (release) => chrome.showTutorial(PAGES, at, { seen: markSeen, done: release, popups: prefs.tutorial }));
   }
 
+  // The last change of state played, to see again; none across games.
+  let lastMove = null;
+
   // The engine's next state, played out.
   function advance(next) {
     const before = state;
+    lastMove = before && before.seed === next.seed && !next.watching ? { before, after: next } : null;
     state = next;
     sel = EMPTY;
     offer = null;
@@ -289,15 +314,25 @@ async function main() {
     const timing = director.advance(state);
     playScore(before.events.length, timing);
     talk(state, before.events.length, timing);
+    if (state.prompt === "over") countGame();
     persist();
     refresh();
   }
 
   // The sitting kept across a reload; a watched game, or one that is over,
   // is not kept.
+  // A game finished counts in the series, once.
+  function countGame() {
+    const ends = state.events.findLast((e) => e.kind === "game_ends");
+    if (!ends || state.watching || replay || prefs.match !== "best-of-7") return;
+    series = recordGame({ ...series, format: "best-of-7" }, { seed: state.seed, youWon: ends.you_won });
+    saveSeries(store, series);
+  }
+
   function persist() {
-    // A game from a seeded link is not kept over the sitting saved (T16).
-    if (state.watching || fixedSeed) return;
+    // A game from a seeded link is not kept over the sitting saved (T16),
+    // nor a step of the replay.
+    if (state.watching || fixedSeed || replay) return;
     saveSitting(store, state.prompt === "over" ? null : state.saved);
   }
 
@@ -312,6 +347,80 @@ async function main() {
       const { stepped, state: next } = engine.step();
       if (stepped) advance(next);
     });
+  }
+
+  // ---- the replay, both hands face up --------------------------------------
+
+  // After the game: its record stepped through, a decision at a time, with
+  // your opponent's hand shown (fairness you can check, DESIGN.md §12.3).
+  // Forward sends the record's next command to the replayed sitting; back
+  // restores the record up to there; leaving restores the finished game.
+  let replay = null; // { record, revealed, at, k, playing }
+  let replayStepping = false;
+  function settleOn(next) {
+    director.cancelTimed();
+    replayStepping = false; // a step pending went with the rest (as review T2)
+    overlay.hush();
+    dialogue.stop();
+    state = next;
+    sel = EMPTY;
+    offer = null;
+    director.restart(state);
+    scoreShown();
+    refresh();
+  }
+  function replayOn() {
+    if (!replay?.playing || replayStepping) return;
+    if (replay.k >= replay.at.length - 1) {
+      replay.playing = false;
+      show();
+      return;
+    }
+    replayStepping = true;
+    director.at(900, () => {
+      replayStepping = false;
+      if (replay?.playing && !director.busy()) replayDo("next");
+    });
+  }
+  function replayDo(what) {
+    if (what === "start") {
+      if (state.prompt !== "over" || state.watching) return;
+      const record = state.saved;
+      replay = { record, revealed: engine.reveal(), at: stops(record), k: 0, playing: false };
+      const r = engine.restore(prefix(record, 0));
+      if (!r.ok) {
+        replay = null;
+        return;
+      }
+      settleOn(r.state);
+      return;
+    }
+    if (!replay) return;
+    if (what === "leave") {
+      const r = engine.restore(replay.record);
+      replay = null;
+      if (r.ok) settleOn(r.state);
+      return;
+    }
+    if (what === "play") {
+      replay.playing = !replay.playing;
+      show();
+      if (replay.playing && !director.busy()) replayOn();
+      return;
+    }
+    if (director.busy()) director.skip();
+    if (what === "next" && replay.k < replay.at.length - 1) {
+      const k = replay.k + 1;
+      for (const command of commandsBetween(replay.record, replay.at[k - 1], replay.at[k])) engine.send(command);
+      replay.k = k;
+      advance(engine.state());
+    } else if (what === "back" && replay.k > 0) {
+      const k = replay.k - 1;
+      const r = engine.restore(prefix(replay.record, replay.at[k]));
+      if (!r.ok) return;
+      replay.k = k;
+      settleOn(r.state);
+    }
   }
 
   // ---- what is said -------------------------------------------------------
@@ -428,12 +537,16 @@ async function main() {
   // ---- the prompt, the aids and the log ----------------------------------
 
   // The line the aids add under the prompt: the hint, or the sweep warning.
+  // With the sweep warning, a move that would leave your opponent a sweep
+  // says so before it is made; otherwise, what would clear the table now.
   function aidLine() {
     if (state.watching || state.prompt !== "play") return null;
     if (hint) return `Hint: ${hint.advice}.`;
-    if (prefs.sweepWarning && state.sweep_values.length) {
-      const values = state.sweep_values.map((v) => (v === 1 || v === 14 ? "an ace" : v === 8 || v === 11 ? `an ${v}` : `a ${v}`));
-      const text = `${[...new Set(values)].join(" or ")} would clear the table.`;
+    if (!prefs.sweepWarning) return null;
+    const warning = sweepWarning(chipsOf(offer));
+    if (warning) return warning;
+    if (state.sweep_values.length) {
+      const text = `${valuesSaid(state.sweep_values)} would clear the table.`;
       return text[0].toUpperCase() + text.slice(1);
     }
     return null;
@@ -441,7 +554,9 @@ async function main() {
 
   function show() {
     const busy = director.busy();
-    overlay.show({ state, chips: busy ? [] : chipsOf(offer), sum: offer?.sum ?? null, message, busy, aid: aidLine() });
+    const replaying = replay ? { k: replay.k, n: replay.at.length - 1, playing: replay.playing } : null;
+    const after = prefs.match === "best-of-7" && !state.watching ? seriesLine(series) : null;
+    overlay.show({ state, chips: busy || replay ? [] : chipsOf(offer), sum: replay ? null : (offer?.sum ?? null), message, busy, aid: replay ? null : aidLine(), replay: replaying, after });
     // The cards still out and the log tell what the cards have shown: they
     // wait for the cards to come to rest, as the trackers do (review T7).
     if (!busy) {
@@ -449,7 +564,7 @@ async function main() {
       drawLog();
     }
     overlay.showTrackers(prefs.trackers);
-    chrome.sync(prefs, state, { busy });
+    chrome.sync(prefs, state, { busy, canAgain: Boolean(lastMove) && !replay });
   }
 
   function drawLog() {
@@ -466,7 +581,7 @@ async function main() {
     offer = sel.chosen && state.prompt === "play" ? engine.offer(selectionText(sel)) : null;
     if (offer?.error) offer = null;
     // The hint, once a position: it cannot change within a turn (T13).
-    const hintFor = !state.watching && state.prompt === "play" && state.aids.hints ? state.saved : null;
+    const hintFor = !state.watching && !replay && state.prompt === "play" && state.aids.hints ? state.saved : null;
     if (hintFor !== hintKey) {
       hintKey = hintFor;
       hint = hintFor ? engine.hint() : null;
@@ -484,7 +599,7 @@ async function main() {
       return;
     }
     message = null;
-    if (!slot || state.prompt !== "play" || state.watching) return;
+    if (!slot || state.prompt !== "play" || state.watching || replay) return;
     if (slot.zone === "your-hand") {
       sel = choose(sel, slot.code);
     } else if (slot.zone === "middle") {
@@ -593,6 +708,8 @@ async function main() {
     hint: () => hint,
     selection: () => sel,
     tutorialOpen: () => chrome.tutorialOpen(),
+    replay: () => (replay ? { k: replay.k, n: replay.at.length - 1 } : null),
+    series: () => series,
     facesShown: () => facesShown,
     pageDue: () => pageDue(state, prefs.seen, tutorialSince),
     screenPoint: (code) => director.screenPoint(code),

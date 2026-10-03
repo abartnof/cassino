@@ -15,7 +15,7 @@ import "@material/web/chips/chip-set.js";
 
 // `later(ms, fn)` runs `fn` after `ms` on the table's clock (director.at),
 // so a box lingers as long as the table runs, and holds when it is held.
-export function createOverlay(root, { onChip, onNext, onNewGame, later = (ms, fn) => setTimeout(fn, ms) }) {
+export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () => {}, later = (ms, fn) => setTimeout(fn, ms) }) {
   root.innerHTML = `
     <div class="badges"></div>
     <div class="afloat"></div>
@@ -35,6 +35,14 @@ export function createOverlay(root, { onChip, onNext, onNewGame, later = (ms, fn
       <md-chip-set class="chips"></md-chip-set>
       <md-filled-button class="next" hidden>Next hand</md-filled-button>
       <md-filled-button class="again" hidden>New game</md-filled-button>
+      <md-outlined-button class="replay" hidden>Replay with both hands</md-outlined-button>
+      <div class="replay-bar" hidden>
+        <md-text-button class="replay-back">Back</md-text-button>
+        <span class="replay-where"></span>
+        <md-text-button class="replay-next">Next</md-text-button>
+        <md-text-button class="replay-play">Play</md-text-button>
+        <md-text-button class="replay-leave">Leave the replay</md-text-button>
+      </div>
     </section>`;
   const $ = (s) => root.querySelector(s);
   const prompt = $(".prompt");
@@ -47,12 +55,30 @@ export function createOverlay(root, { onChip, onNext, onNewGame, later = (ms, fn
   const aidLine = $(".aid-line");
   next.addEventListener("click", () => onNext());
   again.addEventListener("click", () => onNewGame());
+  // The replay after the game, with both hands face up.
+  const replayButton = $(".replay");
+  const replayBar = $(".replay-bar");
+  replayButton.addEventListener("click", () => onReplay("start"));
+  $(".replay-back").addEventListener("click", () => onReplay("back"));
+  $(".replay-next").addEventListener("click", () => onReplay("next"));
+  $(".replay-play").addEventListener("click", () => onReplay("play"));
+  $(".replay-leave").addEventListener("click", () => onReplay("leave"));
 
   // The prompt, the chips and the buttons, for a state and the offer for the
   // person's selection (null if nothing is chosen).
   // `aid`: a line the aids add under the prompt (a hint, the sweep warning).
-  function show({ state, chips, sum: total, message, busy = false, aid = null }) {
-    prompt.textContent = busy ? "" : promptText(state, chips);
+  // `replay`: { k, n, playing } while the game is replayed.
+  // `after`: a line for the end of the game (the series, if one is played).
+  function show({ state, chips, sum: total, message, busy = false, aid = null, replay = null, after = null }) {
+    prompt.textContent = replay ? "The game replayed, both hands face up." : busy ? "" : promptText(state, chips);
+    if (!replay && !busy && after && state.prompt === "over") prompt.textContent += ` ${after}`;
+    replayBar.hidden = !replay;
+    if (replay) {
+      $(".replay-where").textContent = `Move ${replay.k} of ${replay.n}`;
+      $(".replay-back").disabled = replay.k === 0;
+      $(".replay-next").disabled = replay.k === replay.n;
+      $(".replay-play").textContent = replay.playing ? "Pause" : "Play";
+    }
     aidLine.hidden = busy || !aid;
     aidLine.textContent = aid ?? "";
     note.textContent = message ?? "";
@@ -74,8 +100,9 @@ export function createOverlay(root, { onChip, onNext, onNewGame, later = (ms, fn
         }),
       );
     }
-    next.hidden = busy || state.prompt !== "next_hand";
-    again.hidden = busy || state.prompt !== "over";
+    next.hidden = busy || replay || state.prompt !== "next_hand";
+    again.hidden = busy || replay || state.prompt !== "over";
+    replayButton.hidden = busy || replay || state.prompt !== "over" || state.watching;
   }
 
   // A badge over each build: its value ("8", "8s" for a multiple build),

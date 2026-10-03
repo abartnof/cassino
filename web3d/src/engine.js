@@ -58,6 +58,12 @@ export async function loadEngine(bytes) {
       ex.cassino_hint();
       return out();
     },
+    // Every hand's deals once the game is over (null before): for the
+    // replay with both hands face up.
+    reveal() {
+      ex.cassino_reveal();
+      return out();
+    },
     // Restores a sitting from its saved text; { ok, state } or { ok, error }.
     restore(text) {
       const ok = ex.cassino_restore(write(text)) === 1;

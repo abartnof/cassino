@@ -45,6 +45,7 @@ export function chipsOf(offer) {
       value: m.chip.value ?? null,
       said: m.said ?? null,
       call: m.call ?? null,
+      leaves: m.leaves_sweep ?? null,
     }))
     .sort((a, b) => ORDER[a.kind] - ORDER[b.kind] || (a.value ?? 0) - (b.value ?? 0));
 }
@@ -97,4 +98,20 @@ export function selectionOf(move, table) {
   if (words[0] === "trail") return { chosen: card(words[1]), picked: [] };
   if (words[0] === "take") return { chosen: card(words[1]), picked: whole(words.slice(2)) };
   return { chosen: card(words[2]), picked: whole(words.slice(3).filter((w) => w !== "on")) };
+}
+
+// Capture values as they are said: "an 8", "an ace", "a 9 or a 7".
+export function valuesSaid(values) {
+  const said = values.map((v) => (v === 1 || v === 14 ? "an ace" : v === 8 || v === 11 ? `an ${v}` : `a ${v}`));
+  return [...new Set(said)].join(" or ");
+}
+
+// The sweep warning before a move (DESIGN.md §12.3): the first chip whose
+// move would leave your opponent a table to sweep, what would clear it, and
+// how many such cards you have not seen; or null.
+export function sweepWarning(chips) {
+  const c = chips.find((x) => x.leaves);
+  if (!c) return null;
+  const unseen = c.leaves.unseen === 1 ? "1 you have not seen" : `${c.leaves.unseen} you have not seen`;
+  return `${c.label} leaves a sweep: ${valuesSaid(c.leaves.values)} would clear the table, and ${unseen}.`;
 }

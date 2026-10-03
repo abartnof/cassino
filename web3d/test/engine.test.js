@@ -15,6 +15,7 @@ test("the engine plays a game through the protocol", { skip: !existsSync(WASM) &
   assert.equal(state.prompt, "play");
   const card = state.hand[0].card;
   const offer = engine.offer(card);
+  assert.equal(engine.reveal(), null, "nothing revealed while the game is played");
   assert.ok(Array.isArray(offer.moves));
   const refused = engine.send("trail ZZ");
   assert.equal(refused.ok, false);
@@ -26,6 +27,9 @@ test("the engine plays a game through the protocol", { skip: !existsSync(WASM) &
     state = sent.state;
   }
   assert.ok(state.events.some((e) => e.kind === "game_ends"));
+  // Once over, and only then, every hand's deals.
+  const revealed = engine.reveal();
+  assert.equal(revealed.hands.length, state.events.filter((e) => e.kind === "hand_ends").length);
   assert.equal(engine.send(state.moves[0] ?? "trail AS").state.error_code, "game_over");
   const restored = engine.restore(state.saved);
   assert.ok(restored.ok);

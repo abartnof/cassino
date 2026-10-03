@@ -1024,3 +1024,9 @@ html.sideways .game-log {
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+.seed-line {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--md-sys-color-on-surface-variant);
+}

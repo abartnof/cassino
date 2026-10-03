@@ -60,17 +60,24 @@ function yourHand(codes, chosen, Z) {
   });
 }
 
-function theirHand(count, Z) {
+// Your opponent's hand, backs to you; or, in the replay after the game with
+// both hands face up (`shown`: their cards), turned to face you.
+function theirHand(count, Z, shown = null) {
   const zone = Z.theirHand;
   const centre = new Vector3(...zone.centre);
+  const open = Array.isArray(shown) && shown.length === count;
   return fan({
     count,
     centre,
-    facing: toward(centre, -1),
+    facing: toward(centre, open ? 1 : -1),
     radius: zone.radius,
     spread: zone.spread * DEG,
     tilt: zone.lean * DEG,
-  }).map((pose, i) => ({ key: `their-hand:${i}`, zone: "their-hand", index: i, code: null, faceUp: false, item: null, pose }));
+  }).map((pose, i) =>
+    open
+      ? { key: shown[i], zone: "their-hand", index: i, code: shown[i], faceUp: true, item: null, pose }
+      : { key: `their-hand:${i}`, zone: "their-hand", index: i, code: null, faceUp: false, item: null, pose },
+  );
 }
 
 // Where the item at `slot` of `count` lies on the grid: rows of at most
@@ -215,11 +222,12 @@ function stock(count, dealer, Z) {
 
 // `zones`: where things rest (units.js): ZONES across a table, or
 // ZONES_PORTRAIT on a phone held upright.
-export function layout(state, { chosen = null, picked = [], sweeps = { you: [], them: [] }, zones = ZONES } = {}) {
+// `theirs`: your opponent's cards, only in the replay after the game.
+export function layout(state, { chosen = null, picked = [], sweeps = { you: [], them: [] }, zones = ZONES, theirs = null } = {}) {
   const counted = countedCards(state);
   return [
     ...yourHand(state.hand.map((c) => c.card), chosen, zones),
-    ...theirHand(state.opponent_holds, zones),
+    ...theirHand(state.opponent_holds, zones, theirs),
     ...middle(state.table, picked, zones),
     ...pileOf("you", state.piles.you.cards, sweeps.you ?? [], counted.you, zones),
     ...pileOf("them", state.piles.them.cards, sweeps.them ?? [], counted.them, zones),

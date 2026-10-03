@@ -24,6 +24,8 @@ const ICONS = {
   settings: '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>',
   narration: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>',
   hint: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>',
+  // Cassino's own: a turning arrow, the last move played again.
+  again: '<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4 4.5v4h4"/>',
 };
 // Material Symbols (Outlined, weight 400, 24 px), Apache License 2.0, Google:
 // the plus for a new game, the question mark for help, and back, forward
@@ -87,20 +89,21 @@ const PAGE_AIDS = [
 ];
 
 // `on`: { newGame(), daily(), watch(), rules(rules), skill(value),
-// aid(name, on), pref(name, value), copy(button), undo(), hint(), log(open),
-// help() }.
+// aid(name, on), pref(name, value), copy(button), undo(), hint(), again(),
+// log(open), help() }.
 export function createChrome(root, on) {
   // ---- the top bar ---------------------------------------------------------
   const fresh = el("md-icon-button", { class: "new-game", title: "A new game", "aria-label": "A new game", onclick: () => on.newGame() }, symbol("add"));
   const hint = el("md-icon-button", { class: "hint", title: "A hint", "aria-label": "A hint", onclick: () => on.hint() }, icon("hint"));
   const undo = el("md-icon-button", { class: "undo", title: "Take back your move", "aria-label": "Undo", onclick: () => on.undo() }, icon("undo"));
+  const again = el("md-icon-button", { class: "again-last", title: "See the last move again", "aria-label": "See the last move again", onclick: () => on.again() }, icon("again"));
   const log = el("md-icon-button", { class: "log-toggle", title: "The game log", "aria-label": "The game log", toggle: true }, icon("narration"));
   // `change` comes after the button has toggled (a click comes before: the
   // table review's T3).
   log.addEventListener("change", () => on.log(log.selected));
   const help = el("md-icon-button", { class: "help", title: "How to play", "aria-label": "How to play", onclick: () => on.help() }, symbol("help"));
   const gear = el("md-icon-button", { class: "settings-open", title: "Settings", "aria-label": "Settings", onclick: () => settings.show() }, icon("settings"));
-  const bar = el("header", { class: "surface bar" }, el("span", { class: "brand" }, "Cassino"), fresh, hint, undo, log, help, gear);
+  const bar = el("header", { class: "surface bar" }, el("span", { class: "brand" }, "Cassino"), fresh, hint, undo, again, log, help, gear);
 
   // ---- settings ------------------------------------------------------------
   const row = (title, words, control) =>
@@ -135,6 +138,15 @@ export function createChrome(root, on) {
     SKILLS.map((s) => el("md-select-option", { value: String(s.value) }, el("div", { slot: "headline" }, `${s.value} — ${s.words}`))),
   );
   skill.addEventListener("change", () => on.skill(Number(skill.value)));
+  const match = el(
+    "md-outlined-select",
+    { class: "match", "data-pref": "match", label: "The match" },
+    [
+      ["single", "One game to 21"],
+      ["best-of-7", "A World Series: the best of seven games"],
+    ].map(([v, words]) => el("md-select-option", { value: v }, el("div", { slot: "headline" }, words))),
+  );
+  match.addEventListener("change", () => on.pref("match", match.value));
   const startNew = el("md-filled-tonal-button", { class: "start-new", onclick: () => (settings.close(), on.newGame()) }, "New game");
   const daily = el("md-outlined-button", { class: "daily", onclick: () => (settings.close(), on.daily()) }, "Today's deal");
   const watch = el("md-outlined-button", { class: "watch", onclick: () => (settings.close(), on.watch()) }, "Watch a game");
@@ -157,6 +169,8 @@ export function createChrome(root, on) {
     ["classic", "Classic"],
     ["jumbo", "Large Text (Optimized for smaller screens)"],
   ]);
+  // Fairness you can check (DESIGN.md §12.3): the seed deals the cards.
+  const seedLine = el("p", { class: "seed-line" });
   const copy = el("md-text-button", { class: "copy", onclick: () => on.copy(copy) }, "Copy game record");
   const creditsOpen = el("md-text-button", { onclick: () => (settings.close(), credits.show()) }, "Credits");
   const settings = el(
@@ -166,11 +180,12 @@ export function createChrome(root, on) {
     el(
       "div",
       { slot: "content", class: "settings" },
+      seedLine,
       el("h3", {}, "The next game"),
       gameSet,
       row("Aces count 1 or 14", "Royal: an ace in your hand takes as one or as fourteen", aces),
       row("Score sweeps", "A point for each capture that clears the table", sweeps),
-      el("div", { class: "selects" }, skill),
+      el("div", { class: "selects" }, skill, match),
       el("div", { class: "starts" }, startNew, daily, watch),
       el("h3", {}, "Help at the table"),
       aidSwitches,
@@ -261,6 +276,7 @@ export function createChrome(root, on) {
     aces.disabled = rules.game !== "royal";
     sweeps.selected = rules.sweeps;
     skill.value = String(prefs.skill);
+    match.value = prefs.match;
     // The aids as the person set them (a watched game has none of its own:
     // the table review's T14).
     for (const s of settings.querySelectorAll("md-switch[data-aid]")) s.selected = Boolean(state?.watching ? prefs.aids[s.dataset.aid] : (state?.aids?.[s.dataset.aid] ?? prefs.aids[s.dataset.aid]));
@@ -268,17 +284,21 @@ export function createChrome(root, on) {
     speed.value = String(prefs.speed);
     surface.value = prefs.surface;
     faces.value = prefs.faces;
+    seedLine.textContent = state
+      ? `This game's seed is ${state.seed}: the same seed deals the same cards, and your opponent sees only what you see. Add ?seed=${state.seed} to the page's address to deal it again.`
+      : "";
     const watching = Boolean(state?.watching);
     hint.hidden = watching || !state?.aids?.hints;
     hint.disabled = state?.prompt !== "play" || busy; // not while cards move (T10)
+    again.disabled = !last.canAgain || busy;
     undo.hidden = watching || !prefs.undo;
     undo.disabled = !state?.can_undo;
   }
 
   return {
-    sync(prefs, state, { busy = false } = {}) {
+    sync(prefs, state, { busy = false, canAgain = false } = {}) {
       if (!last.prefs) rules = { ...prefs.rules };
-      last = { prefs, state, busy };
+      last = { prefs, state, busy, canAgain };
       draw();
     },
     setRules(r) {

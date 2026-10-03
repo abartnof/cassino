@@ -68,3 +68,17 @@ test("the daily deal: the same seed all day, everywhere, a new one tomorrow", ()
   assert.notEqual(a, c);
   assert.ok(Number.isInteger(a) && a > 0 && a < 2 ** 31);
 });
+
+import { loadSeries, saveSeries } from "../src/prefs.js";
+
+test("the series is kept, checked, and survives storage that fails", () => {
+  const store = memory();
+  assert.deepEqual(loadSeries(store), { format: "single", you: 0, them: 0, counted: [] });
+  saveSeries(store, { format: "best-of-7", you: 2, them: 1, counted: [5, 6, 7] });
+  assert.deepEqual(loadSeries(store), { format: "best-of-7", you: 2, them: 1, counted: [5, 6, 7] });
+  store.setItem("cassino.series", JSON.stringify({ format: "best-of-99", you: "x" }));
+  assert.equal(loadSeries(store).format, "single");
+  assert.equal(loadSeries(broken).format, "single");
+  saveSeries(broken, { format: "best-of-7", you: 0, them: 0, counted: [] });
+  assert.equal(loadPrefs(store).match, "single");
+});

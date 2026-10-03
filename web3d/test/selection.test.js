@@ -91,3 +91,21 @@ test("a refused build is refused on any of its cards, and says why on each (the 
   assert.equal(whyNot("6D", offer, table), "To take the 7-build you need a 7.");
   assert.equal(itemState("5C", offer, sel, table), "addable");
 });
+
+import { sweepWarning, valuesSaid } from "../src/selection.js";
+
+test("the sweep warning, before the move: which chip leaves a sweep, and what would clear the table", () => {
+  assert.equal(valuesSaid([8]), "an 8");
+  assert.equal(valuesSaid([1, 14]), "an ace");
+  assert.equal(valuesSaid([9, 7]), "a 9 or a 7");
+  const offer = {
+    moves: [
+      { move: "trail 5C", chip: { kind: "trail", label: "Trail" }, leaves_sweep: { values: [9], unseen: 2 } },
+      { move: "build 9 5C 4D", chip: { kind: "build", label: "Build 9", value: 9 }, leaves_sweep: null },
+    ],
+  };
+  const chips = chipsOf(offer);
+  assert.deepEqual(chips.find((c) => c.kind === "trail").leaves, { values: [9], unseen: 2 });
+  assert.equal(sweepWarning(chips), "Trail leaves a sweep: a 9 would clear the table, and 2 you have not seen.");
+  assert.equal(sweepWarning(chips.filter((c) => c.kind !== "trail")), null);
+});
