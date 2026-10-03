@@ -213,11 +213,6 @@ impl Hand {
         self.hands[seat.index()]
     }
 
-    /// The shuffled deck the hand is dealt from.
-    pub fn deck(&self) -> &[Card; 52] {
-        &self.deck
-    }
-
     pub fn pile(&self, seat: Seat) -> CardSet {
         self.piles[seat.index()]
     }
