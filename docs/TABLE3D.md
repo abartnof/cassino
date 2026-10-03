@@ -229,11 +229,12 @@ Material Design 3, from piquet's shell.
   what would clear the table now (`state.sweep_values`).
 - **Scores celebrated on the table** (play-testing asked for the HUD's
   popups on the table too): as each line of the count is scored, a disc
-  with its words ("Big Casino", "Ace", "Most cards") pops in over the card
-  it names, turned up in the count row, or over its taker's pile, and four
-  of its points ("+2") burst out past the disc's edge, as a broadcast
-  celebrates a three-pointer; up, or down when the disc is high on the
-  screen, leaning in from a side it is near; gone in under two seconds. A
+  with its words ("Big Casino", "Ace", "Most cards") pops in just above the
+  card it names, turned up in the count row, or its taker's pile, clear of
+  it (below it where there is no room above, under the HUD), and four of
+  its points ("+2", white, inked as the disc is) burst out of it like a
+  firework: a jolt, then slowing, sinking a little and fading; gone in
+  under two seconds. A
   sweep scored is celebrated on its card as it is held up. With reduced
   motion, the disc and its points fade in place (`scorebug.js`
   `celebrationOf`, `overlay.js` `celebrate`).

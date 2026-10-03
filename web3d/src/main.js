@@ -33,6 +33,7 @@ import { commandsBetween, prefix, stops } from "./replay.js";
 import { pageDue, parseTutorial } from "./tutorial.js";
 import TUTORIAL_TEXT from "../tutorial.md";
 import { CARD, PORTRAIT_BELOW, ZONES, ZONES_PORTRAIT } from "./units.js";
+import { cardCorners } from "./kinematics.js";
 
 /* global WASM_BASE64, ART, WORDS */
 
@@ -538,23 +539,27 @@ async function main() {
     });
   }
 
-  // A celebration over its card where it lies (or, `moving`, where it is
-  // now), or over the top of its taker's pile.
+  // A celebration by its card where it lies (or, `moving`, where it is
+  // now), or by the top of its taker's pile: the card's extent on the
+  // screen, for the overlay to place it clear of the card.
   function cheer({ label, pts, card, pile }, moving = false) {
-    let where = null;
+    let pose = null;
     if (card) {
-      const slot = director.placement().find((m) => m.code === card);
-      where = moving ? director.meshOf(card)?.position : slot?.pose.position;
+      const mesh = director.meshOf(card);
+      pose = moving ? mesh && { position: mesh.position, quaternion: mesh.quaternion } : director.placement().find((m) => m.code === card)?.pose;
     }
-    if (!where && pile) {
+    if (!pose && pile) {
       const zone = pile === "you" ? "your-pile" : "their-pile";
-      const top = director
+      pose = director
         .placement()
         .filter((m) => m.zone === zone)
-        .sort((a, b) => b.pose.position.y - a.pose.position.y)[0];
-      where = top?.pose.position;
+        .sort((a, b) => b.pose.position.y - a.pose.position.y)[0]?.pose;
     }
-    if (where) overlay.celebrate({ label, pts, ...director.toScreen(where.clone()) });
+    if (!pose) return;
+    const corners = cardCorners(pose).map((c) => director.toScreen(c));
+    const ys = corners.map((c) => c.y);
+    const x = corners.reduce((sum, c) => sum + c.x, 0) / corners.length;
+    overlay.celebrate({ label, pts, x, top: Math.min(...ys), bottom: Math.max(...ys) });
   }
 
   // A badge on the top right corner of each build's top card (clear of the

@@ -910,23 +910,24 @@ html.sideways .aid-toggles {
     cheer-in 380ms var(--spring) both,
     cheer-out 280ms var(--ease-out) 1450ms forwards;
 }
+/* Each point a firework's spark: white, inked as the disc is. */
 .cheer-burst {
   position: absolute;
   left: 0;
   top: 0;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 900;
   line-height: 1;
   white-space: nowrap;
-  color: #ffd23f;
+  color: #fff;
   -webkit-text-stroke: 2.5px #1b1f24;
   paint-order: stroke fill;
   text-shadow: 0 3px 0 #1b1f24;
   opacity: 0;
   transform: translate(-50%, -50%) scale(0.3);
-  animation: cheer-burst 1100ms cubic-bezier(0.12, 0.9, 0.24, 1) forwards;
-  animation-delay: calc(160ms + var(--k) * 50ms);
+  animation: cheer-burst 1250ms linear forwards;
+  animation-delay: calc(140ms + var(--k) * 35ms);
 }
 @keyframes cheer-in {
   from {
@@ -944,20 +945,31 @@ html.sideways .aid-toggles {
     opacity: 0;
   }
 }
+/* A firework: a jolt carries each spark three quarters of its way in the
+   first fifth of its time; then it slows, sinks a little as it falls, and
+   fades as it shrinks. */
 @keyframes cheer-burst {
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.3);
+    transform: translate(-50%, -50%) scale(0.4);
+    animation-timing-function: cubic-bezier(0.1, 0.8, 0.3, 1);
   }
-  10% {
+  6% {
     opacity: 1;
   }
-  75% {
+  20% {
     opacity: 1;
+    transform: translate(calc(-50% + var(--dx) * 0.75), calc(-50% + var(--dy) * 0.75)) rotate(calc(var(--rot) * 0.7)) scale(1.15);
+    animation-timing-function: cubic-bezier(0.2, 0.6, 0.4, 1);
+  }
+  60% {
+    opacity: 0.9;
+    transform: translate(calc(-50% + var(--dx) * 0.95), calc(-50% + var(--dy) * 0.95 + 6px)) rotate(var(--rot)) scale(1);
+    animation-timing-function: ease-in;
   }
   100% {
     opacity: 0;
-    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--rot)) scale(1.15);
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy) + 18px)) rotate(var(--rot)) scale(0.7);
   }
 }
 @keyframes cheer-still {

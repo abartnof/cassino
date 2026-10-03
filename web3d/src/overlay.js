@@ -143,21 +143,27 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
   // ---- a score celebrated on the table -------------------------------------
 
   // As the HUD's popup does on the score, a score is celebrated where it was
-  // won: a disc with its words over the card (or the pile), popping in, and
-  // its points bursting out past the disc's edge, four of them, as a
-  // broadcast celebrates a three-pointer. Gone in under two seconds, on the
-  // table's clock (`later`).
+  // won: a disc with its words just above the card (or the pile) on the
+  // screen, clear of it -- below it where there is no room above, under the
+  // HUD or the screen's top -- and its points bursting out of the disc like
+  // a firework: a jolt, then slowing, sinking a little and fading. Gone in
+  // under two seconds, on the table's clock (`later`). `top` and `bottom`:
+  // the card's extent on the screen.
   const cheers = $(".cheers");
+  const DISC = 54; // the disc's radius, as drawn
   const BURSTS = [
-    { angle: -150, reach: 118, rot: -14 },
-    { angle: -108, reach: 132, rot: -6 },
-    { angle: -70, reach: 128, rot: 7 },
-    { angle: -28, reach: 116, rot: 15 },
+    { angle: -160, reach: 104, rot: -16 },
+    { angle: -115, reach: 122, rot: -6 },
+    { angle: -65, reach: 120, rot: 6 },
+    { angle: -20, reach: 102, rot: 16 },
   ];
-  function celebrate({ label, pts, x, y }) {
-    // Up, unless the disc is high on the screen (by the HUD, say): then
-    // down; and leaning in, away from a side it is near.
-    const down = y < window.innerHeight * 0.42;
+  function celebrate({ label, pts, x, top, bottom }) {
+    const hud = root.querySelector(".info")?.getBoundingClientRect();
+    const GAP = 14; // between the disc and the card
+    const above = top - DISC - GAP;
+    const underHud = hud && x + DISC > hud.left && x - DISC < hud.right && above - DISC < hud.bottom;
+    const down = above - DISC < 8 || underHud;
+    const y = down ? bottom + DISC + GAP : above;
     const lean = x < 200 ? 22 : x > window.innerWidth - 200 ? -22 : 0;
     const node = el(
       "div",
