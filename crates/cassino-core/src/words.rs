@@ -8,10 +8,12 @@
 //! people read them (`8♠`), and come from the engine so every client says
 //! the same thing.
 
-use crate::cards::CardSet;
+use crate::advice::Note;
+use crate::cards::{Card, CardSet, ACE};
+use crate::hand::Clinch;
 use crate::moves::{build_kind, groups, BuildKind, Move};
 use crate::rules::Rules;
-use crate::table::Table;
+use crate::table::{Seat, Table};
 
 const WORDS: [&str; 15] = [
     "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
@@ -113,6 +115,146 @@ pub fn describe(rules: &Rules, table: &Table, mv: &Move) -> String {
     }
 }
 
+/// A card that captures as `v`, with its article: "an 8", "a king", "an ace".
+pub fn card_for(v: u8) -> String {
+    match v {
+        1 | 14 => "an ace".into(),
+        8 => "an 8".into(),
+        11 => "a jack".into(),
+        12 => "a queen".into(),
+        13 => "a king".into(),
+        v => format!("a {v}"),
+    }
+}
+
+/// A note in English, as `observer` hears it ("you" and "your opponent").
+pub fn note_text(rules: &Rules, note: &Note, observer: Seat) -> String {
+    let who = |seat: Seat| {
+        if seat == observer {
+            "You"
+        } else {
+            "Your opponent"
+        }
+    };
+    let whose = |seat: Seat| {
+        if seat == observer {
+            "yours"
+        } else {
+            "your opponent's"
+        }
+    };
+    let points = |n: u32| {
+        if n == 1 {
+            "1 point".to_string()
+        } else {
+            format!("{n} points")
+        }
+    };
+    match note {
+        Note::TookPoints { seat, cards } => {
+            let mut items = Vec::new();
+            let mut total = 0;
+            if cards.contains(Card::BIG_CASINO) {
+                items.push("Big Casino".to_string());
+                total += 2;
+            }
+            if cards.contains(Card::LITTLE_CASINO) {
+                items.push("Little Casino".to_string());
+                total += 1;
+            }
+            let aces = (*cards & CardSet::of_rank(ACE)).len();
+            if aces > 0 {
+                items.push(match aces {
+                    1 => "an ace".to_string(),
+                    n => format!("{} aces", value_word(n as u8)),
+                });
+                total += aces;
+            }
+            format!(
+                "{} took {}: {}.",
+                who(*seat),
+                items.join(" and "),
+                points(total)
+            )
+        }
+        Note::Swept { seat } => {
+            if rules.sweeps {
+                format!("{} swept the table: 1 point.", who(*seat))
+            } else {
+                format!("{} swept the table (sweeps are not scored).", who(*seat))
+            }
+        }
+        Note::Cash { .. } => "Cash: an ace for an ace.".into(),
+        Note::Clinched {
+            seat,
+            what: Clinch::Cards,
+        } => {
+            format!(
+                "That's 27 cards: most cards, and its 3 points, are {}.",
+                whose(*seat)
+            )
+        }
+        Note::Clinched {
+            seat,
+            what: Clinch::Spades,
+        } => {
+            format!("Seven spades: the spades point is {}.", whose(*seat))
+        }
+        Note::Announces { seat, value } => {
+            if *seat == observer {
+                format!(
+                    "Building {} tells your opponent you hold {}.",
+                    value_word(*value),
+                    card_for(*value)
+                )
+            } else {
+                format!(
+                    "Your opponent is building {}, so they hold {}.",
+                    value_word(*value),
+                    card_for(*value)
+                )
+            }
+        }
+        Note::SweepOpen {
+            next,
+            values,
+            held,
+            unseen,
+        } => {
+            let any: Vec<String> = values
+                .iter()
+                .map(|&v| {
+                    card_for(v)
+                        .split_once(' ')
+                        .map_or(String::new(), |(_, c)| c.to_string())
+                })
+                .collect();
+            if *next == observer && *held {
+                format!("You can sweep the table with your {}.", any.join(" or "))
+            } else {
+                format!(
+                    "That leaves a sweep for any {} ({unseen} unseen).",
+                    any.join(" or ")
+                )
+            }
+        }
+        Note::LeftBehind { seat, cards } => {
+            let card = if *seat == observer {
+                "Your card".to_string()
+            } else {
+                "Your opponent's card".to_string()
+            };
+            format!("{card} could also have taken {}.", cards.labels())
+        }
+        Note::BuildAtRisk { unseen, .. } => match unseen {
+            0 => "No card that could take it is unseen: it is safe.".into(),
+            1 => "1 card that could take it is unseen.".into(),
+            n => format!("{n} cards that could take it are unseen."),
+        },
+        Note::CanTakeBuild { value } => format!("You hold {}: you can take it.", card_for(*value)),
+    }
+}
+
 fn listed(groups: &[CardSet]) -> String {
     groups
         .iter()
@@ -198,6 +340,146 @@ mod tests {
             describe(&royal, &t(&royal, "KS AH"), &mv("take AC=14 KS AH")),
             "takes K♠ A♥ with A♣ as fourteen"
         );
+    }
+
+    #[test]
+    fn notes_in_english() {
+        let r = Rules::CLASSIC;
+        let s = |t: &str| CardSet::parse(t).unwrap();
+        let me = Seat::South;
+        let them = Seat::North;
+        let text = |n: Note| note_text(&r, &n, me);
+        assert_eq!(
+            text(Note::TookPoints {
+                seat: me,
+                cards: s("TD AS")
+            }),
+            "You took Big Casino and an ace: 3 points."
+        );
+        assert_eq!(
+            text(Note::TookPoints {
+                seat: them,
+                cards: s("AH AC")
+            }),
+            "Your opponent took two aces: 2 points."
+        );
+        assert_eq!(
+            text(Note::TookPoints {
+                seat: me,
+                cards: s("2S")
+            }),
+            "You took Little Casino: 1 point."
+        );
+        assert_eq!(
+            text(Note::Swept { seat: me }),
+            "You swept the table: 1 point."
+        );
+        let no_sweeps = Rules { sweeps: false, ..r };
+        assert_eq!(
+            note_text(&no_sweeps, &Note::Swept { seat: them }, me),
+            "Your opponent swept the table (sweeps are not scored)."
+        );
+        assert_eq!(text(Note::Cash { seat: them }), "Cash: an ace for an ace.");
+        assert_eq!(
+            text(Note::Clinched {
+                seat: me,
+                what: Clinch::Cards
+            }),
+            "That's 27 cards: most cards, and its 3 points, are yours."
+        );
+        assert_eq!(
+            text(Note::Clinched {
+                seat: them,
+                what: Clinch::Spades
+            }),
+            "Seven spades: the spades point is your opponent's."
+        );
+        assert_eq!(
+            text(Note::Announces { seat: me, value: 8 }),
+            "Building eight tells your opponent you hold an 8."
+        );
+        assert_eq!(
+            text(Note::Announces {
+                seat: them,
+                value: 9
+            }),
+            "Your opponent is building nine, so they hold a 9."
+        );
+        assert_eq!(
+            text(Note::SweepOpen {
+                next: me,
+                values: vec![9],
+                held: true,
+                unseen: 0
+            }),
+            "You can sweep the table with your 9."
+        );
+        assert_eq!(
+            text(Note::SweepOpen {
+                next: them,
+                values: vec![9],
+                held: false,
+                unseen: 4
+            }),
+            "That leaves a sweep for any 9 (4 unseen)."
+        );
+        assert_eq!(
+            text(Note::SweepOpen {
+                next: them,
+                values: vec![1, 2],
+                held: false,
+                unseen: 3
+            }),
+            "That leaves a sweep for any ace or 2 (3 unseen)."
+        );
+        assert_eq!(
+            text(Note::LeftBehind {
+                seat: me,
+                cards: s("5S 3H")
+            }),
+            "Your card could also have taken 5♠ 3♥."
+        );
+        assert_eq!(
+            text(Note::LeftBehind {
+                seat: them,
+                cards: s("2D")
+            }),
+            "Your opponent's card could also have taken 2♦."
+        );
+        assert_eq!(
+            text(Note::BuildAtRisk {
+                value: 8,
+                unseen: 2
+            }),
+            "2 cards that could take it are unseen."
+        );
+        assert_eq!(
+            text(Note::BuildAtRisk {
+                value: 8,
+                unseen: 1
+            }),
+            "1 card that could take it is unseen."
+        );
+        assert_eq!(
+            text(Note::BuildAtRisk {
+                value: 8,
+                unseen: 0
+            }),
+            "No card that could take it is unseen: it is safe."
+        );
+        assert_eq!(
+            text(Note::CanTakeBuild { value: 8 }),
+            "You hold an 8: you can take it."
+        );
+    }
+
+    #[test]
+    fn cards_for_values() {
+        assert_eq!(card_for(1), "an ace");
+        assert_eq!(card_for(8), "an 8");
+        assert_eq!(card_for(9), "a 9");
+        assert_eq!(card_for(13), "a king");
+        assert_eq!(card_for(14), "an ace");
     }
 
     #[test]
