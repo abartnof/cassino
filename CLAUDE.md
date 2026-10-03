@@ -10,8 +10,10 @@ Standing rules:
 - **Test-driven.** Write the test, watch it fail, then make it pass.
 - **Atomic commits, often**: one logical change each, with `PLAN.md` kept
   current as work lands.
-- **The gate before every commit**: `cargo fmt --check`,
-  `cargo clippy --all-targets -- -D warnings`, `cargo test`.
+- **The gate before every commit**: `bin/gate && git commit ...`. It runs
+  `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and
+  `cargo test`, and exits non-zero on any failure, so nothing slips through a
+  pipe.
 - **Simulations stop when the signal is clear.** Run in batches, look between
   them, and stop when the effect crosses an O'Brien–Fleming boundary fixed
   before the first batch; otherwise report the interval at the last look
