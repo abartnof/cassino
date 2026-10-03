@@ -124,3 +124,24 @@ test("on the clock it is given", () => {
   const after = said([{ who: "them", phrase: "good", delay: 0 }], dialogue);
   assert.equal(after[0].ms, 0);
 });
+
+// Cassino's: the cards landed by a tap, the lines not yet said are dropped,
+// and what is said next is said at once, not after them (the table
+// review's T4).
+test("skip: the lines still to come are forgotten, and the next is said at once", () => {
+  let now = 1000;
+  const dialogue = createDialogue(BANK, () => now);
+  const out = [];
+  const lines = [
+    { who: "you", phrase: "point-5", delay: 0 },
+    { who: "them", phrase: "what-make", delay: 0 },
+    { who: "you", phrase: "value-48", delay: 0 },
+  ];
+  dialogue.say(lines, (line, words, ms) => out.push(ms));
+  assert.ok(out[2] > 2000, "the third line well after the first");
+  now += 100;
+  dialogue.skip();
+  const next = [];
+  dialogue.say([{ who: "them", phrase: "good", delay: 0 }], (line, words, ms) => next.push(ms));
+  assert.equal(next[0], 0, "said at once");
+});

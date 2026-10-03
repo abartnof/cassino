@@ -145,7 +145,19 @@ export function createPegboard(stage) {
       const now = performance.now();
       let delay = 0;
       for (const side of ["you", "opp"]) {
-        if (p[side].front === shown[side].front) continue;
+        if (p[side].front === shown[side].front && p[side].back === shown[side].back) continue;
+        if (p[side].front === shown[side].front) {
+          // A hand scoring nothing: the back peg comes up beside the front,
+          // so the gap is still the last hand's points (none) -- as pegsOf
+          // and a reload have it (the table review's T9).
+          const at = poses(side, p[side]);
+          const back = pegs[side][1 - front[side]];
+          const from = { position: back.position.clone(), quaternion: back.quaternion.clone() };
+          moving.push({ peg: back, path: transfer(from, at.back, { clearance: 1.2 }), start: now + delay, ms: 500 });
+          place(pegs[side][front[side]], at.front);
+          delay += 350;
+          continue;
+        }
         const leaping = pegs[side][1 - front[side]];
         front[side] = 1 - front[side];
         const at = poses(side, p[side]);

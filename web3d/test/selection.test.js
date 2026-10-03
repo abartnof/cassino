@@ -63,7 +63,7 @@ test("each table card is picked, addable, refused or idle", () => {
   assert.equal(itemState("4D", null, EMPTY), "idle");
 });
 
-import { selectionOf } from "../src/selection.js";
+import { selectionOf, whyNot } from "../src/selection.js";
 
 test("a move's text as the selection that makes it, a build picked whole", () => {
   const table = [
@@ -76,4 +76,18 @@ test("a move's text as the selection that makes it, a build picked whole", () =>
   assert.deepEqual(selectionOf("take AC=14 KS AH", table), { chosen: "AC", picked: ["KS", "AH"] });
   assert.deepEqual(selectionOf("build 8 3D 5C", table), { chosen: "3D", picked: ["5C"] });
   assert.deepEqual(selectionOf("build 11 2S on 3C 9D", table), { chosen: "2S", picked: ["3C", "6D", "9D"] });
+});
+
+test("a refused build is refused on any of its cards, and says why on each (the table review's T5)", () => {
+  const table = [
+    { id: 1, cards: [{ card: "AS" }, { card: "6D" }], build: { value: 7 } },
+    { id: 2, cards: [{ card: "5C" }] },
+  ];
+  // The engine names the build by its lowest card.
+  const offer = { moves: [], can_add: [{ card: "5C" }], why_not: [{ card: { card: "AS" }, reason: "To take the 7-build you need a 7." }] };
+  const sel = { chosen: "2H", picked: [] };
+  assert.equal(itemState("6D", offer, sel, table), "refused", "the top card too");
+  assert.equal(itemState("AS", offer, sel, table), "refused");
+  assert.equal(whyNot("6D", offer, table), "To take the 7-build you need a 7.");
+  assert.equal(itemState("5C", offer, sel, table), "addable");
 });

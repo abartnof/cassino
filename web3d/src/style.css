@@ -1005,3 +1005,22 @@ html.sideways .game-log {
   right: calc(min(220px, 28vw) + 16px);
   max-height: calc(100vh - 80px);
 }
+
+/* A narrower window across (a tablet held sideways): the controls start to
+   the right of the aids' panel, so it never covers the prompt (the table
+   review's T11). */
+@media (max-width: 1240px) {
+  html:not(.upright):not(.sideways) .controls {
+    padding-left: 392px;
+  }
+}
+
+/* Told to a screen reader, not shown: what the keyboard's focus is on. */
+.focus-told {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

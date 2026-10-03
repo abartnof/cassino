@@ -111,9 +111,36 @@ def table_cards(move):
     return [w for w in rest if w != "on"]
 
 
+def check_faces(page, s, failures):
+    """No face on a card the person could not know: their hand, the table,
+    the sweep cards of the hand under way, and its count once it is over
+    (the table review's Q3: checked at every rest, not once)."""
+    known = {c["card"] for c in s["hand"]} | {c["card"] for i in s["table"] for c in i["cards"]}
+    last = None
+    for e in s["events"]:
+        if e["hand"] != s["hand_number"]:
+            continue
+        if e["kind"] == "played":
+            last = e
+        if e["kind"] == "swept" and last:
+            known.add(last["card"]["card"])
+        if e["kind"] == "scored":
+            for l in e["count"]["lines"]:
+                if l["item"] == "ace":
+                    known.add("A" + l["suit"])
+                elif l["item"] == "big_casino":
+                    known.add("TD")
+                elif l["item"] == "little_casino":
+                    known.add("2S")
+    shown = set(page.evaluate("window.cassino3d.faces()"))
+    if not shown <= known:
+        failures.append(f"faces shown that the person cannot know: {sorted(shown - known)}")
+
+
 def play_by_clicking(page, failures, moves_made):
     """One decision, made the way a person makes it."""
     settle(page)
+    check_faces(page, page.evaluate("window.cassino3d.state()"), failures)
     for line in page.evaluate("window.cassino3d.said()"):
         HEARD.add(line["words"])
     s = page.evaluate("window.cassino3d.state()")
@@ -294,12 +321,11 @@ def check_settings(browser, failures):
     settle(page)
     if len(page.evaluate("window.cassino3d.state()")["events"]) != before:
         failures.append("settings: undo did not take the move back")
-    # A move made, then the page reloaded: the sitting comes back.
-    s = page.evaluate("window.cassino3d.state()")
-    page.locator(f'md-assist-chip[data-move="{hint["move"]}"]').count()
-    page.evaluate("(m) => window.cassino3d.engine.send(m)", s["moves"][0])
-    made = page.evaluate("window.cassino3d.engine.state()")
-    page.evaluate("() => localStorage.setItem('cassino.sitting', window.cassino3d.engine.state().saved)")
+    # A move made by clicking, then the page reloaded: the sitting the page
+    # saved itself comes back (the table review's Q1).
+    play_by_clicking(page, failures, 3)
+    settle(page)
+    made = page.evaluate("window.cassino3d.state()")
     page.reload()
     page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
     settle(page)
@@ -308,6 +334,27 @@ def check_settings(browser, failures):
         failures.append("settings: the sitting did not come back after a reload")
     if not page.evaluate("window.cassino3d.prefs()")["aids"]["hints"]:
         failures.append("settings: hints were not kept across the reload")
+    # A move chosen from the keyboard (the table review's T15): the focus
+    # on your hand, Enter chooses its card and the chips come; up to the
+    # table; Escape lets go.
+    settle(page)
+    page.evaluate("document.activeElement && document.activeElement.blur()")
+    page.keyboard.press("ArrowRight")
+    told = page.locator(".focus-told").inner_text()
+    page.keyboard.press("Enter")
+    settle(page)
+    chosen = page.evaluate("window.cassino3d.selection().chosen")
+    if not chosen or "in your hand" not in told:
+        failures.append(f"keyboard: Enter did not choose the focused card ({chosen!r}, told {told!r})")
+    if not page.evaluate("window.cassino3d.chips()"):
+        failures.append("keyboard: no chips for the card chosen")
+    page.keyboard.press("ArrowUp")
+    if "on the table" not in page.locator(".focus-told").inner_text():
+        failures.append("keyboard: ArrowUp did not reach the table")
+    page.keyboard.press("Escape")
+    settle(page)
+    if page.evaluate("window.cassino3d.selection().chosen"):
+        failures.append("keyboard: Escape did not let go")
     # The game log opens at the first press, and shows what has happened
     # (the table review's T3).
     page.locator("md-icon-button.log-toggle").click()
@@ -423,6 +470,12 @@ def main() -> int:
         said = page.evaluate("window.cassino3d.said()")
         if {line["who"] for line in said} != {"you", "them"}:
             failures.append(f"the house rules were not talked over: {said}")
+        # A tap lands the cards and drops what is not yet said, but what is
+        # said stays up its while (the table review's T4).
+        page.mouse.click(640, 400)
+        page.wait_for_timeout(600)
+        if not page.evaluate("window.cassino3d.said()"):
+            failures.append("a tap took the table talk down at once")
         page.evaluate("window.cassino3d.tick(3000)")
         strip(page, "t3-deal", None, frames=12, step=180)
         for name, query, move in [

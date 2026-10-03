@@ -28,3 +28,26 @@ test("the holes run in fives, each group a little apart, the game hole last", ()
   assert.ok(step(6) > step(5) + 0.2, "a gap after each five");
   assert.ok(Math.abs(step(2) - step(3)) < 1e-9);
 });
+
+// The live board, pegged hand by hand, stands where a board reset to the
+// same hands stands, a hand scoring nothing included (the table review's
+// T9). On a stand-in stage, the animation frames run at once.
+test("the board pegged hand by hand agrees with the board set from the hands", async () => {
+  globalThis.requestAnimationFrame = (f) => setTimeout(() => f(performance.now() + 60_000), 0);
+  const { createPegboard } = await import("../src/pegboard.js");
+  const stage = { registerInk() {}, render() {}, scene: { add() {} } };
+  const sequence = [[6, 5], [6, 13], [15, 13], [15, 13]]; // a hand scoring nothing for you, then for both
+  const live = createPegboard(stage);
+  live.reset(pegsOf([]));
+  for (let k = 1; k <= sequence.length; k++) {
+    live.peg(pegsOf(ends(sequence.slice(0, k))));
+    await new Promise((r) => setTimeout(r, 20));
+    const fresh = createPegboard(stage);
+    fresh.reset(pegsOf(ends(sequence.slice(0, k))));
+    for (const side of ["you", "opp"]) {
+      const at = (board) => board.pegs[side].map((p) => p.position.x.toFixed(3)).sort();
+      assert.deepEqual(at(live), at(fresh), `${side} after hand ${k}`);
+    }
+  }
+  delete globalThis.requestAnimationFrame;
+});

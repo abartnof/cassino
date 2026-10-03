@@ -99,3 +99,84 @@ test("over real games the ledger adds up to the game's score, and its events to 
     assert.ok(shown.hands.length >= 2);
   }
 });
+
+// ---- the widget, on a stand-in DOM and a clock moved by hand -------------------
+
+class FakeElement {
+  constructor(tag) {
+    this.tagName = tag;
+    this.children = [];
+    this.attributes = {};
+    this.style = { setProperty() {} };
+    this.textContent = "";
+    this.className = "";
+    const el = this;
+    this.classList = {
+      add: (...c) => (el.className = [...new Set([...el.className.split(" ").filter(Boolean), ...c])].join(" ")),
+      remove: (...c) => (el.className = el.className.split(" ").filter((x) => x && !c.includes(x)).join(" ")),
+      toggle: (c, on) => (on ? el.classList.add(c) : el.classList.remove(c)),
+      contains: (c) => el.className.split(" ").includes(c),
+    };
+  }
+  setAttribute(k, v) {
+    this.attributes[k] = String(v);
+  }
+  getAttribute(k) {
+    return this.attributes[k] ?? null;
+  }
+  append(...nodes) {
+    for (const n of nodes) this.children.push(typeof n === "string" ? Object.assign(new FakeElement("#text"), { textContent: n }) : n);
+  }
+  replaceChildren(...nodes) {
+    this.children = [];
+    this.append(...nodes);
+  }
+  addEventListener() {}
+  set innerHTML(_) {}
+  get offsetWidth() {
+    return 0;
+  }
+}
+
+function clock() {
+  let now = 0;
+  const queue = [];
+  return {
+    later: (ms, fn) => queue.push({ at: now + ms, fn }),
+    run(ms) {
+      const until = now + ms;
+      for (;;) {
+        queue.sort((a, b) => a.at - b.at);
+        if (!queue.length || queue[0].at > until) break;
+        const e = queue.shift();
+        now = e.at;
+        e.fn();
+      }
+      now = until;
+    },
+  };
+}
+
+test("the widget: a hand's late popups stay in that hand, and the next hand's live block opens at its deal (the table review's T6)", async () => {
+  globalThis.document = { createElement: (tag) => new FakeElement(tag) };
+  const { createHud } = await import("../src/hud.js");
+  const c = clock();
+  const hud = createHud(new FakeElement("div"), { later: c.later });
+  hud.reset({ hands: [], live: blank() });
+  // Hand 1's count: five lines to you, queued one after another.
+  for (const [cat, pts] of [["cards", 3], ["spades", 1], ["big", 2], ["little", 1], ["aces", 3]]) hud.score({ side: "you", cat, label: cat, pts, hand: 1 });
+  hud.endHand(1);
+  // Next hand at once (Brisk), and your opponent sweeps with its first card.
+  hud.dealt(2);
+  hud.score({ side: "opp", cat: "sweeps", label: "Sweep", pts: 1, hand: 2 });
+  c.run(20_000);
+  const l = hud.ledger();
+  assert.deepEqual(l.hands.map((h) => [h.hand, h.ended]), [[1, true], [2, false]]);
+  assert.equal(handTotal(l.hands[0].lines, "you"), 10);
+  assert.equal(handTotal(l.hands[0].lines, "opp"), 0, "the sweep is not booked to hand 1");
+  assert.deepEqual(l.hands[1].lines.sweeps, { you: 0, opp: 1 });
+  assert.deepEqual(hud.totals(), { you: 10, opp: 1 });
+  assert.deepEqual(hud.shown(), { you: 10, opp: 1 });
+  assert.ok(hud.idle());
+  delete globalThis.document;
+});

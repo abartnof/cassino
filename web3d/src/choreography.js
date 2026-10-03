@@ -483,7 +483,7 @@ class Plan {
         const slot = slotsOf[to].shift();
         if (!mesh || !slot) continue;
         const delay = pair * TIMING.dealPair + k * TIMING.dealSecond;
-        const path = to === "table" ? toss(mesh.pose, slot.pose, { clearance: 3 }) : rise(mesh.pose, slot.pose);
+        const path = to === "table" ? toss(mesh.pose, slot.pose, { clearance: 3 }) : rise(mesh.pose, slot.pose, { clearance: 4 });
         this.move(mesh.id, slot, path, start + delay, TIMING.dealCard);
       }
     });

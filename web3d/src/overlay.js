@@ -20,6 +20,7 @@ export function createOverlay(root, { onChip, onNext, onNewGame, later = (ms, fn
     <div class="badges"></div>
     <div class="afloat"></div>
     <div class="info"><div class="hud-slot"></div></div>
+    <p class="focus-told" aria-live="polite"></p>
     <section class="aids-panel" hidden aria-label="Captures and the cards still out">
       <div class="tally-row you"><span class="who">You</span><ul class="tally" aria-label="Your captures"></ul></div>
       <div class="tally-row them"><span class="who">Opp</span><ul class="tally" aria-label="Your opponent's captures"></ul></div>
@@ -57,16 +58,22 @@ export function createOverlay(root, { onChip, onNext, onNewGame, later = (ms, fn
     note.textContent = message ?? "";
     sum.hidden = total == null;
     sum.textContent = total == null ? "" : `Sum ${total}`;
-    chipSet.replaceChildren(
-      ...chips.map((c) => {
-        const chip = document.createElement("md-assist-chip");
-        chip.label = c.label;
-        chip.dataset.move = c.move;
-        if (c.call) chip.title = c.call;
-        chip.addEventListener("click", () => onChip(c));
-        return chip;
-      }),
-    );
+    // The chips are made again only when the moves change, so one that has
+    // the keyboard's focus keeps it (the table review's T15).
+    const moves = chips.map((c) => `${c.move}|${c.label}`).join("\n");
+    if (chipSet.dataset.moves !== moves) {
+      chipSet.dataset.moves = moves;
+      chipSet.replaceChildren(
+        ...chips.map((c) => {
+          const chip = document.createElement("md-assist-chip");
+          chip.label = c.label;
+          chip.dataset.move = c.move;
+          if (c.call) chip.title = c.call;
+          chip.addEventListener("click", () => onChip(c));
+          return chip;
+        }),
+      );
+    }
     next.hidden = busy || state.prompt !== "next_hand";
     again.hidden = busy || state.prompt !== "over";
   }
@@ -180,10 +187,19 @@ export function createOverlay(root, { onChip, onNext, onNewGame, later = (ms, fn
     if (!anchor || !words) return;
     const node = el("div", { class: `dialogue ${who}`, role: "status" }, words);
     afloat.append(node);
-    // Centred on the hand, kept on the screen.
+    // Centred on the hand, kept on the screen, and clear of the HUD (the
+    // table review's T11).
     const half = node.offsetWidth / 2 + 8;
-    node.style.left = `${Math.min(Math.max(anchor.x, half), window.innerWidth - half)}px`;
+    let x = Math.min(Math.max(anchor.x, half), window.innerWidth - half);
+    node.style.left = `${x}px`;
     node.style.top = `${anchor.y}px`;
+    const hud = root.querySelector(".info")?.getBoundingClientRect();
+    const box = node.getBoundingClientRect();
+    const overlaps = hud && box.left < hud.right && box.right > hud.left && box.top < hud.bottom && box.bottom > hud.top;
+    if (overlaps) {
+      x = Math.min(hud.right + 8 + half - 8, window.innerWidth - half);
+      node.style.left = `${x}px`;
+    }
     boxes[who] = node;
     later(LINGER, () => boxes[who] === node && takeDown(who));
   }
@@ -192,11 +208,18 @@ export function createOverlay(root, { onChip, onNext, onNewGame, later = (ms, fn
     takeDown("them", true);
   }
 
+  // What the keyboard's focus is on, told to a screen reader.
+  const told = $(".focus-told");
+  function tell(text) {
+    told.textContent = text ?? "";
+  }
+
   return {
     show,
     placeBadges,
     say,
     hush,
+    tell,
     trackers,
     showTrackers,
     names,

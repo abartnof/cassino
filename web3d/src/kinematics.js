@@ -203,7 +203,11 @@ export function toss(from, to, { clearance, flight = 0.86, turnBy = 0.8 } = {}) 
 // A card taken up into a hand: flicked up at full speed and slowing under
 // gravity to rest in the grip, as anything thrown upward slows at the top of
 // its rise -- the toss's own curve, with the hand at the top of the arc.
-export function rise(from, to) {
+//
+// Cassino's change: `clearance` adds a hop over the way, for a hand held low
+// (a phone's upright table), where a card turning up from the table would
+// otherwise dip a corner through it (the table review's T12).
+export function rise(from, to, { clearance = 0 } = {}) {
   const a = from.position.clone();
   const b = to.position.clone();
   const lift = Math.max(0, b.y - a.y);
@@ -212,7 +216,8 @@ export function rise(from, to) {
   return (t) => {
     const u = Math.min(1, Math.max(0, t));
     const across = friction(u); // along the table too: fast away, easing in
-    const position = new Vector3(a.x + (b.x - a.x) * across, a.y + lift * (2 * u - u * u), a.z + (b.z - a.z) * across);
+    const hop = 4 * clearance * u * (1 - u);
+    const position = new Vector3(a.x + (b.x - a.x) * across, a.y + lift * (2 * u - u * u) + hop, a.z + (b.z - a.z) * across);
     return { position, quaternion: from.quaternion.clone().slerp(to.quaternion, turn(u)) };
   };
 }

@@ -1,4 +1,4 @@
-// From piquet web3d/src/dialogue.js @ 254cb3c.
+// From piquet web3d/src/dialogue.js @ 254cb3c, with cassino's `skip`.
 // The dialogue at the table: the phrases speech.js asks for, each given its
 // words and its moment, for the declarations' dialogue boxes. The words are
 // the phrase bank's (web3d/tools/phrases.py, docs/PHRASES.md), bundled into
@@ -78,6 +78,12 @@ export function createDialogue(bank, clock = () => performance.now()) {
     },
     // Undo, or a new partie: nothing still to come holds up what follows.
     stop() {
+      next = 0;
+      last = null;
+    },
+    // Cassino's: the cards landed by a tap, and the lines not yet said
+    // dropped (the director's skip): what is said next is said at once.
+    skip() {
       next = 0;
       last = null;
     },

@@ -10,7 +10,8 @@
 // protocol's events, the one source of truth; totals are derived from it.
 // Integration choices (docs/TABLE3D.md): a sweep's point shows as the sweep
 // happens and the count does not show it again; the count's aces come
-// together, one popup a player; popups queue, one side at a time.
+// together, one popup a player; popups queue, one side at a time, each
+// booked to its own hand.
 
 // ---- the model -----------------------------------------------------------------
 
@@ -71,7 +72,7 @@ export function hudEvents(state, since = 0) {
   state.events.forEach((e, at) => {
     if (at < since) return;
     if (e.kind === "swept" && state.rules?.sweeps !== false) {
-      out.push({ side: sideOf(e.you), cat: "sweeps", label: POPUP.sweeps, pts: 1, at });
+      out.push({ side: sideOf(e.you), cat: "sweeps", label: POPUP.sweeps, pts: 1, at, hand: e.hand });
     }
     if (e.kind === "scored") {
       const lines = e.count.lines;
@@ -85,12 +86,12 @@ export function hudEvents(state, since = 0) {
         if (cat === "aces") {
           if (told.has(side)) return;
           told.add(side);
-          out.push({ side, cat, label: POPUP.aces, pts: aces[side], at, line: i });
+          out.push({ side, cat, label: POPUP.aces, pts: aces[side], at, line: i, hand: e.hand });
           return;
         }
-        out.push({ side, cat, label: POPUP[cat], pts: l.points, at, line: i });
+        out.push({ side, cat, label: POPUP[cat], pts: l.points, at, line: i, hand: e.hand });
       });
-      out.push({ end: true, at, line: lines.length });
+      out.push({ end: true, at, line: lines.length, hand: e.hand });
     }
   });
   return out;
@@ -178,8 +179,12 @@ export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms) } = {})
   );
   root.append(hud);
 
-  // What the HUD shows: the ledger as played out so far, and the numbers.
-  let model = { hands: [], live: null };
+  // What the HUD shows: the ledger as played out so far, kept per hand (each
+  // event carries its hand, so a popup played late still lands in its own:
+  // the table review's T6), and the numbers.
+  let ledger = new Map(); // hand number -> the hand's lines
+  const ended = new Set(); // the hands counted
+  let current = null; // the hand under way, if one is
   let totals = { you: 0, opp: 0 };
   let shown = { you: 0, opp: 0 };
   let open = false;
@@ -188,7 +193,6 @@ export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms) } = {})
   let epoch = 0; // a reset cancels what was queued before it
   const queue = { you: [], opp: [] };
   const busyUntil = { you: false, opp: false };
-  let ends = 0; // hand endings waiting for the popups before them
 
   function drawSegments(side, from = null) {
     lines[side].forEach((seg, i) => {
@@ -210,10 +214,11 @@ export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms) } = {})
   }
 
   function drawList() {
-    const all = model.live ? [...model.hands, model.live] : model.hands;
+    const numbers = [...ledger.keys()].sort((a, b) => a - b);
+    const all = numbers.map((n) => ledger.get(n));
     list.replaceChildren(
       ...all.map((h, i) => {
-        const isLive = model.live && i === model.hands.length;
+        const isLive = numbers[i] === current && !ended.has(current);
         const y = handTotal(h, "you");
         const o = handTotal(h, "opp");
         const hand = el("div", { class: `hud-hand${isLive ? " live" : ""}` });
@@ -232,7 +237,7 @@ export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms) } = {})
           "div",
           { class: "hud-sub" },
           el("span", { class: `hud-sv${y > o ? " lead" : ""}` }, String(y)),
-          el("span", { class: "hud-mid" }, isLive ? `Hand ${i + 1} · live` : `Hand ${i + 1} subtotal`),
+          el("span", { class: "hud-mid" }, isLive ? `Hand ${numbers[i]} · live` : `Hand ${numbers[i]} subtotal`),
           el("span", { class: `hud-sv${o > y ? " lead" : ""}` }, String(o)),
         );
         hand.append(sub, el("div", { class: "hud-gap" }));
@@ -263,8 +268,9 @@ export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms) } = {})
     const mine = epoch;
     const side = e.side;
     const from = totals[side];
-    model.live ??= blank();
-    model.live[e.cat][side] += e.pts;
+    const hand = e.hand ?? current ?? 1;
+    if (!ledger.has(hand)) ledger.set(hand, blank());
+    ledger.get(hand)[e.cat][side] += e.pts;
     totals = { ...totals, [side]: totals[side] + e.pts };
     flash = { cat: e.cat, side };
     drawSegments(side, from);
@@ -288,38 +294,28 @@ export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms) } = {})
       busyUntil[side] = false;
       const next = queue[side].shift();
       if (next) play(next);
-      else settleEnds();
     });
-  }
-
-  // A hand's end waits until every popup before it has played.
-  function settleEnds() {
-    if (!ends || busyUntil.you || busyUntil.opp || queue.you.length || queue.opp.length) return;
-    while (ends > 0) {
-      ends--;
-      if (model.live) model.hands.push(model.live);
-      model.live = null;
-    }
-    flash = null;
-    drawList();
   }
 
   return {
     // Shown at once, nothing played out: a new game, a sitting restored, an
     // undo.
-    reset(ledger, who = { you: "You", opp: "Opp" }) {
+    reset(given, who = { you: "You", opp: "Opp" }) {
       epoch++;
       queue.you.length = 0;
       queue.opp.length = 0;
       busyUntil.you = busyUntil.opp = false;
-      ends = 0;
       names = who;
       blocks.you.nameNode.textContent = who.you;
       blocks.opp.nameNode.textContent = who.opp;
       headYou.textContent = who.you;
       headOpp.textContent = who.opp;
-      model = JSON.parse(JSON.stringify(ledger));
-      totals = ledgerTotals(ledger);
+      ledger = new Map(given.hands.map((h, i) => [i + 1, JSON.parse(JSON.stringify(h))]));
+      ended.clear();
+      for (const n of ledger.keys()) ended.add(n);
+      current = given.live ? given.hands.length + 1 : null;
+      if (given.live) ledger.set(current, JSON.parse(JSON.stringify(given.live)));
+      totals = ledgerTotals(given);
       shown = { ...totals };
       flash = null;
       blocks.you.node.classList.remove("popped");
@@ -334,24 +330,30 @@ export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms) } = {})
       if (busyUntil[e.side]) queue[e.side].push(e);
       else play(e);
     },
-    // A hand ends: the live hand joins the counted ones, once its popups
-    // have played.
-    endHand() {
-      ends++;
-      settleEnds();
+    // A hand is counted: it joins the counted ones (its popups still to
+    // play land in it).
+    endHand(hand = current) {
+      if (hand === null) return;
+      ended.add(hand);
+      flash = null;
+      drawList();
     },
     // A new hand dealt: its live block appears (empty until it scores).
-    dealt() {
-      if (ends) return;
-      if (!model.live) {
-        model.live = blank();
-        drawList();
-      }
+    dealt(hand) {
+      current = hand ?? (current ?? 0) + 1;
+      if (!ledger.has(current)) ledger.set(current, blank());
+      drawList();
     },
-    idle: () => !busyUntil.you && !busyUntil.opp && !queue.you.length && !queue.opp.length && !ends,
+    idle: () => !busyUntil.you && !busyUntil.opp && !queue.you.length && !queue.opp.length,
     shown: () => ({ ...shown }),
     totals: () => ({ ...totals }),
-    hands: () => model.hands.length,
+    hands: () => ended.size,
+    // The ledger as shown: each hand's number, whether it is counted, and
+    // its lines; and the hand under way.
+    ledger: () => ({
+      hands: [...ledger.keys()].sort((a, b) => a - b).map((n) => ({ hand: n, ended: ended.has(n), lines: JSON.parse(JSON.stringify(ledger.get(n))) })),
+      current,
+    }),
     node: hud,
   };
 }

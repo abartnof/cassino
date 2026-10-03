@@ -50,7 +50,10 @@ function storage() {
 async function main() {
   const engine = await loadEngine(decodeBase64(WASM_BASE64));
   const store = params.has("fresh") ? null : storage();
-  let prefs = withUrl(loadPrefs(store), params);
+  // What is saved is the person's own settings; the URL's say (for tests and
+  // links) is laid over them but never saved (the table review's T16).
+  let saved = loadPrefs(store);
+  let prefs = withUrl(saved, params);
   const fixedSeed = Number(params.get("seed")) || null;
   const randomSeed = () => fixedSeed ?? Math.floor(Math.random() * 2 ** 31);
 
@@ -59,6 +62,7 @@ async function main() {
   let offer = null;
   let message = null;
   let hint = null; // the hint for this turn, if hints are on
+  let hintKey = null; // the position it is for
   let logOpen = false;
 
   const stage = createScene(document.getElementById("stage"), {
@@ -92,6 +96,9 @@ async function main() {
     stage.render();
   };
 
+  // The card the keyboard's focus is on (below), once the keyboard is used.
+  let focusedCard = () => null;
+
   // The cards' lines: while choosing, the hand card chosen and the table
   // cards picked in amber, what could join in cyan, what cannot dimmed; with
   // nothing chosen, the hint's cards in cyan.
@@ -99,10 +106,11 @@ async function main() {
     const shown = hint && !sel.chosen ? selectionOf(hint.move, state.table) : null;
     const hinted = new Set(shown ? [shown.chosen, ...shown.picked] : []);
     for (const m of placement) {
-      let look = m.zone === "middle" ? itemState(m.code, offer, sel) : m.code && m.code === sel.chosen ? "picked" : "idle";
+      let look = m.zone === "middle" ? itemState(m.code, offer, sel, state.table) : m.code && m.code === sel.chosen ? "picked" : "idle";
       if (look === "idle" && hinted.has(m.code)) look = "addable";
+      const line = look === "picked" ? "chosen" : look === "addable" ? "hint" : "plain";
       deck.decorate(meshes[m.id], {
-        line: look === "picked" ? "chosen" : look === "addable" ? "hint" : "plain",
+        line: line === "plain" && m.code && m.code === focusedCard() ? "hover" : line,
         dim: look === "refused",
       });
     }
@@ -134,7 +142,7 @@ async function main() {
     },
     onNext: () => advance(engine.send("next").state),
     onNewGame: () => newGame(),
-    later: (ms, fn) => director.at(ms, fn),
+    later: (ms, fn) => director.at(ms, fn, "linger"),
   });
 
   const hud = createHud(overlay.hudSlot, { later: (ms, fn) => director.at(ms, fn) });
@@ -152,22 +160,20 @@ async function main() {
     overlay.trackers(trackers(upTo < state.events.length ? { ...seen, piles: { you: none, them: none } } : state));
   }
 
-  const keep = () => savePrefs(store, prefs);
+  // A setting changed: in what is shown and in what is saved.
+  function change(patch) {
+    prefs = { ...prefs, ...patch };
+    saved = { ...saved, ...patch };
+    savePrefs(store, saved);
+  }
   const chrome = createChrome(document.getElementById("overlay"), {
     newGame: () => newGame(),
     daily: () => newGame({ seed: dailySeed() }),
     watch: () => newGame({ watch: true }),
-    rules: (rules) => {
-      prefs = { ...prefs, rules };
-      keep();
-    },
-    skill: (value) => {
-      prefs = { ...prefs, skill: value };
-      keep();
-    },
+    rules: (rules) => change({ rules }),
+    skill: (value) => change({ skill: value }),
     aid: (name, on) => {
-      prefs = { ...prefs, aids: { ...prefs.aids, [name]: on } };
-      keep();
+      change({ aids: { ...prefs.aids, [name]: on } });
       if (state.watching) return;
       const sent = engine.send(`set ${name} ${on ? "on" : "off"}`).state;
       // A forced move may now have been made for you: show what happened.
@@ -179,8 +185,7 @@ async function main() {
       }
     },
     pref: (name, value) => {
-      prefs = { ...prefs, [name]: value };
-      keep();
+      change({ [name]: value });
       if (name === "speed") director.setSpeed(value);
       if (name === "surface") stage.setSurface(chooseSurface({ chosen: value, saved: null }));
       if (name === "faces") showFaces(value);
@@ -216,7 +221,7 @@ async function main() {
     },
     log: (open) => {
       logOpen = open;
-      drawLog();
+      if (!director.busy()) drawLog();
     },
     help: () => readPages(0),
   });
@@ -238,9 +243,10 @@ async function main() {
     offer = null;
     message = null;
     const dealt = !params.has("nodeal");
-    const timing = director.restart(state, { dealt, waits: dealt ? openingTalk(state) : {} });
+    const opening = dialogue.words(speech(state, 0));
+    const timing = director.restart(state, { dealt, waits: dealt ? openingTalk(state, opening) : {} });
     if (dealt) {
-      talk(state, 0, timing);
+      talk(state, 0, timing, opening);
       const deal = state.events.findIndex((e) => e.kind === "dealt") + 1;
       scoreShown(deal);
       playScore(deal, timing);
@@ -259,12 +265,11 @@ async function main() {
   let tutorialSince = 0;
   function markSeen(key) {
     if (prefs.seen.includes(key)) return;
-    prefs = { ...prefs, seen: [...prefs.seen, key] };
-    keep();
+    change({ seen: [...prefs.seen, key] });
   }
   function introduce() {
     if (!prefs.tutorial || chrome.tutorialOpen()) return;
-    if (director.held()) return; // a page is up, or closing
+    if (director.held() || director.gatePending()) return; // a page is up, closing, or coming
     const key = pageDue(state, prefs.seen, tutorialSince);
     tutorialSince = state.events.length;
     if (key) readPages(PAGES.findIndex((p) => p.key === key));
@@ -291,7 +296,9 @@ async function main() {
   // The sitting kept across a reload; a watched game, or one that is over,
   // is not kept.
   function persist() {
-    if (!state.watching) saveSitting(store, state.prompt === "over" ? null : state.saved);
+    // A game from a seeded link is not kept over the sitting saved (T16).
+    if (state.watching || fixedSeed) return;
+    saveSitting(store, state.prompt === "over" ? null : state.saved);
   }
 
   // A watched game moves on by itself once the cards are still.
@@ -313,22 +320,28 @@ async function main() {
 
   // The house rules are agreed aloud and the cut made before the cards are
   // dealt: the opening deal waits until that has been said.
-  function openingTalk(s) {
+  // The words are chosen once, so the wait is planned on what is said (the
+  // table review's T18).
+  function openingTalk(s, lines) {
     const deal = s.events.findIndex((e) => e.kind === "dealt");
     if (deal < 0) return {};
-    const before = speech({ ...s, events: s.events.slice(0, deal) }, 0);
-    const said = dialogue.plan(before.map((l) => ({ ...l, delay: 0 })));
+    const said = dialogue.plan(lines.filter((l) => l.at < deal).map((l) => ({ ...l, delay: 0 })));
     return { [deal]: Math.max(0, ...said.map((l) => l.end)) + 250 };
   }
 
   // Each line at the moment its event is seen (a line of the count, as it
   // is written down), in its speaker's box.
-  function talk(s, since, { beats, count }) {
-    const lines = speech(s, since).map((l) => ({
+  function talk(s, since, { beats, count }, said = speech(s, since)) {
+    // Lines still waiting from moves already past are not said now.
+    if (since > 0) {
+      director.drop("talk");
+      dialogue.skip();
+    }
+    const lines = said.map((l) => ({
       ...l,
       delay: l.line !== undefined && count ? count.lines[l.line] : (beats[l.at] ?? 0),
     }));
-    dialogue.say(lines, (line, words, ms) => director.at(ms, () => overlay.say(line.who, words, director.handEdge(line.who))));
+    dialogue.say(lines, (line, words, ms) => director.at(ms, () => overlay.say(line.who, words, director.handEdge(line.who)), "talk"));
   }
 
   // ---- the score ------------------------------------------------------------
@@ -339,14 +352,14 @@ async function main() {
   function playScore(since, { beats, count }) {
     const at = (ms, fn) => director.at(Math.max(0, ms ?? 0), fn);
     state.events.forEach((e, k) => {
-      if (k >= since && e.kind === "dealt" && e.deal === 1) at(beats[k], () => hud.dealt());
+      if (k >= since && e.kind === "dealt" && e.deal === 1) at(beats[k], () => hud.dealt(e.hand));
     });
     const pace = count && count.lines.length > 1 ? count.lines[1] - count.lines[0] : 600;
     for (const e of hudEvents(state, since)) {
       const ms = e.line !== undefined && count ? (count.lines[e.line] ?? (count.lines.at(-1) ?? 0) + pace) : beats[e.at];
       at(ms, () => {
         if (!e.end) return hud.score(e);
-        hud.endHand();
+        hud.endHand(e.hand);
         board.peg(pegsOf(state.events));
       });
     }
@@ -429,10 +442,14 @@ async function main() {
   function show() {
     const busy = director.busy();
     overlay.show({ state, chips: busy ? [] : chipsOf(offer), sum: offer?.sum ?? null, message, busy, aid: aidLine() });
-    overlay.unseen(prefs.unseen && !state.watching ? state.unseen : null);
+    // The cards still out and the log tell what the cards have shown: they
+    // wait for the cards to come to rest, as the trackers do (review T7).
+    if (!busy) {
+      overlay.unseen(prefs.unseen && !state.watching ? state.unseen : null);
+      drawLog();
+    }
     overlay.showTrackers(prefs.trackers);
-    chrome.sync(prefs, state);
-    drawLog();
+    chrome.sync(prefs, state, { busy });
   }
 
   function drawLog() {
@@ -448,8 +465,13 @@ async function main() {
   function refresh() {
     offer = sel.chosen && state.prompt === "play" ? engine.offer(selectionText(sel)) : null;
     if (offer?.error) offer = null;
-    hint = !state.watching && state.prompt === "play" && state.aids.hints ? engine.hint() : null;
-    if (!hint?.move) hint = null;
+    // The hint, once a position: it cannot change within a turn (T13).
+    const hintFor = !state.watching && state.prompt === "play" && state.aids.hints ? state.saved : null;
+    if (hintFor !== hintKey) {
+      hintKey = hintFor;
+      hint = hintFor ? engine.hint() : null;
+      if (!hint?.move) hint = null;
+    }
     director.rearrange();
     show();
   }
@@ -458,6 +480,7 @@ async function main() {
   function tapped(slot) {
     if (director.busy()) {
       director.skip();
+      dialogue.skip();
       return;
     }
     message = null;
@@ -467,8 +490,8 @@ async function main() {
     } else if (slot.zone === "middle") {
       if (!sel.chosen) {
         message = "Choose a card from your hand first.";
-      } else if (itemState(slot.code, offer, sel) === "refused") {
-        message = whyNot(slot.code, offer);
+      } else if (itemState(slot.code, offer, sel, state.table) === "refused") {
+        message = whyNot(slot.code, offer, state.table);
       } else {
         const item = state.table.find((i) => i.id === slot.item);
         sel = pick(sel, item.cards.map((c) => c.card));
@@ -480,6 +503,63 @@ async function main() {
   const canvas = stage.renderer.domElement;
   canvas.addEventListener("click", (event) => tapped(director.pick(event.clientX, event.clientY)));
 
+  // ---- the keyboard -------------------------------------------------------
+
+  // A move chosen without a pointer (the table review's T15): the arrows
+  // move a focus along your hand and across the table's items (up to the
+  // table, down to your hand), Enter or Space taps what it is on, Escape lets
+  // go of the selection. The focused card takes the heavier line, and what
+  // it is is told to a screen reader.
+  let focus = null; // { row: "hand" | "table", index }
+  focusedCard = () => focused();
+  const rowCards = (row) =>
+    row === "hand" ? state.hand.map((c) => c.card) : state.table.map((item) => item.cards[item.cards.length - 1].card);
+  function focused() {
+    if (!focus) return null;
+    const cards = rowCards(focus.row);
+    if (!cards.length) return null;
+    return cards[Math.min(focus.index, cards.length - 1)];
+  }
+  function describe(code) {
+    if (!code) return "";
+    if (focus.row === "hand") {
+      const label = state.hand.find((c) => c.card === code)?.label ?? code;
+      return `${label}, in your hand${sel.chosen === code ? ", chosen" : ""}.`;
+    }
+    const item = state.table.find((i) => i.cards.some((c) => c.card === code));
+    const labels = item.cards.map((c) => c.label).join(" ");
+    const what = item.build ? `A build of ${item.build.value}${item.build.multiple ? "s" : ""}: ${labels}` : labels;
+    const look = itemState(code, offer, sel, state.table);
+    const why = look === "refused" ? ` ${whyNot(code, offer, state.table)}` : look === "addable" ? ", can join" : look === "picked" ? ", picked" : "";
+    return `${what}, on the table${why}.`;
+  }
+  window.addEventListener("keydown", (event) => {
+    if (event.defaultPrevented || document.querySelector("md-dialog[open]") || state.watching) return;
+    const keys = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Enter", " ", "Escape"];
+    if (!keys.includes(event.key)) return;
+    // Keys pressed on a button are the button's own.
+    if (event.target instanceof Element && event.target.closest("md-assist-chip, md-filled-button, md-icon-button, button")) return;
+    if (state.prompt !== "play") return;
+    event.preventDefault();
+    if (event.key === "Escape") {
+      sel = EMPTY;
+      refresh();
+      return;
+    }
+    if (!focus) focus = { row: "hand", index: 0 };
+    else if (event.key === "ArrowLeft") focus = { ...focus, index: Math.max(0, Math.min(focus.index, rowCards(focus.row).length - 1) - 1) };
+    else if (event.key === "ArrowRight") focus = { ...focus, index: Math.min(rowCards(focus.row).length - 1, focus.index + 1) };
+    else if (event.key === "ArrowUp" && state.table.length) focus = { row: "table", index: 0 };
+    else if (event.key === "ArrowDown") focus = { row: "hand", index: 0 };
+    else if (event.key === "Enter" || event.key === " ") {
+      const code = focused();
+      const slot = code && director.placement().find((m) => m.code === code);
+      if (slot) tapped(slot);
+    }
+    overlay.tell(describe(focused()));
+    director.redecorate();
+  });
+
   // ---- the start ----------------------------------------------------------
 
   // The sitting under way when the page was last open, if there is one and
@@ -488,10 +568,12 @@ async function main() {
   const restored = kept ? engine.restore(kept) : null;
   if (restored?.ok && restored.state.prompt !== "over") {
     state = restored.state;
+    // The person's aids, as they set them, over the record's (T14).
+    for (const [aid, on] of Object.entries(prefs.aids)) if (Boolean(state.aids[aid]) !== on) state = engine.send(`set ${aid} ${on ? "on" : "off"}`).state;
+    tutorialSince = state.events.length; // the history restored is not news (review T8)
     director.restart(state);
     scoreShown();
     refresh();
-    tutorialSince = state.events.length;
   } else {
     newGame({ watch: params.has("watch") });
   }
@@ -509,6 +591,7 @@ async function main() {
     said: () => overlay.said(),
     hud: () => ({ shown: hud.shown(), totals: hud.totals(), hands: hud.hands(), idle: hud.idle() }),
     hint: () => hint,
+    selection: () => sel,
     tutorialOpen: () => chrome.tutorialOpen(),
     facesShown: () => facesShown,
     pageDue: () => pageDue(state, prefs.seen, tutorialSince),

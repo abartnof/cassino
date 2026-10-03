@@ -252,31 +252,33 @@ export function createChrome(root, on) {
   root.append(bar, settings, credits, tutorial);
 
   // Everything drawn from the person's settings and the state.
-  let last = { prefs: null, state: null };
+  let last = { prefs: null, state: null, busy: false };
   function draw() {
-    const { prefs, state } = last;
+    const { prefs, state, busy } = last;
     if (!prefs) return;
     for (const b of gameSet.querySelectorAll("md-outlined-segmented-button")) b.selected = b.dataset.game === rules.game;
     aces.selected = rules.aces14;
     aces.disabled = rules.game !== "royal";
     sweeps.selected = rules.sweeps;
     skill.value = String(prefs.skill);
-    for (const s of settings.querySelectorAll("md-switch[data-aid]")) s.selected = Boolean(state?.aids?.[s.dataset.aid] ?? prefs.aids[s.dataset.aid]);
+    // The aids as the person set them (a watched game has none of its own:
+    // the table review's T14).
+    for (const s of settings.querySelectorAll("md-switch[data-aid]")) s.selected = Boolean(state?.watching ? prefs.aids[s.dataset.aid] : (state?.aids?.[s.dataset.aid] ?? prefs.aids[s.dataset.aid]));
     for (const s of settings.querySelectorAll("md-switch[data-pref]")) s.selected = Boolean(prefs[s.dataset.pref]);
     speed.value = String(prefs.speed);
     surface.value = prefs.surface;
     faces.value = prefs.faces;
     const watching = Boolean(state?.watching);
     hint.hidden = watching || !state?.aids?.hints;
-    hint.disabled = state?.prompt !== "play";
+    hint.disabled = state?.prompt !== "play" || busy; // not while cards move (T10)
     undo.hidden = watching || !prefs.undo;
     undo.disabled = !state?.can_undo;
   }
 
   return {
-    sync(prefs, state) {
+    sync(prefs, state, { busy = false } = {}) {
       if (!last.prefs) rules = { ...prefs.rules };
-      last = { prefs, state };
+      last = { prefs, state, busy };
       draw();
     },
     setRules(r) {

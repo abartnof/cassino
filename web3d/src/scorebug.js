@@ -68,7 +68,7 @@ export function trackers(state) {
       { key: "aces", label: "Aces", n: p.aces, of: 4 },
       { key: "big_casino", label: "10♦", have: p.big_casino },
       { key: "little_casino", label: "2♠", have: p.little_casino },
-      { key: "sweeps", label: "Sweeps", n: p.sweeps },
+      ...(state.rules?.sweeps === false ? [] : [{ key: "sweeps", label: "Sweeps", n: p.sweeps }]),
     ];
   }
   return out;

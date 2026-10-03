@@ -49,6 +49,7 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
   // were. Held time is taken off the clock, so everything scheduled on it
   // simply waits. Each entry is { at, gate, fn }: at a gate the clock stops
   // and `fn(release)` is called; otherwise `fn()` runs when its time comes.
+  let animations = 0; // each animation's token, for its rest
   let manualNow = 0;
   const wall = () => (manual ? manualNow : performance.now());
   let offset = 0;
@@ -155,17 +156,22 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
     const beats = {};
     for (const [k, ms] of Object.entries(result.beats)) beats[k] = ms / timeline.speed;
     const count = result.count ? { at: result.count.at, lines: result.count.lines.map((ms) => ms / timeline.speed) } : null;
+    // Once the cards are still: dressed, drawn once more, and the page told
+    // -- once, and only for the latest animation (an earlier one's idle,
+    // resolved by the skip that began this one, is stale: the table
+    // review's T7 and T8).
+    const token = ++animations;
     timeline.idle().then(() => {
+      if (token !== animations) return;
       dress();
       rested?.();
-      moving = true; // drawn once more, dressed
+      moving = true;
       wake();
     });
     dress();
     moving = true;
     if (manual) frame();
     else wake();
-    if (!timeline.busy()) rested?.();
     return { beats, count };
   }
 
@@ -211,7 +217,7 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
       .filter((m) => m.zone === zone)
       .flatMap((m) => cardCorners(m.pose).map(toScreen));
     if (!points.length) {
-      const centre = ZONES[who === "you" ? "yourHand" : "theirHand"].centre;
+      const centre = (view().zones ?? ZONES)[who === "you" ? "yourHand" : "theirHand"].centre; // T17
       return { ...toScreen(new Vector3(...centre)), empty: true };
     }
     const x = points.reduce((sum, p) => sum + p.x, 0) / points.length;
@@ -275,19 +281,43 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
       schedule({ at: now() + ms, gate: true, fn: open });
     },
     // Run `fn` at `ms` from now on the table's clock, which a gate stops.
-    at(ms, fn) {
-      schedule({ at: now() + ms, gate: false, fn });
+    // `kind`: "hard" (what is timed to the moves: the score, the count),
+    // "talk" (a line still to be said, which a skip drops) or "linger" (a box
+    // coming down, which a skip leaves to its time).
+    at(ms, fn, kind = "hard") {
+      schedule({ at: now() + ms, gate: false, fn, kind });
+    },
+    // Forget what is queued of a kind (talk about moves already past).
+    drop(kind) {
+      for (let i = queue.length - 1; i >= 0; i--) if (queue[i].kind === kind) queue.splice(i, 1);
     },
     held: () => heldAt !== null,
+    // Whether a gate is waiting its moment (a tutorial page about to open).
+    gatePending: () => queue.some((e) => e.gate),
     clock: () => now(),
     // What was timed to the moves is over: an undo, a new game.
     cancelTimed() {
       queue.length = 0;
       release();
     },
+    // The cards landed at once, and what is timed to the moves comes now;
+    // a line not yet said is dropped, and a box said comes down in its own
+    // time (the table review's T4: a skip took every box down at once).
     skip() {
       timeline.skip();
-      due(Infinity);
+      for (let i = queue.length - 1; i >= 0; i--) if (queue[i].kind === "talk") queue.splice(i, 1);
+      while (heldAt === null) {
+        const k = queue.findIndex((e) => e.kind !== "linger");
+        if (k < 0) break;
+        const [entry] = queue.splice(k, 1);
+        if (entry.gate) {
+          heldAt = now();
+          stage.render();
+          entry.fn(release);
+          break;
+        }
+        entry.fn();
+      }
       dress();
       moving = true;
       wake();

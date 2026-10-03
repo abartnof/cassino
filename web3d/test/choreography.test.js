@@ -6,6 +6,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { TIMING, choreograph, initialPlacement, opening, stagesBetween } from "../src/choreography.js";
 import { cardCorners } from "../src/kinematics.js";
 import { layout, sweepCards } from "../src/layout.js";
+import { ZONES, ZONES_PORTRAIT } from "../src/units.js";
 import { loadEngine } from "../src/engine.js";
 import { countLines, countOf } from "../src/scorebug.js";
 
@@ -101,25 +102,29 @@ test("the reducer replays a move into the state the engine reaches", { skip }, (
   }
 });
 
-test("every choreography of real games ends exactly at the layout, faces only where known", { skip }, () => {
-  let worst = 0;
-  for (const [seed, game] of [[1, "classic"], [2, "royal"], [5, "classic"]]) {
-    let state = engine.start({ game, aces14: game === "royal", sweeps: true, skill: 2, seed });
-    const start = opening(state);
-    let placement = playOut(start, state, initialPlacement(start), `seed ${seed} opening`).placement;
-    for (let n = 0; state.prompt !== "over"; n++) {
-      // Now and then a card chosen and table cards picked, seen first.
-      const view = n % 3 === 0 && state.prompt === "play" ? { chosen: state.hand[0].card, picked: state.table.length ? codes(state.table[0].cards) : [] } : {};
-      if (view.chosen) placement = playOut(state, state, placement, `seed ${seed} step ${n} choosing`, view).placement;
-      const command = state.prompt === "play" ? state.moves[(n * 7) % state.moves.length] : "next";
-      const next = engine.send(command).state;
-      const result = playOut(state, next, placement, `seed ${seed} step ${n} ${command}`);
-      worst = Math.min(worst, throughTable(result));
-      placement = result.placement;
-      state = next;
+test("every choreography of real games ends exactly at the layout, faces only where known, in either arrangement", { skip }, () => {
+  for (const zones of [ZONES, ZONES_PORTRAIT]) {
+    let worst = 0;
+    const where = zones === ZONES ? "across" : "upright";
+    for (const [seed, game] of [[1, "classic"], [2, "royal"], [5, "classic"]]) {
+      let state = engine.start({ game, aces14: game === "royal", sweeps: true, skill: 2, seed });
+      const start = opening(state);
+      let placement = playOut(start, state, initialPlacement(start, { zones }), `${where} seed ${seed} opening`, { zones }).placement;
+      for (let n = 0; state.prompt !== "over"; n++) {
+        // Now and then a card chosen and table cards picked, seen first.
+        const view = n % 3 === 0 && state.prompt === "play" ? { zones, chosen: state.hand[0].card, picked: state.table.length ? codes(state.table[0].cards) : [] } : { zones };
+        if (view.chosen) placement = playOut(state, state, placement, `${where} seed ${seed} step ${n} choosing`, view).placement;
+        const command = state.prompt === "play" ? state.moves[(n * 7) % state.moves.length] : "next";
+        const next = engine.send(command).state;
+        const result = playOut(state, next, placement, `${where} seed ${seed} step ${n} ${command}`, { zones });
+        worst = Math.min(worst, throughTable(result));
+        placement = result.placement;
+        state = next;
+      }
     }
+    // The table review's T12: the upright arrangement was not checked.
+    assert.ok(worst >= -1e-6, `${where}: a card dips ${worst} cm into the table`);
   }
-  assert.ok(worst >= -1e-6, `a card dips ${worst} cm into the table`);
 });
 
 test("an undo and a new game go straight to their layouts", { skip }, () => {

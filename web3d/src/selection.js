@@ -49,19 +49,34 @@ export function chipsOf(offer) {
     .sort((a, b) => ORDER[a.kind] - ORDER[b.kind] || (a.value ?? 0) - (b.value ?? 0));
 }
 
+// The cards of the table item a card belongs to (a build's all of them).
+function itemCards(code, table) {
+  const item = (table ?? []).find((i) => i.cards.some((c) => c.card === code));
+  return item ? item.cards.map((c) => c.card) : [code];
+}
+
+// The engine's reason a table item cannot join, if it cannot: `why_not`
+// names each item by one card (a build by its lowest), so any card of the
+// item finds it (the table review's T5).
+function refusal(code, offer, table) {
+  const cards = itemCards(code, table);
+  return (offer?.why_not ?? []).find((w) => cards.includes(w.card.card)) ?? null;
+}
+
 // How a table card is drawn while choosing: picked, could be added, cannot
-// join (tap it to hear why), or idle.
-export function itemState(code, offer, sel) {
+// join (tap it to hear why), or idle. `table`: the state's, so a build is
+// judged whole.
+export function itemState(code, offer, sel, table = []) {
   if (sel.picked.includes(code)) return "picked";
   if (!offer) return "idle";
   if ((offer.can_add ?? []).some((c) => c.card === code)) return "addable";
-  if ((offer.why_not ?? []).some((w) => w.card.card === code)) return "refused";
+  if (refusal(code, offer, table)) return "refused";
   return "idle";
 }
 
 // Why a table card cannot join, in the engine's words, if it cannot.
-export function whyNot(code, offer) {
-  return (offer?.why_not ?? []).find((w) => w.card.card === code)?.reason ?? null;
+export function whyNot(code, offer, table = []) {
+  return refusal(code, offer, table)?.reason ?? null;
 }
 
 // The selection that makes a move, from its command text (the hint's move,
