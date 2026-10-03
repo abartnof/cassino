@@ -1,22 +1,14 @@
 //! A table in the terminal: a person against the computer, or two computer
-//! players watched. A client of the engine only: every rule, score and
-//! refusal comes from `cassino-core`.
+//! players watched. A client of the engine's session only, like the page:
+//! every rule, move, sentence and refusal comes from `cassino-core`.
 
 use std::io::{self, BufRead, Write};
 
-use cassino_core::advice::{self, Quality};
-use cassino_core::agents::Agent;
 use cassino_core::cards::{Card, CardSet, Suit};
-use cassino_core::game::Game;
-use cassino_core::hand::{Clinch, Event};
-use cassino_core::moves::Move;
-use cassino_core::observation::View;
-use cassino_core::opponent::Skill;
 use cassino_core::rules::{Game as Kind, Rules};
 use cassino_core::scoring::{Breakdown, Item};
-use cassino_core::table::{Seat, Table as Layout};
-use cassino_core::tournament::agent_rng;
-
+use cassino_core::session::{Event, EventKind, Prompt, Session, Settings};
+use cassino_core::table::Seat;
 use cassino_core::words;
 
 #[derive(Clone, Debug)]
@@ -30,12 +22,11 @@ pub struct Options {
     pub watch: bool,
     /// When watching, show both hands.
     pub reveal: bool,
-    /// When watching, wait for Enter after each move.
+    /// When watching, wait for Enter after each step.
     pub pause: bool,
     /// Red hearts and diamonds.
     pub colour: bool,
-    /// After every move, what it means, as South sees it; after the
-    /// person's own move, how it compares with the best.
+    /// Notes on every move, and verdicts on the person's.
     pub explain: bool,
 }
 
@@ -43,6 +34,8 @@ pub struct Table<R, W> {
     input: R,
     out: W,
     options: Options,
+    /// How many of the session's events have been told.
+    told: usize,
 }
 
 impl<R: BufRead, W: Write> Table<R, W> {
@@ -51,28 +44,7 @@ impl<R: BufRead, W: Write> Table<R, W> {
             input,
             out,
             options,
-        }
-    }
-
-    fn human(&self) -> Option<Seat> {
-        (!self.options.watch).then_some(Seat::South)
-    }
-
-    fn name(&self, seat: Seat) -> &'static str {
-        match (self.human(), seat) {
-            (Some(_), Seat::South) => "You",
-            (Some(_), Seat::North) => "Your opponent",
-            (None, Seat::South) => "South",
-            (None, Seat::North) => "North",
-        }
-    }
-
-    /// The name inside a sentence: "you" and "your opponent" in lower case,
-    /// the compass seats as they are.
-    fn named(&self, seat: Seat) -> String {
-        match self.human() {
-            Some(_) => self.name(seat).to_lowercase(),
-            None => self.name(seat).to_string(),
+            told: 0,
         }
     }
 
@@ -110,168 +82,100 @@ impl<R: BufRead, W: Write> Table<R, W> {
             "Cassino ({kind}). Game to 21. Seed {}.",
             self.options.seed
         )?;
-        if self.human().is_some() {
-            writeln!(
-                self.out,
-                "Choose a move by its number, or type one: trail 7H, take 8S 5S 3H, build 8 3D 5C, build 9 2S on 3C. ? lists them, hint suggests one, q quits."
-            )?;
-        }
-        let (mut game, opening) = Game::new(rules, self.options.seed);
-        self.tell_cut(&game)?;
-        let mut agents: [Option<Box<dyn Agent>>; 2] = [None, None];
-        for seat in Seat::BOTH {
-            if Some(seat) != self.human() {
-                let skill = Skill(self.options.skills[seat.index()]);
-                let seed = agent_rng(self.options.seed, seat).next_u64();
-                agents[seat.index()] = Some(Box::new(skill.opponent(seed)));
-            }
-        }
-        self.tell(&game, &Layout::new(), opening.as_slice())?;
-        loop {
-            while let Some(seat) = game.hand().to_move() {
-                let before = *game.hand().table();
-                let observer = game.hand().view(Seat::South, game.scores());
-                let mv = match agents[seat.index()].as_mut() {
-                    Some(agent) => {
-                        let view = game.hand().view(seat, game.scores());
-                        agent.choose(&view)
-                    }
-                    None => match self.ask(&game)? {
-                        Some(mv) => mv,
-                        None => {
-                            writeln!(self.out, "You leave the table.")?;
-                            return Ok(());
-                        }
-                    },
-                };
-                let events = game.play(&mv).expect("checked before it was played");
-                self.tell(&game, &before, events.as_slice())?;
-                if self.options.explain {
-                    self.explain(&observer, seat, &mv)?;
-                }
-                if self.options.watch && self.options.pause {
-                    self.wait()?;
-                }
-            }
-            let [s, n] = game.scores();
-            writeln!(
-                self.out,
-                "Game: {} {s}, {} {n}.",
-                self.name(Seat::South),
-                self.name(Seat::North)
-            )?;
-            if let Some(winner) = game.winner() {
-                let verb = if self.human() == Some(winner) {
-                    "win"
-                } else {
-                    "wins"
-                };
-                writeln!(
-                    self.out,
-                    "{} {verb} the game, {}.",
-                    self.name(winner),
-                    self.final_score(game.scores(), winner)
-                )?;
-                return Ok(());
-            }
-            let opening = game.next_hand().expect("no winner yet");
-            self.tell(&game, &Layout::new(), opening.as_slice())?;
-        }
-    }
-
-    fn final_score(&self, scores: [u32; 2], winner: Seat) -> String {
-        format!(
-            "{} to {}",
-            scores[winner.index()],
-            scores[winner.other().index()]
-        )
-    }
-
-    fn tell_cut(&mut self, game: &Game) -> io::Result<()> {
-        for cut in game.cuts() {
-            let line = format!(
-                "{} cut{} {}, {} {}.",
-                self.name(Seat::South),
-                if self.human().is_some() { "" } else { "s" },
-                self.card(cut.south),
-                self.named(Seat::North),
-                self.card(cut.north)
-            );
-            writeln!(self.out, "{line}")?;
-        }
-        let dealer = game.first_dealer();
-        let deals = if self.human() == Some(dealer) {
-            "deal"
+        let mut session = if self.options.watch {
+            Session::watch(self.options.seed, rules, self.options.skills)
         } else {
-            "deals"
+            writeln!(
+                self.out,
+                "Choose a move by its number, or type one: trail 7H, take 8S 5S 3H, build 8 3D 5C, build 9 2S on 3C. ? lists them, hint suggests one, u undoes, q quits."
+            )?;
+            let mut s = Session::new(
+                self.options.seed,
+                Settings {
+                    rules,
+                    skill: self.options.skills[1],
+                },
+            );
+            s.send("set hints on");
+            if self.options.explain {
+                s.send("set explain on");
+            }
+            s
         };
-        writeln!(self.out, "Low deals: {} {deals}.", self.name(dealer))?;
-        Ok(())
-    }
-
-    /// Narrates events; `before` is the table as it was before the move.
-    fn tell(&mut self, game: &Game, before: &Layout, events: &[Event]) -> io::Result<()> {
-        let rules = self.options.rules;
-        for e in events {
-            match *e {
-                Event::Dealt { deal, last } => {
-                    let hand = game.history().len() + 1;
-                    writeln!(self.out)?;
-                    writeln!(self.out, "-- Hand {hand}, deal {deal} of 6 --")?;
-                    if last {
-                        let dealer = game.hand().dealer();
-                        writeln!(self.out, "{}: \"Last.\"", self.name(dealer))?;
-                    }
-                    if self.human().is_none() {
-                        self.show(game)?;
+        loop {
+            self.tell(&session)?;
+            match session.prompt() {
+                Prompt::Over => return Ok(()),
+                _ if session.watching() => {
+                    session.step();
+                    if self.options.pause && self.line()?.is_none() {
+                        self.options.pause = false;
                     }
                 }
-                Event::Played { seat, mv } => {
-                    let mut line = format!(
-                        "{}: {}",
-                        self.name(seat),
-                        words::describe(&rules, before, &mv)
-                    );
-                    if let Some(call) = words::call(&rules, before, &mv) {
-                        line += &format!(". \"{call}\"");
-                    }
-                    writeln!(self.out, "{line}")?;
-                }
-                Event::Swept { seat } => writeln!(self.out, "{}: \"Sweep!\"", self.name(seat))?,
-                Event::Cash { seat } => writeln!(self.out, "{}: \"Cash.\"", self.name(seat))?,
-                Event::Clinched { seat, what } => {
-                    let said = match what {
-                        Clinch::Cards => "That's the cards.",
-                        Clinch::Spades => "Seven spades.",
-                    };
-                    writeln!(self.out, "{}: \"{said}\"", self.name(seat))?;
-                }
-                Event::Residue { seat, cards } => {
-                    if !cards.is_empty() {
-                        match seat {
-                            Some(s) => writeln!(
-                                self.out,
-                                "The last {} card{} go to {}, the last to capture: {}.",
-                                cards.len(),
-                                if cards.len() == 1 { "" } else { "s" },
-                                self.named(s),
-                                self.cards(cards)
-                            )?,
-                            None => {
-                                writeln!(self.out, "Nobody captured; the last cards go to nobody.")?
-                            }
+                Prompt::NextHand => {
+                    write!(self.out, "Enter for the next hand (q quits) > ")?;
+                    self.out.flush()?;
+                    match self.line()?.as_deref() {
+                        None | Some("q") | Some("quit") => return self.leave(),
+                        _ => {
+                            session.send("next");
                         }
                     }
                 }
-                Event::Scored(b) => self.tell_count(&b)?,
+                Prompt::Play => {
+                    if !self.ask(&mut session)? {
+                        return self.leave();
+                    }
+                }
+            }
+        }
+    }
+
+    fn leave(&mut self) -> io::Result<()> {
+        writeln!(self.out, "You leave the table.")
+    }
+
+    /// Tells the events not yet told.
+    fn tell(&mut self, session: &Session) -> io::Result<()> {
+        let events: Vec<Event> = session.events()[self.told..].to_vec();
+        self.told = session.events().len();
+        for e in &events {
+            if let EventKind::Dealt {
+                deal, yours, table, ..
+            } = e.kind
+            {
+                writeln!(self.out)?;
+                writeln!(self.out, "-- Hand {}, deal {deal} of 6 --", e.hand)?;
+                if !table.is_empty() {
+                    writeln!(self.out, "{:<14} {}", "Table", self.cards(table))?;
+                }
+                if session.watching() {
+                    writeln!(self.out, "{:<14} {}", "South is dealt", self.cards(yours))?;
+                }
+                if !e.text.starts_with("Deal ") {
+                    writeln!(self.out, "{}", e.text)?;
+                }
+                continue;
+            }
+            writeln!(self.out, "{}", e.text)?;
+            if let EventKind::Scored { breakdown } = &e.kind {
+                self.tell_count(session, breakdown)?;
+            }
+            for note in &e.notes {
+                writeln!(self.out, "    · {note}")?;
             }
         }
         Ok(())
     }
 
-    /// The count, called in Foster's order.
-    fn tell_count(&mut self, b: &Breakdown) -> io::Result<()> {
-        writeln!(self.out, "The count:")?;
+    /// The count's lines, in Foster's order.
+    fn tell_count(&mut self, session: &Session, b: &Breakdown) -> io::Result<()> {
+        let name = |seat: Seat| match (session.watching(), seat) {
+            (true, Seat::South) => "South",
+            (true, Seat::North) => "North",
+            (false, Seat::South) => "you",
+            (false, Seat::North) => "your opponent",
+        };
         let [ts, tn] = b.tallies;
         for (item, seat, points) in b.lines() {
             let what = match item {
@@ -290,32 +194,30 @@ impl<R: BufRead, W: Write> Table<R, W> {
                 Item::Ace(suit) => format!("The ace of {}", suit_name(suit)),
                 Item::Sweeps => format!("Sweeps, {}", b.sweeps[seat.index()]),
             };
-            writeln!(self.out, "  {what}: {} +{points}", self.name(seat))?;
+            writeln!(self.out, "  {what}: {} +{points}", name(seat))?;
         }
         if b.cards.is_none() {
             writeln!(self.out, "  Cards are tied, 26 each: nobody scores them.")?;
         }
-        let s = b.points(Seat::South);
-        let n = b.points(Seat::North);
-        writeln!(
-            self.out,
-            "This hand: {} {s}, {} {n}.",
-            self.name(Seat::South),
-            self.name(Seat::North)
-        )?;
         Ok(())
     }
 
     /// The table as it stands, from the person's side (or both, watching).
-    fn show(&mut self, game: &Game) -> io::Result<()> {
-        let hand = game.hand();
-        let viewer = self.human();
+    fn show(&mut self, session: &Session) -> io::Result<()> {
+        let hand = session.game().hand();
+        let watching = session.watching();
+        let name = |seat: Seat| match (watching, seat) {
+            (true, Seat::South) => "South",
+            (true, Seat::North) => "North",
+            (false, Seat::South) => "You",
+            (false, Seat::North) => "Your opponent",
+        };
         for seat in [Seat::North, Seat::South] {
-            if Some(seat) == viewer {
+            if !watching && seat == Seat::South {
                 continue;
             }
             let held = hand.hand_of(seat);
-            let shown = if viewer.is_none() && self.options.reveal {
+            let shown = if watching && self.options.reveal {
                 self.cards(held)
             } else {
                 plural(held.len(), "card")
@@ -323,24 +225,31 @@ impl<R: BufRead, W: Write> Table<R, W> {
             writeln!(
                 self.out,
                 "{:<14} {shown}  {}",
-                self.name(seat),
-                self.pile_line(game, seat)
+                name(seat),
+                pile_line(session, seat)
             )?;
         }
-        let table = hand.table();
-        let mut items: Vec<String> = table.loose.iter().map(|c| self.card(c)).collect();
-        for b in table.builds.iter() {
-            let whose = match (viewer, b.controller) {
-                (Some(v), c) if v == c => "yours".to_string(),
-                (Some(_), _) => "theirs".to_string(),
-                (None, c) => self.name(c).to_string(),
-            };
-            let value = if b.multiple {
-                format!("{}s", b.value)
-            } else {
-                b.value.to_string()
-            };
-            items.push(format!("[{value}: {} ({whose})]", self.cards(b.cards)));
+        let view = session.view();
+        let mut items = Vec::new();
+        for item in session.items() {
+            let set: CardSet = item.cards.iter().copied().collect();
+            match view.table.builds.iter().find(|b| b.cards == set) {
+                None => items.push(self.card(item.cards[0])),
+                Some(b) => {
+                    let whose = match (watching, b.controller) {
+                        (false, Seat::South) => "yours".to_string(),
+                        (false, Seat::North) => "theirs".to_string(),
+                        (true, c) => name(c).to_string(),
+                    };
+                    let value = if b.multiple {
+                        format!("{}s", b.value)
+                    } else {
+                        b.value.to_string()
+                    };
+                    let laid: Vec<String> = item.cards.iter().map(|&c| self.card(c)).collect();
+                    items.push(format!("[{value}: {} ({whose})]", laid.join(" ")));
+                }
+            }
         }
         let shown = if items.is_empty() {
             "(empty)".to_string()
@@ -348,8 +257,13 @@ impl<R: BufRead, W: Write> Table<R, W> {
             items.join("  ")
         };
         writeln!(self.out, "{:<14} {shown}", "Table")?;
-        if let Some(me) = viewer {
-            writeln!(self.out, "{:<14} {}", "You", self.pile_line(game, me))?;
+        if !watching {
+            writeln!(
+                self.out,
+                "{:<14} {}",
+                "You",
+                pile_line(session, Seat::South)
+            )?;
         }
         writeln!(
             self.out,
@@ -360,61 +274,20 @@ impl<R: BufRead, W: Write> Table<R, W> {
         Ok(())
     }
 
-    fn pile_line(&self, game: &Game, seat: Seat) -> String {
-        let pile = game.hand().pile(seat);
-        let sweeps = game.hand().sweeps(seat);
-        let mut line = format!("pile {} ({})", pile.len(), plural(pile.spades(), "spade"));
-        if sweeps > 0 {
-            line += &format!(", sweeps {sweeps}");
-        }
-        line
-    }
-
-    /// What a move means, as South saw the table before it; and, for the
-    /// person's own move, how it compares with the best.
-    fn explain(&mut self, observer: &View, mover: Seat, mv: &Move) -> io::Result<()> {
-        let rules = self.options.rules;
-        for note in advice::notes(observer, mover, mv) {
-            writeln!(
-                self.out,
-                "    · {}",
-                words::note_text(&rules, &note, Seat::South)
-            )?;
-        }
-        if self.human() == Some(mover) {
-            let rating = advice::rate(observer, mv);
-            let verdict = match rating.quality {
-                Quality::Sound => None,
-                Quality::Dubious => Some("Doubtful"),
-                Quality::Blunder => Some("A mistake"),
-            };
-            if let Some(verdict) = verdict {
-                writeln!(
-                    self.out,
-                    "    · {verdict}: better to {} (about {:.1} points better).",
-                    words::advise(&rules, &observer.table, &rating.best),
-                    rating.best_value - rating.value
-                )?;
-            }
-        }
-        Ok(())
-    }
-
-    /// Asks the person for a move: a number from the list, or the text form.
-    fn ask(&mut self, game: &Game) -> io::Result<Option<Move>> {
-        let rules = self.options.rules;
-        let me = Seat::South;
+    /// Asks the person for a move; false if they leave.
+    fn ask(&mut self, session: &mut Session) -> io::Result<bool> {
         let mut listed = false;
         loop {
-            let hand = game.hand();
-            let moves = hand.candidates();
+            let moves = session.candidates();
+            let rules = session.settings().rules;
+            let table = session.view().table;
             if !listed {
-                self.show(game)?;
-                let mine: Vec<String> = hand.hand_of(me).iter().map(|c| self.card(c)).collect();
+                self.show(session)?;
+                let mine: Vec<String> = session.view().hand.iter().map(|c| self.card(c)).collect();
                 writeln!(self.out, "{:<14} {}", "Your hand", mine.join("  "))?;
                 for (i, mv) in moves.iter().enumerate() {
-                    let mut line = words::describe(&rules, hand.table(), mv);
-                    if let Some(call) = words::call(&rules, hand.table(), mv) {
+                    let mut line = words::advise(&rules, &table, mv);
+                    if let Some(call) = words::call(&rules, &table, mv) {
                         line += &format!(" (\"{call}\")");
                     }
                     writeln!(self.out, "  {:>2}) {line}", i + 1)?;
@@ -424,50 +297,58 @@ impl<R: BufRead, W: Write> Table<R, W> {
             write!(self.out, "> ")?;
             self.out.flush()?;
             let Some(line) = self.line()? else {
-                return Ok(None);
+                return Ok(false);
             };
-            match line.as_str() {
-                "q" | "quit" => return Ok(None),
+            let command = match line.as_str() {
+                "q" | "quit" => return Ok(false),
                 "" => continue,
                 "?" | "h" | "help" => {
                     listed = false;
                     continue;
                 }
+                "u" | "undo" => "undo".to_string(),
                 "hint" => {
-                    let view = hand.view(me, game.scores());
-                    let hint = advice::hint(&view);
-                    let n = moves
-                        .iter()
-                        .position(|m| *m == hint.mv)
-                        .map_or(String::new(), |i| format!(" ({})", i + 1));
-                    writeln!(
-                        self.out,
-                        "Hint{n}: {}.",
-                        words::describe(&rules, hand.table(), &hint.mv)
-                    )?;
-                    for note in hint.notes {
-                        writeln!(self.out, "    · {}", words::note_text(&rules, &note, me))?;
+                    if let Some(hint) = session.hint() {
+                        let n = moves
+                            .iter()
+                            .position(|m| *m == hint.mv)
+                            .map_or(String::new(), |i| format!(" ({})", i + 1));
+                        writeln!(
+                            self.out,
+                            "Hint{n}: {}.",
+                            words::advise(&rules, &table, &hint.mv)
+                        )?;
+                        for note in hint.notes {
+                            writeln!(
+                                self.out,
+                                "    · {}",
+                                words::note_text(&rules, &note, Seat::South)
+                            )?;
+                        }
                     }
                     continue;
                 }
-                _ => {}
-            }
-            if let Ok(n) = line.parse::<usize>() {
-                match moves.get(n.wrapping_sub(1)) {
-                    Some(mv) => return Ok(Some(*mv)),
-                    None => {
-                        writeln!(self.out, "Choose 1 to {}.", moves.len())?;
-                        continue;
-                    }
-                }
-            }
-            match Move::parse(&line) {
-                Err(e) => writeln!(self.out, "{e}. (? lists your moves.)")?,
-                Ok(mv) => match hand.check(&mv) {
-                    Ok(()) => return Ok(Some(mv)),
-                    Err(why) => writeln!(self.out, "{why}")?,
+                text => match text.parse::<usize>() {
+                    Ok(n) => match moves.get(n.wrapping_sub(1)) {
+                        Some(mv) => mv.to_string(),
+                        None => {
+                            writeln!(self.out, "Choose 1 to {}.", moves.len())?;
+                            continue;
+                        }
+                    },
+                    Err(_) => text.to_string(),
                 },
+            };
+            if session.send(&command) {
+                if command == "undo" {
+                    self.told = session.events().len();
+                    writeln!(self.out, "Taken back to your last decision.")?;
+                    listed = false;
+                    continue;
+                }
+                return Ok(true);
             }
+            writeln!(self.out, "{}", session.error().unwrap_or("Refused."))?;
         }
     }
 
@@ -478,14 +359,16 @@ impl<R: BufRead, W: Write> Table<R, W> {
         }
         Ok(Some(text.trim().to_string()))
     }
+}
 
-    /// Waits for Enter while watching; stops pausing at the end of input.
-    fn wait(&mut self) -> io::Result<()> {
-        if self.line()?.is_none() {
-            self.options.pause = false;
-        }
-        Ok(())
+fn pile_line(session: &Session, seat: Seat) -> String {
+    let hand = session.game().hand();
+    let pile = hand.pile(seat);
+    let mut line = format!("pile {} ({})", pile.len(), plural(pile.spades(), "spade"));
+    if hand.sweeps(seat) > 0 {
+        line += &format!(", sweeps {}", hand.sweeps(seat));
     }
+    line
 }
 
 /// "1 card", "3 cards".
@@ -555,7 +438,7 @@ mod tests {
         let text = run(&input, options(false, 5, Rules::CLASSIC));
         assert!(text.contains("Your hand"));
         assert!(
-            text.contains("You cut") && text.contains(", your opponent "),
+            text.contains("You cut") && text.contains("; your opponent, "),
             "{text}"
         );
         assert!(
@@ -565,12 +448,12 @@ mod tests {
     }
 
     #[test]
-    fn explanations_and_hints() {
+    fn explanations_hints_and_undo() {
         let mut o = options(false, 5, Rules::CLASSIC);
         o.explain = true;
-        let text = run("hint\n1\n1\n1\nq\n", o);
+        let text = run("hint\n1\nu\n1\n1\nq\n", o);
         assert!(text.contains("Hint ("), "{text}");
-        assert!(text.contains("    · "), "notes are printed: {text}");
+        assert!(text.contains("Taken back to your last decision."), "{text}");
     }
 
     #[test]

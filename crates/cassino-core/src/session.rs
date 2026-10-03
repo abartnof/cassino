@@ -92,11 +92,14 @@ pub enum EventKind {
     FirstDealer {
         you: bool,
     },
-    /// A deal, 1 to 6; the sixth is "last".
+    /// A deal, 1 to 6; the sixth is "last". `yours`: the cards the person
+    /// (South) was dealt; `table`: the layout, on the first deal.
     Dealt {
         deal: u8,
         last: bool,
         you_deal: bool,
+        yours: CardSet,
+        table: CardSet,
     },
     /// A move, with the groups a capture took and the call a build makes.
     Played {
@@ -572,11 +575,20 @@ impl Session {
                     } else {
                         format!("Deal {deal} of 6.")
                     };
+                    let hand = self.game.hand();
+                    let table = if deal == 1 {
+                        hand.table().loose
+                    } else {
+                        CardSet::EMPTY
+                    };
+                    let yours = hand.hand_of(Seat::South);
                     self.tell(
                         EventKind::Dealt {
                             deal,
                             last,
                             you_deal: dealer == Seat::South,
+                            yours,
+                            table,
                         },
                         text,
                     );
@@ -816,6 +828,26 @@ mod tests {
         );
         assert_eq!(s.view().to_move, Some(Seat::South));
         assert!(s.events().iter().all(|e| !e.text.is_empty()));
+    }
+
+    #[test]
+    fn a_deal_tells_the_cards_dealt_as_they_were() {
+        let s = Session::new(7, settings());
+        let dealt = s.events().iter().find_map(|e| match e.kind {
+            EventKind::Dealt {
+                deal: 1,
+                yours,
+                table,
+                ..
+            } => Some((yours, table)),
+            _ => None,
+        });
+        let (yours, table) = dealt.expect("the first deal");
+        assert_eq!(yours.len(), 4);
+        assert_eq!(table.len(), 4);
+        // Whatever the opponent has done since, these were the cards dealt.
+        assert!(yours.contains_all(s.view().hand));
+        assert!(table.is_disjoint(yours));
     }
 
     #[test]

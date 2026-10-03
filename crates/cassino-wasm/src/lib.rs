@@ -238,10 +238,14 @@ fn event(e: &Event) -> String {
             deal,
             last,
             you_deal,
+            yours,
+            table,
         } => {
             fields.push(("deal", deal.to_string()));
             fields.push(("last", boolean(*last)));
             fields.push(("you_deal", boolean(*you_deal)));
+            fields.push(("yours", cards(*yours)));
+            fields.push(("table", cards(*table)));
             "dealt"
         }
         EventKind::Played {

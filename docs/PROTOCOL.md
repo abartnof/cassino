@@ -127,7 +127,7 @@ Each event has `kind`, `hand`, `text` (one sentence ready to show) and
 |---|---|
 | `cut` | `yours`, `theirs`: the cards shown in the cut for the deal |
 | `first_dealer` | `you` |
-| `dealt` | `deal`, `last` (the sixth deal, "Last."), `you_deal` |
+| `dealt` | `deal`, `last` (the sixth deal, "Last."), `you_deal`, `yours` (the cards you were dealt), `table` (the layout, on the first deal) |
 | `played` | `you`, `move`, `card`, `type` (`trail`/`take`/`build`), `value`, `taken`, `onto`, `loose`, `groups` (a capture's groups in narration order: pairs, builds, sums), `call` ("Building eight.") |
 | `swept`, `cash` | `you` |
 | `clinched` | `you`, `what`: `cards` (27) or `spades` (7) |
