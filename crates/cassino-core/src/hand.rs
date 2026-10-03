@@ -85,7 +85,7 @@ impl<'a> IntoIterator for &'a Events {
 }
 
 /// One hand of Cassino.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Hand {
     rules: Rules,
     dealer: Seat,
