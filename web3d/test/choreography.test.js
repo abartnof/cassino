@@ -26,6 +26,7 @@ function known(prev, next) {
   for (const e of next.events.slice(prev ? prev.events.length : 0)) {
     if (e.kind === "played") for (const c of [e.card, ...(e.taken ?? []), ...(e.loose ?? [])]) seen.add(c.card);
     if (e.kind === "dealt") for (const c of [...e.yours, ...e.table]) seen.add(c.card);
+    if (e.kind === "cut") for (const c of [e.yours, e.theirs]) seen.add(c.card); // shown to both
   }
   return seen;
 }
@@ -143,12 +144,37 @@ test("an undo and a new game go straight to their layouts", { skip }, () => {
   playOut(undone, fresh, placement, "new game");
 });
 
+test("the cut: each player's card shown face up beside the pack, then back on it, before the deal", { skip }, () => {
+  const state = engine.start({ game: "classic", sweeps: false, skill: 1, seed: 7 });
+  const start = opening(state);
+  const placement = initialPlacement(start);
+  const result = choreograph(start, state, placement);
+  const cut = state.events.find((e) => e.kind === "cut");
+  const k = state.events.indexOf(cut);
+  for (const code of [cut.yours.card, cut.theirs.card]) {
+    const shown = result.motions.find((m) => m.reveal?.code === code);
+    assert.ok(shown, `${code} turned up in the cut`);
+    const back = result.motions.find((m) => m.id === shown.id && m.delay > shown.delay);
+    assert.ok(back && back.reveal?.atEnd && back.reveal.code === null, `${code} back on the pack, face down`);
+    const firstDeal = Math.min(...result.motions.filter((m) => m.reveal?.code && ![cut.yours.card, cut.theirs.card].includes(m.reveal.code)).map((m) => m.delay));
+    assert.ok(back.delay + back.duration <= firstDeal + 1e-6, "the cut is over before the deal");
+  }
+  assert.equal(result.beats[k], 0, "heard as it begins: the house rules agreed as the cards are cut");
+});
+
 test("the opening deal goes in twos: elder, table, dealer, and round again", { skip }, () => {
   const state = engine.start({ game: "classic", sweeps: true, skill: 1, seed: 4 });
   const start = opening(state);
   const placement = initialPlacement(start);
   const result = choreograph(start, state, placement);
-  const dealt = result.motions.filter((m) => placement[m.id].zone === "stock").sort((a, b) => a.delay - b.delay);
+  // The cut cards go out and back before they are dealt: their motions
+  // until they are back on the pack are not the deal's.
+  const cutCodes = new Set(state.events.filter((e) => e.kind === "cut").flatMap((e) => [e.yours.card, e.theirs.card]));
+  const backAt = new Map();
+  for (const m of result.motions) if (cutCodes.has(m.reveal?.code)) backAt.set(m.id, Math.max(backAt.get(m.id) ?? 0, ...result.motions.filter((x) => x.id === m.id && x.reveal?.atEnd).map((x) => x.delay)));
+  const dealt = result.motions
+    .filter((m) => placement[m.id].zone === "stock" && !(backAt.has(m.id) && m.delay <= backAt.get(m.id)))
+    .sort((a, b) => a.delay - b.delay);
   const where = (m) => result.placement[m.id].zone;
   const elder = state.dealer === "you" ? "their-hand" : "your-hand";
   const dealer = state.dealer === "you" ? "your-hand" : "their-hand";

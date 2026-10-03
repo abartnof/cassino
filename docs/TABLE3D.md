@@ -115,6 +115,7 @@ layout, its faces, no leak, and no card through the table.
 
 | Event | Motion |
 |---|---|
+| `cut` | Each player's card peeled off the top of the pack toward them and laid face up beside it, nearer the middle, yours nearer you; both seen a moment ("Low deals."); then back on the pack, face down, before the deal. A tied cut is shown again. Heard as it begins, so the house rules are agreed as the cards are cut |
 | `dealt` | In twos off the top of the stock, each card straight to where it will rest: two to the elder, two face up to the table (the first deal), two to the dealer, and round again. Yours turn to face you as they rise, and show their faces. A new hand first collects every card into the stock at the new dealer's left, the highest first, a face-up card turning over on its way |
 | `played`, trail | The card is tugged out of the hand, arcs a little above it and falls to its slot at the end of the grid; the grid moves up to make room |
 | `played`, build | The loose cards it takes in are pushed together on the first of them and the card is laid on top; a raised build takes the card and then the loose cards on top of it |

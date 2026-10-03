@@ -54,6 +54,9 @@ export const TIMING = Object.freeze({
   carry: 620, // the gathered heap turned over into its taker's pile
   show: 650, // a sweep's card held up a moment ("Clear!")
   lay: 420, // and then laid crosswise in the pile
+  cutOut: 420, // a cut card peeled off the pack and laid face up
+  cutShow: 900, // both cuts seen ("Low deals.")
+  cutBack: 360, // and back on the pack
   dealCard: 300,
   dealPair: 170, // two at a time: one pair after another
   dealSecond: 50, // and the second card of a pair just behind the first
@@ -188,6 +191,10 @@ export function stagesBetween(prev, next) {
     const seen = (more = 0) => next.events.slice(0, at + 1 + more);
     const who = e.you ? "you" : "them";
     switch (e.kind) {
+      case "cut":
+        s = { ...s, events: seen() };
+        stages.push({ kind: "cut", state: s, event: e, at });
+        break;
       case "dealt": {
         const dealer = e.you_deal ? "you" : "them";
         const elder = e.you_deal ? "them" : "you";
@@ -479,6 +486,33 @@ class Plan {
     this.clock = Math.max(this.clock, this.end);
   }
 
+  // The cut for the deal (play-testing asked to see it): each player's card
+  // peeled off the top of the pack toward them and laid face up beside it,
+  // nearer the middle, yours nearer you; a moment to see both ("Low deals.");
+  // then both back on the pack, face down, where they lay.
+  cut({ event }) {
+    const pack = this.now.filter((m) => m.zone === "stock").sort((a, b) => b.index - a.index);
+    if (pack.length < 2) return;
+    const start = Math.max(this.clock, this.end);
+    const base = pack[0].pose.position;
+    const inward = base.x > 0 ? -1 : 1;
+    const shownAt = (side) => lying({ x: base.x + inward * (CARD.width + 2.5), z: base.z + side * (CARD.height / 2 + 0.8), height: REST });
+    const cuts = [
+      [pack[0], "you", 1, event.yours.card],
+      [pack[1], "them", -1, event.theirs.card],
+    ];
+    let end = start;
+    for (const [mesh, who, side, code] of cuts) {
+      const home = { ...mesh };
+      const pose = shownAt(side);
+      const out = peelOff(mesh.pose, (lifted) => toss(lifted, pose, { clearance: 3 }), { toward: TOWARD[who] });
+      const shown = this.move(mesh.id, { ...this.via(mesh.id, pose), code }, out, start + (who === "them" ? 90 : 0), TIMING.cutOut);
+      const back = this.move(mesh.id, home, peelOff(pose, (lifted) => toss(lifted, home.pose, { clearance: 3 }), { toward: TOWARD[who] }), shown + TIMING.cutShow, TIMING.cutBack);
+      end = Math.max(end, back);
+    }
+    this.clock = end;
+  }
+
   // The cards off the top of the stock in twos, each straight to where it
   // will rest: up into a hand (yours turning to face you, and showing their
   // faces), or face up onto the table.
@@ -686,7 +720,7 @@ class Plan {
 // gathered to the last capturer as they are gathered. Every other stage's
 // moment is when it has landed; a sweep and cash, which move no cards of
 // their own, are heard at their moments within the capture (`moments`).
-const HEARD_AT_START = new Set(["collect", "count", "deal", "residue"]);
+const HEARD_AT_START = new Set(["collect", "count", "deal", "residue", "cut"]);
 const HEARD_WITHIN = { swept: "held", cash: "landed" };
 
 export function choreograph(prev, next, placement, view = {}, options = {}) {
