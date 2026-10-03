@@ -98,6 +98,7 @@ test("the sweep warning, before the move: which chip leaves a sweep, and what wo
   assert.equal(valuesSaid([8]), "an 8");
   assert.equal(valuesSaid([1, 14]), "an ace");
   assert.equal(valuesSaid([9, 7]), "a 9 or a 7");
+  assert.equal(valuesSaid([12]), "a queen", "a court by its name (second review, S10)");
   const offer = {
     moves: [
       { move: "trail 5C", chip: { kind: "trail", label: "Trail" }, leaves_sweep: { values: [9], unseen: 2 } },

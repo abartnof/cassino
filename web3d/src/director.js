@@ -259,6 +259,13 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
     relayout() {
       settle(state);
     },
+    // A change of state played again (the last move seen again): the cards
+    // from `before`, keeping what is timed (the HUD's popups still playing:
+    // the table's second review, S1).
+    again(before, after) {
+      settle(before);
+      return animate(before, after);
+    },
     // The next state, animated from this one.
     advance(next) {
       return animate(state, next);
@@ -306,8 +313,10 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
     skip() {
       timeline.skip();
       for (let i = queue.length - 1; i >= 0; i--) if (queue[i].kind === "talk") queue.splice(i, 1);
+      // Only what is timed to the moves runs now: talk queued during the
+      // skip waits its moment (the table's second review, S7).
       while (heldAt === null) {
-        const k = queue.findIndex((e) => e.kind !== "linger");
+        const k = queue.findIndex((e) => e.gate || e.kind === "hard");
         if (k < 0) break;
         const [entry] = queue.splice(k, 1);
         if (entry.gate) {

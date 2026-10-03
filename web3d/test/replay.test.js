@@ -38,7 +38,8 @@ test("replayed step by step, your opponent's hand is what they hold, never a car
 test("the replay stops after each of your decisions, the table's forced moves with it", () => {
   // trail 7H | take 8S 8D | next, then the forced trail made by the table.
   assert.deepEqual(stops(RECORD), [0, 1, 2, 4]);
-  assert.deepEqual(commandsBetween(RECORD, 2, 4), ["next"], "the forced move the engine makes itself");
+  assert.deepEqual(commandsBetween(RECORD, 2, 4), ["next", "trail 2C"], "the forced move made as the move it was");
+  assert.ok(prefix(RECORD, 4).includes("play_forced=0") && prefix(RECORD, 4).endsWith("next\ntrail 2C\n"));
 });
 
 test("stepping forward by sending, and back by restoring, reach the same positions", { skip: !existsSync(WASM) && "build the module first" }, async () => {
@@ -59,7 +60,7 @@ test("stepping forward by sending, and back by restoring, reach the same positio
       assert.equal(back.state.saved, forward, `step ${k}: restored as stepped`);
     }
   }
-  assert.equal(engine.state().saved, record, "stepped to the end, the record itself");
+  assert.equal(engine.state().saved.trim(), prefix(record, at.at(-1)).trim(), "stepped to the end, the record (as the replay plays it)");
 });
 
 import { choreograph, initialPlacement } from "../src/choreography.js";
@@ -86,5 +87,43 @@ test("in the replay, the choreography keeps your opponent's hand face up and lan
     for (const slot of target) assert.ok(result.placement.some((m) => m.pose.position.distanceTo(slot.pose.position) < 1e-9 && m.code === slot.code), `step ${k}: ${slot.key} landed`);
     placement = result.placement;
     state = next;
+  }
+});
+
+// The table's second review, S2: forced moves turned on or off during the
+// game. The record's header holds the aids as they stood at its end, so the
+// replay plays every forced move itself, as the ordinary move it was.
+test("the replay follows the record when forced moves were turned on or off during the game", { skip: !existsSync(WASM) && "build the module first" }, async () => {
+  const engine = await loadEngine(readFileSync(WASM));
+  for (const [first, then] of [["off", "on"], ["on", "off"]]) {
+    for (const seed of [61, 62]) {
+      let s = engine.start({ game: "classic", sweeps: true, skill: 2, seed });
+      s = engine.send(`set play_forced ${first}`).state;
+      for (let n = 0; s.prompt !== "over"; n++) {
+        if (n === 30) s = engine.send(`set play_forced ${then}`).state;
+        if (s.prompt === "over") break;
+        s = engine.send(s.prompt === "play" ? s.moves[(n * 5) % s.moves.length] : "next").state;
+      }
+      const record = s.saved;
+      const final = { scores: s.scores, kinds: s.events.map((e) => e.kind).join(",") };
+      const at = stops(record);
+      let r = engine.restore(prefix(record, 0));
+      assert.ok(r.ok, r.error);
+      for (let k = 1; k < at.length; k++) {
+        for (const command of commandsBetween(record, at[k - 1], at[k])) {
+          const sent = engine.send(command);
+          assert.ok(sent.ok, `${first}->${then} seed ${seed} step ${k}: ${command} refused: ${sent.state.error}`);
+        }
+        if (k % 9 === 0) {
+          const forward = engine.state();
+          const back = engine.restore(prefix(record, at[k]));
+          assert.ok(back.ok, back.error);
+          assert.equal(back.state.events.length, forward.events.length, `${first}->${then} seed ${seed} step ${k}: back as forward`);
+          assert.deepEqual(back.state.hand, forward.hand);
+        }
+      }
+      const end = engine.state();
+      assert.deepEqual({ scores: end.scores, kinds: end.events.map((e) => e.kind).join(",") }, final, `${first}->${then} seed ${seed}: the game as played`);
+    }
   }
 });

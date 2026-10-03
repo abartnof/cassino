@@ -284,21 +284,29 @@ export function createChrome(root, on) {
     speed.value = String(prefs.speed);
     surface.value = prefs.surface;
     faces.value = prefs.faces;
-    seedLine.textContent = state
-      ? `This game's seed is ${state.seed}: the same seed deals the same cards, and your opponent sees only what you see. Add ?seed=${state.seed} to the page's address to deal it again.`
-      : "";
+    // During the replay nothing acts on its position but its own controls
+    // (the table's second review, S3).
+    const replaying = Boolean(last.replaying);
+    // Shown once the game is over: during it, the seed in a second window
+    // would show what your opponent holds (the table's second review, S4).
+    seedLine.textContent = !state
+      ? ""
+      : state.prompt === "over" || replaying
+        ? `This game's seed was ${state.seed}: the same seed deals the same cards, and your opponent saw only what you saw. Add ?seed=${state.seed} to the page's address to deal it again.`
+        : "This game's seed is shown when it is over: the same seed deals the same cards, so it would show your opponent's hand now.";
     const watching = Boolean(state?.watching);
-    hint.hidden = watching || !state?.aids?.hints;
+    hint.hidden = watching || replaying || !state?.aids?.hints;
     hint.disabled = state?.prompt !== "play" || busy; // not while cards move (T10)
     again.disabled = !last.canAgain || busy;
-    undo.hidden = watching || !prefs.undo;
+    again.hidden = replaying;
+    undo.hidden = watching || replaying || !prefs.undo;
     undo.disabled = !state?.can_undo;
   }
 
   return {
-    sync(prefs, state, { busy = false, canAgain = false } = {}) {
+    sync(prefs, state, { busy = false, canAgain = false, replaying = false } = {}) {
       if (!last.prefs) rules = { ...prefs.rules };
-      last = { prefs, state, busy, canAgain };
+      last = { prefs, state, busy, canAgain, replaying };
       draw();
     },
     setRules(r) {

@@ -27,7 +27,7 @@ from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[2]
 PAGE = ROOT / "web3d" / "cassino3d.html"
-SHOTS = Path(sys.argv[1]) if len(sys.argv) > 1 else None
+SHOTS = next((Path(a) for a in sys.argv[1:] if not a.startswith("--")), None)
 LOCAL = ("file:", "data:", "blob:")
 
 
@@ -148,6 +148,10 @@ def play_by_clicking(page, failures, moves_made):
         if s["hand_number"] == 1:
             page.wait_for_timeout(500)
             shot(page, "t4-count")  # the HUD's popups under way
+            # The last move seen again while the count's popups still play:
+            # the HUD must still catch up (the second review, S1).
+            page.evaluate("() => document.querySelector('md-icon-button.again-last').click()")
+            settle(page)
         check_count(page, s, failures)
     if s["prompt"] == "next_hand":
         if s["hand_number"] == 1:
@@ -209,6 +213,14 @@ def check_replay(page, failures):
     settle(page)
     if page.evaluate("window.cassino3d.replay()")["k"] != 2:
         failures.append("replay: back did not step back")
+    # Driven from the keyboard too (the second review, S6).
+    page.locator(".replay-next").focus()
+    page.keyboard.press("Enter")
+    settle(page)
+    if page.evaluate("window.cassino3d.replay()")["k"] != 3:
+        failures.append("replay: Enter on Next did not step")
+    page.locator(".replay-back").click()
+    settle(page)
     page.locator(".replay-leave").click()
     settle(page)
     back = page.evaluate("window.cassino3d.state()")
@@ -458,6 +470,30 @@ def strip(page, name, move, frames=16, step=150):
         sheet.save(SHOTS / f"{name}.png")
 
 
+def quick() -> int:
+    """A minute's smoke test (--quick), for before a commit that touches the
+    table: the page loads offline with no error in the console, and a few
+    decisions are made by clicking. The full run is the thorough one."""
+    failures = []
+    with sync_playwright() as p:
+        browser = p.chromium.launch(executable_path="/usr/bin/chromium", args=["--use-angle=swiftshader", "--disable-gpu-compositing"])
+        page = open_page(browser, "seed=7&speed=8")
+        settle(page)
+        made = 0
+        while made < 4 and play_by_clicking(page, failures, made):
+            made += 1
+        if made < 4:
+            failures.append(f"only {made} decisions made by clicking")
+        check_offline(page, failures)
+        if page.errors:
+            failures.append(f"console errors: {page.errors[:5]}")
+        browser.close()
+    for f in failures:
+        print("FAIL:", f)
+    print("browser (quick): ok" if not failures else f"browser (quick): {len(failures)} failures")
+    return 1 if failures else 0
+
+
 def main() -> int:
     failures = []
     with sync_playwright() as p:
@@ -546,4 +582,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(quick() if "--quick" in sys.argv else main())

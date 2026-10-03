@@ -101,8 +101,11 @@ export function selectionOf(move, table) {
 }
 
 // Capture values as they are said: "an 8", "an ace", "a 9 or a 7".
+// A court card's value is said by its name (the second review, S10: a lone
+// court on a Classic table is swept by its rank).
 export function valuesSaid(values) {
-  const said = values.map((v) => (v === 1 || v === 14 ? "an ace" : v === 8 || v === 11 ? `an ${v}` : `a ${v}`));
+  const named = { 1: "an ace", 14: "an ace", 11: "a jack", 12: "a queen", 13: "a king" };
+  const said = values.map((v) => named[v] ?? (v === 8 ? "an 8" : `a ${v}`));
   return [...new Set(said)].join(" or ");
 }
 

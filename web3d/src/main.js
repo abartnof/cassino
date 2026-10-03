@@ -180,7 +180,8 @@ async function main() {
     skill: (value) => change({ skill: value }),
     aid: (name, on) => {
       change({ aids: { ...prefs.aids, [name]: on } });
-      if (state.watching) return;
+      // A watched game, or the replay's sitting, keeps its own (S3).
+      if (state.watching || replay) return;
       const sent = engine.send(`set ${name} ${on ? "on" : "off"}`).state;
       // A forced move may now have been made for you: show what happened.
       if (sent.events.length !== state.events.length) advance(sent);
@@ -204,7 +205,8 @@ async function main() {
     },
     copy: async (button) => {
       try {
-        await navigator.clipboard.writeText(state.saved);
+        // During the replay, the whole game's record, not the step's (S3).
+        await navigator.clipboard.writeText(replay?.record ?? state.saved);
         button.textContent = "Copied";
       } catch {
         button.textContent = "Could not copy";
@@ -233,9 +235,8 @@ async function main() {
     // The last move seen again (DESIGN.md §12.3, "a 'last turn' replay"):
     // the cards from where they were, the score and the talk as they are.
     again: () => {
-      if (!lastMove || director.busy()) return;
-      director.restart(lastMove.before);
-      director.advance(lastMove.after);
+      if (!lastMove || replay || director.busy()) return;
+      director.again(lastMove.before, lastMove.after);
       show();
     },
     log: (open) => {
@@ -306,7 +307,7 @@ async function main() {
   // The engine's next state, played out.
   function advance(next) {
     const before = state;
-    lastMove = before && before.seed === next.seed && !next.watching ? { before, after: next } : null;
+    lastMove = before && before.seed === next.seed && !next.watching && !replay ? { before, after: next } : null;
     state = next;
     sel = EMPTY;
     offer = null;
@@ -321,12 +322,22 @@ async function main() {
 
   // The sitting kept across a reload; a watched game, or one that is over,
   // is not kept.
+  // A short fingerprint of a game's record.
+  function gameKey(text) {
+    let h = 2166136261;
+    for (const ch of text) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+    return h >>> 0;
+  }
+
   // A game finished counts in the series, once.
   function countGame() {
     const ends = state.events.findLast((e) => e.kind === "game_ends");
     if (!ends || state.watching || replay || prefs.match !== "best-of-7") return;
-    series = recordGame({ ...series, format: "best-of-7" }, { seed: state.seed, youWon: ends.you_won });
-    saveSeries(store, series);
+    // Each game counted once, by its record (a seed can deal more than one
+    // game: a seeded link, today's deal twice; the second review, S8); a
+    // game from a seeded link is not kept in the saved series.
+    series = recordGame({ ...series, format: "best-of-7" }, { seed: gameKey(state.saved), youWon: ends.you_won });
+    if (!fixedSeed) saveSeries(store, series);
   }
 
   function persist() {
@@ -360,6 +371,7 @@ async function main() {
   function settleOn(next) {
     director.cancelTimed();
     replayStepping = false; // a step pending went with the rest (as review T2)
+    lastMove = null; // nothing to see again across a replay (S5)
     overlay.hush();
     dialogue.stop();
     state = next;
@@ -377,12 +389,16 @@ async function main() {
       return;
     }
     replayStepping = true;
+    const token = replayToken;
     director.at(900, () => {
       replayStepping = false;
-      if (replay?.playing && !director.busy()) replayDo("next");
+      // A step pressed by hand meanwhile takes this one's place (S7).
+      if (token === replayToken && replay?.playing && !director.busy()) replayDo("next", true);
     });
   }
-  function replayDo(what) {
+  let replayToken = 0;
+  function replayDo(what, auto = false) {
+    if (!auto) replayToken++;
     if (what === "start") {
       if (state.prompt !== "over" || state.watching) return;
       const record = state.saved;
@@ -411,7 +427,14 @@ async function main() {
     if (director.busy()) director.skip();
     if (what === "next" && replay.k < replay.at.length - 1) {
       const k = replay.k + 1;
-      for (const command of commandsBetween(replay.record, replay.at[k - 1], replay.at[k])) engine.send(command);
+      // A command refused would leave the record: stop there (S2).
+      for (const command of commandsBetween(replay.record, replay.at[k - 1], replay.at[k])) {
+        if (!engine.send(command).ok) {
+          replay.playing = false;
+          show();
+          return;
+        }
+      }
       replay.k = k;
       advance(engine.state());
     } else if (what === "back" && replay.k > 0) {
@@ -564,7 +587,7 @@ async function main() {
       drawLog();
     }
     overlay.showTrackers(prefs.trackers);
-    chrome.sync(prefs, state, { busy, canAgain: Boolean(lastMove) && !replay });
+    chrome.sync(prefs, state, { busy, canAgain: Boolean(lastMove) && !replay, replaying: Boolean(replay) });
   }
 
   function drawLog() {
@@ -649,11 +672,11 @@ async function main() {
     return `${what}, on the table${why}.`;
   }
   window.addEventListener("keydown", (event) => {
-    if (event.defaultPrevented || document.querySelector("md-dialog[open]") || state.watching) return;
+    if (event.defaultPrevented || document.querySelector("md-dialog[open]") || state.watching || replay) return;
     const keys = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Enter", " ", "Escape"];
     if (!keys.includes(event.key)) return;
     // Keys pressed on a button are the button's own.
-    if (event.target instanceof Element && event.target.closest("md-assist-chip, md-filled-button, md-icon-button, button")) return;
+    if (event.target instanceof Element && event.target.closest("button, [role=button], md-assist-chip, md-filled-button, md-outlined-button, md-text-button, md-filled-tonal-button, md-icon-button, md-switch, md-outlined-select, md-outlined-segmented-button")) return;
     if (state.prompt !== "play") return;
     event.preventDefault();
     if (event.key === "Escape") {

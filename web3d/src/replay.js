@@ -13,6 +13,16 @@ function split(saved) {
   return { header, commands: lines.slice(i) };
 }
 
+// The record as the replay plays it: forced moves off in its header, and
+// every forced move (*) made as the ordinary move it was. The header holds
+// the aids as they stood at the game's end, so a record whose forced moves
+// were turned on or off during the game would otherwise be replayed
+// differently forward and back (the table's second review, S2).
+const unforced = (c) => (c.startsWith("*") ? c.slice(1) : c);
+function normal(header) {
+  return header.map((l) => (l.startsWith("aids") ? l.replace(/play_forced=\d/, "play_forced=0") : l));
+}
+
 // How many steps the record has: one a command.
 export function steps(saved) {
   return split(saved).commands.length;
@@ -21,7 +31,7 @@ export function steps(saved) {
 // The record of the first `k` steps, to restore.
 export function prefix(saved, k) {
   const { header, commands } = split(saved);
-  return [...header, ...commands.slice(0, k)].join("\n") + "\n";
+  return [...normal(header), ...commands.slice(0, k).map(unforced)].join("\n") + "\n";
 }
 
 // Your opponent's cards at a state: what they were dealt in this hand so far
@@ -53,8 +63,9 @@ export function stops(saved) {
   return out;
 }
 
-// The commands to send to go from one stop to the next: your decision (the
-// engine makes the forced moves after it itself, as it did in the game).
+// The commands to send to go from one stop to the next: your decision, and
+// the forced moves after it as ordinary moves (the replay's sitting has
+// forced moves off: see `prefix`).
 export function commandsBetween(saved, from, to) {
-  return split(saved).commands.slice(from, to).filter((c) => !c.startsWith("*"));
+  return split(saved).commands.slice(from, to).map(unforced);
 }

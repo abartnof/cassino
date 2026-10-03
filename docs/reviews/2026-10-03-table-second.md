@@ -323,3 +323,19 @@ interactions below.
   hand's last card nothing is unseen, so it gives no false warning.
 - **`skip()` cannot loop forever.** Every hard chain (HUD popups, marks) is
   finite, and the watch and replay steps are queued only from `rested`.
+
+## Triage (the same day)
+
+| ID | Decision | Fix |
+|---|---|---|
+| S1 | fixed | "See the last move again" re-lays the cards with `director.again(before, after)`, which keeps the timed queue, so the HUD's popups finish. The browser test presses it at a hand's end, while the count's popups are queued, and then checks the HUD. |
+| S2 | fixed | The replay plays a normalized record: forced moves off in its header and every forced move made as the ordinary move it was, both forward (`commandsBetween`) and back (`prefix`); a refused command stops the replay rather than running the counter on. Node-tested with the aid turned on and off mid-game, two seeds each. |
+| S3 | fixed | During the replay undo, hint and "again" are hidden; an aid switch changes only the preference; Copy gives the whole game's record. |
+| S4 | fixed (design) | The seed is shown once the game is over (and in the replay), with a line saying why not before. Fairness can still be checked after the game; the daily deal's seed stays computable from the date, as it must, for everyone to get the same cards. |
+| S5 | fixed | The last move is forgotten across the replay (`settleOn`) and is not kept from a replay step. |
+| S6 | fixed | Keys on any button (the replay bar's included) are the button's own, and the card keys rest during the replay. The browser test steps the replay with Enter. |
+| S7 | fixed | A skip runs only what is timed to the moves (and gates): talk queued during it waits its moment; the replay's auto-step carries a token, so a step pressed by hand takes its place. |
+| S8 | fixed | A game is counted once by a fingerprint of its record, not its seed; a game from a seeded link is not saved into the series. |
+| S9 | fixed | The gate's summary says when the table's tests and the page check were skipped (no `node_modules`), and notes a rebuilt page that is not staged. |
+| S10 | fixed | A court's value is said by its name ("a queen would clear the table"). Node-tested. |
+| S11 | fixed | `Hand::deck()` removed. |
