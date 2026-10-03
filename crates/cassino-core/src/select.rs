@@ -53,6 +53,56 @@ pub fn whole(table: &Table, picked: CardSet) -> CardSet {
         .fold(picked, |acc, b| acc | b.cards)
 }
 
+/// Every legal move with `card` whose table cards are exactly `picked`: the
+/// trail if nothing is picked, a capture of the selection at each value the
+/// card captures as, and builds at every value onto nothing or onto the one
+/// build the selection holds.
+fn exact_moves(
+    rules: &Rules,
+    table: &Table,
+    hand: CardSet,
+    me: Seat,
+    card: Card,
+    picked: CardSet,
+) -> Vec<Move> {
+    let mut tries = Vec::new();
+    if picked.is_empty() {
+        tries.push(Move::Trail { card });
+    } else {
+        for &value in rules.capture_values(card) {
+            tries.push(Move::Capture {
+                card,
+                value,
+                taken: picked,
+            });
+        }
+    }
+    let targets: Vec<Option<&crate::table::Build>> = std::iter::once(None)
+        .chain(
+            table
+                .builds
+                .iter()
+                .filter(|b| picked.contains_all(b.cards))
+                .map(Some),
+        )
+        .collect();
+    for value in 1..=rules.max_build() {
+        for target in &targets {
+            let loose = picked - target.map_or(CardSet::EMPTY, |b| b.cards);
+            tries.push(Move::Build {
+                card,
+                value,
+                onto: target.map(|b| b.name()),
+                loose,
+            });
+        }
+    }
+    tries
+        .into_iter()
+        .filter(|m| moves::check(rules, table, hand, me, m).is_ok())
+        .collect()
+}
+
 /// What playing `card` with `picked` from the table can still become.
 pub fn offer(
     rules: &Rules,
@@ -63,20 +113,17 @@ pub fn offer(
     picked: CardSet,
 ) -> Offer {
     let picked = whole(table, picked);
-    let mine: Vec<Move> = moves::candidate_moves(rules, table, hand, me)
+    // The exact moves, by asking the rules of every move with this card and
+    // this selection: complete even where the bounded candidates are not
+    // (the engine review's F4).
+    let exact = exact_moves(rules, table, hand, me, card, picked);
+    // What could still be added: from the candidates, which suffice.
+    let can_add = moves::candidate_moves(rules, table, hand, me)
         .into_iter()
         .filter(|m| m.card() == card)
-        .collect();
-    let mut can_add = CardSet::EMPTY;
-    let mut exact = Vec::new();
-    for m in mine {
-        let sel = selected(table, &m);
-        if sel == picked {
-            exact.push(m);
-        } else if sel.contains_all(picked) {
-            can_add |= sel - picked;
-        }
-    }
+        .map(|m| selected(table, &m))
+        .filter(|sel| sel.contains_all(picked) && *sel != picked)
+        .fold(CardSet::EMPTY, |acc, sel| acc | (sel - picked));
     // Every other table item, named by its lowest card, with the reason a
     // capture including it is refused.
     let items: Vec<CardSet> = table
@@ -86,25 +133,29 @@ pub fn offer(
         .chain(table.builds.iter().map(|b| b.cards))
         .filter(|item| item.is_disjoint(picked) && item.is_disjoint(can_add))
         .collect();
-    let why_not = items
-        .into_iter()
-        .filter_map(|item| {
-            let name = item.first()?;
-            let reason = rules
-                .capture_values(card)
-                .iter()
-                .find_map(|&value| {
-                    let attempt = Move::Capture {
-                        card,
-                        value,
-                        taken: picked | item,
-                    };
-                    moves::check(rules, table, hand, me, &attempt).err()
-                })
-                .unwrap_or(Illegal::DoesNotMake(rules.capture_values(card)[0]));
-            Some((name, reason))
-        })
-        .collect();
+    let mut can_add = can_add;
+    let mut why_not = Vec::new();
+    for item in items {
+        let Some(name) = item.first() else { continue };
+        let attempts: Vec<Result<(), Illegal>> = rules
+            .capture_values(card)
+            .iter()
+            .map(|&value| {
+                let attempt = Move::Capture {
+                    card,
+                    value,
+                    taken: picked | item,
+                };
+                moves::check(rules, table, hand, me, &attempt)
+            })
+            .collect();
+        if attempts.iter().any(Result::is_ok) {
+            // A legal capture the bounded candidates did not list.
+            can_add |= item;
+        } else if let Some(Err(reason)) = attempts.into_iter().next() {
+            why_not.push((name, reason));
+        }
+    }
     Offer {
         moves: exact,
         can_add,
@@ -203,6 +254,51 @@ mod tests {
         let table = Table::parse(&r, "[6: 3S 3D]").unwrap();
         let o = offer(&r, &table, set("2H 8C"), Seat::South, c("2H"), set("3S 3D"));
         assert_eq!(texts(&o.moves), ["build 8 2H on 3S"]);
+    }
+
+    #[test]
+    fn every_legal_move_is_offered_even_on_a_crowded_table() {
+        // The review's F4: two tens taken at once, a legal move the bounded
+        // candidates do not list.
+        let r = Rules::CLASSIC;
+        let mut table = Table::new();
+        for rank in 1..=6 {
+            table.loose |= CardSet::of_rank(rank);
+        }
+        let m = Move::parse("take TD AS 2S 3S 4S 6S AH 3H").unwrap();
+        let hand = set("TD 9C");
+        assert_eq!(moves::check(&r, &table, hand, Seat::South, &m), Ok(()));
+        let o = offer(&r, &table, hand, Seat::South, c("TD"), selected(&table, &m));
+        assert!(o.moves.contains(&m), "{:?}", o.moves);
+        // Short of one ten, the missing cards are addable, not refused.
+        let partial = selected(&table, &m) - set("3H");
+        let o = offer(&r, &table, hand, Seat::South, c("TD"), partial);
+        assert!(o.can_add.contains(c("3H")), "{:?}", o.can_add);
+    }
+
+    #[test]
+    fn offered_moves_are_exactly_the_legal_moves_for_the_selection() {
+        for seed in 0..150 {
+            let (table, hand) = crate::reference::random_position(&Rules::ROYAL, seed);
+            let legal = moves::legal_moves(&Rules::ROYAL, &table, hand, Seat::South);
+            for m in &legal {
+                let o = offer(
+                    &Rules::ROYAL,
+                    &table,
+                    hand,
+                    Seat::South,
+                    m.card(),
+                    selected(&table, m),
+                );
+                assert!(o.moves.contains(m), "{table} / {hand}: {m}");
+                for offered in &o.moves {
+                    assert!(
+                        legal.contains(offered),
+                        "{table} / {hand}: offered {offered}"
+                    );
+                }
+            }
+        }
     }
 
     #[test]
