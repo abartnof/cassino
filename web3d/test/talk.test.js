@@ -60,6 +60,15 @@ test("before the game, the house rules agreed aloud, then the cut", () => {
   assert.deepEqual(said(royal), ["them:sweeps-ask", "you:sweeps-no", "them:royal", "them:aces-14", "them:low-deals", "them:your-deal"]);
 });
 
+// Equal ranks cut again (docs/RULES.md §2): the engine tells each cut, and
+// the house rules are agreed once, before the first.
+test("a tied cut is cut again, and the house rules are not asked twice", () => {
+  const cut = (yours, theirs) => ({ kind: "cut", hand: 1, yours: card(yours, Number(yours[0])), theirs: card(theirs, Number(theirs[0])) });
+  const lines = speech(state([cut("5H", "5C"), cut("3D", "9S"), { kind: "first_dealer", hand: 1, you: true }]));
+  assert.deepEqual(said(lines), ["them:sweeps-ask", "you:sweeps-yes", "them:low-deals", "them:cut-again", "them:your-deal"]);
+  assert.equal(lines[3].at, 0, "said as the equal cards are seen");
+});
+
 test("builds are called: single in the singular, multiple in the plural, a raise by its new total", () => {
   const build = (extra) => ({ kind: "played", hand: 1, type: "build", value: 8, left: [], ...extra });
   const lines = speech(

@@ -123,7 +123,9 @@ def phrase_groups():
         ("Aces one or fourteen, as the player elects.", "Us"))
     add("low-deals", ("Low deals.", "L"), ("Low card deals.", "T"), ("Cut. Low deals.", "T"),
         ("Cut for the deal: low deals.", "T"), ("Ace is low. Low deals.", "T"), ("Shall we cut? Low deals.", "T"))
-    add("my-deal", ("My deal.", "T"), ("I deal.", "T"), ("I'll deal.", "T"),
+    add("cut-again", ("Equal. Cut again.", "T"), ("A tie. Cut again.", "T"), ("The same. Again.", "T"),
+        ("Even. Once more.", "T"), ("Equal cards: cut again.", "T"))
+    add("my-deal",("My deal.", "T"), ("I deal.", "T"), ("I'll deal.", "T"),
         ("Low card. My deal.", "T"), ("The deal is mine.", "T"), ("Mine is lower. I deal.", "T"))
     add("your-deal", ("Your deal.", "T"), ("You deal.", "T"), ("Over to you. Your deal.", "T"),
         ("Low card. Your deal.", "T"), ("The deal is yours.", "T"), ("Yours is lower. Your deal.", "T"))

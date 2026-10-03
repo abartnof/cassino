@@ -64,13 +64,17 @@ export function speech(state, since = 0) {
     const who = e.you ? "you" : "them";
     switch (e.kind) {
       case "cut":
-        // The house rules, agreed before the cut: your opponent asks, and
-        // your settings answer.
-        say("them", "sweeps-ask");
-        say("you", rules.sweeps === false ? "sweeps-no" : "sweeps-yes");
-        if (rules.game === "royal") say("them", "royal");
-        if (rules.aces14) say("them", "aces-14");
-        say("them", "low-deals");
+        // The house rules, agreed before the first cut: your opponent asks,
+        // and your settings answer. Equal cards are cut again, and the rules
+        // are not asked twice.
+        if (!state.events.slice(0, at).some((p) => p.kind === "cut")) {
+          say("them", "sweeps-ask");
+          say("you", rules.sweeps === false ? "sweeps-no" : "sweeps-yes");
+          if (rules.game === "royal") say("them", "royal");
+          if (rules.aces14) say("them", "aces-14");
+          say("them", "low-deals");
+        }
+        if (e.yours && e.theirs && e.yours.rank === e.theirs.rank) say("them", "cut-again");
         break;
       case "first_dealer":
         say("them", e.you ? "your-deal" : "my-deal");

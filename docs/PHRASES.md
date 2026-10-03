@@ -68,6 +68,11 @@ Sources:
 |  | Cut for the deal: low deals. | T |
 |  | Ace is low. Low deals. | T |
 |  | Shall we cut? Low deals. | T |
+| `cut-again` | Equal. Cut again. | T |
+|  | A tie. Cut again. | T |
+|  | The same. Again. | T |
+|  | Even. Once more. | T |
+|  | Equal cards: cut again. | T |
 | `my-deal` | My deal. | T |
 |  | I deal. | T |
 |  | I'll deal. | T |
