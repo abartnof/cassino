@@ -143,3 +143,29 @@ export function countPace(lines, plan) {
     gaps: chant.map((l, i) => (i + 1 < chant.length ? chant[i + 1].ms - l.ms : l.end - l.ms)),
   };
 }
+
+// Lines one speaker says at one moment, said as one (play-testing: waiting
+// through your opponent's lines one by one is time spent for nothing): the
+// first's phrase and moment, the words joined. The count's lines keep their
+// own moments, each with its card.
+export function chunk(lines) {
+  const out = [];
+  for (const l of lines) {
+    const last = out.at(-1);
+    if (last && last.who === l.who && last.delay === l.delay && last.line === undefined && l.line === undefined) {
+      out[out.length - 1] = { ...last, words: `${last.words} ${l.words}` };
+    } else out.push(l);
+  }
+  return out;
+}
+
+// The table talk at a level (a setting): "none"; "calls", what carries the
+// game -- the house rules, the build calls, "Last.", a sweep, cash, the
+// count, the game won; or "all", the remarks too: what was left, a haul or
+// a Casino taken, the clinches, the last cards taken, "Good game.".
+const REMARKS = /^(left-|take-|clinch-|residue$|good-game$)/;
+export function heard(lines, level) {
+  if (level === "none") return [];
+  if (level === "calls") return lines.filter((l) => !REMARKS.test(l.phrase));
+  return lines;
+}

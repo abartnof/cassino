@@ -314,6 +314,10 @@ md-dialog {
   padding: 8px 0;
   cursor: pointer;
 }
+.setting.talk-row {
+  flex-wrap: wrap;
+  cursor: default;
+}
 .setting-text {
   display: grid;
 }

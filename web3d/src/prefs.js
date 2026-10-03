@@ -34,6 +34,9 @@ export const DEFAULTS = Object.freeze({
   buildValues: false,
   unseen: false,
   sweepWarning: false,
+  // What is said at the table: "all", "calls" (what carries the game) or
+  // "none" (talk.js heard).
+  talk: "all",
   // The tutorial: its pages open by themselves, each once (`seen`).
   tutorial: true,
   seen: Object.freeze([]),
@@ -105,6 +108,7 @@ export function loadPrefs(store) {
     buildValues: isBool(kept.buildValues) ? kept.buildValues : DEFAULTS.buildValues,
     unseen: isBool(kept.unseen) ? kept.unseen : DEFAULTS.unseen,
     sweepWarning: isBool(kept.sweepWarning) ? kept.sweepWarning : DEFAULTS.sweepWarning,
+    talk: ["all", "calls", "none"].includes(kept.talk) ? kept.talk : DEFAULTS.talk,
     tutorial: isBool(kept.tutorial) ? kept.tutorial : DEFAULTS.tutorial,
     seen: Array.isArray(kept.seen) ? kept.seen.filter((k) => typeof k === "string") : [],
   };

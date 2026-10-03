@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { countPace, speech } from "../src/talk.js";
+import { chunk, countPace, heard, speech } from "../src/talk.js";
 import { GAP, TURN, createDialogue, saying } from "../src/dialogue.js";
 import { loadEngine } from "../src/engine.js";
 
@@ -216,4 +216,31 @@ test("the count's pace, from what is said: the words before the chant, and each 
   assert.deepEqual(pace.gaps, [saying("Spades.") + TURN, saying("The ace of spades.") + GAP, saying("Big Casino.")]);
   assert.equal(countPace(lines.slice(0, 1), plan), null, "no count, no pace");
   assert.equal(countPace(lines.filter((l) => l.phrase !== "count-cards-tie"), plan).lead, 0);
+});
+
+test("lines one speaker says at one moment are said as one, so nobody waits through them one by one", () => {
+  const lines = [
+    { who: "them", phrase: "sweeps-ask", at: 0, delay: 0, words: "Do you count sweeps?" },
+    { who: "you", phrase: "sweeps-no", at: 0, delay: 0, words: "No sweeps." },
+    { who: "them", phrase: "royal", at: 0, delay: 0, words: "Royal, then." },
+    { who: "them", phrase: "low-deals", at: 0, delay: 0, words: "Low deals." },
+    { who: "them", phrase: "my-deal", at: 1, delay: 0, words: "My deal." },
+    { who: "them", phrase: "last", at: 2, delay: 900, words: "Last." },
+    { who: "you", phrase: "count-spades", at: 5, delay: 2000, line: 0, words: "Spades." },
+    { who: "you", phrase: "count-ace-S", at: 5, delay: 3000, line: 1, words: "Ace of spades." },
+  ];
+  const said = chunk(lines);
+  assert.deepEqual(said.map((l) => l.words), ["Do you count sweeps?", "No sweeps.", "Royal, then. Low deals. My deal.", "Last.", "Spades.", "Ace of spades."]);
+  assert.equal(said[2].phrase, "royal", "a chunk keeps its first line's phrase and moment");
+  assert.equal(said[4].line, 0, "the count's lines keep their own moments");
+});
+
+test("the talk at three levels: none, the calls that carry the game, or everything", () => {
+  const lines = ["sweeps-ask", "build-8", "last", "sweep", "cash", "count-spades", "game-won", "left-7", "take-many", "take-big-casino", "clinch-cards", "residue", "good-game"].map((phrase) => ({ who: "them", phrase }));
+  assert.deepEqual(heard(lines, "none"), []);
+  assert.deepEqual(heard(lines, "all"), lines);
+  assert.deepEqual(
+    heard(lines, "calls").map((l) => l.phrase),
+    ["sweeps-ask", "build-8", "last", "sweep", "cash", "count-spades", "game-won"],
+  );
 });

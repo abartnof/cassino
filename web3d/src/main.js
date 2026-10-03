@@ -28,7 +28,7 @@ import { createScene } from "./scene.js";
 import { celebrationOf, trackers } from "./scorebug.js";
 import { EMPTY, choose, chipsOf, itemState, pick, selectionOf, selectionText, sweepWarning, valuesSaid, whyNot } from "./selection.js";
 import { chooseSurface } from "./surfaces.js";
-import { countPace, speech } from "./talk.js";
+import { chunk, countPace, heard, speech } from "./talk.js";
 import { commandsBetween, prefix, stops } from "./replay.js";
 import { pageDue, parseTutorial } from "./tutorial.js";
 import TUTORIAL_TEXT from "../tutorial.md";
@@ -249,7 +249,7 @@ async function main() {
   // ---- the game -----------------------------------------------------------
 
   // A new sitting, played or watched, with the next game's rules; the
-  // opening deal waits for the house rules to be agreed aloud. `welcome`:
+  // house rules are agreed aloud as the cards are dealt. `welcome`:
   // the table held at the pack while the welcome asks how to begin.
   function newGame({ seed = randomSeed(), watch = false, welcome = false } = {}) {
     replay = null;
@@ -266,9 +266,11 @@ async function main() {
     sel = EMPTY;
     offer = null;
     message = null;
+    // The cards are dealt while the house rules are agreed: nobody waits
+    // for the talk (play-testing).
     const dealt = !params.has("nodeal");
-    const opening = dialogue.words(speech(state, 0));
-    const timing = director.restart(state, { dealt, waits: dealt ? openingTalk(state, opening) : {} });
+    const opening = dialogue.words(heard(speech(state, 0), prefs.talk));
+    const timing = director.restart(state, { dealt });
     // The welcome holds the clock before anything timed on it, the talk
     // included, can come (a line scheduled first would slip out behind it).
     if (welcome)
@@ -335,7 +337,7 @@ async function main() {
     badgeFrom = before;
     // The words chosen first, so the count can be paced by them.
     // The count paced by them, and by the score's popups.
-    const said = dialogue.words(speech(state, before.events.length));
+    const said = dialogue.words(heard(speech(state, before.events.length), prefs.talk));
     const talkPace = countPace(said, dialogue.plan);
     const scored = state.events.slice(before.events.length).find((e) => e.kind === "scored");
     const pace = talkPace && scored ? { ...talkPace, popups: popupsOf(scored.count.lines), busy: POPUP_BUSY } : null;
@@ -478,17 +480,6 @@ async function main() {
 
   const dialogue = createDialogue(WORDS, () => director.clock());
 
-  // The house rules are agreed aloud and the cut made before the cards are
-  // dealt: the opening deal waits until that has been said.
-  // The words are chosen once, so the wait is planned on what is said (the
-  // table review's T18).
-  function openingTalk(s, lines) {
-    const deal = s.events.findIndex((e) => e.kind === "dealt");
-    if (deal < 0) return {};
-    const said = dialogue.plan(lines.filter((l) => l.at < deal).map((l) => ({ ...l, delay: 0 })));
-    return { [deal]: Math.max(0, ...said.map((l) => l.end)) + 250 };
-  }
-
   // Each line at the moment its event is seen (a line of the count, as it
   // is written down), in its speaker's box.
   function talk(s, since, { beats, count }, said = speech(s, since)) {
@@ -500,12 +491,15 @@ async function main() {
     // In the order they come: a line's moment can fall inside an earlier
     // event's motion ("Cash." as the ace lands, before the heap is carried
     // in), and is not held back behind what is said at the end of it.
-    const lines = said
-      .map((l) => ({
-        ...l,
-        delay: l.line !== undefined && count ? count.lines[l.line] : (beats[l.at] ?? 0),
-      }))
-      .sort((a, b) => a.delay - b.delay);
+    // And what one speaker says at one moment, said as one (chunk).
+    const lines = chunk(
+      said
+        .map((l) => ({
+          ...l,
+          delay: l.line !== undefined && count ? count.lines[l.line] : (beats[l.at] ?? 0),
+        }))
+        .sort((a, b) => a.delay - b.delay),
+    );
     dialogue.say(lines, (line, words, ms) => director.at(ms, () => overlay.say(line.who, words, director.handEdge(line.who)), "talk"));
   }
 

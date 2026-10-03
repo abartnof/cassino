@@ -66,7 +66,7 @@ legal move. RULES.md now says each held card answers for one build value.
   gather of a capture turned over into its pile, sweeps held up and laid
   crosswise), T4 the score and the count (each ace and Casino turned up as
   its line is told; live trackers), T5 the table talk (a sourced phrase bank, `docs/PHRASES.md`; the
-  house rules agreed aloud before the deal, the build calls, "Last.",
+  house rules agreed aloud as the cards are dealt, the build calls, "Last.",
   "Clear!", the count chanted), T6 settings and aids (rules, skill, today's
   deal, watch mode, hints, explanations in a game log, undo, the sitting
   kept across a reload, the credits on screen). A whole game is played by

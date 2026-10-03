@@ -693,8 +693,9 @@ export function choreograph(prev, next, placement, view = {}, options = {}) {
   const plan = new Plan(placement, view);
   plan.pace = options.pace ?? null;
   const stages = stagesBetween(prev, next);
-  // Held back: an event no sooner than its wait, and all after it with it
-  // (the house rules agreed aloud before the opening deal). From piquet's.
+  // Held back: an event no sooner than its wait, and all after it with it.
+  // From piquet's (whose opening waited for the declarations; cassino's
+  // deal no longer waits for its house rules).
   const waits = Object.entries(options.waits ?? {}).map(([at, ms]) => [Number(at), ms]);
   const waitFor = (k) => Math.max(0, ...waits.filter(([at]) => at <= k).map(([, ms]) => ms));
   const marks = [];

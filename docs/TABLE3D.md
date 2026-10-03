@@ -173,6 +173,11 @@ chooses the words first (`talk.js` `countPace`), and each counted card
 turns up, and the score's popup comes, as its line is said; a player's
 next popup waits for the last (`hud.js` `popupsOf`), so a line that
 brings one waits too. At the Instant speed nothing waits for the talk.
+What one speaker says at one moment is said in one box (`talk.js`
+`chunk`: "Low deals. My deal."), so nobody waits through a run of lines
+one by one. A setting, "Table talk", chooses everything, only the calls
+that carry the game (the house rules, the build calls, "Last.", a sweep,
+cash, the count, the game won), or nothing (`talk.js` `heard`).
 
 ## 8. The overlay
 
@@ -296,8 +301,9 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   with its source; `--check` keeps `docs/PHRASES.md` and `words.json` in
   step, run by the Node tests), `talk.js` (events to phrases, pure and
   node-tested), piquet's `dialogue.js` and boxes by each speaker's hand.
-  Said: the house rules agreed aloud and the cut before the opening deal,
-  which waits for them; the build calls (singular, plural, a raise by its
+  Said: the house rules agreed aloud and the cut as the opening deal is
+  dealt (it waited for them until play-testing found the wait too long);
+  the build calls (singular, plural, a raise by its
   new total: the engine's `played` event now says which); "Last."; "Clear!";
   "Cash."; the clinches; your opponent pointing out what you left; the
   residue; the count chanted line by line with the sheet; the game's end.

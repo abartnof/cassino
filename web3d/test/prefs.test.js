@@ -87,6 +87,15 @@ test("the welcome's choices: the tutorial from its first page, or a game without
   assert.deepEqual(choosePlay("continue"), {});
 });
 
+test("the table talk: everything by default, or the calls, or none", () => {
+  assert.equal(DEFAULTS.talk, "all");
+  const store = memory();
+  savePrefs(store, { ...DEFAULTS, talk: "calls" });
+  assert.equal(loadPrefs(store).talk, "calls");
+  store.setItem("cassino.prefs", JSON.stringify({ talk: "shouting" }));
+  assert.equal(loadPrefs(store).talk, "all");
+});
+
 test("the skill dial runs from 1 to 4 in halves", () => {
   assert.deepEqual(SKILLS.map((s) => s.value), [1, 1.5, 2, 2.5, 3, 3.5, 4]);
   assert.ok(SKILLS.every((s) => s.words.length > 0));

@@ -188,6 +188,17 @@ export function createChrome(root, on) {
     s.addEventListener("change", () => on.pref(name, name === "speed" ? Number(s.value) : s.value));
     return s;
   };
+  // What is said at the table: everything, the calls, or nothing.
+  const talkSet = el(
+    "md-outlined-segmented-button-set",
+    { class: "talk-set", "aria-label": "Table talk" },
+    ...[
+      ["all", "Everything"],
+      ["calls", "The calls"],
+      ["none", "Quiet"],
+    ].map(([value, label]) => el("md-outlined-segmented-button", { "data-talk": value, label })),
+  );
+  talkSet.addEventListener("segmented-button-set-selection", (e) => on.pref("talk", e.detail.button.dataset.talk));
   const speed = select("speed", "Animation", SPEEDS.map((s) => [s.value, s.words]));
   const surface = select("surface", "The table", [["random", "A new one each time the page opens"], ...PATTERNS.map((p) => [p.id, p.name])]);
   const faces = select("faces", "Card faces", [
@@ -217,6 +228,7 @@ export function createChrome(root, on) {
       aidSwitches,
       pageSwitches,
       el("h3", {}, "The table"),
+      el("div", { class: "setting talk-row" }, el("span", { class: "setting-text" }, el("span", { class: "setting-title" }, "Table talk"), el("span", { class: "setting-words" }, "What the players say aloud: everything, only the calls that carry the game (the house rules, builds, \u201cLast.\u201d, sweeps, the count), or nothing")), talkSet),
       el("div", { class: "selects" }, speed, surface, faces),
     ),
     el("div", { slot: "actions" }, copy, creditsOpen, el("md-filled-tonal-button", { onclick: () => settings.close() }, "Done")),
@@ -355,6 +367,7 @@ export function createChrome(root, on) {
     values.selected = badgesOn(prefs);
     values.disabled = Boolean(prefs.tutorial);
     speed.value = String(prefs.speed);
+    for (const b of talkSet.querySelectorAll("[data-talk]")) b.selected = b.dataset.talk === prefs.talk;
     surface.value = prefs.surface;
     faces.value = prefs.faces;
     // During the replay nothing acts on its position but its own controls

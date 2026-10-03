@@ -415,6 +415,35 @@ def check_cheers(browser, failures):
     page.context.close()
 
 
+def check_talk(browser, failures):
+    """The opening: the cards dealt while the house rules are agreed, and
+    what one speaker says at once said in one box; and quiet, nothing."""
+    page = open_page(browser, "seed=7&manual", calm=True)
+    page.evaluate("window.cassino3d.tick(1200)")
+    if not page.evaluate("window.cassino3d.said().length"):
+        failures.append("nothing said as the game opens")
+    if not set(page.evaluate("window.cassino3d.faces()")) & {c["card"] for c in page.evaluate("window.cassino3d.state().hand")}:
+        failures.append("the deal waited for the house rules to be agreed")
+    # Your opponent asks about sweeps, and after your answer says the rest
+    # (low deals, whose deal) at once: two boxes, not one a line.
+    theirs = set()
+    for _ in range(40):
+        page.evaluate("window.cassino3d.tick(150)")
+        theirs |= {l["words"] for l in page.evaluate("window.cassino3d.said()") if l["who"] == "them"}
+    if len(theirs) != 2:
+        failures.append(f"your opponent's lines at one moment were not said as one: {sorted(theirs)}")
+    page.evaluate("localStorage.setItem('cassino.prefs', JSON.stringify({ talk: 'none' }))")
+    page.reload()
+    page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
+    heard = []
+    for _ in range(30):
+        page.evaluate("window.cassino3d.tick(200)")
+        heard += page.evaluate("window.cassino3d.said()")
+    if heard:
+        failures.append(f"talk set to quiet, but said: {heard[:2]}")
+    page.context.close()
+
+
 def check_tutorial(browser, failures):
     """The tutorial: the introduction as the game begins, holding the table;
     then, playing on, a page of the teaching ladder at its moment; and the
@@ -726,6 +755,7 @@ def main() -> int:
         check_welcome(browser, failures)
         check_aid_toggles(browser, failures)
         check_cheers(browser, failures)
+        check_talk(browser, failures)
         check_tutorial(browser, failures)
         check_phone(browser, failures)
         page = open_page(browser, "seed=11&skill=4&manual", calm=True)
