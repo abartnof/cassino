@@ -387,7 +387,7 @@ fn guarded(
 
 /// The kind of build a build move makes, if rule 5 allows it: whether the
 /// result is multiple. `x` is the played card's value.
-fn build_kind(
+fn resulting_multiple(
     rules: &Rules,
     target: Option<&Build>,
     x: u8,
@@ -529,13 +529,50 @@ pub fn check(
                 None => None,
                 Some(o) => Some(table.build_of(o).ok_or(Illegal::NoSuchBuild)?),
             };
-            build_kind(rules, target, x, value, loose)?;
+            resulting_multiple(rules, target, x, value, loose)?;
             if !rules.holds_value(rest, value) {
                 return Err(Illegal::NotHolding(value));
             }
         }
     }
     guarded(rules, table, rest, me, mv)
+}
+
+/// What a build move does to the table.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum BuildKind {
+    /// A new build from the card and loose cards.
+    New,
+    /// A single build raised from the value `from`.
+    Raise { from: u8 },
+    /// Cards added to a build at its value, making it multiple.
+    Add,
+}
+
+/// The kind of a build move, and whether the build it leaves is multiple;
+/// `None` if it is not a build rule 5 allows (whatever else is wrong with it).
+pub fn build_kind(rules: &Rules, table: &Table, mv: &Move) -> Option<(BuildKind, bool)> {
+    let Move::Build {
+        card,
+        value,
+        onto,
+        loose,
+    } = *mv
+    else {
+        return None;
+    };
+    let x = rules.build_value(card)?;
+    let target = match onto {
+        None => None,
+        Some(o) => Some(table.build_of(o)?),
+    };
+    let multiple = resulting_multiple(rules, target, x, value, loose).ok()?;
+    let kind = match target {
+        None => BuildKind::New,
+        Some(b) if !b.multiple && b.value + x == value => BuildKind::Raise { from: b.value },
+        Some(_) => BuildKind::Add,
+    };
+    Some((kind, multiple))
 }
 
 /// The groups a legal capture takes, for narration and animation
@@ -632,7 +669,7 @@ pub fn apply(rules: &Rules, table: &mut Table, hand: &mut CardSet, me: Seat, mv:
             let index = onto.and_then(|o| table.builds.position(o));
             let target = index.map(|i| table.builds.as_slice()[i]);
             let multiple =
-                build_kind(rules, target.as_ref(), x, value, loose).expect("a legal build");
+                resulting_multiple(rules, target.as_ref(), x, value, loose).expect("a legal build");
             table.loose = table.loose - loose;
             let cards = loose.with(card);
             match index {

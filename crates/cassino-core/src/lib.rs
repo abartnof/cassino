@@ -15,6 +15,7 @@ pub mod scoring;
 pub mod sums;
 pub mod table;
 pub mod tournament;
+pub mod words;
 pub mod worth;
 
 #[cfg(test)]
