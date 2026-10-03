@@ -36,8 +36,6 @@
   --md-sys-color-surface-variant: #e1e2ec;
   --md-sys-color-on-surface-variant: #44474f;
   --md-sys-color-surface-container-lowest: #ffffff;
-  --bubble-you: #ffe7d4; /* your colour (the badges', the score's) softened */
-  --bubble-them: #d3f3f4; /* and your opponent's teal */
   --md-sys-color-surface-container-low: #f3f3fa;
   --md-sys-color-surface-container: #ededf4;
   --md-sys-color-surface-container-high: #e8e7ee;
@@ -193,7 +191,7 @@ html, body {
 /* ---- what is said at the table ---------------------------------------------
    Each line in a box by the hand of whoever said it (after piquet's): yours
    above your hand with its tail down to you, your opponent's below theirs
-   with its tail up to them, each in a soft tint of its speaker's colour. */
+   with its tail up to them, both plain white: the tail says who spoke. */
 .afloat {
   position: fixed;
   inset: 0;
@@ -217,12 +215,10 @@ html, body {
   animation: box-in 420ms var(--spring) both;
 }
 .dialogue.you {
-  background: var(--bubble-you);
   translate: -50% calc(-100% - 18px);
   transform-origin: 50% 100%;
 }
 .dialogue.them {
-  background: var(--bubble-them);
   translate: -50% 18px;
   transform-origin: 50% 0;
 }
