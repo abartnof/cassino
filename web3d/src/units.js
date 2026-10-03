@@ -71,9 +71,10 @@ export const ZONES = Object.freeze({
   // nearer than this would lie under your floating hand, as the eye sees
   // it, and could not be tapped.
   middle: Object.freeze({ x: 0, z: -7, columns: 6, gapX: 1.8, gapZ: 2.2 }),
-  // A build's cards, each laid a little down and to the right of the last,
-  // so every index shows.
-  stack: Object.freeze({ dx: 0.9, dz: 1.3 }),
+  // A build's cards, each laid down and to the right of the last, enough
+  // that every card's index and a strip of its face show: a ten of
+  // diamonds in a build should be seen at a glance.
+  stack: Object.freeze({ dx: 1.5, dz: 2 }),
   // Each player's captures, squared and face down at their right; sweep
   // cards crosswise in the pile, each offset a little from the last.
   yourPile: Object.freeze({ x: 34, z: 6, sweepStep: 1.4 }),
@@ -97,7 +98,7 @@ export const ZONES_PORTRAIT = Object.freeze({
   yourHand: Object.freeze({ centre: Object.freeze([0, 12, 34]), radius: 22, spread: 7, lean: 40 }),
   theirHand: Object.freeze({ centre: Object.freeze([0, 6, -32]), radius: 14, spread: 4.5, lean: 15 }),
   middle: Object.freeze({ x: 0, z: -6.5, columns: 3, gapX: 0.8, gapZ: 1.4 }),
-  stack: Object.freeze({ dx: 0.9, dz: 1.3 }),
+  stack: Object.freeze({ dx: 1.2, dz: 1.8 }),
   yourPile: Object.freeze({ x: 14, z: 7, sweepStep: 1 }),
   theirPile: Object.freeze({ x: -12, z: -42, sweepStep: 1 }),
   count: Object.freeze({ first: 7, step: 3.9 }),

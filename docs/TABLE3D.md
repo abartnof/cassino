@@ -35,8 +35,8 @@ players), opened from disk with no network.
 **The scene.** The same bright, pale table as piquet's. Your hand floats
 before you, fanned, facing you; your opponent's floats across the table,
 backs to you. **The middle of the table is the game**: the loose cards on a
-loose grid, and the builds as small squared stacks, slightly fanned so each
-card reads, each with a value badge. The capture piles lie face down at each
+loose grid, and the builds as small squared stacks, fanned so each card's
+index and a strip of its face read, each with a value badge (a setting). The capture piles lie face down at each
 player's right, sweeps crosswise and offset so they can be counted (the
 Swedish tally, `DESIGN.md` §12.2). The stock lies at the dealer's left; its
 thickness is the clock of the hand. The scorekeeper sits at the table's
@@ -79,8 +79,16 @@ node-tested, as in piquet.
 - **Their hand**: `state.opponent_holds` anonymous cards, backs to you.
 - **The table**: `state.table` items in arrival order on a grid that grows
   from the centre. A loose card lies flat. A build is a stack: its cards in
-  the order laid, each offset a little so its index shows, the last on top,
-  with a badge (value; "8s" for a multiple build; the controller's colour).
+  the order laid, each offset so its whole index and a strip of its face
+  show (the layout test holds the offsets to the index measured on the
+  art), the last on top. With "Build values" on (off by default, always on
+  while the tutorial is), a badge on the top card's top right corner, clear
+  of the indices: the value ("8s" for a multiple build), white on a dark
+  disc ringed in white; its title names whose build it is and its cards,
+  and a tap on it is a tap on the build. The badges are placed as each
+  frame is drawn, so they follow the cards, and stay through every move
+  that leaves their build alone (`badges.js`); a build made, raised or
+  taken shows its badge once the cards rest.
   An item keeps its slot while it lies there; new items take the next free
   slot. The grid shrinks the cards a little as the table fills, and on a
   phone it wraps.

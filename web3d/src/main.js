@@ -21,7 +21,8 @@ import { facesFor, jumboTextures, phoneHere } from "./faces.js";
 import { decodeBase64, loadEngine } from "./engine.js";
 import { createHud, hudEvents, ledgerOf } from "./hud.js";
 import { createOverlay } from "./overlay.js";
-import { dailySeed, loadPrefs, loadSeries, loadSitting, savePrefs, saveSeries, saveSitting, withUrl } from "./prefs.js";
+import { badgeText, badgeTitle, badgesShown } from "./badges.js";
+import { badgesOn, dailySeed, loadPrefs, loadSeries, loadSitting, savePrefs, saveSeries, saveSitting, withUrl } from "./prefs.js";
 import { recordGame, seriesLine } from "./series.js";
 import { createScene } from "./scene.js";
 import { trackers } from "./scorebug.js";
@@ -67,6 +68,7 @@ async function main() {
   let hint = null; // the hint for this turn, if hints are on
   let hintKey = null; // the position it is for
   let logOpen = false;
+  let badgeFrom = null; // the state the cards are moving from (badges.js)
 
   const stage = createScene(document.getElementById("stage"), {
     table: chooseSurface({ chosen: prefs.surface, saved: null }),
@@ -120,6 +122,7 @@ async function main() {
     view: () => ({ ...sel, zones: stage.portrait ? ZONES_PORTRAIT : ZONES, revealed: replay?.revealed ?? null }),
     decorate,
     rested: () => {
+      badgeFrom = state; // from here, a move starts from this table
       placeBadges();
       overlay.trackers(trackers(state));
       show();
@@ -140,6 +143,8 @@ async function main() {
     onNext: () => advance(engine.send("next").state),
     onNewGame: () => newGame(),
     onReplay: (what) => replayDo(what),
+    // A badge tapped is its build tapped.
+    onBadge: (id) => tapped(director.placement().find((m) => m.item === id) ?? null),
     later: (ms, fn) => director.at(ms, fn, "linger"),
   });
 
@@ -187,6 +192,7 @@ async function main() {
       if (name === "speed") director.setSpeed(value);
       if (name === "surface") stage.setSurface(chooseSurface({ chosen: value, saved: null }));
       if (name === "faces") showFaces(value);
+      if (name === "buildValues" || name === "tutorial") placeBadges();
       if (name === "match") {
         series = { format: value, you: 0, them: 0, counted: [] };
         saveSeries(store, series);
@@ -210,6 +216,7 @@ async function main() {
       overlay.hush();
       dialogue.stop();
       lastMove = null;
+      badgeFrom = state;
       state = sent.state;
       sel = EMPTY;
       director.advance(state);
@@ -226,6 +233,7 @@ async function main() {
     // the cards from where they were, the score and the talk as they are.
     again: () => {
       if (!lastMove || replay || director.busy()) return;
+      badgeFrom = lastMove.before;
       director.again(lastMove.before, lastMove.after);
       show();
     },
@@ -242,6 +250,7 @@ async function main() {
   // opening deal waits for the house rules to be agreed aloud.
   function newGame({ seed = randomSeed(), watch = false } = {}) {
     replay = null;
+    badgeFrom = null;
     lastMove = null;
     director.cancelTimed();
     watchStep = false; // a step pending was cancelled with the rest (review T2)
@@ -301,7 +310,7 @@ async function main() {
     state = next;
     sel = EMPTY;
     offer = null;
-    overlay.placeBadges([]);
+    badgeFrom = before;
     const timing = director.advance(state);
     playScore(before.events.length, timing);
     talk(state, before.events.length, timing);
@@ -359,6 +368,7 @@ async function main() {
   let replay = null; // { record, revealed, at, k, playing }
   let replayStepping = false;
   function settleOn(next) {
+    badgeFrom = null;
     director.cancelTimed();
     replayStepping = false; // a step pending went with the rest (as review T2)
     lastMove = null; // nothing to see again across a replay (S5)
@@ -483,20 +493,25 @@ async function main() {
     }
   }
 
-  // A badge just above each build's top card, once the cards are still.
+  // A badge on the top right corner of each build's top card (clear of the
+  // indices, which are top left and bottom right), with the build values on (or
+  // the tutorial): drawn with every frame, following the card, and kept
+  // through every move that leaves its build alone (badges.js).
   function placeBadges() {
-    if (director.busy()) return overlay.placeBadges([]);
+    if (!state || !badgesOn(prefs)) return overlay.placeBadges([]);
+    const whose = state.watching ? { you: "South's", them: "North's" } : undefined;
     const list = [];
-    for (const item of state.table) {
-      if (!item.build) continue;
+    for (const item of badgesShown(badgeFrom ?? state, state, director.busy())) {
       const top = director.meshOf(item.cards[item.cards.length - 1].card);
       if (!top) continue;
-      const at = director.toScreen(top.position.clone().add(new Vector3(0, 0, -CARD.height / 2 - 1)));
-      list.push({ ...item.build, ...at });
+      const corner = new Vector3(CARD.width / 2 - 0.5, CARD.height / 2 - 0.5, CARD.thickness / 2);
+      const at = director.toScreen(corner.applyQuaternion(top.quaternion).add(top.position));
+      list.push({ id: item.id, text: badgeText(item.build), title: badgeTitle(item, whose), ...at });
     }
     overlay.placeBadges(list);
   }
   window.addEventListener("resize", placeBadges);
+  stage.onRender = placeBadges;
 
   // ---- phones ------------------------------------------------------------
 

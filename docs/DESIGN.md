@@ -555,7 +555,9 @@ shipped apps (§7.6).
   reasons.
 - **Build labels.** A big value badge, the controller's colour on the rim,
   and a lock on multiple builds, which can never be raised (review §7.6
-  item 1).
+  item 1). *As built: a white number on a dark disc, the same for both
+  players (its title names the owner), a setting that the tutorial turns
+  on; play-testing asked for it to stay in view through the moves.*
 - **Live trackers** with the clinch lines: cards towards 27, spades towards 7,
   aces, the Casinos and sweeps. This meets the need behind the Reddit question
   "Is it allowed to stack or track your spades separately so you can see if

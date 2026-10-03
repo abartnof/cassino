@@ -53,7 +53,9 @@ export function createScene(
   // the way to `target`, which they ease toward.
   let strips = { ...STRIPS };
   let target = { ...STRIPS };
-  const stage = { portrait: false, onReframe: null };
+  // `onRender`: called after each frame drawn (the page's build badges
+  // follow the cards by it).
+  const stage = { portrait: false, onReframe: null, onRender: null };
   // Place the eye for this window: upright, or across. Explicit eye, at and
   // fov (from the page's query, for tuning) win.
   function frame(aspect) {
@@ -165,6 +167,7 @@ export function createScene(
   function render() {
     renderer.render(scene, camera);
     frames += 1;
+    stage.onRender?.();
   }
 
   resize();

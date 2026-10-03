@@ -2,7 +2,7 @@
 // fail, the URL's overrides, and the daily deal.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DEFAULTS, SKILLS, dailySeed, loadPrefs, savePrefs, loadSitting, saveSitting, withUrl } from "../src/prefs.js";
+import { DEFAULTS, SKILLS, badgesOn, dailySeed, loadPrefs, savePrefs, loadSitting, saveSitting, withUrl } from "../src/prefs.js";
 
 function memory() {
   const items = new Map();
@@ -56,6 +56,16 @@ test("sweeps are off by default; the old default kept before then is not a choic
   assert.equal(withUrl(DEFAULTS, new URLSearchParams("sweeps")).rules.sweeps, true);
 });
 
+test("build values: off by default, kept when chosen, and always on with the tutorial", () => {
+  assert.equal(DEFAULTS.buildValues, false);
+  assert.equal(badgesOn({ ...DEFAULTS, tutorial: false }), false);
+  assert.equal(badgesOn({ ...DEFAULTS, tutorial: true }), true);
+  assert.equal(badgesOn({ ...DEFAULTS, tutorial: false, buildValues: true }), true);
+  const store = memory();
+  savePrefs(store, { ...DEFAULTS, buildValues: true });
+  assert.equal(loadPrefs(store).buildValues, true);
+});
+
 test("the skill dial runs from 1 to 4 in halves", () => {
   assert.deepEqual(SKILLS.map((s) => s.value), [1, 1.5, 2, 2.5, 3, 3.5, 4]);
   assert.ok(SKILLS.every((s) => s.words.length > 0));
@@ -65,6 +75,7 @@ test("the URL overrides what is kept, for tests and shared links", () => {
   const url = new URLSearchParams("game=royal&aces14&nosweeps&skill=1.5&speed=6");
   const p = withUrl(DEFAULTS, url);
   assert.equal(withUrl(DEFAULTS, new URLSearchParams("tutorial=0")).tutorial, false);
+  assert.equal(withUrl(DEFAULTS, new URLSearchParams("values")).buildValues, true);
   assert.deepEqual(p.rules, { game: "royal", aces14: true, sweeps: false });
   assert.equal(p.skill, 1.5);
   assert.equal(p.speed, 6);

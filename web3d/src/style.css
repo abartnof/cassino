@@ -148,25 +148,32 @@ html, body {
   inset: 0;
   pointer-events: none;
 }
+/* A build's value: a white number on a dark disc, ringed in white and
+   outlined dark, as an inked cel is, so it reads on any table. It takes a
+   tap as its build does, and its title tells the build's cards. */
 .badge {
   position: absolute;
   transform: translate(-50%, -50%);
-  min-width: 28px;
-  padding: 2px 8px;
-  border-radius: 14px;
-  text-align: center;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
+  box-sizing: border-box;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 7px;
+  display: grid;
+  place-items: center;
+  border: 2.5px solid #fff;
+  border-radius: 999px;
+  background: #1b1f24;
   color: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-.badge.you {
-  background: var(--cassino-you);
-  color: var(--cassino-on-you);
-}
-.badge.them {
-  background: var(--cassino-them);
-  color: var(--cassino-on-them);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  box-shadow:
+    0 0 0 1.5px #1b1f24,
+    0 2px 5px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 /* The trackers: small tallies that wrap (in the aids' panel, under the

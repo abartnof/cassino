@@ -15,7 +15,7 @@ import "@material/web/chips/chip-set.js";
 
 // `later(ms, fn)` runs `fn` after `ms` on the table's clock (director.at),
 // so a box lingers as long as the table runs, and holds when it is held.
-export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () => {}, later = (ms, fn) => setTimeout(fn, ms) }) {
+export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () => {}, onBadge = () => {}, later = (ms, fn) => setTimeout(fn, ms) }) {
   root.innerHTML = `
     <div class="badges"></div>
     <div class="afloat"></div>
@@ -105,19 +105,32 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
     replayButton.hidden = busy || replay || state.prompt !== "over" || state.watching;
   }
 
-  // A badge over each build: its value ("8", "8s" for a multiple build),
-  // in its controller's colour, at a point on the screen.
+  // A badge over each build: its value ("8", "8s" for a multiple build) at
+  // a point on the screen, its title saying whose and of what. Placed every
+  // frame the table is drawn, so each is kept by its item's id and moved.
+  const placed = new Map();
   function placeBadges(list) {
-    badges.replaceChildren(
-      ...list.map(({ value, multiple, controller, x, y }) => {
-        const badge = document.createElement("div");
-        badge.className = `badge ${controller}`;
-        badge.textContent = multiple ? `${value}s` : `${value}`;
-        badge.style.left = `${x}px`;
-        badge.style.top = `${y}px`;
-        return badge;
-      }),
-    );
+    const keep = new Set();
+    for (const { id, text, title, x, y } of list) {
+      keep.add(id);
+      let badge = placed.get(id);
+      if (!badge) {
+        badge = document.createElement("div");
+        badge.className = "badge";
+        badge.addEventListener("click", () => onBadge(id));
+        placed.set(id, badge);
+        badges.append(badge);
+      }
+      if (badge.textContent !== text) badge.textContent = text;
+      if (badge.title !== title) badge.title = title;
+      badge.style.left = `${x}px`;
+      badge.style.top = `${y}px`;
+    }
+    for (const [id, badge] of placed) {
+      if (keep.has(id)) continue;
+      badge.remove();
+      placed.delete(id);
+    }
   }
 
   // ---- the aids' panel ----------------------------------------------------

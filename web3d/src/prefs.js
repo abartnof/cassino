@@ -27,6 +27,9 @@ export const DEFAULTS = Object.freeze({
   aids: Object.freeze({ hints: false, explain: false, play_forced: false }),
   undo: false,
   trackers: true,
+  // A badge with its value over each build, always in view; always on while
+  // the tutorial is (badgesOn).
+  buildValues: false,
   unseen: false,
   sweepWarning: false,
   // The tutorial: its pages open by themselves, each once (`seen`).
@@ -96,11 +99,17 @@ export function loadPrefs(store) {
     aids: Object.fromEntries(Object.entries(DEFAULTS.aids).map(([k, v]) => [k, isBool(aids[k]) ? aids[k] : v])),
     undo: isBool(kept.undo) ? kept.undo : DEFAULTS.undo,
     trackers: isBool(kept.trackers) ? kept.trackers : DEFAULTS.trackers,
+    buildValues: isBool(kept.buildValues) ? kept.buildValues : DEFAULTS.buildValues,
     unseen: isBool(kept.unseen) ? kept.unseen : DEFAULTS.unseen,
     sweepWarning: isBool(kept.sweepWarning) ? kept.sweepWarning : DEFAULTS.sweepWarning,
     tutorial: isBool(kept.tutorial) ? kept.tutorial : DEFAULTS.tutorial,
     seen: Array.isArray(kept.seen) ? kept.seen.filter((k) => typeof k === "string") : [],
   };
+}
+
+// Whether the builds' badges show: chosen, or the tutorial on.
+export function badgesOn(prefs) {
+  return Boolean(prefs.buildValues || prefs.tutorial);
 }
 
 export function savePrefs(store, prefs) {
@@ -121,6 +130,7 @@ export function withUrl(prefs, params) {
   if (params.has("table")) out.surface = params.get("table");
   if (["auto", "classic", "jumbo"].includes(params.get("faces"))) out.faces = params.get("faces");
   if (params.has("tutorial")) out.tutorial = params.get("tutorial") !== "0";
+  if (params.has("values")) out.buildValues = params.get("values") !== "0";
   return out;
 }
 

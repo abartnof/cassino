@@ -61,6 +61,14 @@ test("the zones hold what the state says", () => {
   assert.equal(count("their-pile"), 19);
 });
 
+test("a build shows each covered card's whole corner index, and a strip of its face", () => {
+  // The classic faces' index (rank over suit) reaches 0.85 cm in from the
+  // left edge and 1.9 cm down from the top, measured on the art.
+  const index = { across: 0.85, down: 1.9 };
+  assert.ok(ZONES.stack.dx >= index.across + 0.5, "the left strip shows the index and some of the face");
+  assert.ok(ZONES.stack.dz >= index.down, "the top strip shows the rank and the suit");
+});
+
 test("a build is a stack in the order laid, the last on top and each index showing", () => {
   const s = state({ hand: ["8S"], table: [[5, ["5C", "3D"], { value: 8, multiple: false, controller: "you" }]], holds: 1, undealt: 0, piles: [24, 24] });
   const [first, second] = ["5C", "3D"].map((c) => layout(s).find((x) => x.code === c));

@@ -15,7 +15,7 @@ import "@material/web/select/select-option.js";
 import "@material/web/switch/switch.js";
 import "@material/web/labs/segmentedbutton/outlined-segmented-button.js";
 import "@material/web/labs/segmentedbuttonset/outlined-segmented-button-set.js";
-import { DEFAULTS, SKILLS, SPEEDS } from "./prefs.js";
+import { DEFAULTS, SKILLS, SPEEDS, badgesOn } from "./prefs.js";
 import { PATTERNS } from "./surfaces.js";
 
 // Simple stroked icons, piquet's, drawn for its page.
@@ -83,6 +83,7 @@ const AIDS = [
 const PAGE_AIDS = [
   ["tutorial", "Tutorial", "Its pages open by themselves the first time each idea comes up. The question mark has them at any time"],
   ["trackers", "Trackers", "Each player's captures under their score: cards, spades, aces, the Casinos, sweeps"],
+  ["buildValues", "Build values", "A badge with each build's value, always in view. Always on while the tutorial is"],
   ["unseen", "Cards still out", "Which aces and Casinos, and how many spades, you have not seen"],
   ["sweepWarning", "Sweep warning", "Say when a single card would clear the table"],
   ["undo", "Undo", "Allow taking back a move"],
@@ -280,6 +281,10 @@ export function createChrome(root, on) {
     // the table review's T14).
     for (const s of settings.querySelectorAll("md-switch[data-aid]")) s.selected = Boolean(state?.watching ? prefs.aids[s.dataset.aid] : (state?.aids?.[s.dataset.aid] ?? prefs.aids[s.dataset.aid]));
     for (const s of settings.querySelectorAll("md-switch[data-pref]")) s.selected = Boolean(prefs[s.dataset.pref]);
+    // The tutorial shows the builds' values: the switch holds on with it.
+    const values = settings.querySelector('md-switch[data-pref="buildValues"]');
+    values.selected = badgesOn(prefs);
+    values.disabled = Boolean(prefs.tutorial);
     speed.value = String(prefs.speed);
     surface.value = prefs.surface;
     faces.value = prefs.faces;

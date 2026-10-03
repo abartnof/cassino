@@ -241,6 +241,56 @@ def check_count(page, s, failures):
         failures.append(f"hand {s['hand_number']}: the HUD's ledger has {hud['hands']} hands, {counted} were counted")
 
 
+def check_badges(browser, failures):
+    """The build values on: a build's badge stays in view while the cards
+    move for a move that leaves it alone, and none shows with them off."""
+    page = open_page(browser, "seed=1&skill=1&values", calm=True)
+    for _ in range(30):
+        settle(page)
+        s = page.evaluate("window.cassino3d.state()")
+        if s["prompt"] != "play":
+            continue
+        builds = [i for i in s["table"] if i.get("build")]
+        trails = [m for m in s["moves"] if m.startswith("trail")]
+        move = trails[0] if builds and trails else (sorted([m for m in s["moves"] if m.startswith("build")], key=lambda m: -len(m.split())) or s["moves"])[0]
+        played = move.split()[1].split("=")[0] if move.split()[0] != "build" else move.split()[2]
+        click_card(page, played)
+        settle(page)
+        items = {c["card"]: i["id"] for i in s["table"] for c in i["cards"]}
+        for item in {items[code] for code in table_cards(move)}:
+            code = next(c for c, i in items.items() if i == item)
+            click_card(page, code)
+            settle(page)
+        # Pressed, then looked at frame by frame while the trail moves (the
+        # badges are placed as each frame is drawn), until it lands.
+        samples = page.evaluate(f"""() => new Promise((done) => {{
+            document.querySelector('md-assist-chip[data-move="{move}"]').click();
+            const seen = [];
+            const look = () => {{
+                const busy = window.cassino3d.busy();
+                if (busy) seen.push(document.querySelectorAll('.badge').length);
+                if (busy || seen.length === 0 && performance.now() - t0 < 500) requestAnimationFrame(look);
+                else done(seen);
+            }};
+            const t0 = performance.now();
+            requestAnimationFrame(look);
+        }})""")
+        if builds and trails:
+            if not samples:
+                failures.append("the trail beside a build did not move")
+            elif min(samples) < len(builds):
+                failures.append(f"a build's badge went out of view while a trail moved: {samples}, {len(builds)} builds")
+            break
+    else:
+        failures.append("no build to watch the badges of")
+    page.context.close()
+    page = open_page(browser, "seed=1&skill=1&values=0", calm=True)
+    settle(page)
+    if page.locator(".badge").count():
+        failures.append("badges shown with the build values off")
+    page.context.close()
+
+
 def check_tutorial(browser, failures):
     """The tutorial: the introduction as the game begins, holding the table;
     then, playing on, a page of the teaching ladder at its moment; and the
@@ -547,6 +597,7 @@ def main() -> int:
         # The gather and the sweep, frame by frame (seeds found to open with
         # them: a pair and a sum taken with 9C; all four cards with 10C).
         check_settings(browser, failures)
+        check_badges(browser, failures)
         check_tutorial(browser, failures)
         check_phone(browser, failures)
         page = open_page(browser, "seed=11&skill=4&manual", calm=True)
