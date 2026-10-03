@@ -10,6 +10,8 @@ use crate::cards::Card;
 use crate::moves::Move;
 use crate::observation::View;
 use crate::rng::Rng;
+use crate::rules::Rules;
+use crate::table::Table;
 use crate::worth::Worth;
 
 pub trait Agent {
@@ -50,16 +52,22 @@ pub struct GreedyAgent;
 impl GreedyAgent {
     /// What a move banks at once: the cards it wins, and a sweep.
     pub fn immediate(view: &View, mv: &Move) -> Worth {
-        match *mv {
-            Move::Capture { card, taken, .. } => {
-                let mut w = Worth::of_cards(taken.with(card));
-                if view.rules.sweeps && taken == view.table.cards() {
-                    w += Worth::sweep();
-                }
-                w
+        immediate_worth(&view.rules, &view.table, mv)
+    }
+}
+
+/// What `mv` banks at once on `table`: the cards it wins, and a sweep when
+/// sweeps score. Nothing for a trail or a build.
+pub fn immediate_worth(rules: &Rules, table: &Table, mv: &Move) -> Worth {
+    match *mv {
+        Move::Capture { card, taken, .. } => {
+            let mut w = Worth::of_cards(taken.with(card));
+            if rules.sweeps && taken == table.cards() {
+                w += Worth::sweep();
             }
-            _ => Worth::default(),
+            w
         }
+        _ => Worth::default(),
     }
 }
 
@@ -106,7 +114,7 @@ impl Agent for GreedyAgent {
 }
 
 /// The highest level of opponent.
-pub const TOP: u8 = 2;
+pub const TOP: u8 = 3;
 
 /// The opponent at `level` (1 to [`TOP`]), drawing any choices it makes at
 /// random from `rng`.
@@ -114,6 +122,7 @@ pub fn by_level(level: u8, rng: Rng) -> Box<dyn Agent> {
     match level {
         1 => Box::new(RandomAgent::new(rng)),
         2 => Box::new(GreedyAgent),
+        3 => Box::new(crate::counter::CounterAgent::new(rng)),
         _ => panic!("no level {level}: 1 to {TOP}"),
     }
 }
@@ -123,6 +132,7 @@ pub fn describe(level: u8) -> &'static str {
     match level {
         1 => "plays any legal card",
         2 => "takes the best capture in sight, and never builds",
+        3 => "remembers every card and looks one move ahead",
         _ => "",
     }
 }
@@ -208,6 +218,7 @@ mod tests {
         }
         assert_eq!(by_level(1, Rng::seeded(1)).name(), "legal");
         assert_eq!(by_level(2, Rng::seeded(1)).name(), "greedy");
+        assert_eq!(by_level(3, Rng::seeded(1)).name(), "counter");
     }
 
     #[test]

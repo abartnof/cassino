@@ -5,6 +5,7 @@
 
 pub mod agents;
 pub mod cards;
+pub mod counter;
 pub mod game;
 pub mod hand;
 pub mod moves;
