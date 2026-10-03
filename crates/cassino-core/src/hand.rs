@@ -88,6 +88,32 @@ impl<'a> IntoIterator for &'a Events {
     }
 }
 
+/// What each deal of a hand gave, from its dealer and shuffled deck, in
+/// pagat's order (`Hand::deal_round`): `[south, north, table]` for each of
+/// the six deals. For the replay after a game, never during one.
+pub fn deals_of(dealer: Seat, deck: &[Card; 52]) -> Vec<[CardSet; 3]> {
+    let elder = dealer.other();
+    let mut at = 0;
+    let mut take = |n: usize| {
+        let cards: CardSet = deck[at..at + n].iter().copied().collect();
+        at += n;
+        cards
+    };
+    let mut out = Vec::with_capacity(6);
+    for deal in 0..6 {
+        let mut d = [CardSet::EMPTY; 3];
+        for _ in 0..2 {
+            d[elder.index()] |= take(2);
+            if deal == 0 {
+                d[2] |= take(2);
+            }
+            d[dealer.index()] |= take(2);
+        }
+        out.push(d);
+    }
+    out
+}
+
 /// One hand of Cassino.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Hand {
@@ -185,6 +211,11 @@ impl Hand {
 
     pub fn hand_of(&self, seat: Seat) -> CardSet {
         self.hands[seat.index()]
+    }
+
+    /// The shuffled deck the hand is dealt from.
+    pub fn deck(&self) -> &[Card; 52] {
+        &self.deck
     }
 
     pub fn pile(&self, seat: Seat) -> CardSet {
@@ -777,5 +808,43 @@ mod tests {
         fn is_copy<T: Copy>() {}
         is_copy::<Hand>();
         is_copy::<Events>();
+    }
+    #[test]
+    fn the_deals_of_a_hand_are_what_was_dealt() {
+        for seed in 0..6 {
+            let rules = Rules::CLASSIC;
+            let mut rng = Rng::stream(seed, 7);
+            let mut deck = pack();
+            rng.shuffle(&mut deck);
+            let dealer = if seed % 2 == 0 {
+                Seat::South
+            } else {
+                Seat::North
+            };
+            let deals = deals_of(dealer, &deck);
+            let (mut hand, _) = Hand::deal(rules, dealer, deck);
+            assert_eq!(hand.table().loose, deals[0][2]);
+            let mut all = CardSet::EMPTY;
+            for d in &deals {
+                for part in d {
+                    assert!(all.is_disjoint(*part));
+                    all |= *part;
+                }
+            }
+            assert_eq!(all.len(), 52, "every card dealt once");
+            // Played out, each deal gives each player what it says.
+            for (k, d) in deals.iter().enumerate() {
+                for seat in Seat::BOTH {
+                    assert_eq!(hand.hand_of(seat), d[seat.index()], "seed {seed} deal {k}");
+                }
+                // Each deal is eight cards played, four each.
+                for _ in 0..8 {
+                    let seat = hand.to_move().expect("a player to move");
+                    let mv =
+                        moves::candidate_moves(&rules, hand.table(), hand.hand_of(seat), seat)[0];
+                    hand.play(&mv).unwrap();
+                }
+            }
+        }
     }
 }

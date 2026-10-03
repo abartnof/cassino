@@ -589,6 +589,32 @@ fn leaves_sweep(view: &cassino_core::observation::View, mv: &Move) -> String {
         .unwrap_or_else(|| "null".into())
 }
 
+/// Every hand's deals once the game is over, as JSON, or `null` while it is
+/// played: `{hands: [{hand, dealer, deals: [{you, them, table}]}]}`, for the
+/// replay with both hands face up.
+pub fn reveal(session: &Session) -> String {
+    let Some(hands) = session.deals() else {
+        return "null".into();
+    };
+    let hands = hands.iter().enumerate().map(|(i, (dealer, deals))| {
+        object(&[
+            ("hand", (i + 1).to_string()),
+            ("dealer", whose(*dealer == Seat::South)),
+            (
+                "deals",
+                list(deals.iter().map(|d| {
+                    object(&[
+                        ("you", cards(d[Seat::South.index()])),
+                        ("them", cards(d[Seat::North.index()])),
+                        ("table", cards(d[2])),
+                    ])
+                })),
+            ),
+        ])
+    });
+    object(&[("hands", list(hands))])
+}
+
 /// The hint, as JSON, or `null` when hints are off or it is not the
 /// person's turn.
 pub fn hint(session: &Session) -> String {
@@ -655,7 +681,7 @@ pub fn scripted(game: u32, aces_fourteen: u32, sweeps: u32, skill_milli: u32, se
 // ---------------------------------------------------------------------------
 
 pub mod ffi {
-    use super::{hint, offer, sit_down, state, watch, Session};
+    use super::{hint, offer, reveal, sit_down, state, watch, Session};
     use std::cell::RefCell;
 
     thread_local! {
@@ -760,6 +786,17 @@ pub mod ffi {
     #[no_mangle]
     pub extern "C" fn cassino_hint() {
         let json = SESSION.with(|s| s.borrow().as_ref().map_or_else(|| "null".to_string(), hint));
+        OUT.with(|out| *out.borrow_mut() = json.into_bytes());
+    }
+
+    /// Renders every hand's deals, once the game is over (`null` before).
+    #[no_mangle]
+    pub extern "C" fn cassino_reveal() {
+        let json = SESSION.with(|s| {
+            s.borrow()
+                .as_ref()
+                .map_or_else(|| "null".to_string(), reveal)
+        });
         OUT.with(|out| *out.borrow_mut() = json.into_bytes());
     }
 
@@ -1085,6 +1122,61 @@ mod tests {
             }
         }
         assert!(warned > 0, "some move left a sweep open");
+    }
+
+    #[test]
+    fn the_deals_are_revealed_only_once_the_game_is_over() {
+        let mut s = sit_down(0, 0, 1, 2000, 9);
+        assert_eq!(reveal(&s), "null", "never while the game is played");
+        while s.prompt() != Prompt::Over {
+            let command = if s.prompt() == Prompt::NextHand {
+                "next".to_string()
+            } else {
+                s.candidates()[0].to_string()
+            };
+            assert!(s.send(&command));
+            if s.prompt() != Prompt::Over {
+                assert_eq!(reveal(&s), "null");
+            }
+        }
+        let v = parse(&reveal(&s));
+        let hands = v["hands"].as_array().unwrap();
+        assert_eq!(hands.len(), s.game().history().len());
+        // Your cards in each deal are what the dealt events said you got.
+        let dealt: Vec<CardSet> = s
+            .events()
+            .iter()
+            .filter_map(|e| match e.kind {
+                EventKind::Dealt { yours, .. } => Some(yours),
+                _ => None,
+            })
+            .collect();
+        let revealed: Vec<CardSet> = hands
+            .iter()
+            .flat_map(|h| h["deals"].as_array().unwrap().iter())
+            .map(|d| {
+                d["you"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|c| c["card"].as_str().unwrap().parse::<Card>().unwrap())
+                    .collect()
+            })
+            .collect();
+        assert_eq!(revealed, dealt);
+        for h in hands {
+            let mut all = CardSet::EMPTY;
+            for d in h["deals"].as_array().unwrap() {
+                for part in ["you", "them", "table"] {
+                    for c in d[part].as_array().unwrap() {
+                        let card: Card = c["card"].as_str().unwrap().parse().unwrap();
+                        assert!(!all.contains(card));
+                        all = all.with(card);
+                    }
+                }
+            }
+            assert_eq!(all.len(), 52);
+        }
     }
 
     #[test]

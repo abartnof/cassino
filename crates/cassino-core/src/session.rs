@@ -951,6 +951,16 @@ impl Session {
         &self.items
     }
 
+    /// Every hand's deals, with its dealer, once the game is over: for the
+    /// replay with both hands face up ("fairness you can check",
+    /// DESIGN.md §12.3). `None` while the game is played.
+    pub fn deals(&self) -> Option<Vec<(Seat, Vec<[CardSet; 3]>)>> {
+        if self.prompt() != Prompt::Over {
+            return None;
+        }
+        self.game.deals()
+    }
+
     /// The top rung's move in the person's place, when the hints aid is on
     /// and it is their turn.
     pub fn hint(&self) -> Option<advice::Hint> {

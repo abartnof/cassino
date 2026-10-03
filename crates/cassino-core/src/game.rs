@@ -5,7 +5,7 @@
 //! from another, so the same seed gives the same cards natively and in
 //! WebAssembly, however the players think.
 
-use crate::cards::{pack, Card};
+use crate::cards::{pack, Card, CardSet};
 use crate::hand::{Events, Hand};
 use crate::moves::{Illegal, Move};
 use crate::rng::{purpose, Rng};
@@ -75,6 +75,8 @@ pub struct Game {
     scores: [u32; 2],
     history: Vec<Breakdown>,
     winner: Option<Seat>,
+    /// Each hand's dealer and shuffled deck, for the replay after the game.
+    decks: Vec<(Seat, [Card; 52])>,
 }
 
 impl Game {
@@ -83,7 +85,8 @@ impl Game {
     pub fn new(rules: Rules, seed: u64) -> (Game, Events) {
         let (cuts, dealer) = cut_for_deal(&mut Rng::stream(seed, purpose::CUT));
         let mut deals = Rng::stream(seed, purpose::DEALS);
-        let (hand, events) = Hand::deal(rules, dealer, shuffle(&mut deals));
+        let deck = shuffle(&mut deals);
+        let (hand, events) = Hand::deal(rules, dealer, deck);
         let game = Game {
             rules,
             deals,
@@ -93,6 +96,7 @@ impl Game {
             scores: [0, 0],
             history: Vec::new(),
             winner: None,
+            decks: vec![(dealer, deck)],
         };
         (game, events)
     }
@@ -148,9 +152,24 @@ impl Game {
             return None;
         }
         let dealer = self.hand.dealer().other();
-        let (hand, events) = Hand::deal(self.rules, dealer, shuffle(&mut self.deals));
+        let deck = shuffle(&mut self.deals);
+        let (hand, events) = Hand::deal(self.rules, dealer, deck);
         self.hand = hand;
+        self.decks.push((dealer, deck));
         Some(events)
+    }
+
+    /// Every hand's deals, `[south, north, table]` each, with its dealer:
+    /// what was dealt to whom, for the replay with both hands face up. Only
+    /// once the game is over, so nothing can be seen early.
+    pub fn deals(&self) -> Option<Vec<(Seat, Vec<[CardSet; 3]>)>> {
+        self.winner?;
+        Some(
+            self.decks
+                .iter()
+                .map(|(dealer, deck)| (*dealer, crate::hand::deals_of(*dealer, deck)))
+                .collect(),
+        )
     }
 }
 
