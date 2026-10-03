@@ -224,11 +224,22 @@ over the cards sorted by value.
 - **Filter**: the controller's obligation (rule 7), checked on the resulting
   position.
 
-**The full move list is large.** Partial captures and optional absorptions
-mean a crowded table can offer dozens of legal moves for one card. That is
-right for the rules, and the reference generator checks it exactly. But it is
-not what the opponent should search, or what a person should scroll through.
-Two views sit on top:
+**The full move list can be astronomical.** Partial captures and optional
+absorptions mean every union of disjoint groups is a separate legal move. On
+an ordinary table that is a few dozen; on a crowded one (a hand where every
+card is trailed grows the table to 40 cards) it ran a test out of memory. So
+there are two generators:
+
+- **`legal_moves`** is exhaustive, verified against the reference, and
+  exponential. It is for tests and small positions.
+- **`candidate_moves`** is what agents, hints and clients use. It is exactly
+  `legal_moves` whenever no value has more than 12 groups on the table,
+  which is over 85% of random positions and nearly every real one. Beyond
+  that it offers every trail, each group alone, greedy maximal packings and
+  the smallest partial builds, all legal. A person may still make any legal
+  move, which `check` accepts.
+
+On top of them:
 
 - **The opponent's candidates.** Dominated moves are pruned. A capture that
   takes a strict subset of another capture with the same card is usually
@@ -339,20 +350,27 @@ state`. The engine runs the opponent between the person's decisions.
 
 As in piquet and bezique, skill is a **ladder of named capabilities**. Each
 rung is a concept a player could be taught, and each must beat the rung below
-it in a mirrored measurement or be deleted. A first draft, to be measured:
+it in a mirrored measurement or be deleted. As measured
+(`measurements/README.md`):
 
-1. **Legal.** Any legal move.
-2. **Greedy.** Takes the most valuable capture it can see, and otherwise
-   trails its least valuable card. In the review's simulations this beats
-   random by a wide margin [07-S40].
-3. **Builder.** Adds building and the classical maxims that held up in the
-   review's tests (§9.4): trail court cards first, then low cards; keep a
-   court card back for the end; protect builds.
-4. **Counter.** Remembers every card. It uses the build inference (§9), and
-   does a one-ply look-ahead against sampled hands. The review's version
-   "beats greedy in 91% of games" [07-S40].
-5. **Searcher.** Determinized search over sampled worlds for deals 1–5, and
-   the exact solver for the last deal (§11.2).
+1. **Legal** (`agents.rs`). Any candidate move, uniformly.
+2. **Greedy** (`agents.rs`). Takes the capture worth most and otherwise
+   trails its least valuable card; never builds. It beats legal by 11.8
+   points a mirrored pair of hands.
+3. **Counter** (`counter.rs`). Remembers every card, samples the opponent's
+   possible hands (honouring what their builds announce), and weighs each
+   move by what it banks, what the opponent's best reply would take back,
+   and what a surviving build of its own will take next turn. It prices the
+   sweep a stolen lone build would be. It beats greedy by 6.8 points a pair
+   in Classic (9.0 in Royal) and wins about 88% of games.
+4. **Searcher** (`search.rs`). In the last deal, the exact solver
+   (§11.2). Before it, sampled worlds, each candidate played out to the end
+   of the current deal by the counter for both seats (§11.3). It beats the
+   counter by 3.7 points a pair in Classic (6.4 in Royal) and wins about 76%
+   of games.
+
+One proposed design failed measurement and was deleted: playouts to the end
+of the *hand* with greedy players were no clearly better than the counter.
 
 **The player scales the opponent up and down.** The skill setting runs from
 the bottom rung to the top. Between rungs, **erraticism** gives finer steps:
@@ -378,11 +396,22 @@ given both totals, through the end-of-hand scoring.
 ### 11.3 Earlier deals
 
 Deals 1–5 have hidden cards: the opponent's hand, and the order of the stock.
-The searcher samples worlds consistent with the view (§9), searches each with
-a depth limit and an evaluation, and averages. The known weaknesses of this
-approach (strategy fusion, the optimizer's curse) are measured, not assumed
-away. The review's PIMC results are policy-conditional starting points [07
-§6.12].
+The searcher samples 32 worlds consistent with its view (§9), narrows the
+candidates to the counter's best eight, and plays each candidate out in every
+world **to the end of the current deal**, with the counter (on four samples)
+for both seats. It scores the worth each side banked on the way.
+
+- **The same worlds, and the same playout luck within each, serve every
+  candidate**, so the comparison is not drowned by sampling noise.
+- **The horizon is the deal, not the hand.** Playouts to the end of the hand
+  measured no better than the counter: a hand's final margin swings by
+  several points, too much for 32 worlds to separate moves whose true
+  difference is a fraction of a point. The deal is short, and a build never
+  survives its end, so what was banked is a fair score.
+- **The counter is the playout policy.** It beat greedy in that role,
+  confirmed on fresh seeds (greedy never builds, so its playouts misjudge
+  builds).
+- Cost: about 3 ms a decision natively.
 
 ### 11.4 Measurement
 

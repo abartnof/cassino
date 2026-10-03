@@ -6,27 +6,31 @@
 
 ## Where we are
 
-**2026-10-03: the rules engine is complete for both games, and playable in a
-terminal.** 133 tests, all passing (`bin/gate`).
+**2026-10-03: the rules engine is complete for both games, with a measured
+four-rung opponent and a skill dial, playable and watchable in a terminal.**
+160 tests, all passing (`bin/gate`).
 
 - **The engine** (`crates/cassino-core`): cards, values for Classic, Royal
   and Royal with aces at 14, the table and builds, move generation, checking
   with a reason for every refusal, the hand (six deals, residue, events) and
   the game (cut, hands to 21). All twenty worked examples of `RULES.md` are
-  fixtures. The fast move generator matches a brute-force, literal reading of
-  the rules on 1,200 synthetic and 4,000+ real-play positions, and planted
-  bugs are caught.
-- **Observation**: the `View`, with a leak test that redistributes the
-  hidden cards and requires an identical view.
-- **Agents and measurement**: rung 1 (legal) and rung 2 (greedy);
-  mirrored pairs; sequential runs with O'Brien–Fleming boundaries, whose
-  false-alarm rate a self-test holds at 5%.
-- **The terminal client** (`cargo run -p cassino-cli`): play by number or
-  by typed move, or `--watch` two computer players, with the calls, the
-  count and the dealer's "Last." narrated. It runs on `Game` directly for
-  now and moves onto the session in milestone 8.
-- Earlier, on the same day: the literature review was finished, and
-  `docs/RULES.md`, `docs/DESIGN.md` and this plan were written.
+  fixtures. The exhaustive generator matches a brute-force, literal reading
+  of the rules on 1,200 synthetic and 4,000+ real-play positions, and planted
+  bugs are caught. The bounded candidate generator equals it on ordinary
+  tables and stays fast on crowded ones.
+- **Observation**: the `View`, with a leak test; sampled worlds that honour
+  the card each opponent build announces.
+- **The opponent**: legal, greedy, counter, searcher (the exact last-deal
+  solver plus deal-length playouts in sampled worlds). Each rung beats the
+  one below, clearly, in sequential mirrored measurements
+  (`measurements/README.md`). The skill dial runs from 1 to 4, with one-rung
+  erratic slips between rungs, and skill 3.5 measures between 3 and 4.
+- **Measurement**: mirrored pairs, sequential with O'Brien–Fleming
+  boundaries (`cargo run --release --bin measure`); `bench` for speeds.
+- **The terminal client** (`cargo run -p cassino-cli`): play by number or by
+  typed move at `--skill 1-4`, or `--watch` two computer players, with the
+  calls, the count and the dealer's "Last." narrated. It runs on `Game`
+  directly for now and moves onto the session in milestone 8.
 
 ## Settled decisions
 
@@ -55,14 +59,14 @@ terminal.** 133 tests, all passing (`bin/gate`).
   `apply`, the `RULES.md` fixtures, narration groups.
 - [x] 3. **The hand and the game**: dealing, the residue, events, scoring, the
   game to 21. Invariants over random play.
-- [ ] 4. **Agents and measurement**: random and greedy agents and the
-  mirrored, sequential harness are done; the measurement binary and the
-  anatomy of a hand remain.
+- [x] 4. **Agents and measurement**: random and greedy agents, the mirrored,
+  sequential harness and the measurement binary. (The anatomy of a hand is
+  still to come.)
 - [x] 5. **The terminal client**: play against the computer, and **watch
   mode**.
-- [ ] 6. **Observation and the stronger rungs**: the view and its leak test,
-  the build inference, counting, the exact last-deal solver, sampled search.
-  Each rung measured.
+- [x] 6. **Observation and the stronger rungs**: the view and its leak test,
+  the build inference, counting, the exact last-deal solver, sampled search,
+  the skill dial. Each rung measured.
 - [ ] 7. **Explanations and hints**: the category evaluation, `explain`,
   `hint`, `options` with reasons, sweep warnings, the unseen-card summary.
 - [ ] 8. **The session, the protocol and the wasm module**:
