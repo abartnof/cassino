@@ -15,7 +15,7 @@ Sources:
 - **Us**: the United States Playing Card Company's rules (1898): Royal's aces "either ones or fourteens, as the player may elect" [03-S24]
 - **St**: the Standard Hoyle (1904): sweeps "should be scored, as there is fine play made in the scoring of them" [03-S25]
 - **H**: the mid-century Hoyles (1945-1952): "Building eight", "Building sevens", the dealer's announcement of the last cards, "Sweeps do not count" [03-S35][03-S36]
-- **Lo**: Long's Short Rules (1792), the first: "The Majority of the Cards", "The Majority of the Spades", a player who "clears the Board", "take up as many as you can with one Card" [03-S1]
+- **Lo**: Long's Short Rules (1792), the first: "The Majority of the Cards", "The Majority of the Spades", "The Deuce of Spades, which is Little Cassino", a player who "clears the Board", "take up as many as you can with one Card" [03-S1]
 - **Po**: the mock-heroic poem Casino (1793): "the Great Casino nam'd", and the deuce of spades, "Casino's younger Brother" [04-S21]
 - **P**: pagat.com, the modern rules: "building 5", "last", a "clear", "cash", the Good Ten and the Good Two [02-S1]
 - **M**: the modern rules on the web: "calling 5", "calling 8" [05-S77][05-S78]
@@ -358,6 +358,7 @@ Sources:
 |  | I'll have the good two. | P |
 |  | Little Casino, and a point. | T |
 |  | That's a point. | T |
+|  | Casino's younger brother! | Po |
 | `take-many` | A good haul. | T |
 |  | That's a grab! | Fi |
 |  | Taken in, every one. | F |
@@ -455,19 +456,19 @@ Sources:
 | `count-cards-tie` | The cards are a tie. | Ha |
 |  | Twenty-six each. | T |
 |  | A tie on the cards. | T |
-|  | Cards tie: no points. | T |
+|  | No points for cards. | T |
 |  | Twenty-six all. | T |
 | `count-cards` | Cards. | Fe |
 |  | Most cards. | T |
 |  | The cards. | T |
 |  | Card majority! | Hu |
-|  | The majority of the cards. | Lo |
+|  | Majority of cards. | Lo |
 |  | Three for cards. | T |
 | `count-spades` | Spades. | Fe |
 |  | Most spades. | T |
 |  | The spades. | T |
 |  | Spade majority! | Hu |
-|  | The majority of the spades. | Lo |
+|  | Majority of spades. | Lo |
 |  | One for spades. | T |
 | `count-big-casino` | Big Casino. | T |
 |  | Ten of diamonds. | Fe |
@@ -478,69 +479,69 @@ Sources:
 | `count-little-casino` | Little Casino. | T |
 |  | Deuce. | Fe |
 |  | The little one. | Sw |
-|  | Casino's younger brother. | Po |
+|  | The deuce of spades. | Lo |
 |  | The good two. | P |
-|  | One for Little Casino. | T |
+|  | Little Casino, one. | T |
 | `count-ace-S` | The ace of spades. | T |
 |  | Ace of spades. | T |
 |  | An ace. | Fe |
-|  | And the ace of spades. | T |
-|  | One for the ace of spades. | T |
+|  | And an ace. | T |
+|  | The spade ace. | T |
 | `count-ace-H` | The ace of hearts. | T |
 |  | Ace of hearts. | T |
 |  | An ace. | Fe |
-|  | And the ace of hearts. | T |
-|  | One for the ace of hearts. | T |
+|  | And an ace. | T |
+|  | The heart ace. | T |
 | `count-ace-D` | The ace of diamonds. | T |
 |  | Ace of diamonds. | T |
 |  | An ace. | Fe |
-|  | And the ace of diamonds. | T |
-|  | One for the ace of diamonds. | T |
+|  | And an ace. | T |
+|  | The diamond ace. | T |
 | `count-ace-C` | The ace of clubs. | T |
 |  | Ace of clubs. | T |
 |  | An ace. | Fe |
-|  | And the ace of clubs. | T |
-|  | One for the ace of clubs. | T |
+|  | And an ace. | T |
+|  | The club ace. | T |
 | `count-sweeps-1` | A sweep. | T |
 |  | One sweep. | T |
 |  | And a sweep. | T |
 |  | One for the sweep. | T |
-|  | A sweep, and a point. | T |
+|  | Sweeps: one. | T |
 | `count-sweeps-2` | Two sweeps. | T |
 |  | Sweeps: two. | T |
 |  | And two sweeps. | T |
 |  | Two for sweeps. | T |
-|  | Two sweeps, two points. | T |
+|  | That's two sweeps. | T |
 | `count-sweeps-3` | Three sweeps. | T |
 |  | Sweeps: three. | T |
 |  | And three sweeps. | T |
 |  | Three for sweeps. | T |
-|  | Three sweeps, three points. | T |
+|  | That's three sweeps. | T |
 | `count-sweeps-4` | Four sweeps. | T |
 |  | Sweeps: four. | T |
 |  | And four sweeps. | T |
 |  | Four for sweeps. | T |
-|  | Four sweeps, four points. | T |
+|  | That's four sweeps. | T |
 | `count-sweeps-5` | Five sweeps. | T |
 |  | Sweeps: five. | T |
 |  | And five sweeps. | T |
 |  | Five for sweeps. | T |
-|  | Five sweeps, five points. | T |
+|  | That's five sweeps. | T |
 | `count-sweeps-6` | Six sweeps. | T |
 |  | Sweeps: six. | T |
 |  | And six sweeps. | T |
 |  | Six for sweeps. | T |
-|  | Six sweeps, six points. | T |
+|  | That's six sweeps. | T |
 | `count-sweeps-7` | Seven sweeps. | T |
 |  | Sweeps: seven. | T |
 |  | And seven sweeps. | T |
 |  | Seven for sweeps. | T |
-|  | Seven sweeps, seven points. | T |
+|  | That's seven sweeps. | T |
 | `count-sweeps-8` | Eight sweeps. | T |
 |  | Sweeps: eight. | T |
 |  | And eight sweeps. | T |
 |  | Eight for sweeps. | T |
-|  | Eight sweeps, eight points. | T |
+|  | That's eight sweeps. | T |
 | `game-won` | And I am out. | N |
 |  | That's game. | T |
 |  | Game. Twenty-one. | T |

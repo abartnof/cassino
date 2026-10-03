@@ -45,6 +45,10 @@ test("everything is said in several ways, the frequent moments in many", () => {
     assert.equal(new Set(texts).size, texts.length, `${group} says something twice`);
     if (texts.length < (FREQUENT.test(group) ? 5 : 3)) few.push(`${group}: ${texts.length}`);
     for (const text of texts) assert.ok(text.length <= 44, `too long for a balloon: "${text}"`);
+    // The count is written a line a second (choreography's countLine), and
+    // its chant keeps up only if its lines are short: none longer than "The
+    // ace of diamonds.", the longest it had.
+    if (group.startsWith("count-")) for (const text of texts) assert.ok(text.length <= 20, `too long for the chant: "${text}"`);
   }
   assert.deepEqual(few, []);
 });

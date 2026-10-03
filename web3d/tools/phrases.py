@@ -41,8 +41,8 @@ SOURCES = {
     "H": "the mid-century Hoyles (1945-1952): \"Building eight\", \"Building sevens\", the dealer's "
          "announcement of the last cards, \"Sweeps do not count\" [03-S35][03-S36]",
     "Lo": "Long's Short Rules (1792), the first: \"The Majority of the Cards\", \"The Majority of "
-          "the Spades\", a player who \"clears the Board\", \"take up as many as you can with one "
-          "Card\" [03-S1]",
+          "the Spades\", \"The Deuce of Spades, which is Little Cassino\", a player who \"clears the "
+          "Board\", \"take up as many as you can with one Card\" [03-S1]",
     "Po": "the mock-heroic poem Casino (1793): \"the Great Casino nam'd\", and the deuce of "
           "spades, \"Casino's younger Brother\" [04-S21]",
     "P": "pagat.com, the modern rules: \"building 5\", \"last\", a \"clear\", \"cash\", the Good Ten "
@@ -161,7 +161,8 @@ def phrase_groups():
         ("The big one's mine.", "Sw"), ("I'll have the good ten.", "P"), ("That's two points.", "T"),
         ("Big Casino comes to me.", "T"))
     add("take-little-casino", ("I have Little Casino.", "Sw"), ("The little one's mine.", "Sw"),
-        ("I'll have the good two.", "P"), ("Little Casino, and a point.", "T"), ("That's a point.", "T"))
+        ("I'll have the good two.", "P"), ("Little Casino, and a point.", "T"), ("That's a point.", "T"),
+        ("Casino's younger brother!", "Po"))
     add("take-many", ("A good haul.", "T"), ("That's a grab!", "Fi"), ("Taken in, every one.", "F"),
         ("As many as I can, with one card.", "Lo"), ("In they all come.", "T"), ("Quite a pile.", "T"))
     add("clinch-cards", ("That's the cards.", "P"), ("Twenty-seven. The cards are mine.", "T"),
@@ -180,27 +181,27 @@ def phrase_groups():
         ("The last trick is mine.", "F"), ("Last to take, so the rest are mine.", "T"), ("Those come to me.", "T"))
 
     # The count, chanted line by line, each line by whoever wins it; a tie on
-    # the cards, which scores nobody, said first.
+    # the cards, which scores nobody, said first. The count is written a line
+    # a second, so its words are short, or the chant falls behind the sheet.
     add("count-cards-tie", ("The cards are a tie.", "Ha"), ("Twenty-six each.", "T"), ("A tie on the cards.", "T"),
-        ("Cards tie: no points.", "T"), ("Twenty-six all.", "T"))
+        ("No points for cards.", "T"), ("Twenty-six all.", "T"))
     add("count-cards", ("Cards.", "Fe"), ("Most cards.", "T"), ("The cards.", "T"), ("Card majority!", "Hu"),
-        ("The majority of the cards.", "Lo"), ("Three for cards.", "T"))
+        ("Majority of cards.", "Lo"), ("Three for cards.", "T"))
     add("count-spades", ("Spades.", "Fe"), ("Most spades.", "T"), ("The spades.", "T"), ("Spade majority!", "Hu"),
-        ("The majority of the spades.", "Lo"), ("One for spades.", "T"))
+        ("Majority of spades.", "Lo"), ("One for spades.", "T"))
     add("count-big-casino", ("Big Casino.", "T"), ("Ten of diamonds.", "Fe"), ("The big one.", "Sw"),
         ("Great Casino.", "Po"), ("The good ten.", "P"), ("Two for Big Casino.", "T"))
     add("count-little-casino", ("Little Casino.", "T"), ("Deuce.", "Fe"), ("The little one.", "Sw"),
-        ("Casino's younger brother.", "Po"), ("The good two.", "P"), ("One for Little Casino.", "T"))
+        ("The deuce of spades.", "Lo"), ("The good two.", "P"), ("Little Casino, one.", "T"))
     for s, name in SUITS.items():
         add(f"count-ace-{s}", (f"The ace of {name}.", "T"), (f"Ace of {name}.", "T"), ("An ace.", "Fe"),
-            (f"And the ace of {name}.", "T"), (f"One for the ace of {name}.", "T"))
+            ("And an ace.", "T"), (f"The {name[:-1]} ace.", "T"))
     add("count-sweeps-1", ("A sweep.", "T"), ("One sweep.", "T"), ("And a sweep.", "T"),
-        ("One for the sweep.", "T"), ("A sweep, and a point.", "T"))
+        ("One for the sweep.", "T"), ("Sweeps: one.", "T"))
     for n in range(2, 9):
         w = NUMBERS[n]
         add(f"count-sweeps-{n}", (f"{w.capitalize()} sweeps.", "T"), (f"Sweeps: {w}.", "T"),
-            (f"And {w} sweeps.", "T"), (f"{w.capitalize()} for sweeps.", "T"),
-            (f"{w.capitalize()} sweeps, {w} points.", "T"))
+            (f"And {w} sweeps.", "T"), (f"{w.capitalize()} for sweeps.", "T"), (f"That's {w} sweeps.", "T"))
 
     # The game: the winner claims it, the other is gracious.
     add("game-won", ("And I am out.", "N"), ("That's game.", "T"), ("Game. Twenty-one.", "T"),
