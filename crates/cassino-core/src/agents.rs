@@ -105,6 +105,28 @@ impl Agent for GreedyAgent {
     }
 }
 
+/// The highest level of opponent.
+pub const TOP: u8 = 2;
+
+/// The opponent at `level` (1 to [`TOP`]), drawing any choices it makes at
+/// random from `rng`.
+pub fn by_level(level: u8, rng: Rng) -> Box<dyn Agent> {
+    match level {
+        1 => Box::new(RandomAgent::new(rng)),
+        2 => Box::new(GreedyAgent),
+        _ => panic!("no level {level}: 1 to {TOP}"),
+    }
+}
+
+/// What the opponent at `level` does, in a phrase for a menu.
+pub fn describe(level: u8) -> &'static str {
+    match level {
+        1 => "plays any legal card",
+        2 => "takes the best capture in sight, and never builds",
+        _ => "",
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -175,6 +197,17 @@ mod tests {
         // capture, build nor trail: the 9 must take the build.
         let v = view(Rules::CLASSIC, "[9 @S: 6S 3H]", "9C 4D");
         assert_eq!(GreedyAgent.choose(&v), mv("take 9C 6S 3H"));
+    }
+
+    #[test]
+    fn every_level_has_an_agent_and_a_description() {
+        for level in 1..=TOP {
+            let agent = by_level(level, Rng::seeded(1));
+            assert!(!agent.name().is_empty());
+            assert!(!describe(level).is_empty());
+        }
+        assert_eq!(by_level(1, Rng::seeded(1)).name(), "legal");
+        assert_eq!(by_level(2, Rng::seeded(1)).name(), "greedy");
     }
 
     #[test]
