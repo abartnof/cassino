@@ -159,6 +159,78 @@ def check_count(page, s, failures):
         failures.append(f"hand {s['hand_number']}: the score shows {scores}, the game is {s['scores']}")
 
 
+def check_settings(browser, failures):
+    """The settings: hints and undo turned on in the dialog; a hint shown,
+    lit and chosen; a move taken back; the sitting kept across a reload;
+    the credits; and a watched game that plays itself."""
+    page = open_page(browser, "skill=2&speed=8")
+    settle(page)
+    page.locator("md-icon-button.settings-open").click()
+    page.wait_for_timeout(1500)
+    shot(page, "t6-settings")
+    page.locator('md-switch[data-aid="hints"]').click()
+    page.locator('md-switch[data-pref="undo"]').click()
+    page.locator(".settings-dialog md-filled-tonal-button", has_text="Done").click()
+    page.wait_for_timeout(1200)
+    settle(page)
+    s = page.evaluate("window.cassino3d.state()")
+    if s["prompt"] != "play":
+        failures.append(f"settings: expected your turn, found {s['prompt']}")
+        return
+    hint = page.evaluate("window.cassino3d.hint()")
+    if not hint or page.locator(".aid-line").inner_text().strip() != f"Hint: {hint['advice']}.":
+        failures.append(f"settings: no hint shown with hints on: {hint}")
+        return
+    shot(page, "t6-hint")
+    page.locator("md-icon-button.hint").click()
+    settle(page)
+    chip = page.locator(f'md-assist-chip[data-move="{hint["move"]}"]')
+    if chip.count() != 1:
+        failures.append(f"settings: the hint's move {hint['move']} is not offered once chosen: {page.evaluate('window.cassino3d.chips()')}")
+        return
+    before = len(s["events"])
+    chip.click()
+    settle(page)
+    page.locator("md-icon-button.undo").click()
+    settle(page)
+    if len(page.evaluate("window.cassino3d.state()")["events"]) != before:
+        failures.append("settings: undo did not take the move back")
+    # A move made, then the page reloaded: the sitting comes back.
+    s = page.evaluate("window.cassino3d.state()")
+    page.locator(f'md-assist-chip[data-move="{hint["move"]}"]').count()
+    page.evaluate("(m) => window.cassino3d.engine.send(m)", s["moves"][0])
+    made = page.evaluate("window.cassino3d.engine.state()")
+    page.evaluate("() => localStorage.setItem('cassino.sitting', window.cassino3d.engine.state().saved)")
+    page.reload()
+    page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
+    settle(page)
+    back = page.evaluate("window.cassino3d.state()")
+    if back["saved"] != made["saved"]:
+        failures.append("settings: the sitting did not come back after a reload")
+    if not page.evaluate("window.cassino3d.prefs()")["aids"]["hints"]:
+        failures.append("settings: hints were not kept across the reload")
+    page.locator("md-icon-button.settings-open").click()
+    page.wait_for_timeout(400)
+    page.locator(".settings-dialog md-text-button", has_text="Credits").click()
+    page.wait_for_timeout(400)
+    if "CC BY-SA 3.0" not in page.locator(".credits-dialog").inner_text():
+        failures.append("settings: the credits do not credit the card back's licence")
+    shot(page, "t6-credits")
+    if page.errors:
+        failures.append(f"settings: console errors {page.errors[:5]}")
+    # Watched: it plays itself.
+    page = open_page(browser, "watch&speed=30&seed=5&manual")
+    start = len(page.evaluate("window.cassino3d.state()")["events"])
+    for _ in range(80):  # the table's clock, moved by hand
+        page.evaluate("window.cassino3d.tick(400)")
+    w = page.evaluate("window.cassino3d.state()")
+    if not w["watching"] or len(w["events"]) <= start + 10:
+        failures.append(f"watch: the game did not play itself ({start} -> {len(w['events'])} events)")
+    shot(page, "t6-watch")
+    if page.errors:
+        failures.append(f"watch: console errors {page.errors[:5]}")
+
+
 def strip(page, name, move, frames=16, step=150):
     """A capture chosen by clicking on a still table, then played out frame
     by frame on the table's own clock, the frames tiled into one image.
@@ -190,7 +262,10 @@ def strip(page, name, move, frames=16, step=150):
 def main() -> int:
     failures = []
     with sync_playwright() as p:
-        browser = p.chromium.launch(executable_path="/usr/bin/chromium", args=["--use-angle=swiftshader"])
+        # Software compositing: SwiftShader's GPU compositing of the
+        # table's canvas starves CSS animations (the boxes' pop-in, the
+        # dialogs) of frames in a headless browser.
+        browser = p.chromium.launch(executable_path="/usr/bin/chromium", args=["--use-angle=swiftshader", "--disable-gpu-compositing"])
         page = open_page(browser, "seed=7&speed=6")
         settle(page)
         check_drawn(page, failures, "at the start")
@@ -218,7 +293,8 @@ def main() -> int:
             failures.append(f"console errors: {page.errors[:5]}")
         # The gather and the sweep, frame by frame (seeds found to open with
         # them: a pair and a sum taken with 9C; all four cards with 10C).
-        page = open_page(browser, "seed=11&manual", calm=True)
+        check_settings(browser, failures)
+        page = open_page(browser, "seed=11&skill=4&manual", calm=True)
         page.evaluate("window.cassino3d.tick(2500)")
         shot(page, "t5-talk")  # the house rules agreed before the deal
         said = page.evaluate("window.cassino3d.said()")
@@ -227,8 +303,8 @@ def main() -> int:
         page.evaluate("window.cassino3d.tick(3000)")
         strip(page, "t3-deal", None, frames=12, step=180)
         for name, query, move in [
-            ("t3-gather", "seed=11&manual", "take 9C 6S 3H 9H"),
-            ("t3-sweep", "seed=112&manual", "take TC 2S 3S 7D 8C"),
+            ("t3-gather", "seed=11&skill=4&manual", "take 9C 6S 3H 9H"),
+            ("t3-sweep", "seed=112&skill=4&manual", "take TC 2S 3S 7D 8C"),
         ]:
             page = open_page(browser, query)
             strip(page, name, move)

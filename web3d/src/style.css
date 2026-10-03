@@ -300,7 +300,7 @@ html, body {
    §12.2, Foster's third way of keeping the score). */
 .sheet {
   position: fixed;
-  top: 12px;
+  top: 72px;
   right: 12px;
   width: 17rem;
   max-height: calc(100vh - 200px);
@@ -474,4 +474,171 @@ html, body {
   .dialogue.leaving {
     animation: none;
   }
+}
+
+/* ---- the chrome: the top bar, settings, credits ------------------------------
+   After piquet's: a pill of icon buttons at the top right, Material dialogs. */
+.surface {
+  box-sizing: border-box;
+  pointer-events: auto;
+  background: var(--md-sys-color-surface-container-low);
+  border-radius: 20px;
+  box-shadow: var(--elevation-2);
+}
+.bar {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px 4px 16px;
+  border-radius: 28px;
+}
+.brand {
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  margin-right: 6px;
+  color: var(--md-sys-color-primary);
+}
+.icon {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.icon.symbol {
+  fill: currentColor;
+  stroke: none;
+  color: var(--md-sys-color-on-surface-variant);
+  padding: 3px 0;
+}
+md-dialog {
+  pointer-events: auto;
+  --md-dialog-container-color: var(--md-sys-color-surface-container-high);
+  max-width: min(560px, calc(100vw - 32px));
+}
+.settings h3 {
+  font-size: 14px;
+  margin: 16px 0 6px;
+  color: var(--md-sys-color-primary);
+}
+.settings h3:first-child {
+  margin-top: 0;
+}
+.setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+  cursor: pointer;
+}
+.setting-text {
+  display: grid;
+}
+.setting-title {
+  font-weight: 600;
+}
+.setting-words {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 13px;
+}
+.selects,
+.starts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+}
+.selects md-outlined-select {
+  flex: 1 1 14rem;
+}
+.game-set {
+  width: 100%;
+  margin-bottom: 4px;
+}
+.credit {
+  margin-bottom: 12px;
+}
+.credit p {
+  margin: 2px 0;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* The aids' line under the prompt, the cards still out under the score, and
+   the trackers turned off. */
+.controls .aid-line {
+  flex-basis: 100%;
+  margin: 0;
+  text-align: center;
+  color: #00616a;
+  font-weight: 600;
+}
+.out {
+  position: fixed;
+  top: 148px;
+  left: 12px;
+  margin: 0;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  background: var(--md-sys-color-surface-container-lowest);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.14);
+  color: var(--md-sys-color-on-surface-variant);
+}
+.bug.no-tally .tally {
+  display: none;
+}
+
+/* The game log: what has happened, down the left under the score. */
+.game-log {
+  position: fixed;
+  top: 184px;
+  left: 12px;
+  width: 19rem;
+  max-height: calc(100vh - 340px);
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: var(--md-sys-color-surface-container-lowest);
+  box-shadow: var(--elevation-2);
+  pointer-events: auto;
+  font-size: 13px;
+}
+.game-log h2 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.game-log ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.entry {
+  display: grid;
+  gap: 2px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+.entry .note-line {
+  padding-left: 10px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.entry.verdict .said {
+  color: #8c1d18;
+  font-weight: 600;
+}
+.entry.dealt,
+.entry.hand_ends,
+.entry.game_ends {
+  font-weight: 600;
 }

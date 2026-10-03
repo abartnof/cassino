@@ -208,7 +208,18 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   residue; the count chanted line by line with the sheet; the game's end.
   Boxes linger on the table's clock.
 - **T6. Settings and aids.** Everything in §8's settings; watch mode; hints
-  and explanations; undo; saved sittings across a reload.
+  and explanations; undo; saved sittings across a reload. **Done**: the top
+  bar (new game, hint, undo, the game log, help, settings); the settings
+  dialog (`chrome.js`: the next game's rules and your opponent's skill in
+  halves, New game, Today's deal, Watch a game; the engine's aids and the
+  page's: trackers, cards still out, the sweep warning, undo; animation
+  speed and the table top); the credits on screen; preferences and the
+  sitting kept in the browser (`prefs.js`, node-tested, surviving storage
+  that fails); a hint shown under the prompt with its cards lit, chosen by
+  the hint button; the game log with each move's notes (the explain aid);
+  a watched game that plays itself. The director now draws only when a
+  card moved. The browser test turns hints and undo on in the dialog, takes
+  a hinted move back, reloads, reads the credits and watches a game.
 - **T7. Teaching.** Tutorial and help pages.
 - **T8. Phones.** Piquet's phone framing and Large Text faces, fitted to a
   middle that grows.

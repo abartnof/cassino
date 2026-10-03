@@ -62,3 +62,18 @@ test("each table card is picked, addable, refused or idle", () => {
   assert.equal(itemState("2C", offer, sel), "idle");
   assert.equal(itemState("4D", null, EMPTY), "idle");
 });
+
+import { selectionOf } from "../src/selection.js";
+
+test("a move's text as the selection that makes it, a build picked whole", () => {
+  const table = [
+    { id: 1, cards: [{ card: "3C" }, { card: "6D" }], build: { value: 9 } },
+    { id: 2, cards: [{ card: "9D" }] },
+    { id: 3, cards: [{ card: "5C" }] },
+  ];
+  assert.deepEqual(selectionOf("trail 7H", table), { chosen: "7H", picked: [] });
+  assert.deepEqual(selectionOf("take 9S 3C 6D 9D", table), { chosen: "9S", picked: ["3C", "6D", "9D"] });
+  assert.deepEqual(selectionOf("take AC=14 KS AH", table), { chosen: "AC", picked: ["KS", "AH"] });
+  assert.deepEqual(selectionOf("build 8 3D 5C", table), { chosen: "3D", picked: ["5C"] });
+  assert.deepEqual(selectionOf("build 11 2S on 3C 9D", table), { chosen: "2S", picked: ["3C", "6D", "9D"] });
+});

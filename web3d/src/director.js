@@ -89,8 +89,8 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
       const held = due(now());
       if (!held) {
         const busy = timeline.tick(now());
-        if (busy || moving) stage.render();
-        moving = busy;
+        if (timeline.moved || moving) stage.render();
+        moving = false;
         if ((busy || queue.length) && !manual) {
           requestAnimationFrame(frame);
           return;
@@ -216,6 +216,10 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
       return m ? meshes[m.id] : null;
     },
     busy: () => timeline.busy(),
+    // The animation's speed, for what moves from now on.
+    setSpeed(v) {
+      timeline.speed = v;
+    },
     idle: () => timeline.idle(),
     // Straight onto the table: a new game, a sitting restored. With
     // `dealt`, from the pack squared at the dealer's left, and the opening

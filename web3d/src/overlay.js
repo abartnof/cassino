@@ -23,6 +23,8 @@ export function createOverlay(root, { onChip, onNext, onNewGame, later = (ms, fn
       <div class="period"></div>
       <div class="side them"><span class="side-name">Your opponent</span><span class="side-num"><span class="n">0</span></span><span class="goal-bar"><i></i></span><ul class="tally" aria-label="Your opponent's captures"></ul></div>
     </header>
+    <p class="out" hidden></p>
+    <aside class="game-log" hidden aria-label="The game log"><h2>Game log</h2><ol></ol></aside>
     <aside class="sheet" hidden aria-live="polite">
       <h2 class="sheet-title"></h2>
       <ol class="count-lines"></ol>
@@ -32,6 +34,7 @@ export function createOverlay(root, { onChip, onNext, onNewGame, later = (ms, fn
     <section class="controls">
       <p class="prompt" aria-live="polite"></p>
       <p class="note" aria-live="polite"></p>
+      <p class="aid-line" hidden></p>
       <div class="sum" hidden></div>
       <md-chip-set class="chips"></md-chip-set>
       <md-filled-button class="next" hidden>Next hand</md-filled-button>
@@ -45,13 +48,17 @@ export function createOverlay(root, { onChip, onNext, onNewGame, later = (ms, fn
   const next = $(".next");
   const again = $(".again");
   const badges = $(".badges");
+  const aidLine = $(".aid-line");
   next.addEventListener("click", () => onNext());
   again.addEventListener("click", () => onNewGame());
 
   // The prompt, the chips and the buttons, for a state and the offer for the
   // person's selection (null if nothing is chosen).
-  function show({ state, chips, sum: total, message, busy = false }) {
+  // `aid`: a line the aids add under the prompt (a hint, the sweep warning).
+  function show({ state, chips, sum: total, message, busy = false, aid = null }) {
     prompt.textContent = busy ? "" : promptText(state, chips);
+    aidLine.hidden = busy || !aid;
+    aidLine.textContent = aid ?? "";
     note.textContent = message ?? "";
     sum.hidden = total == null;
     sum.textContent = total == null ? "" : `Sum ${total}`;
@@ -127,6 +134,43 @@ export function createOverlay(root, { onChip, onNext, onNewGame, later = (ms, fn
         }),
       );
     }
+  }
+
+  // Who sits where: "You" and "Your opponent", or South and North when two
+  // computer players are watched.
+  function names({ you, them }) {
+    sides.you.node.querySelector(".side-name").textContent = you;
+    sides.them.node.querySelector(".side-name").textContent = them;
+  }
+
+  // The cards you have not seen (the counting aid), or nothing.
+  const outLine = $(".out");
+  function unseen(u) {
+    outLine.hidden = !u;
+    if (!u) return;
+    const parts = [];
+    if (u.aces.length) parts.push(u.aces.map((c) => c.label).join(" "));
+    if (u.big_casino) parts.push("10♦");
+    if (u.little_casino) parts.push("2♠");
+    parts.push(`${u.spades} spade${u.spades === 1 ? "" : "s"}`, `${u.cards} card${u.cards === 1 ? "" : "s"}`);
+    outLine.textContent = `Still out: ${parts.join(" · ")}`;
+  }
+
+  // ---- the game log ------------------------------------------------------
+
+  const logPanel = $(".game-log");
+  const logList = logPanel.querySelector("ol");
+  // What has happened, newest last, each with its notes (the explain aid);
+  // a verdict on a move of yours stands out.
+  function log(entries, open) {
+    logPanel.hidden = !open;
+    if (!open) return;
+    logList.replaceChildren(
+      ...entries.map((e) =>
+        el("li", { class: `entry ${e.kind}${e.who ? ` ${e.who}` : ""}` }, el("span", { class: "said" }, e.text), ...e.notes.map((n) => el("span", { class: "note-line" }, n))),
+      ),
+    );
+    logList.lastElementChild?.scrollIntoView({ block: "end" });
   }
 
   // ---- the score sheet ---------------------------------------------------
@@ -206,6 +250,10 @@ export function createOverlay(root, { onChip, onNext, onNewGame, later = (ms, fn
     said: () => [...afloat.querySelectorAll(".dialogue")].map((d) => ({ who: d.classList.contains("you") ? "you" : "them", words: d.textContent })),
     score,
     trackers,
+    names,
+    unseen,
+    log,
+    showTrackers: (on) => root.querySelector(".bug").classList.toggle("no-tally", !on),
     openCount,
     countLine,
     closeCount,

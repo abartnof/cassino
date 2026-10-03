@@ -1,4 +1,6 @@
-// From piquet web3d/src/timeline.js @ 254cb3c.
+// From piquet web3d/src/timeline.js @ 254cb3c; cassino's change: `moved`
+// says whether the last tick moved anything, so a table whose next motion
+// has not yet begun is not drawn again for nothing.
 // The timeline: motions run against the clock.
 //
 // A motion is { target, path, delay, duration, onStart, onDone }: `path(t)`
@@ -31,9 +33,11 @@ export class Timeline {
   // anything is still to move.
   tick(now) {
     this.now = now;
+    this.moved = false;
     const landed = [];
     for (const m of this.motions) {
       if (now < m.start) continue;
+      this.moved = true;
       const t = m.length > 0 ? Math.min(1, (now - m.start) / m.length) : 1;
       this.begin(m);
       this.apply(m.target, m.path(t));

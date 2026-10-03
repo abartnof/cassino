@@ -51,6 +51,14 @@ piquet's do. They are used through `@material/web` (below), and the colour
 tokens are piquet's, generated from one seed colour with Google's Material
 Color Utilities.
 
+The page's own icons (undo, settings, the game log, the hint) are simple
+strokes drawn for piquet's page and reused. Two come from **Material
+Symbols** (Outlined, weight 400, 24 px), by **Google**,
+<https://github.com/google/material-design-icons>, Apache License 2.0: *add*
+(the plus for a new game) and *help* (the question mark), both in the top
+bar. Their SVG paths are copied into `web3d/src/chrome.js`; no icon font is
+fetched or bundled.
+
 ## Software in the page
 
 The single-file page (`web3d/cassino3d.html`; see `docs/TABLE3D.md`) bundles

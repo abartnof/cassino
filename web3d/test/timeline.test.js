@@ -136,3 +136,16 @@ test("one card's motions finish in order: hidden as one lands, then shown as the
     assert.equal(face, "KD");
   }
 });
+
+test("a tick says whether it moved anything", () => {
+  const t = new Timeline({ apply: () => {} });
+  t.add({ target: 1, path: () => 0, delay: 100, duration: 50 }, 0);
+  t.tick(50);
+  assert.equal(t.moved, false, "waiting for its delay");
+  t.tick(120);
+  assert.equal(t.moved, true);
+  t.tick(200);
+  assert.equal(t.moved, true, "the landing moves it");
+  t.tick(300);
+  assert.equal(t.moved, false);
+});

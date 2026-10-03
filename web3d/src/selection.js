@@ -63,3 +63,23 @@ export function itemState(code, offer, sel) {
 export function whyNot(code, offer) {
   return (offer?.why_not ?? []).find((w) => w.card.card === code)?.reason ?? null;
 }
+
+// The selection that makes a move, from its command text (the hint's move,
+// shown by choosing it): the card played, then the table cards it uses, a
+// build named by one of its cards picked whole.
+export function selectionOf(move, table) {
+  const words = move.split(/\s+/);
+  const itemOf = (code) => table.find((item) => item.cards.some((c) => c.card === code));
+  const whole = (codes) => {
+    const out = [];
+    for (const code of codes) {
+      const item = itemOf(code);
+      for (const c of item ? item.cards.map((x) => x.card) : [code]) if (!out.includes(c)) out.push(c);
+    }
+    return out;
+  };
+  const card = (w) => w.split("=")[0];
+  if (words[0] === "trail") return { chosen: card(words[1]), picked: [] };
+  if (words[0] === "take") return { chosen: card(words[1]), picked: whole(words.slice(2)) };
+  return { chosen: card(words[2]), picked: whole(words.slice(3).filter((w) => w !== "on")) };
+}
