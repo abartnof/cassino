@@ -31,6 +31,24 @@ test("nothing in the bank is unkind", () => {
   assert.deepEqual(said, []);
 });
 
+// Variety (play-testing: "a lot of written dialogue in the lit review you
+// can choose from at any event"): everything is said at least three ways,
+// and what comes up again and again (the build calls, the captures and
+// clears, the count, the deal, "Last.") at least five, none twice in one
+// group and none too long for a balloon.
+const FREQUENT = /^(build|builds|raise|left|count-sweeps)-\d+$|^count-|^take-|^(sweep|cash|clinch-cards|clinch-spades|residue|last|low-deals|my-deal|your-deal|left-more)$/;
+
+test("everything is said in several ways, the frequent moments in many", () => {
+  const few = [];
+  for (const [group, keys] of Object.entries(WORDS.groups)) {
+    const texts = keys.map((k) => WORDS.texts[k]);
+    assert.equal(new Set(texts).size, texts.length, `${group} says something twice`);
+    if (texts.length < (FREQUENT.test(group) ? 5 : 3)) few.push(`${group}: ${texts.length}`);
+    for (const text of texts) assert.ok(text.length <= 44, `too long for a balloon: "${text}"`);
+  }
+  assert.deepEqual(few, []);
+});
+
 test("before the game, the house rules agreed aloud, then the cut", () => {
   const events = [{ kind: "cut", hand: 1 }, { kind: "first_dealer", hand: 1, you: true }];
   assert.deepEqual(said(speech(state(events))), ["them:sweeps-ask", "you:sweeps-yes", "them:low-deals", "them:your-deal"]);
