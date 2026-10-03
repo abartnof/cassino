@@ -37,6 +37,18 @@ export function lineLabel(line) {
   }
 }
 
+// A line of the count celebrated on the table, as the score's popup is on
+// the HUD: its words on a disc over the card it names (an ace, a Casino,
+// turned up in the count row) or over its taker's pile (most cards, most
+// spades), with its points bursting out. A sweep is celebrated as it is
+// made, so not again here.
+const CELEBRATED = { cards: "Most cards", spades: "Most spades", big_casino: "Big Casino", little_casino: "Little Casino", ace: "Ace" };
+export function celebrationOf(line) {
+  const label = CELEBRATED[line.item];
+  if (!label) return null;
+  return { label, pts: line.points, card: lineCard(line), pile: line.who };
+}
+
 // The count of the hand under way, once it is over: its `scored` event.
 export function countOf(state) {
   return (state.events ?? []).findLast((e) => e.kind === "scored" && e.hand === state.hand_number) ?? null;

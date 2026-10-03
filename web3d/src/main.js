@@ -25,7 +25,7 @@ import { badgeText, badgeTitle, badgesShown } from "./badges.js";
 import { badgesOn, choosePlay, dailySeed, loadPrefs, welcomeWanted, loadSeries, loadSitting, savePrefs, saveSeries, saveSitting, withUrl } from "./prefs.js";
 import { recordGame, seriesLine } from "./series.js";
 import { createScene } from "./scene.js";
-import { trackers } from "./scorebug.js";
+import { celebrationOf, trackers } from "./scorebug.js";
 import { EMPTY, choose, chipsOf, itemState, pick, selectionOf, selectionText, sweepWarning, valuesSaid, whyNot } from "./selection.js";
 import { chooseSurface } from "./surfaces.js";
 import { countPace, speech } from "./talk.js";
@@ -522,7 +522,39 @@ async function main() {
     for (const e of hudEvents(state, since)) {
       const ms = e.line !== undefined && count ? (count.lines[e.line] ?? (count.lines.at(-1) ?? 0) + pace) : beats[e.at];
       at(ms, () => (e.end ? hud.endHand(e.hand) : hud.score(e)));
+      // A sweep scored, celebrated on its card once it is held up.
+      if (e.cat === "sweeps") {
+        const card = state.events.slice(0, e.at).findLast((p) => p.kind === "played")?.card.card;
+        at(ms + 380 / prefs.speed, () => cheer({ label: "Sweep", pts: e.pts, card, pile: null }, true));
+      }
     }
+    // Each line of the count celebrated on the table, as it is said.
+    state.events.forEach((e, k) => {
+      if (k < since || e.kind !== "scored" || !count) return;
+      e.count.lines.forEach((line, i) => {
+        const c = celebrationOf(line);
+        if (c) at(count.lines[i], () => cheer(c));
+      });
+    });
+  }
+
+  // A celebration over its card where it lies (or, `moving`, where it is
+  // now), or over the top of its taker's pile.
+  function cheer({ label, pts, card, pile }, moving = false) {
+    let where = null;
+    if (card) {
+      const slot = director.placement().find((m) => m.code === card);
+      where = moving ? director.meshOf(card)?.position : slot?.pose.position;
+    }
+    if (!where && pile) {
+      const zone = pile === "you" ? "your-pile" : "their-pile";
+      const top = director
+        .placement()
+        .filter((m) => m.zone === zone)
+        .sort((a, b) => b.pose.position.y - a.pose.position.y)[0];
+      where = top?.pose.position;
+    }
+    if (where) overlay.celebrate({ label, pts, ...director.toScreen(where.clone()) });
   }
 
   // A badge on the top right corner of each build's top card (clear of the
@@ -760,6 +792,7 @@ async function main() {
     faces: () => director.meshes.filter((m) => m.userData.code).map((m) => m.userData.code),
     chips: () => overlay.chips(),
     said: () => overlay.said(),
+    cheers: () => overlay.cheers(),
     hud: () => ({ shown: hud.shown(), totals: hud.totals(), hands: hud.hands(), idle: hud.idle() }),
     hint: () => hint,
     selection: () => sel,

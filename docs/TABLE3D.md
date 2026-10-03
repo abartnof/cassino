@@ -214,6 +214,16 @@ Material Design 3, from piquet's shell.
   under the prompt: before a move, when a chip's move would leave your
   opponent a table to sweep (the offer's `leaves_sweep`), and otherwise
   what would clear the table now (`state.sweep_values`).
+- **Scores celebrated on the table** (play-testing asked for the HUD's
+  popups on the table too): as each line of the count is scored, a disc
+  with its words ("Big Casino", "Ace", "Most cards") pops in over the card
+  it names, turned up in the count row, or over its taker's pile, and four
+  of its points ("+2") burst out past the disc's edge, as a broadcast
+  celebrates a three-pointer; up, or down when the disc is high on the
+  screen, leaning in from a side it is near; gone in under two seconds. A
+  sweep scored is celebrated on its card as it is held up. With reduced
+  motion, the disc and its points fade in place (`scorebug.js`
+  `celebrationOf`, `overlay.js` `celebrate`).
 - **The count ritual**: at the end of a hand, the lines of `scored.count` one
   at a time in Foster's order: each ace and Casino turns up out of its
   taker's pile into a row (`layout.js` lays out a counted hand; the

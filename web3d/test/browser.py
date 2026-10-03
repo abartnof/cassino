@@ -383,6 +383,38 @@ def check_aid_toggles(browser, failures):
     phone.context.close()
 
 
+def check_cheers(browser, failures):
+    """The count celebrated on the table: a disc for each line scored, with
+    four of its points bursting out of it."""
+    page = open_page(browser, "seed=7&speed=100", calm=True)
+    made = 0
+    while True:
+        settle(page)
+        s = page.evaluate("window.cassino3d.state()")
+        if s["prompt"] != "play":
+            failures.append("no count reached to celebrate")
+            break
+        last = len(s["hand"]) == 1 and any(e["kind"] == "dealt" and e.get("last") for e in s["events"] if e["hand"] == s["hand_number"])
+        play_by_clicking(page, failures, made)
+        made += 1
+        if last:
+            seen = page.evaluate("""() => new Promise((done) => {
+                const all = new Map(); const t0 = performance.now();
+                const look = () => {
+                    for (const c of window.cassino3d.cheers()) all.set(c.label, c.bursts);
+                    if (performance.now() - t0 < 4000) setTimeout(look, 30); else done([...all]);
+                };
+                look();
+            })""")
+            labels = {label for label, _ in seen}
+            if not labels or not labels <= {"Most cards", "Most spades", "Big Casino", "Little Casino", "Ace"}:
+                failures.append(f"the count was not celebrated on the table: {seen}")
+            if any(n != 4 for _, n in seen):
+                failures.append(f"a celebration without its four bursts: {seen}")
+            break
+    page.context.close()
+
+
 def check_tutorial(browser, failures):
     """The tutorial: the introduction as the game begins, holding the table;
     then, playing on, a page of the teaching ladder at its moment; and the
@@ -693,6 +725,7 @@ def main() -> int:
         check_trackers(browser, failures)
         check_welcome(browser, failures)
         check_aid_toggles(browser, failures)
+        check_cheers(browser, failures)
         check_tutorial(browser, failures)
         check_phone(browser, failures)
         page = open_page(browser, "seed=11&skill=4&manual", calm=True)

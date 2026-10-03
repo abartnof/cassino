@@ -20,6 +20,7 @@ import { trackerTable } from "./scorebug.js";
 export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () => {}, onBadge = () => {}, onFold = () => {}, later = (ms, fn) => setTimeout(fn, ms) }) {
   root.innerHTML = `
     <div class="badges"></div>
+    <div class="cheers" aria-hidden="true"></div>
     <div class="afloat"></div>
     <div class="info"><div class="hud-slot"></div></div>
     <p class="focus-told" aria-live="polite"></p>
@@ -136,6 +137,45 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
       badge.remove();
       placed.delete(id);
     }
+  }
+
+  // ---- a score celebrated on the table -------------------------------------
+
+  // As the HUD's popup does on the score, a score is celebrated where it was
+  // won: a disc with its words over the card (or the pile), popping in, and
+  // its points bursting out past the disc's edge, four of them, as a
+  // broadcast celebrates a three-pointer. Gone in under two seconds, on the
+  // table's clock (`later`).
+  const cheers = $(".cheers");
+  const BURSTS = [
+    { angle: -150, reach: 118, rot: -14 },
+    { angle: -108, reach: 132, rot: -6 },
+    { angle: -70, reach: 128, rot: 7 },
+    { angle: -28, reach: 116, rot: 15 },
+  ];
+  function celebrate({ label, pts, x, y }) {
+    // Up, unless the disc is high on the screen (by the HUD, say): then
+    // down; and leaning in, away from a side it is near.
+    const down = y < window.innerHeight * 0.42;
+    const lean = x < 200 ? 22 : x > window.innerWidth - 200 ? -22 : 0;
+    const node = el(
+      "div",
+      { class: "cheer" },
+      el("div", { class: "cheer-disc" }, label),
+      ...BURSTS.map(({ angle, reach, rot }, k) => {
+        const burst = el("span", { class: "cheer-burst" }, `+${pts}`);
+        const a = (((down ? -angle - lean : angle + lean) * Math.PI) / 180);
+        burst.style.setProperty("--dx", `${Math.round(Math.cos(a) * reach)}px`);
+        burst.style.setProperty("--dy", `${Math.round(Math.sin(a) * reach)}px`);
+        burst.style.setProperty("--rot", `${rot}deg`);
+        burst.style.setProperty("--k", String(k));
+        return burst;
+      }),
+    );
+    node.style.left = `${x}px`;
+    node.style.top = `${y}px`;
+    cheers.append(node);
+    later(1900, () => node.remove());
   }
 
   // ---- the aids' panel ----------------------------------------------------
@@ -319,6 +359,8 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
     say,
     hush,
     tell,
+    celebrate,
+    cheers: () => [...cheers.querySelectorAll(".cheer")].map((c) => ({ label: c.querySelector(".cheer-disc").textContent, bursts: c.querySelectorAll(".cheer-burst").length })),
     trackers,
     showTrackers,
     setOpen,

@@ -856,6 +856,116 @@ html.sideways .aid-toggles {
   gap: 6px;
   padding-right: 6px;
 }
+/* A score celebrated on the table: a disc with its words over the card or
+   the pile, popping in, and its points bursting out past the disc's edge. */
+.cheers {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+.cheer {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+.cheer-disc {
+  position: absolute;
+  left: -54px;
+  top: -54px;
+  width: 108px;
+  height: 108px;
+  box-sizing: border-box;
+  padding: 10px;
+  display: grid;
+  place-items: center;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #1b1f24;
+  color: #fff;
+  box-shadow:
+    0 0 0 2px #1b1f24,
+    0 8px 18px rgba(0, 0, 0, 0.35);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+  animation:
+    cheer-in 380ms var(--spring) both,
+    cheer-out 280ms var(--ease-out) 1450ms forwards;
+}
+.cheer-burst {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  color: #ffd23f;
+  -webkit-text-stroke: 2.5px #1b1f24;
+  paint-order: stroke fill;
+  text-shadow: 0 3px 0 #1b1f24;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.3);
+  animation: cheer-burst 1100ms cubic-bezier(0.12, 0.9, 0.24, 1) forwards;
+  animation-delay: calc(160ms + var(--k) * 50ms);
+}
+@keyframes cheer-in {
+  from {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes cheer-out {
+  to {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+}
+@keyframes cheer-burst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.3);
+  }
+  10% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--rot)) scale(1.15);
+  }
+}
+@keyframes cheer-still {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  8%,
+  85% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Shown in place, faded in and out: nothing flies. */
+  .cheer-disc {
+    animation: cheer-still 1700ms linear both;
+  }
+  .cheer-burst {
+    transform: translate(calc(-50% + var(--dx) * 0.75), calc(-50% + var(--dy) * 0.75)) rotate(var(--rot));
+    animation: cheer-still 1700ms linear both;
+  }
+}
+
 /* The trackers: a column for each point, a row for each player, the value
    alone in each cell. */
 .tracker-table {

@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
-import { countLines, countOf, lineCard, lineLabel, trackerTable, trackers } from "../src/scorebug.js";
+import { celebrationOf, countLines, countOf, lineCard, lineLabel, trackerTable, trackers } from "../src/scorebug.js";
 import { loadEngine } from "../src/engine.js";
 
 const line = (item, who, points, suit = null) => ({ item, suit, who, points });
@@ -77,6 +77,15 @@ test("the trackers as a table: a column for each point, a row for each player, a
   const watched = trackerTable(trackers(state), { watching: true });
   assert.deepEqual(watched.rows.map((r) => r.name), ["South", "North"]);
   assert.match(watched.rows[1].cells[0].tip, /^North has taken 10 cards/);
+});
+
+test("a celebration on the table for each line of the count: its words, its points, where", () => {
+  assert.deepEqual(celebrationOf({ item: "big_casino", who: "you", points: 2 }), { label: "Big Casino", pts: 2, card: "TD", pile: "you" });
+  assert.deepEqual(celebrationOf({ item: "little_casino", who: "them", points: 1 }), { label: "Little Casino", pts: 1, card: "2S", pile: "them" });
+  assert.deepEqual(celebrationOf({ item: "ace", suit: "H", who: "you", points: 1 }), { label: "Ace", pts: 1, card: "AH", pile: "you" });
+  assert.deepEqual(celebrationOf({ item: "cards", who: "them", points: 3 }), { label: "Most cards", pts: 3, card: null, pile: "them" });
+  assert.deepEqual(celebrationOf({ item: "spades", who: "you", points: 1 }), { label: "Most spades", pts: 1, card: null, pile: "you" });
+  assert.equal(celebrationOf({ item: "sweeps", who: "you", points: 2 }), null, "a sweep is celebrated as it is made");
 });
 
 const WASM = new URL("../../target/wasm32-unknown-unknown/release/cassino_wasm.wasm", import.meta.url);
