@@ -704,10 +704,13 @@ impl Session {
         }
     }
 
-    /// The items of a freshly dealt table.
+    /// The items of a freshly dealt table, in the order the `dealt` event
+    /// lists them: by rank, then suit.
     fn lay_out(&mut self) {
         self.items.clear();
-        for card in self.game.hand().table().loose {
+        let mut laid: Vec<Card> = self.game.hand().table().loose.iter().collect();
+        laid.sort_by_key(|c| (c.rank(), c.suit()));
+        for card in laid {
             self.items.push(Item {
                 id: self.next_id,
                 cards: vec![card],
@@ -1235,6 +1238,29 @@ mod tests {
         assert_eq!(s.hint(), Some(h), "asked twice, the same");
         assert!(!s.send("set nonsense on"));
         assert!(!s.send("set hints maybe"));
+    }
+
+    #[test]
+    fn a_fresh_table_lies_in_the_order_the_deal_lists_it() {
+        // By rank, then suit: what the `dealt` event renders, so a client
+        // replaying the events lays the items out as the session does.
+        let mut checked = 0;
+        for seed in 0..40 {
+            let s = Session::new(seed, settings());
+            if s.events()
+                .iter()
+                .any(|e| matches!(e.kind, EventKind::Played { .. }))
+            {
+                continue; // the opponent led, and the table has changed
+            }
+            let laid: Vec<Card> = s.items().iter().map(|i| i.cards[0]).collect();
+            let mut sorted = laid.clone();
+            sorted.sort_by_key(|c| (c.rank(), c.suit()));
+            assert_eq!(laid, sorted, "seed {seed}");
+            assert_eq!(laid.len(), 4);
+            checked += 1;
+        }
+        assert!(checked >= 10, "{checked} fresh tables");
     }
 
     /// The items are the table: each card once, each build whole.

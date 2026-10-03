@@ -117,8 +117,11 @@ client cannot show more than the person at the table could know.
 **Table items** keep their `id` while they lie on the table. A build's cards
 are in the order they were laid, the last on top. A new build takes the place
 of the first loose card it was made from, and a trailed card goes to the end.
-A client animates by id: an id that disappears was captured (or absorbed into
-a build), and a new id arrived.
+A freshly dealt table's items lie in the order the `dealt` event lists its
+cards: by rank, then suit. A client animates by id: an id that disappears was
+captured (or absorbed into a build), and a new id arrived. With these rules a
+client can replay the events between two states into the tables between them
+(the 3D table's choreography does, and its tests hold it to the engine's).
 
 ### Events
 
