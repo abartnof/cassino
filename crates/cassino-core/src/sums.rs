@@ -82,7 +82,9 @@ pub fn partitions_into(rules: &Rules, set: CardSet, v: u8) -> bool {
     let Some(lowest) = set.first() else {
         return true;
     };
-    let need = v - rules.build_value(lowest).expect("valued above");
+    let Some(need) = v.checked_sub(rules.build_value(lowest).expect("valued above")) else {
+        return false;
+    };
     let rest = set.without(lowest);
     if need == 0 {
         return partitions_into(rules, rest, v);
@@ -191,6 +193,14 @@ mod tests {
             "a Classic king has no value"
         );
         assert!(partitions_into(&Rules::ROYAL, s("KS 6H 7D"), 13));
+    }
+
+    #[test]
+    fn a_card_worth_more_than_the_value_never_splits() {
+        // 5 is a multiple of 1, but a five is not a group of ones.
+        assert!(!partitions_into(&Rules::CLASSIC, s("5S"), 1));
+        assert!(!partitions_into(&Rules::CLASSIC, s("AS 9D"), 5));
+        assert!(partitions_into(&Rules::CLASSIC, s("AS AD"), 1));
     }
 
     #[test]
