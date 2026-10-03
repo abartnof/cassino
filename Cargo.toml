@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/cassino-core", "crates/cassino-cli"]
+members = ["crates/cassino-core", "crates/cassino-cli", "crates/cassino-wasm"]
 
 [workspace.package]
 version = "0.1.0"
