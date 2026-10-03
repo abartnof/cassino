@@ -308,6 +308,16 @@ def check_settings(browser, failures):
         failures.append("settings: the sitting did not come back after a reload")
     if not page.evaluate("window.cassino3d.prefs()")["aids"]["hints"]:
         failures.append("settings: hints were not kept across the reload")
+    # The game log opens at the first press, and shows what has happened
+    # (the table review's T3).
+    page.locator("md-icon-button.log-toggle").click()
+    page.wait_for_timeout(300)
+    if page.locator(".game-log").is_hidden() or page.locator(".game-log li").count() == 0:
+        failures.append("settings: the game log did not open at the first press")
+    page.locator("md-icon-button.log-toggle").click()
+    page.wait_for_timeout(300)
+    if not page.locator(".game-log").is_hidden():
+        failures.append("settings: the game log did not close at the second press")
     page.locator("md-icon-button.settings-open").click()
     page.wait_for_timeout(400)
     page.locator(".settings-dialog md-text-button", has_text="Credits").click()
@@ -326,6 +336,18 @@ def check_settings(browser, failures):
     if not w["watching"] or len(w["events"]) <= start + 10:
         failures.append(f"watch: the game did not play itself ({start} -> {len(w['events'])} events)")
     shot(page, "t6-watch")
+    # Another watched game started while this one waits between moves
+    # plays on too (the table review's T2).
+    page.locator("md-icon-button.settings-open").click()
+    page.wait_for_function("document.querySelector('.settings-dialog').open")
+    page.locator(".settings-dialog md-outlined-button.watch").click()
+    page.wait_for_function("!document.querySelector('.settings-dialog').open")
+    start = len(page.evaluate("window.cassino3d.state()")["events"])
+    for _ in range(80):
+        page.evaluate("window.cassino3d.tick(400)")
+    after = len(page.evaluate("window.cassino3d.state()")["events"])
+    if after <= start + 10:
+        failures.append(f"watch: a second watched game did not play ({start} -> {after} events)")
     if page.errors:
         failures.append(f"watch: console errors {page.errors[:5]}")
 

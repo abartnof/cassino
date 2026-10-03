@@ -95,7 +95,9 @@ export function createChrome(root, on) {
   const hint = el("md-icon-button", { class: "hint", title: "A hint", "aria-label": "A hint", onclick: () => on.hint() }, icon("hint"));
   const undo = el("md-icon-button", { class: "undo", title: "Take back your move", "aria-label": "Undo", onclick: () => on.undo() }, icon("undo"));
   const log = el("md-icon-button", { class: "log-toggle", title: "The game log", "aria-label": "The game log", toggle: true }, icon("narration"));
-  log.addEventListener("click", () => on.log(log.selected));
+  // `change` comes after the button has toggled (a click comes before: the
+  // table review's T3).
+  log.addEventListener("change", () => on.log(log.selected));
   const help = el("md-icon-button", { class: "help", title: "How to play", "aria-label": "How to play", onclick: () => on.help() }, symbol("help"));
   const gear = el("md-icon-button", { class: "settings-open", title: "Settings", "aria-label": "Settings", onclick: () => settings.show() }, icon("settings"));
   const bar = el("header", { class: "surface bar" }, el("span", { class: "brand" }, "Cassino"), fresh, hint, undo, log, help, gear);

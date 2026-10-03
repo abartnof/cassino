@@ -227,6 +227,7 @@ async function main() {
   // opening deal waits for the house rules to be agreed aloud.
   function newGame({ seed = randomSeed(), watch = false } = {}) {
     director.cancelTimed();
+    watchStep = false; // a step pending was cancelled with the rest (review T2)
     overlay.hush();
     dialogue.stop();
     state = watch
