@@ -293,10 +293,25 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
 
 ## 11. Testing
 
-- **Node tests** of the pure modules (`layout`, `choreography`, `easing`,
-  `kinematics`, `timeline`, `talk`, `bag`, `framing`), as piquet's.
-- **The offline browser test** (`test/browser.py`, Playwright in the project
-  `.venv`): it blocks every network request, plays a game by clicking, and
-  saves screenshots to read back by eye.
-- **The leak test at the table**: no face shown that the person could not
-  see.
+- **Node tests** (`web3d/test/*.test.js`, run by `bin/gate`) of the pure
+  modules and, against the real engine module, of whole games: the layout
+  (faces only where known), the choreography (every timeline of real games
+  lands on its layout, faces as they should be, no leak, no card through
+  the table, in both arrangements; the reducer held to the engine's own
+  states), the HUD (its model and, on a stand-in DOM, its widget), the
+  talk and the phrase bank, the tutorial's moments, the staging test of
+  the phone camera's reach, the replay, the series, the preferences, and
+  the piquet modules brought across. `bin/gate` builds the engine module
+  first, so nothing skips, and checks that the committed page is built
+  from the sources.
+- **The offline browser test** (`test/browser.py`, Playwright with the
+  system Chromium; about fifteen minutes): it blocks every network request
+  and plays a whole game by clicking, checking at every rest that no face
+  is shown that the person could not know, the HUD at every hand's end, the
+  talk, the count; then the replay, a World Series game counted, the last
+  move seen again; the settings (hints, undo, the log, the keyboard path, a
+  reload that brings the sitting back, the credits); watched games; the
+  tutorial; a phone held either way, a tablet held upright and a tall
+  window, each played by tapping. It saves screenshots and strips of the
+  motion to read back by eye. Headless Chromium on SwiftShader needs
+  software compositing for CSS animations to run (`--disable-gpu-compositing`).
