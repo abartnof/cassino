@@ -79,10 +79,12 @@ legal move. RULES.md now says each held card answers for one build value.
   the controls, upright or sideways, and Large Text faces fitted to the
   hand. T9 the scoring board: a 21-hole cribbage-style board at the table's
   edge, the back peg leapfrogging the front at each hand's end.
-- **The table reviewed** (`docs/reviews/2026-10-03-table.md`): one critical
-  finding (an upright tablet's overlay and framing disagreed), four major,
-  fifteen minor, an engine one (undo across a deal) and five on the tests;
-  all fixed, each with a test, and the triage recorded.
+- **The table reviewed twice** (`docs/reviews/2026-10-03-table.md`: one
+  critical finding, an upright tablet's overlay and framing disagreeing; four
+  major; fifteen minor; an engine one, undo across a deal; five on the tests.
+  `docs/reviews/2026-10-03-table-second.md`, of what changed since: three
+  major where the fixes met the new features, six minor). All fixed, each
+  with a test, the triage recorded in each.
 - **Fairness and the match** (DESIGN.md §12.3): the seed shown; after the
   game, a replay with both hands face up (the engine reveals the deals only
   once the game is over); the last move seen again; a World Series, the
@@ -129,10 +131,11 @@ legal move. RULES.md now says each held card answers for one build value.
 - [x] 8. **The session, the protocol and the wasm module**:
   `docs/PROTOCOL.md`; the CLI on the session; saved sittings; golden games,
   native and wasm byte for byte; a Node smoke test.
-- [ ] 9. **The 3D table**, adapted from piquet's: art for 52 cards, the
+- [x] 9. **The 3D table**, adapted from piquet's: art for 52 cards, the
   middle-of-the-table layout, builds, the cribbage board, the table talk.
-  Phases T0–T9 in `docs/TABLE3D.md`, all done.
-- [ ] 10. **Teaching**: tutorial pages, on-screen help.
+  Phases T0–T9 in `docs/TABLE3D.md`, the designer's HUD, two reviews.
+- [x] 10. **Teaching**: tutorial pages at each idea's first moment, and all
+  of them from the question mark (T7).
 
 ## Working conventions
 
@@ -157,9 +160,30 @@ legal move. RULES.md now says each held card answers for one build value.
 
 1. **A `LICENSE` file.** `Cargo.toml` says MIT, as piquet and bezique do; the
    file itself, with its copyright line, is the user's to add.
+2. **Publishing.** Piquet is served from GitHub Pages; the same would serve
+   `web3d/cassino3d.html`. Making the repository or the page public is the
+   user's decision.
+3. **One design call made provisionally**: the game's seed is shown only once
+   the game is over (shown during it, a second window could read your
+   opponent's hand; the second review, S4). Fairness is still checkable
+   after the game, with the replay.
+
+## What could come next
+
+- Real devices: the phone and tablet layouts are tested in headless
+  Chromium only, and the HUD's springs need `linear()` (Safari 17.2+); its
+  handoff lists what was not designed (a win flourish, tie popups).
+- The shared package across piquet, bezique and cassino, once the third
+  game shows what they truly share (`docs/DESIGN.md` §3).
+- A screen-reader narration of each move (the game log has the words; only
+  the focused card is told now).
 
 ## Notes for a future session
 
+- Before committing a table change: `bin/gate` (it builds the module and
+  checks the committed page), then `~/piquet/.venv/bin/python
+  web3d/test/browser.py --quick`; the full browser test (about fifteen
+  minutes, best run in the background) before calling a phase done.
 - Read `docs/RULES.md` before touching move generation. The fixtures W1–W20
   are the rules' worked examples.
 - `~/piquet` and `~/bezique` are the working references. Read their
