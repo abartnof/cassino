@@ -3,6 +3,7 @@
 //! The rules are those of `docs/RULES.md` (pagat.com's Casino and Royal
 //! Casino); the reasoning behind the structure is in `docs/DESIGN.md`.
 
+pub mod agents;
 pub mod cards;
 pub mod game;
 pub mod hand;
@@ -13,6 +14,7 @@ pub mod rules;
 pub mod scoring;
 pub mod sums;
 pub mod table;
+pub mod worth;
 
 #[cfg(test)]
 mod reference;
