@@ -6,12 +6,16 @@
 
 ## Where we are
 
-**2026-10-03: the engine is complete for both games and runs in WebAssembly.**
-A measured four-rung opponent with a skill dial; explanations, hints and the
-selection interface; the session and its JSON protocol; a 334 KB module that
-plays a whole game in Node at 10–16 ms a command, byte for byte as the native
-build does. 235 Rust tests and 163 Node tests of the table, all passing
-(`bin/gate`).
+**2026-10-03: the game is playable, complete for both games, as one offline
+page** (`web3d/cassino3d.html`, about 3.3 MB, committed and checked by the
+gate against its sources). The engine: a measured four-rung opponent with a
+skill dial; explanations, hints and the selection interface; the session
+and its JSON protocol; a module that plays a whole game in Node at 10–16 ms
+a command, byte for byte as the native build does. The table: all nine
+phases of `docs/TABLE3D.md`, the designer's score HUD, the fairness features
+and the match, on a desktop, a tablet or a phone held either way. 235 Rust
+tests and 163 Node tests of the table, all passing (`bin/gate`), and an
+offline browser test that plays whole games by clicking.
 
 **Reviewed.** A full code review by a separate agent
 (`docs/reviews/2026-10-03-engine.md`) found one rules-level hole and seven
