@@ -19,7 +19,7 @@
 //! out to the end of the deal beat the counter clearly, and the counter beat
 //! greedy as the playout policy, confirmed on fresh seeds.
 
-use crate::agents::{immediate_worth_with, Agent, GreedyAgent};
+use crate::agents::{immediate_worth, Agent, GreedyAgent};
 use crate::counter::CounterAgent;
 use crate::hand::Hand;
 use crate::moves::Move;
@@ -27,7 +27,7 @@ use crate::observation::View;
 use crate::rng::Rng;
 use crate::solver::{Margin, Solver};
 use crate::table::Seat;
-use crate::worth::{Weights, Worth};
+use crate::worth::Worth;
 
 /// Who plays the playouts, for both seats.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -46,9 +46,6 @@ pub struct SearchAgent {
     /// The most candidates searched; the counter ranks them.
     pub width: usize,
     pub policy: Policy,
-    /// Weigh cards and spades by the state of the piles, in the ranking, the
-    /// playouts and their scoring.
-    pub dynamic: bool,
 }
 
 impl SearchAgent {
@@ -61,7 +58,6 @@ impl SearchAgent {
             worlds: 32,
             width: 8,
             policy: Policy::Counter,
-            dynamic: false,
         }
     }
 }
@@ -69,27 +65,13 @@ impl SearchAgent {
 /// Plays `world` to the end of the current deal (or of the hand, if this is
 /// the last deal) with `policy` for both seats; the worth banked by `seat`
 /// less the worth banked by the other on the way, in points.
-pub fn rollout_deal(world: Hand, seat: Seat, policy: Policy, rng: &mut Rng) -> f64 {
-    rollout_deal_with(world, seat, policy, &Weights::FLAT, false, rng)
-}
-
-/// [`rollout_deal`] scored under `weights`, the counter playing it weighing
-/// dynamically if `dynamic`.
-pub fn rollout_deal_with(
-    mut world: Hand,
-    seat: Seat,
-    policy: Policy,
-    weights: &Weights,
-    dynamic: bool,
-    rng: &mut Rng,
-) -> f64 {
+pub fn rollout_deal(mut world: Hand, seat: Seat, policy: Policy, rng: &mut Rng) -> f64 {
     let deal = world.deal_number();
     let piles = [world.pile(Seat::South), world.pile(Seat::North)];
     let sweeps = [world.sweeps(Seat::South), world.sweeps(Seat::North)];
     let mut counter = (policy == Policy::Counter).then(|| {
         let mut c = CounterAgent::new(Rng::seeded(rng.next_u64()));
         c.samples = 4;
-        c.dynamic = dynamic;
         c
     });
     while let Some(mover) = world.to_move() {
@@ -111,7 +93,7 @@ pub fn rollout_deal_with(
         } else {
             0.0
         };
-        Worth::of_cards_with(won, weights).total() + sweep_points
+        Worth::of_cards(won).total() + sweep_points
     };
     banked(seat) - banked(seat.other())
 }
@@ -136,31 +118,19 @@ impl SearchAgent {
                 .collect();
         }
         // The same worlds, and the same playout luck in each, for every move.
-        let weights = if self.dynamic {
-            Weights::for_piles(view.piles)
-        } else {
-            Weights::FLAT
-        };
         let worlds: Vec<(Hand, u64)> = (0..self.worlds)
             .map(|_| (view.sample_world(&mut self.rng), self.rng.next_u64()))
             .collect();
         moves
             .iter()
             .map(|&m| {
-                let now = immediate_worth_with(&view.rules, &view.table, &m, &weights).total();
+                let now = immediate_worth(&view.rules, &view.table, &m).total();
                 let total: f64 = worlds
                     .iter()
                     .map(|&(w, luck)| {
                         let mut next = w;
                         next.play(&m).expect("a candidate is legal in every world");
-                        now + rollout_deal_with(
-                            next,
-                            view.me,
-                            self.policy,
-                            &weights,
-                            self.dynamic,
-                            &mut Rng::seeded(luck),
-                        )
+                        now + rollout_deal(next, view.me, self.policy, &mut Rng::seeded(luck))
                     })
                     .sum();
                 (m, total / worlds.len() as f64)
@@ -179,7 +149,6 @@ impl Agent for SearchAgent {
             let world = view.world(view.unseen(), &[]);
             return Solver::new(&Margin).best(&world).0;
         }
-        self.counter.dynamic = self.dynamic;
         let mut ranked = self.counter.assess(view);
         if ranked.len() == 1 {
             return ranked[0].0;
