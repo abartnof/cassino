@@ -14,8 +14,9 @@
 
 import { Raycaster, Vector2, Vector3 } from "three";
 import { choreograph, initialPlacement, opening } from "./choreography.js";
+import { cardCorners } from "./kinematics.js";
 import { Timeline } from "./timeline.js";
-import { CARD } from "./units.js";
+import { CARD, ZONES } from "./units.js";
 
 // `view()` is how the person asks to see the state: { chosen, picked }.
 // `advance` and `restart` return { beats, count }: when each new event will
@@ -80,12 +81,16 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
     }
     return heldAt !== null;
   }
+  // A frame: what is due runs, the cards move, and the table is drawn if
+  // anything moved. The loop runs while cards move or something is due.
+  let moving = false;
   function frame() {
     if (heldAt === null) {
       const held = due(now());
       if (!held) {
         const busy = timeline.tick(now());
-        stage.render();
+        if (busy || moving) stage.render();
+        moving = busy;
         if ((busy || queue.length) && !manual) {
           requestAnimationFrame(frame);
           return;
@@ -114,9 +119,10 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
     stage.render();
   }
 
-  function animate(prev, next) {
+  function animate(prev, next, waits = {}) {
     timeline.skip(); // anything still moving lands first
-    const result = choreograph(prev, next, placement, view());
+    const scaled = Object.fromEntries(Object.entries(waits).map(([k, ms]) => [k, ms * timeline.speed]));
+    const result = choreograph(prev, next, placement, view(), { waits: scaled });
     placement = result.placement;
     state = next;
     const start = now();
@@ -141,9 +147,11 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
     timeline.idle().then(() => {
       dress();
       rested?.();
+      moving = true; // drawn once more, dressed
       wake();
     });
     dress();
+    moving = true;
     if (manual) frame();
     else wake();
     if (!timeline.busy()) rested?.();
@@ -180,7 +188,27 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
     return toScreen(local.applyQuaternion(mesh.quaternion).add(mesh.position));
   }
 
+  // Where to speak from, on the screen: just above your hand's top edge, or
+  // just below your opponent's lowest, near the middle of the table where
+  // the eye already is (after piquet's director.js). From where the hand
+  // rests once the cards have moved (a line can be said before a dealt
+  // hand arrives); with no cards in it, from where the hand would be.
+  function handEdge(who) {
+    const zone = who === "you" ? "your-hand" : "their-hand";
+    const points = placement
+      .filter((m) => m.zone === zone)
+      .flatMap((m) => cardCorners(m.pose).map(toScreen));
+    if (!points.length) {
+      const centre = ZONES[who === "you" ? "yourHand" : "theirHand"].centre;
+      return { ...toScreen(new Vector3(...centre)), empty: true };
+    }
+    const x = points.reduce((sum, p) => sum + p.x, 0) / points.length;
+    const y = who === "you" ? Math.min(...points.map((p) => p.y)) : Math.max(...points.map((p) => p.y));
+    return { x, y };
+  }
+
   return {
+    handEdge,
     state: () => state,
     placement: () => placement,
     meshOf: (code) => {
@@ -192,7 +220,8 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
     // Straight onto the table: a new game, a sitting restored. With
     // `dealt`, from the pack squared at the dealer's left, and the opening
     // deal played out.
-    restart(s, { dealt = false } = {}) {
+    // `waits` (ms of the clock, by event index) holds events back.
+    restart(s, { dealt = false, waits = {} } = {}) {
       queue.length = 0;
       release();
       if (!dealt) {
@@ -201,7 +230,7 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
       }
       const start = opening(s);
       settle(start);
-      return animate(start, s);
+      return animate(start, s, waits);
     },
     // The next state, animated from this one.
     advance(next) {
@@ -239,6 +268,7 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
       timeline.skip();
       due(Infinity);
       dress();
+      moving = true;
       wake();
     },
     // For stills: move the hand-driven clock and draw.

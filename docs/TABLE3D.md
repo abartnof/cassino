@@ -196,7 +196,17 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   into a count row as its line is written on the score sheet, the score
   ticking with it; the sheet keeps every hand's points and the game's. The
   browser test checks the sheet and the score at every hand's end.
-- **T5. Table talk.** The phrase bank and the dialogue boxes.
+- **T5. Table talk.** The phrase bank and the dialogue boxes. **Done**:
+  `web3d/tools/phrases.py` (the bank, each phrase in at least two wordings
+  with its source; `--check` keeps `docs/PHRASES.md` and `words.json` in
+  step, run by the Node tests), `talk.js` (events to phrases, pure and
+  node-tested), piquet's `dialogue.js` and boxes by each speaker's hand.
+  Said: the house rules agreed aloud and the cut before the opening deal,
+  which waits for them; the build calls (singular, plural, a raise by its
+  new total: the engine's `played` event now says which); "Last."; "Clear!";
+  "Cash."; the clinches; your opponent pointing out what you left; the
+  residue; the count chanted line by line with the sheet; the game's end.
+  Boxes linger on the table's clock.
 - **T6. Settings and aids.** Everything in §8's settings; watch mode; hints
   and explanations; undo; saved sittings across a reload.
 - **T7. Teaching.** Tutorial and help pages.

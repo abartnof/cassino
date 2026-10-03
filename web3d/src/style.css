@@ -27,8 +27,8 @@
   --md-sys-color-surface-variant: #e1e2ec;
   --md-sys-color-on-surface-variant: #44474f;
   --md-sys-color-surface-container-lowest: #ffffff;
-  --bubble-you: #dce5ff; /* near primary-container */
-  --bubble-them: #ffdfd9; /* a mild rose, the opponent's red softened */
+  --bubble-you: #ffe7d4; /* your colour (the badges', the score's) softened */
+  --bubble-them: #d3f3f4; /* and your opponent's teal */
   --md-sys-color-surface-container-low: #f3f3fa;
   --md-sys-color-surface-container: #ededf4;
   --md-sys-color-surface-container-high: #e8e7ee;
@@ -398,6 +398,80 @@ html, body {
   .n.bump,
   .sheet.arrive,
   .count-line {
+    animation: none;
+  }
+}
+
+/* ---- what is said at the table ---------------------------------------------
+   Each line in a box by the hand of whoever said it (after piquet's): yours
+   above your hand with its tail down to you, your opponent's below theirs
+   with its tail up to them, each in a soft tint of its speaker's colour. */
+.afloat {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+.dialogue {
+  position: fixed;
+  max-width: min(78vw, 360px);
+  padding: 9px 18px 10px;
+  border-radius: 20px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  color: var(--md-sys-color-on-surface);
+  background: var(--md-sys-color-surface-container-lowest);
+  box-shadow: var(--elevation-2);
+  pointer-events: none;
+  white-space: nowrap;
+  animation: box-in 420ms var(--ease-in) both;
+  animation: box-in 420ms var(--spring) both;
+}
+.dialogue.you {
+  background: var(--bubble-you);
+  translate: -50% calc(-100% - 18px);
+  transform-origin: 50% 100%;
+}
+.dialogue.them {
+  background: var(--bubble-them);
+  translate: -50% 18px;
+  transform-origin: 50% 0;
+}
+.dialogue::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  background: inherit;
+  transform: rotate(45deg);
+}
+.dialogue.you::after {
+  bottom: -6px;
+}
+.dialogue.them::after {
+  top: -6px;
+}
+.dialogue.leaving {
+  animation: box-out 260ms var(--ease-out) forwards;
+}
+@keyframes box-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+@keyframes box-out {
+  to {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dialogue,
+  .dialogue.leaving {
     animation: none;
   }
 }

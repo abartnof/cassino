@@ -10,7 +10,7 @@
 // layout(next) whatever happened, and anything the reducer cannot follow (an
 // undo, a new game, a sitting restored) is a single direct transition.
 //
-// choreograph(prev, next, placement, view, options) -> { motions, placement, duration, beats }
+// choreograph(prev, next, placement, view, options) -> { motions, placement, duration, beats, count }
 //
 //   placement  where each of the 52 meshes is: [{ id, key, zone, index, code, pose }]
 //   motions    [{ id, path, delay, duration, reveal }]: `reveal` is the face a
@@ -21,6 +21,9 @@
 //              happen, on the same clock, for the dialogue.
 //   view       { chosen, picked }: how the person has asked to see the state
 //              (layout.js); it applies to `next` only.
+//   options    { waits }: { eventIndex: ms } holds an event back until then,
+//              and everything after it with it.
+//   count      { at, lines }: a hand's count, the moment of each line.
 //
 // The structure is piquet's choreography.js @ 254cb3c (the reducer, the
 // matching of meshes to slots, the plan and its settle); the stages are
@@ -640,12 +643,17 @@ class Plan {
 // when it has landed.
 const HEARD_AT_START = new Set(["collect", "count"]);
 
-export function choreograph(prev, next, placement, view = {}) {
+export function choreograph(prev, next, placement, view = {}, options = {}) {
   const plan = new Plan(placement, view);
   const stages = stagesBetween(prev, next);
+  // Held back: an event no sooner than its wait, and all after it with it
+  // (the house rules agreed aloud before the opening deal). From piquet's.
+  const waits = Object.entries(options.waits ?? {}).map(([at, ms]) => [Number(at), ms]);
+  const waitFor = (k) => Math.max(0, ...waits.filter(([at]) => at <= k).map(([, ms]) => ms));
   const marks = [];
   if (stages) {
     for (const stage of stages) {
+      plan.clock = Math.max(plan.clock, waitFor(stage.at));
       const start = plan.clock;
       plan[stage.kind](stage);
       marks.push({ at: stage.at, start, end: Math.max(plan.clock, plan.end), early: HEARD_AT_START.has(stage.kind) });
@@ -659,6 +667,7 @@ export function choreograph(prev, next, placement, view = {}) {
   let done = 0;
   let m = 0;
   for (let k = prev ? prev.events.length : 0; k < next.events.length; k++) {
+    done = Math.max(done, waitFor(k));
     const own = [];
     while (m < marks.length && marks[m].at <= k) {
       if (marks[m].at === k) own.push(marks[m]);

@@ -10,7 +10,7 @@
 A measured four-rung opponent with a skill dial; explanations, hints and the
 selection interface; the session and its JSON protocol; a 334 KB module that
 plays a whole game in Node at 10–16 ms a command, byte for byte as the native
-build does. 229 Rust tests and 109 Node tests of the table, all passing
+build does. 230 Rust tests and 117 Node tests of the table, all passing
 (`bin/gate`).
 
 **Reviewed.** A full code review by a separate agent
@@ -62,8 +62,11 @@ legal move. RULES.md now says each held card answers for one build value.
   gather of a capture turned over into its pile, sweeps held up and laid
   crosswise), T4 the score (a broadcast's bug with live trackers) and the
   count (each ace and Casino turned up as its line is written on the score
-  sheet). A whole game is played by clicking in an offline browser test.
-  Next: T5, the table talk.
+  sheet), T5 the table talk (a sourced phrase bank, `docs/PHRASES.md`; the
+  house rules agreed aloud before the deal, the build calls, "Last.",
+  "Clear!", the count chanted). A whole game is played by clicking in an
+  offline browser test. Next: T6, settings and aids. The user will supply
+  a HUD design for the score; the bug stays as it is until then.
 
 ## Settled decisions
 
@@ -107,7 +110,7 @@ legal move. RULES.md now says each held card answers for one build value.
   native and wasm byte for byte; a Node smoke test.
 - [ ] 9. **The 3D table**, adapted from piquet's: art for 52 cards, the
   middle-of-the-table layout, builds, the cribbage board, the table talk.
-  Phases T0–T9 in `docs/TABLE3D.md`; T0–T4 done.
+  Phases T0–T9 in `docs/TABLE3D.md`; T0–T5 done.
 - [ ] 10. **Teaching**: tutorial pages, on-screen help.
 
 ## Working conventions
@@ -120,6 +123,9 @@ legal move. RULES.md now says each held card answers for one build value.
   brings it in.
 - **Consult the user before anything that spends money**, and before any long
   compute run, with a runtime and cost estimate in hand.
+- **An unattended overnight session ends with the VM shut down**: everything
+  committed, this file current, then `sudo shutdown -h now` (the instance
+  cannot stop itself through `gcloud`; piquet's `docs/VM.md`).
 - **Simulations stop when the signal is clear.** Batches, looks between them,
   and an O'Brien–Fleming boundary fixed before the first batch: a clear
   effect ends the run early, and the last look reports the interval

@@ -2,8 +2,9 @@
 // (docs/TABLE3D.md section 8): the prompt, the chips that offer what a
 // selection makes, the running sum, the "why not?" line, the next hand and
 // the end of the game; the badges over the builds; the score, as a
-// broadcast's bug, with each player's trackers under their number; and the
-// score sheet, where each hand's count is written down line by line.
+// broadcast's bug, with each player's trackers under their number; the
+// score sheet, where each hand's count is written down line by line; and
+// what is said at the table, in boxes by each speaker's hand.
 //
 // It draws what it is given and reports what is pressed; it holds no rules.
 
@@ -11,9 +12,12 @@ import "@material/web/button/filled-button.js";
 import "@material/web/chips/assist-chip.js";
 import "@material/web/chips/chip-set.js";
 
-export function createOverlay(root, { onChip, onNext, onNewGame }) {
+// `later(ms, fn)` runs `fn` after `ms` on the table's clock (director.at),
+// so a box lingers as long as the table runs, and holds when it is held.
+export function createOverlay(root, { onChip, onNext, onNewGame, later = (ms, fn) => setTimeout(fn, ms) }) {
   root.innerHTML = `
     <div class="badges"></div>
+    <div class="afloat"></div>
     <header class="bug" aria-label="The score">
       <div class="side you"><span class="side-name">You</span><span class="side-num"><span class="n">0</span></span><span class="goal-bar"><i></i></span><ul class="tally" aria-label="Your captures"></ul></div>
       <div class="period"></div>
@@ -160,9 +164,46 @@ export function createOverlay(root, { onChip, onNext, onNewGame }) {
     sheet.hidden = true;
   }
 
+  // ---- what is said at the table ------------------------------------------
+
+  // Each line in a box by the hand of whoever said it, at `anchor(who)` on
+  // the screen: one box a speaker, a new line replacing the last; each stays
+  // a while unless replaced (after piquet's overlay.js, showBox).
+  const LINGER = 3200;
+  const boxes = { you: null, them: null };
+  const afloat = $(".afloat");
+  function takeDown(who, atOnce = false) {
+    const node = boxes[who];
+    if (!node) return;
+    boxes[who] = null;
+    if (atOnce) return node.remove();
+    node.classList.add("leaving");
+    node.addEventListener("animationend", () => node.remove(), { once: true });
+    setTimeout(() => node.remove(), 400);
+  }
+  function say(who, words, anchor) {
+    takeDown(who, true);
+    if (!anchor || !words) return;
+    const node = el("div", { class: `dialogue ${who}`, role: "status" }, words);
+    afloat.append(node);
+    // Centred on the hand, kept on the screen.
+    const half = node.offsetWidth / 2 + 8;
+    node.style.left = `${Math.min(Math.max(anchor.x, half), window.innerWidth - half)}px`;
+    node.style.top = `${anchor.y}px`;
+    boxes[who] = node;
+    later(LINGER, () => boxes[who] === node && takeDown(who));
+  }
+  function hush() {
+    takeDown("you", true);
+    takeDown("them", true);
+  }
+
   return {
     show,
     placeBadges,
+    say,
+    hush,
+    said: () => [...afloat.querySelectorAll(".dialogue")].map((d) => ({ who: d.classList.contains("you") ? "you" : "them", words: d.textContent })),
     score,
     trackers,
     openCount,

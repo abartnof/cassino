@@ -37,9 +37,13 @@ def shot(page, name):
         page.screenshot(path=str(SHOTS / f"{name}.png"))
 
 
-def open_page(browser, query="seed=7", viewport=None):
-    """A fresh context, offline, recording every request the page makes."""
-    context = browser.new_context(viewport=viewport or {"width": 1280, "height": 800})
+def open_page(browser, query="seed=7", viewport=None, calm=False):
+    """A fresh context, offline, recording every request the page makes.
+    `calm`: with reduced motion, so the dialogue boxes appear without their
+    pop-in -- which headless Chromium on SwiftShader, with the table's WebGL
+    busy, never starts (a bare page animates; the shipped page in a real
+    browser does too, as piquet's has)."""
+    context = browser.new_context(viewport=viewport or {"width": 1280, "height": 800}, reduced_motion="reduce" if calm else "no-preference")
     context.set_offline(True)
     page = context.new_page()
     page.requests = []
@@ -77,6 +81,9 @@ def check_drawn(page, failures, where=""):
         failures.append(f"the canvas is mostly black {where} -- WebGL may have failed")
 
 
+HEARD = set()  # every line seen in a dialogue box
+
+
 def settle(page):
     """Wait for the cards to come to rest."""
     page.wait_for_function("!window.cassino3d.busy()", timeout=60_000)
@@ -104,6 +111,8 @@ def table_cards(move):
 def play_by_clicking(page, failures, moves_made):
     """One decision, made the way a person makes it."""
     settle(page)
+    for line in page.evaluate("window.cassino3d.said()"):
+        HEARD.add(line["words"])
     s = page.evaluate("window.cassino3d.state()")
     if s["prompt"] in ("next_hand", "over"):
         check_count(page, s, failures)
@@ -202,12 +211,20 @@ def main() -> int:
         if end["prompt"] != "over":
             failures.append(f"the game did not end by clicking: {end['prompt']} after {made} decisions")
         shot(page, "t2-over")
+        if len(HEARD) < 5 or not any("ast" in w for w in HEARD):
+            failures.append(f"too little said at the table: {sorted(HEARD)}")
         check_offline(page, failures)
         if page.errors:
             failures.append(f"console errors: {page.errors[:5]}")
         # The gather and the sweep, frame by frame (seeds found to open with
         # them: a pair and a sum taken with 9C; all four cards with 10C).
-        page = open_page(browser, "seed=11&manual")
+        page = open_page(browser, "seed=11&manual", calm=True)
+        page.evaluate("window.cassino3d.tick(2500)")
+        shot(page, "t5-talk")  # the house rules agreed before the deal
+        said = page.evaluate("window.cassino3d.said()")
+        if {line["who"] for line in said} != {"you", "them"}:
+            failures.append(f"the house rules were not talked over: {said}")
+        page.evaluate("window.cassino3d.tick(3000)")
         strip(page, "t3-deal", None, frames=12, step=180)
         for name, query, move in [
             ("t3-gather", "seed=11&manual", "take 9C 6S 3H 9H"),
