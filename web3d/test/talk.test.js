@@ -16,6 +16,21 @@ test("the phrase bank is up to date with its source", { skip: !existsSync("/usr/
   execFileSync("python3", [tool, "--check"]);
 });
 
+// Kind talk (play-testing: "Keep it kid-friendly"): nothing said at the
+// table insults, belittles or sneers. Jack London's "That's a sissy game."
+// was the case in point.
+const UNKIND = [
+  "sissy", "stupid", "dumb", "idiot", "fool", "foolish", "loser", "baby", "chicken", "coward", "sucker",
+  "pathetic", "useless", "hopeless", "careless", "clumsy", "lousy", "rubbish", "shame", "hate", "shut up",
+  "take that", "so there", "who's laughing", "shoot", "too slow", "blind", "weak",
+];
+
+test("nothing in the bank is unkind", () => {
+  const unkind = new RegExp(`\\b(${UNKIND.join("|")})\\b`, "i");
+  const said = Object.entries(WORDS.texts).filter(([, text]) => unkind.test(text));
+  assert.deepEqual(said, []);
+});
+
 test("before the game, the house rules agreed aloud, then the cut", () => {
   const events = [{ kind: "cut", hand: 1 }, { kind: "first_dealer", hand: 1, you: true }];
   assert.deepEqual(said(speech(state(events))), ["them:sweeps-ask", "you:sweeps-yes", "them:low-deals", "them:your-deal"]);

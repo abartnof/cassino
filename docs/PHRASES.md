@@ -13,7 +13,7 @@ Sources:
 - **F**: Foster's Complete Hoyle (1897-1914): "Nine", "Ten", "Two Sevens" [03-S31]
 - **H**: the mid-century Hoyles (1945-1952): "Building eight", "Building sevens", the dealer's announcement of the last cards [03-S35][03-S36]
 - **P**: pagat.com, the modern rules: "building 5", "last", a "clear" [02-S1]
-- **L**: Jack London's players agreeing their rules (1912): "Do you count sweeps?" "Certainly not ... That's a sissy game." "Low deals." [04-S28]
+- **L**: Jack London's players agreeing their rules (1912): "Do you count sweeps?" "Certainly not." "Low deals." [04-S28]
 - **Fe**: Feydeau, in English translation: the count chanted, "Cards... Spades... Ten of diamonds...", "Deuce... Aces...", and "Clean sweep!" [04-S159]
 - **N**: the New York Dispatch's answers column (1877-1881): "sevens", "I have three points, and am out" [04-S155][04-S130]
 - **Do**: the Dominican custom of pointing out the cards an opponent left behind (dejado) [02-S3]; the words are ours
@@ -27,9 +27,9 @@ Sources:
 | `sweeps-yes` | We count them. | T |
 |  | Of course. | T |
 |  | Every one. | T |
-| `sweeps-no` | Certainly not. That's a sissy game. | L |
-|  | Certainly not. | L |
+| `sweeps-no` | Certainly not. | L |
 |  | No sweeps. | T |
+|  | Not this time. | T |
 | `royal` | Royal, then: the court cards count. | T |
 |  | Jack eleven, queen twelve, king thirteen. | T |
 |  | Royal cassino. The court cards build. | T |
@@ -180,46 +180,46 @@ Sources:
 |  | That's the spades. | T |
 |  | Seven spades. The point is mine. | T |
 | `left-1` | You left the ace. | Do |
-|  | You missed the ace. | T |
+|  | The ace was left behind. | Do |
 |  | The ace was there for you. | T |
 | `left-2` | You left the two. | Do |
-|  | You missed the two. | T |
+|  | The two was left behind. | Do |
 |  | The two was there for you. | T |
 | `left-3` | You left the three. | Do |
-|  | You missed the three. | T |
+|  | The three was left behind. | Do |
 |  | The three was there for you. | T |
 | `left-4` | You left the four. | Do |
-|  | You missed the four. | T |
+|  | The four was left behind. | Do |
 |  | The four was there for you. | T |
 | `left-5` | You left the five. | Do |
-|  | You missed the five. | T |
+|  | The five was left behind. | Do |
 |  | The five was there for you. | T |
 | `left-6` | You left the six. | Do |
-|  | You missed the six. | T |
+|  | The six was left behind. | Do |
 |  | The six was there for you. | T |
 | `left-7` | You left the seven. | Do |
-|  | You missed the seven. | T |
+|  | The seven was left behind. | Do |
 |  | The seven was there for you. | T |
 | `left-8` | You left the eight. | Do |
-|  | You missed the eight. | T |
+|  | The eight was left behind. | Do |
 |  | The eight was there for you. | T |
 | `left-9` | You left the nine. | Do |
-|  | You missed the nine. | T |
+|  | The nine was left behind. | Do |
 |  | The nine was there for you. | T |
 | `left-10` | You left the ten. | Do |
-|  | You missed the ten. | T |
+|  | The ten was left behind. | Do |
 |  | The ten was there for you. | T |
 | `left-11` | You left the jack. | Do |
-|  | You missed the jack. | T |
+|  | The jack was left behind. | Do |
 |  | The jack was there for you. | T |
 | `left-12` | You left the queen. | Do |
-|  | You missed the queen. | T |
+|  | The queen was left behind. | Do |
 |  | The queen was there for you. | T |
 | `left-13` | You left the king. | Do |
-|  | You missed the king. | T |
+|  | The king was left behind. | Do |
 |  | The king was there for you. | T |
 | `left-more` | You left a few there. | Do |
-|  | You could have taken more. | T |
+|  | More could have come with it. | T |
 |  | There was more for you there. | T |
 | `residue` | And the rest are mine. | T |
 |  | The last cards come to me. | T |

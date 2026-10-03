@@ -476,15 +476,20 @@ traditional even though the engine makes them unambiguous.
 | 27 cards / 7 spades | "That's the cards." / "Seven spades." | [02-S1] (counting as earned) | `Clinched` |
 | A missed capture | "You left the five." The Dominican *dejado*/*pisado* custom | [02-S3] | `Left` |
 | The count | "Cards… Spades… Big Casino… Little Casino… Aces…": the chant | [04-S159][10-S56][03-S31] | `Scored`, in order |
-| Before the game | "Do you count sweeps?" "Certainly not … That's a sissy game." / "Low deals." | [04-S28] | the settings and the cut |
+| Before the game | "Do you count sweeps?" "Certainly not." / "Low deals." | [04-S28] | the settings and the cut |
 
 Notes on the design:
 
 - **Settings as conversation.** Jack London's players agree their house rules
   aloud before the deal [04-S28]. The new-game screen can stage the settings
-  the same way: your opponent asks "Do you count sweeps?", and with sweeps off
-  agrees, "That's a sissy game." It is a small thing, but it turns a menu into
-  a scene. Then the cut: "Low deals."
+  the same way: your opponent asks "Do you count sweeps?", and your settings
+  answer, "Certainly not." or "We count them." It is a small thing, but it
+  turns a menu into a scene. Then the cut: "Low deals." London's reply goes on
+  to belittle a game with sweeps; the table leaves that out.
+- **The talk is kind.** Play-testing asked for it kid-friendly: nothing said
+  at the table insults, belittles or sneers. Pointing out what was left is an
+  observation ("You left the five."), never a jibe, and a test keeps a list
+  of unkind words out of the bank.
 - **Raise wars.** When a build is raised back and forth, the dialogue shows
   the chain ("Seven." "Nine." "Ten.") the way Dick's 1866 example reads.
 - **The count is a ritual.** The end of the hand is staged in Foster's order.

@@ -34,7 +34,7 @@ SOURCES = {
          "the dealer's announcement of the last cards [03-S35][03-S36]",
     "P": "pagat.com, the modern rules: \"building 5\", \"last\", a \"clear\" [02-S1]",
     "L": "Jack London's players agreeing their rules (1912): \"Do you count sweeps?\" "
-         "\"Certainly not ... That's a sissy game.\" \"Low deals.\" [04-S28]",
+         "\"Certainly not.\" \"Low deals.\" [04-S28]",
     "Fe": "Feydeau, in English translation: the count chanted, \"Cards... Spades... "
           "Ten of diamonds...\", \"Deuce... Aces...\", and \"Clean sweep!\" [04-S159]",
     "N": "the New York Dispatch's answers column (1877-1881): \"sevens\", "
@@ -71,7 +71,7 @@ def phrase_groups():
     # and the cut.
     add("sweeps-ask", ("Do you count sweeps?", "L"), ("Sweeps count?", "T"), ("Are we counting sweeps?", "T"))
     add("sweeps-yes", ("We count them.", "T"), ("Of course.", "T"), ("Every one.", "T"))
-    add("sweeps-no", ("Certainly not. That's a sissy game.", "L"), ("Certainly not.", "L"), ("No sweeps.", "T"))
+    add("sweeps-no", ("Certainly not.", "L"), ("No sweeps.", "T"), ("Not this time.", "T"))
     add("royal", ("Royal, then: the court cards count.", "T"),
         ("Jack eleven, queen twelve, king thirteen.", "T"),
         ("Royal cassino. The court cards build.", "T"))
@@ -105,9 +105,9 @@ def phrase_groups():
         ("That's twenty-seven.", "T"))
     add("clinch-spades", ("Seven spades.", "P"), ("That's the spades.", "T"), ("Seven spades. The point is mine.", "T"))
     for r, name in RANKS.items():
-        add(f"left-{r}", (f"You left the {name}.", "Do"), (f"You missed the {name}.", "T"),
+        add(f"left-{r}", (f"You left the {name}.", "Do"), (f"The {name} was left behind.", "Do"),
             (f"The {name} was there for you.", "T"))
-    add("left-more", ("You left a few there.", "Do"), ("You could have taken more.", "T"),
+    add("left-more", ("You left a few there.", "Do"), ("More could have come with it.", "T"),
         ("There was more for you there.", "T"))
     add("residue", ("And the rest are mine.", "T"), ("The last cards come to me.", "T"), ("I'll take what's left.", "T"))
 
