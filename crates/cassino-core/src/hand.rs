@@ -305,6 +305,34 @@ impl Hand {
         events.push(Event::Scored(self.breakdown().expect("over")));
     }
 
+    /// The same hand with what `seat` holds and the undealt cards replaced:
+    /// a world consistent with what `seat`'s opponent can see, for a search
+    /// that samples the hidden cards. `undealt` must have as many cards as
+    /// are still to be dealt, and with `hand` must be exactly the cards they
+    /// replace.
+    pub fn with_hidden(&self, seat: Seat, hand: CardSet, undealt: &[Card]) -> Hand {
+        let from = self.dealt as usize;
+        assert_eq!(undealt.len(), 52 - from, "as many undealt cards as remain");
+        let replaced = self.hands[seat.index()] | self.undealt().iter().copied().collect();
+        let with: CardSet = undealt.iter().copied().collect::<CardSet>() | hand;
+        assert_eq!(with, replaced, "the same cards, redistributed");
+        assert_eq!(
+            hand.len(),
+            self.hands[seat.index()].len(),
+            "the same number in hand"
+        );
+        let mut world = *self;
+        world.hands[seat.index()] = hand;
+        world.deck[from..].copy_from_slice(undealt);
+        world
+    }
+
+    /// The same hand with another table, for tests that need a position.
+    #[cfg(test)]
+    pub(crate) fn with_table(&self, table: Table) -> Hand {
+        Hand { table, ..*self }
+    }
+
     /// The count, once the hand is over.
     pub fn breakdown(&self) -> Option<Breakdown> {
         self.over
