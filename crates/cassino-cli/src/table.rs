@@ -366,7 +366,7 @@ impl<R: BufRead, W: Write> Table<R, W> {
         let mut listed = false;
         loop {
             let hand = game.hand();
-            let moves = hand.legal_moves();
+            let moves = hand.candidates();
             if !listed {
                 self.show(game)?;
                 let mine: Vec<String> = hand.hand_of(me).iter().map(|c| self.card(c)).collect();

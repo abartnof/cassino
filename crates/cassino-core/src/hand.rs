@@ -218,6 +218,20 @@ impl Hand {
         )
     }
 
+    /// The moves offered for play to the player to move: see
+    /// [`moves::candidate_moves`].
+    pub fn candidates(&self) -> Vec<Move> {
+        if self.over {
+            return Vec::new();
+        }
+        moves::candidate_moves(
+            &self.rules,
+            &self.table,
+            self.hands[self.to_move.index()],
+            self.to_move,
+        )
+    }
+
     /// Whether the player to move may make `mv`.
     pub fn check(&self, mv: &Move) -> Result<(), Illegal> {
         if self.over {
@@ -325,6 +339,51 @@ impl Hand {
         world.hands[seat.index()] = hand;
         world.deck[from..].copy_from_slice(undealt);
         world
+    }
+
+    /// A hand assembled from its parts: what each player holds, the table,
+    /// the piles and sweeps, and the undealt cards in the order they will be
+    /// dealt. `to_move` is `None` for a hand that is over. Used to rebuild a
+    /// world from a view; the parts must account for all 52 cards.
+    #[allow(clippy::too_many_arguments)]
+    pub fn from_parts(
+        rules: Rules,
+        dealer: Seat,
+        deal: u8,
+        to_move: Option<Seat>,
+        hands: [CardSet; 2],
+        table: Table,
+        piles: [CardSet; 2],
+        sweeps: [u8; 2],
+        last_capturer: Option<Seat>,
+        undealt: &[Card],
+    ) -> Hand {
+        let later: CardSet = undealt.iter().copied().collect();
+        let out = hands[0] | hands[1] | table.cards() | piles[0] | piles[1];
+        assert!(
+            out.is_disjoint(later) && (out | later) == CardSet::FULL,
+            "the parts are the pack"
+        );
+        let mut deck = [Card::from_index(0); 52];
+        let dealt = 52 - undealt.len();
+        for (slot, card) in deck.iter_mut().zip(out.iter()) {
+            *slot = card;
+        }
+        deck[dealt..].copy_from_slice(undealt);
+        Hand {
+            rules,
+            dealer,
+            deck,
+            dealt: dealt as u8,
+            hands,
+            table,
+            piles,
+            sweeps,
+            last_capturer,
+            deal,
+            to_move: to_move.unwrap_or(dealer.other()),
+            over: to_move.is_none(),
+        }
     }
 
     /// The same hand with another table, for tests that need a position.

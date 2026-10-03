@@ -16,7 +16,7 @@ pub trait Agent {
     /// A short name for tables of results.
     fn name(&self) -> String;
 
-    /// One of `view.legal_moves()`, which is never empty when this is asked.
+    /// One of `view.candidates()`, which is never empty when this is asked.
     fn choose(&mut self, view: &View) -> Move;
 }
 
@@ -37,7 +37,7 @@ impl Agent for RandomAgent {
     }
 
     fn choose(&mut self, view: &View) -> Move {
-        let moves = view.legal_moves();
+        let moves = view.candidates();
         moves[self.rng.below(moves.len() as u64) as usize]
     }
 }
@@ -74,7 +74,7 @@ impl Agent for GreedyAgent {
     }
 
     fn choose(&mut self, view: &View) -> Move {
-        let moves = view.legal_moves();
+        let moves = view.candidates();
         let best_by = |key: &dyn Fn(&Move) -> f64, pool: &mut dyn Iterator<Item = Move>| {
             pool.fold(None, |best: Option<(f64, Move)>, m| {
                 let k = key(&m);
@@ -151,7 +151,7 @@ mod tests {
     #[test]
     fn the_random_agent_plays_legal_moves_and_repeats_with_its_seed() {
         let v = view(Rules::CLASSIC, "AC 2D 3H 5S 6C 8D", "8S 3C 4D");
-        let legal = v.legal_moves();
+        let legal = v.candidates();
         let picks: Vec<Move> = {
             let mut a = RandomAgent::new(Rng::seeded(1));
             (0..20).map(|_| a.choose(&v)).collect()

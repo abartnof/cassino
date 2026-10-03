@@ -22,7 +22,7 @@ use std::fmt;
 
 use crate::cards::{Card, CardSet};
 use crate::rules::Rules;
-use crate::sums::{disjoint_unions, partitions_into, subsets_summing, value_sum};
+use crate::sums::{bounded_unions, disjoint_unions, partitions_into, subsets_summing, value_sum};
 use crate::table::{Build, Seat, Table};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -257,14 +257,46 @@ pub struct Played {
     pub swept: bool,
 }
 
-/// Every legal move for `me` holding `hand`, in a fixed order.
+/// The most groups of one value a card's captures and absorptions are
+/// enumerated over exhaustively by [`candidate_moves`].
+pub const CANDIDATE_LIMIT: usize = 12;
+
+/// The moves offered for play: exactly [`legal_moves`] whenever no value has
+/// more than [`CANDIDATE_LIMIT`] groups on the table, which is nearly
+/// always; on a crowded table, a bounded subset (every trail, each group
+/// alone, greedy maximal packings, the smallest partial builds), every one of
+/// them legal. Agents, hints and clients use this; a person may still make
+/// any legal move, which [`check`] accepts.
+pub fn candidate_moves(rules: &Rules, table: &Table, hand: CardSet, me: Seat) -> Vec<Move> {
+    generate(rules, table, hand, me, Some(CANDIDATE_LIMIT))
+}
+
+/// Every legal move for `me` holding `hand`, in a fixed order. Exhaustive,
+/// and so exponential in the loose cards: on a crowded table the number of
+/// legal captures is astronomical. For tests and small positions; play uses
+/// [`candidate_moves`].
 pub fn legal_moves(rules: &Rules, table: &Table, hand: CardSet, me: Seat) -> Vec<Move> {
+    generate(rules, table, hand, me, None)
+}
+
+/// The generator behind both: exhaustive with no limit, bounded with one.
+fn generate(
+    rules: &Rules,
+    table: &Table,
+    hand: CardSet,
+    me: Seat,
+    limit: Option<usize>,
+) -> Vec<Move> {
     let controls = table.controls_any(me);
+    let unions_over = |groups: &[CardSet]| match limit {
+        None => disjoint_unions(groups),
+        Some(l) => bounded_unions(groups, l),
+    };
     // The loose groups of each value, and their disjoint unions, built once.
     let mut unions: [Option<Vec<CardSet>>; 15] = Default::default();
     let mut unions_of = |v: u8| -> Vec<CardSet> {
         unions[v as usize]
-            .get_or_insert_with(|| disjoint_unions(&subsets_summing(rules, table.loose, v)))
+            .get_or_insert_with(|| unions_over(&subsets_summing(rules, table.loose, v)))
             .clone()
     };
     let mut out = Vec::new();
@@ -291,8 +323,9 @@ pub fn legal_moves(rules: &Rules, table: &Table, hand: CardSet, me: Seat) -> Vec
                 .filter(|b| b.value == value)
                 .map(|b| b.cards)
                 .collect();
+            let wholes = unions_over(&builds);
             for loose in unions_of(value) {
-                for whole in disjoint_unions(&builds) {
+                for &whole in &wholes {
                     let taken = loose | whole;
                     if !taken.is_empty() {
                         mine.push(Move::Capture { card, value, taken });
@@ -306,11 +339,15 @@ pub fn legal_moves(rules: &Rules, table: &Table, hand: CardSet, me: Seat) -> Vec
                     continue;
                 }
                 let groups = unions_of(value);
-                let parts: Vec<CardSet> = if value == x {
+                let mut parts: Vec<CardSet> = if value == x {
                     vec![CardSet::EMPTY]
                 } else {
                     subsets_summing(rules, table.loose, value - x)
                 };
+                if let Some(l) = limit.filter(|&l| parts.len() > l) {
+                    parts.sort_by_key(|g| (g.len(), *g));
+                    parts.truncate(l);
+                }
                 // New builds, and additions to builds of this value.
                 for &s0 in &parts {
                     for &u in groups.iter().filter(|u| u.is_disjoint(s0)) {
@@ -1208,6 +1245,101 @@ mod tests {
                     assert_eq!(fast, slow, "{rules:?} seed {seed}: {table} / {hand}: {m}");
                 }
             }
+        }
+    }
+
+    /// No value has more groups on the table than the candidates enumerate.
+    fn ordinary(rules: &Rules, table: &Table) -> bool {
+        (1..=14).all(|v| {
+            crate::sums::subsets_summing(rules, table.loose, v).len() <= CANDIDATE_LIMIT
+                && table.builds.iter().filter(|b| b.value == v).count() <= CANDIDATE_LIMIT
+        })
+    }
+
+    #[test]
+    fn candidates_are_the_legal_moves_on_ordinary_tables() {
+        let mut compared = 0;
+        for rules in [Rules::CLASSIC, Rules::ROYAL, ROYAL_14] {
+            for seed in 0..400 {
+                let (table, hand) = reference::random_position(&rules, seed);
+                if !ordinary(&rules, &table) {
+                    continue;
+                }
+                compared += 1;
+                assert_eq!(
+                    candidate_moves(&rules, &table, hand, Seat::South),
+                    legal_moves(&rules, &table, hand, Seat::South),
+                    "{table} / {hand}"
+                );
+            }
+        }
+        assert!(
+            compared > 1_000,
+            "{compared} of 1,200 positions are ordinary"
+        );
+    }
+
+    /// A crowded table: every card from ace to six but those in the hand.
+    fn crowded(rules: Rules, hand: &str) -> Pos {
+        let hand = set(hand);
+        let mut loose = CardSet::EMPTY;
+        for r in 1..=6 {
+            loose |= CardSet::of_rank(r);
+        }
+        let mut table = Table::new();
+        table.loose = loose - hand;
+        Pos { rules, table, hand }
+    }
+
+    #[test]
+    fn candidates_stay_small_and_legal_on_a_crowded_table() {
+        for (rules, hand) in [(Rules::CLASSIC, "9C TD 8S 7H"), (ROYAL_14, "KC QD AS 7H")] {
+            let p = crowded(rules, hand);
+            let started = std::time::Instant::now();
+            let moves = candidate_moves(&p.rules, &p.table, p.hand, Seat::South);
+            assert!(
+                started.elapsed().as_millis() < 2_000,
+                "{:?}",
+                started.elapsed()
+            );
+            assert!(moves.len() < 5_000, "{}", moves.len());
+            for m in &moves {
+                assert_eq!(
+                    check(&p.rules, &p.table, p.hand, Seat::South, m),
+                    Ok(()),
+                    "{m}"
+                );
+            }
+            for card in p.hand {
+                assert!(moves.contains(&Move::Trail { card }), "every trail");
+                assert!(
+                    moves
+                        .iter()
+                        .any(|m| matches!(m, Move::Capture { card: c, .. } if *c == card)),
+                    "a capture for {card}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn a_hand_of_trails_never_overwhelms_the_candidates() {
+        // Every card trailed that can be: the table grows to its limit.
+        for rules in [Rules::CLASSIC, ROYAL_14] {
+            let mut deck = crate::cards::pack();
+            crate::rng::Rng::seeded(4).shuffle(&mut deck);
+            let (mut h, _) = crate::hand::Hand::deal(rules, Seat::South, deck);
+            let started = std::time::Instant::now();
+            while h.to_move().is_some() {
+                let moves = h.candidates();
+                let mv = moves
+                    .iter()
+                    .find(|m| matches!(m, Move::Trail { .. }))
+                    .copied()
+                    .unwrap_or(moves[0]);
+                h.play(&mv).unwrap();
+            }
+            assert!(started.elapsed().as_secs() < 20, "{:?}", started.elapsed());
         }
     }
 

@@ -13,6 +13,7 @@
 use crate::cards::{Card, CardSet};
 use crate::hand::Hand;
 use crate::moves::{self, Move};
+use crate::rng::Rng;
 use crate::rules::Rules;
 use crate::table::{Seat, Table};
 
@@ -71,7 +72,17 @@ impl View {
         self.undealt == 0
     }
 
-    /// The moves this player may make, if it is their turn.
+    /// The moves offered to this player for play, if it is their turn: see
+    /// [`moves::candidate_moves`].
+    pub fn candidates(&self) -> Vec<Move> {
+        if self.to_move != Some(self.me) {
+            return Vec::new();
+        }
+        moves::candidate_moves(&self.rules, &self.table, self.hand, self.me)
+    }
+
+    /// Every legal move for this player, if it is their turn. Exhaustive:
+    /// exponential on a crowded table.
     pub fn legal_moves(&self) -> Vec<Move> {
         if self.to_move != Some(self.me) {
             return Vec::new();
@@ -83,6 +94,75 @@ impl View {
     /// can tell.
     pub fn could_be_held(&self, card: Card) -> bool {
         self.unseen().contains(card)
+    }
+}
+
+/// Draws the opponent's hidden hand and the undealt order, consistent with
+/// `view`: the opponent holds `view.opponent_holds` unseen cards, among them a
+/// card for every build they control. Exact (rejection sampling) when the
+/// constraints are loose, as they almost always are; if a thousand draws all
+/// fail, a card for each required value is placed first, which is slightly
+/// biased but always consistent.
+pub fn sample_hidden(view: &View, rng: &mut Rng) -> (CardSet, Vec<Card>) {
+    let mut pool: Vec<Card> = view.unseen().iter().collect();
+    let n = view.opponent_holds as usize;
+    debug_assert_eq!(
+        pool.len(),
+        n + view.undealt as usize,
+        "the unseen cards are the opponent's and the undealt"
+    );
+    let must = view.opponent_must_hold();
+    let holds_all = |hidden: CardSet| must.iter().all(|&v| view.rules.holds_value(hidden, v));
+    for _ in 0..1000 {
+        rng.shuffle(&mut pool);
+        let hidden: CardSet = pool[..n].iter().copied().collect();
+        if holds_all(hidden) {
+            return (hidden, pool[n..].to_vec());
+        }
+    }
+    // Place a card for each required value first, then fill at random.
+    rng.shuffle(&mut pool);
+    let mut hidden = CardSet::EMPTY;
+    for &v in &must {
+        if view.rules.holds_value(hidden, v) {
+            continue;
+        }
+        let rank = if v == 14 { crate::cards::ACE } else { v };
+        if let Some(i) = pool.iter().position(|c| c.rank() == rank) {
+            hidden.insert(pool.swap_remove(i));
+        }
+    }
+    while (hidden.len() as usize) < n {
+        hidden.insert(pool.pop().expect("enough unseen cards"));
+    }
+    (hidden, pool)
+}
+
+impl View {
+    /// A whole hand consistent with this view: the opponent holding `hidden`
+    /// and the undealt cards in the order `undealt`.
+    pub fn world(&self, hidden: CardSet, undealt: &[Card]) -> Hand {
+        let mut hands = [CardSet::EMPTY; 2];
+        hands[self.me.index()] = self.hand;
+        hands[self.opponent().index()] = hidden;
+        Hand::from_parts(
+            self.rules,
+            self.dealer,
+            self.deal,
+            self.to_move,
+            hands,
+            self.table,
+            self.piles,
+            self.sweeps,
+            self.last_capturer,
+            undealt,
+        )
+    }
+
+    /// A world drawn at random among those consistent with this view.
+    pub fn sample_world(&self, rng: &mut Rng) -> Hand {
+        let (hidden, undealt) = sample_hidden(self, rng);
+        self.world(hidden, &undealt)
     }
 }
 
@@ -220,9 +300,103 @@ mod tests {
     }
 
     #[test]
+    fn a_sampled_world_is_consistent_with_the_view() {
+        for seed in 0..300 {
+            let mut rng = Rng::seeded(seed);
+            let (mut h, _) = Hand::deal(Rules::ROYAL, Seat::North, shuffled(seed));
+            for _ in 0..rng.below(46) {
+                if h.to_move().is_none() {
+                    break;
+                }
+                let moves = h.legal_moves();
+                h.play(&moves[rng.below(moves.len() as u64) as usize])
+                    .unwrap();
+            }
+            if h.is_over() {
+                continue;
+            }
+            for seat in Seat::BOTH {
+                let v = h.view(seat, [0, 0]);
+                let world = v.sample_world(&mut rng);
+                // Everything the seat can see is the same in the world.
+                assert_eq!(world.view(seat, [0, 0]), v, "seed {seed}");
+                // The opponent holds a card for each build they control.
+                for value in v.opponent_must_hold() {
+                    assert!(
+                        v.rules.holds_value(world.hand_of(seat.other()), value),
+                        "seed {seed}"
+                    );
+                }
+                // And the world is a real hand: it plays out.
+                let mut w = world;
+                while w.to_move().is_some() {
+                    let m = w.candidates()[0];
+                    w.play(&m).unwrap();
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn sampling_is_uniform_over_the_unseen_cards() {
+        // At the first deal, with no builds, each unseen card is in the
+        // opponent's hand with probability 4/44.
+        let (h, _) = Hand::deal(Rules::CLASSIC, Seat::North, shuffled(1));
+        let v = h.view(Seat::South, [0, 0]);
+        let mut rng = Rng::seeded(2);
+        let mut counts = [0u32; 52];
+        let n = 44_000;
+        for _ in 0..n {
+            let (hidden, _) = sample_hidden(&v, &mut rng);
+            for c in hidden {
+                counts[c.index() as usize] += 1;
+            }
+        }
+        for c in v.unseen() {
+            let p = f64::from(counts[c.index() as usize]) / f64::from(n);
+            assert!((p - 4.0 / 44.0).abs() < 0.01, "{c}: {p}");
+        }
+        assert!(v.hand.iter().all(|c| counts[c.index() as usize] == 0));
+    }
+
+    #[test]
+    fn a_controlled_build_is_honoured_even_when_rare() {
+        // North controls a 9-build and holds one card; of the nine unseen
+        // cards only 9♥ is a nine, so North's card must be 9♥.
+        let rules = Rules::CLASSIC;
+        let hand = CardSet::parse("2C 3C").unwrap();
+        let table = Table::parse(&rules, "7D [9 @N: 5S 4S]").unwrap();
+        let unseen = CardSet::parse("9H 2D 3D 4D 5D 6D 7H 8H TH").unwrap();
+        let v = View {
+            rules,
+            me: Seat::South,
+            dealer: Seat::North,
+            deal: 5,
+            to_move: Some(Seat::South),
+            hand,
+            table,
+            piles: [!(hand | table.cards() | unseen), CardSet::EMPTY],
+            sweeps: [0, 0],
+            last_capturer: Some(Seat::South),
+            opponent_holds: 1,
+            undealt: 8,
+            scores: [0, 0],
+        };
+        assert_eq!(v.unseen(), unseen);
+        let mut rng = Rng::seeded(3);
+        for _ in 0..50 {
+            let (hidden, undealt) = sample_hidden(&v, &mut rng);
+            assert_eq!(hidden, CardSet::parse("9H").unwrap());
+            assert_eq!(undealt.len(), 8);
+        }
+    }
+
+    #[test]
     fn a_view_offers_the_moves_only_on_your_turn() {
         let (h, _) = Hand::deal(Rules::CLASSIC, Seat::North, shuffled(4));
         assert_eq!(h.view(Seat::South, [0, 0]).legal_moves(), h.legal_moves());
+        assert_eq!(h.view(Seat::South, [0, 0]).candidates(), h.candidates());
         assert!(h.view(Seat::North, [0, 0]).legal_moves().is_empty());
+        assert!(h.view(Seat::North, [0, 0]).candidates().is_empty());
     }
 }

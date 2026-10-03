@@ -112,6 +112,32 @@ pub fn disjoint_unions(groups: &[CardSet]) -> Vec<CardSet> {
     out
 }
 
+/// The unions a bounded generator offers: every disjoint union when there
+/// are at most `limit` groups, as [`disjoint_unions`] gives them; otherwise
+/// the empty union, each of the first `limit` groups alone (pairs first,
+/// then the fewest cards), and a greedy maximal packing started from each.
+/// Always a subset of [`disjoint_unions`], and never more than
+/// `2 * limit + 1` unions.
+pub fn bounded_unions(groups: &[CardSet], limit: usize) -> Vec<CardSet> {
+    if groups.len() <= limit {
+        return disjoint_unions(groups);
+    }
+    let mut ranked: Vec<CardSet> = groups.to_vec();
+    ranked.sort_by_key(|g| (g.len(), *g));
+    let mut out = vec![CardSet::EMPTY];
+    for &start in ranked.iter().take(limit) {
+        out.push(start);
+        let packed = ranked.iter().fold(
+            start,
+            |acc, &g| if acc.is_disjoint(g) { acc | g } else { acc },
+        );
+        out.push(packed);
+    }
+    out.sort_unstable();
+    out.dedup();
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -201,6 +227,28 @@ mod tests {
         assert!(!partitions_into(&Rules::CLASSIC, s("5S"), 1));
         assert!(!partitions_into(&Rules::CLASSIC, s("AS 9D"), 5));
         assert!(partitions_into(&Rules::CLASSIC, s("AS AD"), 1));
+    }
+
+    #[test]
+    fn bounded_unions_are_exhaustive_when_few_and_bounded_when_many() {
+        let groups = [s("8D"), s("2D 6C"), s("3H 5S"), s("AC 2D 5S")];
+        assert_eq!(bounded_unions(&groups, 4), disjoint_unions(&groups));
+        // Many groups: a crowded table of small cards summing to 10.
+        let pool = s("AS 2S 3S 4S 5S 6S AH 2H 3H 4H 5H 6H AD 2D 3D 4D 5D 6D AC 2C 3C 4C");
+        let many = subsets_summing(&Rules::CLASSIC, pool, 10);
+        assert!(many.len() > 100, "{}", many.len());
+        let bounded = bounded_unions(&many, 12);
+        assert!(bounded.len() <= 25, "{}", bounded.len());
+        assert!(bounded.contains(&CardSet::EMPTY));
+        // Each is a union of disjoint groups: it splits into tens.
+        for u in &bounded {
+            assert!(partitions_into(&Rules::CLASSIC, *u, 10), "{u}");
+        }
+        // And some take a lot at once.
+        assert!(
+            bounded.iter().any(|u| u.len() >= 12),
+            "a packing takes many cards"
+        );
     }
 
     #[test]
