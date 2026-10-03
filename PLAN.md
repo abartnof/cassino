@@ -6,9 +6,11 @@
 
 ## Where we are
 
-**2026-10-03: the rules engine is complete for both games, with a measured
-four-rung opponent and a skill dial, playable and watchable in a terminal.**
-160 tests, all passing (`bin/gate`).
+**2026-10-03: the engine is complete for both games and runs in WebAssembly.**
+A measured four-rung opponent with a skill dial; explanations, hints and the
+selection interface; the session and its JSON protocol; a 334 KB module that
+plays a whole game in Node at 10–16 ms a command. 205 tests, all passing
+(`bin/gate`). A full code review by a separate agent is under way.
 
 - **The engine** (`crates/cassino-core`): cards, values for Classic, Royal
   and Royal with aces at 14, the table and builds, move generation, checking
@@ -18,19 +20,29 @@ four-rung opponent and a skill dial, playable and watchable in a terminal.**
   of the rules on 1,200 synthetic and 4,000+ real-play positions, and planted
   bugs are caught. The bounded candidate generator equals it on ordinary
   tables and stays fast on crowded ones.
-- **Observation**: the `View`, with a leak test; sampled worlds that honour
-  the card each opponent build announces.
+- **Observation**: the `View`, with leak tests at every layer; sampled
+  worlds that honour the card each opponent build announces.
 - **The opponent**: legal, greedy, counter, searcher (the exact last-deal
   solver plus deal-length playouts in sampled worlds). Each rung beats the
   one below, clearly, in sequential mirrored measurements
   (`measurements/README.md`). The skill dial runs from 1 to 4, with one-rung
-  erratic slips between rungs, and skill 3.5 measures between 3 and 4.
+  erratic slips between rungs. Every decision is a pure function of the
+  opponent's seed and the view.
+- **Explanations and hints** (`advice.rs`, `words.rs`): notes on any move
+  from one observer's view (points, sweeps, cash, clinches, the card a build
+  announces, sweeps left open, cards left behind, builds at risk), hints
+  from the top rung, ratings (sound, dubious, blunder), the unseen summary,
+  sweep values.
+- **The selection interface** (`select.rs`): pick a card, tap the table,
+  and get the chips, the addable cards, the running sum and the reasons.
+- **The session and protocol** (`session.rs`, `crates/cassino-wasm`,
+  `docs/PROTOCOL.md`): commands, events with sentences and notes, aids,
+  undo by snapshot, replay of records, watch mode, table items with stable
+  ids; JSON state, offer and hint; C exports; a Node smoke test.
+- **The terminal client** (`cargo run -p cassino-cli`): a client of the
+  session, at `--skill 1-4` with `--explain`, `hint` and undo, or `--watch`.
 - **Measurement**: mirrored pairs, sequential with O'Brien–Fleming
   boundaries (`cargo run --release --bin measure`); `bench` for speeds.
-- **The terminal client** (`cargo run -p cassino-cli`): play by number or by
-  typed move at `--skill 1-4`, or `--watch` two computer players, with the
-  calls, the count and the dealer's "Last." narrated. It runs on `Game`
-  directly for now and moves onto the session in milestone 8.
 
 ## Settled decisions
 
@@ -67,10 +79,11 @@ four-rung opponent and a skill dial, playable and watchable in a terminal.**
 - [x] 6. **Observation and the stronger rungs**: the view and its leak test,
   the build inference, counting, the exact last-deal solver, sampled search,
   the skill dial. Each rung measured.
-- [ ] 7. **Explanations and hints**: the category evaluation, `explain`,
-  `hint`, `options` with reasons, sweep warnings, the unseen-card summary.
-- [ ] 8. **The session, the protocol and the wasm module**:
-  `docs/PROTOCOL.md`, replay byte for byte, native and wasm.
+- [x] 7. **Explanations and hints**: notes, hints, ratings, the selection
+  offer with reasons, sweep warnings, the unseen-card summary.
+- [x] 8. **The session, the protocol and the wasm module**:
+  `docs/PROTOCOL.md`; the CLI on the session; a Node smoke test. (A
+  byte-for-byte native/wasm replay test is still to add.)
 - [ ] 9. **The 3D table**, adapted from piquet's: art for 52 cards, the
   middle-of-the-table layout, builds, the cribbage board, the table talk.
 - [ ] 10. **Teaching**: tutorial pages, on-screen help.
