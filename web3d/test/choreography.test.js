@@ -3,10 +3,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
-import { choreograph, initialPlacement, opening, stagesBetween } from "../src/choreography.js";
+import { TIMING, choreograph, initialPlacement, opening, stagesBetween } from "../src/choreography.js";
 import { cardCorners } from "../src/kinematics.js";
 import { layout, sweepCards } from "../src/layout.js";
 import { loadEngine } from "../src/engine.js";
+import { countLines, countOf } from "../src/scorebug.js";
 
 const WASM = new URL("../../target/wasm32-unknown-unknown/release/cassino_wasm.wasm", import.meta.url);
 const skip = !existsSync(WASM) && "build the module first";
@@ -20,6 +21,7 @@ const codes = (cards) => cards.map((c) => c.card ?? c);
 function known(prev, next) {
   const seen = new Set([...codes(next.hand), ...next.table.flatMap((i) => codes(i.cards))]);
   if (prev) for (const c of [...codes(prev.hand), ...prev.table.flatMap((i) => codes(i.cards))]) seen.add(c);
+  for (const l of countLines(countOf(next))) if (l.code) seen.add(l.code);
   for (const e of next.events.slice(prev ? prev.events.length : 0)) {
     if (e.kind === "played") for (const c of [e.card, ...(e.taken ?? []), ...(e.loose ?? [])]) seen.add(c.card);
     if (e.kind === "dealt") for (const c of [...e.yours, ...e.table]) seen.add(c.card);
@@ -283,4 +285,29 @@ test("beats: each new event's moment, after the motion it names", { skip }, () =
   assert.deepEqual(ks, [...Array(next.events.length - state.events.length).keys()].map((k) => k + state.events.length));
   for (let i = 1; i < ks.length; i++) assert.ok(result.beats[ks[i]] >= result.beats[ks[i - 1]], "in order");
   assert.ok(result.beats[ks[0]] > 0, "your move is seen when it lands");
+});
+
+test("the count: each counted card is turned up at its line's moment", { skip }, () => {
+  let state = engine.start({ game: "classic", sweeps: true, skill: 1, seed: 7 });
+  let placement = initialPlacement(state);
+  for (let n = 0; ; n++) {
+    const next = engine.send(state.moves[state.moves.length - 1]).state;
+    const result = playOut(state, next, placement, `move ${n}`);
+    placement = result.placement;
+    state = next;
+    if (state.prompt !== "next_hand") continue;
+    const lines = countLines(countOf(state));
+    assert.ok(result.count, "the count's moments");
+    assert.equal(result.count.lines.length, lines.length);
+    for (let i = 1; i < lines.length; i++) assert.ok(result.count.lines[i] > result.count.lines[i - 1], "one line after another");
+    assert.equal(result.beats[result.count.at], result.count.lines[0] - TIMING.beat, "the count is heard as it begins");
+    lines.forEach((l, i) => {
+      if (!l.code) return;
+      const rest = result.placement.find((m) => m.code === l.code);
+      assert.ok(rest.zone.endsWith("count"), `${l.code} in the count row`);
+      const m = result.motions.filter((x) => x.id === rest.id).at(-1);
+      assert.equal(m.delay, result.count.lines[i], `${l.code} turned up as its line is said`);
+    });
+    break;
+  }
 });

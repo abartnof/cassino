@@ -10,7 +10,7 @@
 A measured four-rung opponent with a skill dial; explanations, hints and the
 selection interface; the session and its JSON protocol; a 334 KB module that
 plays a whole game in Node at 10–16 ms a command, byte for byte as the native
-build does. 229 Rust tests and 101 Node tests of the table, all passing
+build does. 229 Rust tests and 109 Node tests of the table, all passing
 (`bin/gate`).
 
 **Reviewed.** A full code review by a separate agent
@@ -60,8 +60,10 @@ legal move. RULES.md now says each held card answers for one build value.
   origin headers. Done: T0 the scaffold, T1 the state laid out, T2 a move
   chosen by tapping, T3 the motion (the deal in twos, trails, builds, the
   gather of a capture turned over into its pile, sweeps held up and laid
-  crosswise). A whole game is played by clicking in an offline browser
-  test. Next: T4, the score and the count.
+  crosswise), T4 the score (a broadcast's bug with live trackers) and the
+  count (each ace and Casino turned up as its line is written on the score
+  sheet). A whole game is played by clicking in an offline browser test.
+  Next: T5, the table talk.
 
 ## Settled decisions
 
@@ -105,7 +107,7 @@ legal move. RULES.md now says each held card answers for one build value.
   native and wasm byte for byte; a Node smoke test.
 - [ ] 9. **The 3D table**, adapted from piquet's: art for 52 cards, the
   middle-of-the-table layout, builds, the cribbage board, the table talk.
-  Phases T0–T9 in `docs/TABLE3D.md`; T0–T3 done.
+  Phases T0–T9 in `docs/TABLE3D.md`; T0–T4 done.
 - [ ] 10. **Teaching**: tutorial pages, on-screen help.
 
 ## Working conventions

@@ -18,10 +18,11 @@ import { Timeline } from "./timeline.js";
 import { CARD } from "./units.js";
 
 // `view()` is how the person asks to see the state: { chosen, picked }.
-// `timed(prev, next, beats)`, if given, runs once a change is choreographed,
-// with when each new event will be seen to happen, in ms from now: for the
-// dialogue. `rested()` runs whenever the cards come to rest.
-export function createDirector({ stage, deck, view, decorate, timed, rested, manual = false, speed = 1 }) {
+// `advance` and `restart` return { beats, count }: when each new event will
+// be seen to happen, and each line of a hand's count said, in ms from now on
+// the table's clock (for the dialogue and the score sheet; see `at`).
+// `rested()` runs whenever the cards come to rest.
+export function createDirector({ stage, deck, view, decorate, rested, manual = false, speed = 1 }) {
   const meshes = Array.from({ length: 52 }, () => deck.card(null));
   meshes.forEach((mesh, id) => (mesh.userData.id = id));
   let state = null;
@@ -136,6 +137,7 @@ export function createDirector({ stage, deck, view, decorate, timed, rested, man
     }
     const beats = {};
     for (const [k, ms] of Object.entries(result.beats)) beats[k] = ms / timeline.speed;
+    const count = result.count ? { at: result.count.at, lines: result.count.lines.map((ms) => ms / timeline.speed) } : null;
     timeline.idle().then(() => {
       dress();
       rested?.();
@@ -145,7 +147,7 @@ export function createDirector({ stage, deck, view, decorate, timed, rested, man
     if (manual) frame();
     else wake();
     if (!timeline.busy()) rested?.();
-    return beats;
+    return { beats, count };
   }
 
   // ---- picking ------------------------------------------------------------
@@ -195,13 +197,13 @@ export function createDirector({ stage, deck, view, decorate, timed, rested, man
       release();
       if (!dealt) {
         settle(s);
-        return {};
+        return { beats: {}, count: null };
       }
       const start = opening(s);
       settle(start);
       return animate(start, s);
     },
-    // The next state, animated from this one; returns each new event's moment.
+    // The next state, animated from this one.
     advance(next) {
       return animate(state, next);
     },

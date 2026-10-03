@@ -105,7 +105,11 @@ def play_by_clicking(page, failures, moves_made):
     """One decision, made the way a person makes it."""
     settle(page)
     s = page.evaluate("window.cassino3d.state()")
+    if s["prompt"] in ("next_hand", "over"):
+        check_count(page, s, failures)
     if s["prompt"] == "next_hand":
+        if s["hand_number"] == 1:
+            shot(page, "t4-count")
         page.locator("md-filled-button.next").click()
         return True
     if s["prompt"] != "play":
@@ -131,6 +135,19 @@ def play_by_clicking(page, failures, moves_made):
         return False
     chip.click()
     return True
+
+
+def check_count(page, s, failures):
+    """At the end of a hand: the sheet holds the count, line by line, and
+    the score shows the new totals."""
+    page.wait_for_function("window.cassino3d.sheet().total !== ''", timeout=20_000)
+    sheet = page.evaluate("window.cassino3d.sheet()")
+    scored = [e for e in s["events"] if e["kind"] == "scored" and e["hand"] == s["hand_number"]][-1]
+    if len(sheet["lines"]) != len(scored["count"]["lines"]):
+        failures.append(f"hand {s['hand_number']}: the sheet has {len(sheet['lines'])} lines, the count {len(scored['count']['lines'])}")
+    scores = page.evaluate("window.cassino3d.scores()")
+    if scores != s["scores"]:
+        failures.append(f"hand {s['hand_number']}: the score shows {scores}, the game is {s['scores']}")
 
 
 def strip(page, name, move, frames=16, step=150):

@@ -124,6 +124,49 @@ test("a sweep lies where it was laid: later captures cover it, its ends showing"
   );
 });
 
+test("a finished hand's counted aces and Casinos lie face up before their taker's pile, in the count's order", () => {
+  const scored = {
+    kind: "scored",
+    hand: 1,
+    count: {
+      lines: [
+        { item: "cards", suit: null, who: "you", points: 3 },
+        { item: "big_casino", suit: null, who: "them", points: 2 },
+        { item: "ace", suit: "S", who: "you", points: 1 },
+        { item: "ace", suit: "D", who: "you", points: 1 },
+        { item: "sweeps", suit: null, who: "you", points: 1 },
+      ],
+    },
+  };
+  const s = { ...state({ hand: [], holds: 0, undealt: 0, piles: [30, 22], sweeps: [1, 0] }), hand_number: 1, events: [scored] };
+  const slots = layout(s, { sweeps: { you: [{ code: "9C", at: 12 }], them: [] } });
+  assert.equal(slots.length, 52);
+  const row = (zone) => slots.filter((x) => x.zone === zone).sort((a, b) => a.index - b.index);
+  assert.deepEqual(row("your-count").map((x) => x.code), ["AS", "AD"]);
+  assert.deepEqual(row("their-count").map((x) => x.code), ["TD"]);
+  assert.ok(row("your-count").every((x) => x.faceUp));
+  assert.equal(row("your-pile").length, 28);
+  assert.equal(row("their-pile").length, 21);
+  // Toward the middle, clear of the pile.
+  const [ace] = row("your-count");
+  assert.ok(ace.pose.position.x < ZONES.yourPile.x - CARD.width);
+  assert.ok(slots.find((x) => x.code === "9C"), "the sweep card still lies in the pile");
+  // Mid-hand, nothing is counted.
+  const playing = { ...s, hand_number: 2 };
+  assert.equal(layout(playing).filter((x) => x.zone.endsWith("count")).length, 0);
+});
+
+test("a counted card that made a sweep comes out of its place in the pile", () => {
+  const scored = { kind: "scored", hand: 1, count: { lines: [{ item: "ace", suit: "H", who: "you", points: 1 }] } };
+  const s = { ...state({ hand: [], holds: 0, undealt: 0, piles: [10, 42], sweeps: [1, 0] }), hand_number: 1, events: [scored] };
+  const slots = layout(s, { sweeps: { you: [{ code: "AH", at: 4 }], them: [] } });
+  assert.equal(slots.filter((x) => x.code === "AH").length, 1);
+  assert.equal(slots.find((x) => x.code === "AH").zone, "your-count");
+  const pile = slots.filter((x) => x.zone === "your-pile").sort((a, b) => a.index - b.index);
+  assert.equal(pile.length, 9);
+  assert.deepEqual(pile.map((x) => x.key), [...Array(9).keys()].map((i) => `your-pile:${i}`), "the plain cards stay as they were");
+});
+
 test("the stock lies at the dealer's left", () => {
   const theirs = layout(state({ hand: ["AS"], dealer: "them" })).find((x) => x.zone === "stock").pose.position;
   const yours = layout(state({ hand: ["AS"], dealer: "you" })).find((x) => x.zone === "stock").pose.position;
@@ -142,6 +185,7 @@ test("the hand card chosen stands up, and table cards picked rise", () => {
 import { existsSync, readFileSync } from "node:fs";
 import { loadEngine } from "../src/engine.js";
 import { sweepCards } from "../src/layout.js";
+import { countLines, countOf } from "../src/scorebug.js";
 
 test("sweep cards come from the events of the hand under way, at their height in the pile", () => {
   const played = (you, c, hand = 2, taken = 1) => ({ kind: "played", you, card: { card: c }, hand, type: "take", taken: Array(taken).fill({}) });
@@ -177,6 +221,7 @@ test("real games lay out 52 cards at every step, faces only where seen", { skip:
       assert.equal(new Set(slots.map((s) => s.key)).size, 52);
       const seen = new Set([...state.hand.map((c) => c.card), ...state.table.flatMap((i) => i.cards.map((c) => c.card))]);
       const sweeps = sweepCards(state.events, state.hand_number);
+      for (const l of countLines(countOf(state))) if (l.code) seen.add(l.code);
       for (const who of ["you", "them"]) {
         assert.equal(sweeps[who].length, state.piles[who].sweeps, `${who} sweeps, seed ${seed} step ${n}`);
         for (const s of sweeps[who]) {

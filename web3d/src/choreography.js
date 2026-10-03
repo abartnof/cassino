@@ -32,6 +32,7 @@
 import { Vector3 } from "three";
 import { carryBlock, fan, lying, pickUp, pull, rise, slide, toss, transfer } from "./kinematics.js";
 import { jitter, layout, sweepCards } from "./layout.js";
+import { lineCard } from "./scorebug.js";
 import { CARD } from "./units.js";
 
 // Starting points, tuned by eye; the speed setting scales them all.
@@ -50,6 +51,8 @@ export const TIMING = Object.freeze({
   dealCard: 300,
   dealPair: 170, // two at a time: one pair after another
   dealSecond: 50, // and the second card of a pair just behind the first
+  countLine: 700, // the count, line by line
+  countCard: 520, // a counted card turned up out of the pile into the count row
   collect: 480, // every card back to the stock for a new hand
   collectStagger: 12,
   direct: 420,
@@ -239,6 +242,10 @@ export function stagesBetween(prev, next) {
         stages.push({ kind: "residue", state: s, who, event: e, items, at });
         break;
       }
+      case "scored":
+        s = { ...s, events: seen() };
+        stages.push({ kind: "count", state: s, event: { ...e, at }, at });
+        break;
       default:
         s = { ...s, events: seen() }; // the rest move no cards
         break;
@@ -255,13 +262,15 @@ export function stagesBetween(prev, next) {
 // truly arrives is claimed.
 const SOURCES = {
   middle: ["their-hand", "your-hand", "stock", "your-pile", "their-pile"],
-  "your-pile": ["your-pile", "middle", "your-hand"],
-  "their-pile": ["their-pile", "middle", "their-hand"],
+  "your-pile": ["your-pile", "middle", "your-hand", "your-count"],
+  "their-pile": ["their-pile", "middle", "their-hand", "their-count"],
+  "your-count": ["your-pile"],
+  "their-count": ["their-pile"],
   "your-hand": ["your-hand", "stock", "middle", "your-pile", "their-pile"],
   "their-hand": ["their-hand", "stock", "middle", "your-pile", "their-pile"],
-  stock: ["stock", "your-pile", "their-pile", "middle", "your-hand", "their-hand"],
+  stock: ["stock", "your-pile", "their-pile", "your-count", "their-count", "middle", "your-hand", "their-hand"],
 };
-const CLAIM = ["middle", "your-pile", "their-pile", "your-hand", "their-hand", "stock"];
+const CLAIM = ["middle", "your-count", "their-count", "your-pile", "their-pile", "your-hand", "their-hand", "stock"];
 const KEYED = new Set(["your-pile", "their-pile", "stock"]);
 
 // Which of a zone's meshes to take first when some must leave it.
@@ -596,14 +605,40 @@ class Plan {
     this.stage(target, null, t);
   }
 
+  // The count, line by line in Foster's order: each ace and Casino it
+  // names turned up out of its taker's pile into the count row as its line
+  // is said (a sweep card from its place in the pile, any other off the
+  // top). `this.count` keeps each line's moment, for the score sheet.
+  count({ state, event }) {
+    const target = layoutOf(state);
+    let t = Math.max(this.clock, this.end) + TIMING.beat;
+    const lines = [];
+    for (const line of event.count.lines) {
+      lines.push(t);
+      const code = lineCard(line);
+      const slot = code && target.find((x) => x.code === code && x.zone.endsWith("count"));
+      if (slot) {
+        const mesh =
+          this.now.find((m) => m.code === code) ??
+          this.now.filter((m) => m.zone === PILE[line.who] && !m.code).sort((a, b) => b.index - a.index)[0];
+        if (mesh) this.move(mesh.id, slot, toss(mesh.pose, slot.pose), t, TIMING.countCard);
+      }
+      t += TIMING.countLine;
+    }
+    this.counted = { at: event.at, lines };
+    this.clock = t;
+    this.stage(target, null, t);
+  }
+
   result() {
-    return { motions: this.motions, placement: this.now, duration: Math.max(this.clock, this.end) };
+    return { motions: this.motions, placement: this.now, duration: Math.max(this.clock, this.end), count: this.counted ?? null };
   }
 }
 
 // Stages whose moment is their start: the cards collected are heard as they
-// begin to move. Every other stage's moment is when it has landed.
-const HEARD_AT_START = new Set(["collect"]);
+// begin to move, and the count as it begins. Every other stage's moment is
+// when it has landed.
+const HEARD_AT_START = new Set(["collect", "count"]);
 
 export function choreograph(prev, next, placement, view = {}) {
   const plan = new Plan(placement, view);

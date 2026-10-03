@@ -147,8 +147,10 @@ Material Design 3, from piquet's shell.
   Casinos taken, sweeps; cards still out (`state.unseen`); the sweep warning
   (`state.sweep_values`).
 - **The count ritual**: at the end of a hand, the lines of `scored.count` one
-  at a time in Foster's order, each with its points, the cards fanned toward
-  the winner.
+  at a time in Foster's order, each with its points, written on the score
+  sheet as each ace and Casino turns up out of its taker's pile into a row
+  (`layout.js` lays out a counted hand; the choreography's `count` stage
+  times each card to its line).
 - **Settings**: Classic or Royal, aces 1 or 14, sweeps, the skill dial (1 to
   4 in halves), the aids, Large Text, watch mode, a new game, copy the game
   record (`state.saved`), the daily deal (seeded from the date).
@@ -187,7 +189,13 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   clicking with the motion on, and saves strips of the deal, a gather and a
   sweep (`t3-deal`, `t3-gather`, `t3-sweep`).
 - **T4. The score and the count.** Score, trackers, the count ritual, the
-  end of the game.
+  end of the game. **Done**: the bug (two numbers in the build badges'
+  colours, the period, bars toward 21) with each player's trackers under
+  their number (`scorebug.js`, pure and node-tested); at the end of a hand,
+  each ace and Casino the count names turned up out of its taker's pile
+  into a count row as its line is written on the score sheet, the score
+  ticking with it; the sheet keeps every hand's points and the game's. The
+  browser test checks the sheet and the score at every hand's end.
 - **T5. Table talk.** The phrase bank and the dialogue boxes.
 - **T6. Settings and aids.** Everything in §8's settings; watch mode; hints
   and explanations; undo; saved sittings across a reload.

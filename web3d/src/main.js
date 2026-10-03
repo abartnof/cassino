@@ -2,10 +2,11 @@
 //
 // A client of the table protocol (docs/PROTOCOL.md): it draws the engine's
 // state and sends back commands, and holds no rules. The plan is
-// docs/TABLE3D.md. Phase T3: a move chosen by tapping (selection.js,
-// overlay.js), and every change of state played out on the cards by the
-// director (director.js, choreography.js): the deal in twos, the trail, the
-// build, the gather of a capture into its taker's pile.
+// docs/TABLE3D.md. Phase T4: a move chosen by tapping (selection.js,
+// overlay.js); every change of state played out on the cards by the director
+// (director.js, choreography.js); the score, the trackers, and each hand's
+// count said line by line on the score sheet as its cards turn up
+// (scorebug.js).
 
 import { Vector3 } from "three";
 import { loadTextures } from "./art.js";
@@ -14,6 +15,7 @@ import { createDirector } from "./director.js";
 import { decodeBase64, loadEngine } from "./engine.js";
 import { createOverlay } from "./overlay.js";
 import { createScene } from "./scene.js";
+import { countLines, countOf, history, period, scoreAfter, standing, trackers } from "./scorebug.js";
 import { EMPTY, choose, chipsOf, itemState, pick, selectionText, whyNot } from "./selection.js";
 import { chooseSurface } from "./surfaces.js";
 import { CARD } from "./units.js";
@@ -62,6 +64,7 @@ async function main() {
     decorate,
     rested: () => {
       placeBadges();
+      overlay.trackers(trackers(state));
       show();
     },
     manual: params.has("manual"),
@@ -69,12 +72,53 @@ async function main() {
   });
 
   function advance(next) {
+    const before = state;
     state = next;
     sel = EMPTY;
     offer = null;
     overlay.placeBadges([]);
-    director.advance(state);
+    if (state.hand_number !== before.hand_number || state.seed !== before.seed) overlay.hideSheet();
+    const { count } = director.advance(state);
+    if (count) tellCount(count);
+    else scoreboard();
     show();
+  }
+
+  // The score as it stands, and the sheet complete if the hand is over.
+  function scoreboard() {
+    const now = standing(state);
+    overlay.score({ ...now.after, target: now.target, period: period(state) });
+    overlay.trackers(trackers(state));
+    const lines = countLines(countOf(state));
+    if (!lines.length) return;
+    overlay.openCount(`The count · hand ${state.hand_number}`);
+    lines.forEach((l) => overlay.countLine(l));
+    closeCount();
+  }
+
+  // A hand's count, told as the cards turn up: the sheet opens, each line
+  // is written down as it is said and the score ticks with it, and then the
+  // hand's points and the game's.
+  function tellCount(count) {
+    const now = standing(state);
+    const lines = countLines(countOf(state));
+    const at = (ms, fn) => director.at(Math.max(0, ms), fn);
+    overlay.score({ ...now.before, target: now.target, period: period(state) });
+    const pace = count.lines.length > 1 ? count.lines[1] - count.lines[0] : 500;
+    at(count.lines[0] - pace / 2, () => overlay.openCount(`The count · hand ${state.hand_number}`));
+    lines.forEach((l, i) =>
+      at(count.lines[i], () => {
+        overlay.countLine(l);
+        overlay.score({ ...scoreAfter(now.before, lines, i + 1), target: now.target, period: period(state) });
+      }),
+    );
+    at((count.lines.at(-1) ?? 0) + pace, closeCount);
+  }
+  function closeCount() {
+    const ends = state.events.findLast((e) => (e.kind === "hand_ends" || e.kind === "game_ends") && e.hand === state.hand_number);
+    const hand = state.events.findLast((e) => e.kind === "hand_ends" && e.hand === state.hand_number);
+    const text = hand ? `This hand: you ${hand.yours}, your opponent ${hand.theirs}.` : "";
+    overlay.closeCount({ text: ends?.kind === "game_ends" ? `${text} ${ends.text}` : text, rows: history(state.events) });
   }
 
   const overlay = createOverlay(document.getElementById("overlay"), {
@@ -89,7 +133,9 @@ async function main() {
       sel = EMPTY;
       offer = null;
       overlay.placeBadges([]);
+      overlay.hideSheet();
       director.restart(state, { dealt: true });
+      scoreboard();
       show();
     },
   });
@@ -110,7 +156,8 @@ async function main() {
   window.addEventListener("resize", placeBadges);
 
   function show() {
-    overlay.show({ state, chips: director.busy() ? [] : chipsOf(offer), sum: offer?.sum ?? null, message });
+    const busy = director.busy();
+    overlay.show({ state, chips: busy ? [] : chipsOf(offer), sum: offer?.sum ?? null, message, busy });
   }
 
   // The selection changed: ask the engine what it makes, and show it.
@@ -148,6 +195,7 @@ async function main() {
   canvas.addEventListener("click", (event) => tapped(director.pick(event.clientX, event.clientY)));
 
   director.restart(state, { dealt: !params.has("nodeal") });
+  scoreboard();
   show();
   document.getElementById("loading").remove();
 
@@ -159,6 +207,8 @@ async function main() {
     meshes: () => director.meshes.length,
     faces: () => director.meshes.filter((m) => m.userData.code).map((m) => m.userData.code),
     chips: () => overlay.chips(),
+    sheet: () => overlay.sheet(),
+    scores: () => overlay.scores(),
     screenPoint: (code) => director.screenPoint(code),
     busy: () => director.busy(),
     skip: () => director.skip(),

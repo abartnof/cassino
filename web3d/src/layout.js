@@ -18,6 +18,7 @@
 
 import { Vector3 } from "three";
 import { fan, lying } from "./kinematics.js";
+import { countLines, countOf } from "./scorebug.js";
 import { CARD, ZONES } from "./units.js";
 
 const DEG = Math.PI / 180;
@@ -123,44 +124,80 @@ function middle(items, picked) {
 // so later captures cover its middle and its ends still show, each a little
 // along from the last (the Swedish tally). Plain cards are keyed by their
 // place among the plain ones, which a sweep laid on them does not change.
-function pileOf(who, count, sweeps) {
+//
+// Once the hand is counted, the cards the count names (`drawn`) are out of
+// the pile, in the count row: a sweep card from its place, and the rest off
+// the top of the plain cards, which are anonymous.
+function pileOf(who, count, sweeps, drawn = []) {
   const zone = who === "you" ? ZONES.yourPile : ZONES.theirPile;
   const name = who === "you" ? "your-pile" : "their-pile";
   const side = who === "you" ? 1 : -1;
   const crosswise = new Map(sweeps.filter((s) => s.at < count).map((s, k) => [s.at, { code: s.code, k }]));
-  const slots = [];
+  const places = [];
   let plain = 0;
   for (let i = 0; i < count; i++) {
     const sweep = crosswise.get(i);
-    if (sweep) {
-      slots.push({
-        key: sweep.code,
+    places.push(sweep ? { sweep } : { plain: plain++ });
+  }
+  const sweepCodes = new Set([...crosswise.values()].map((s) => s.code));
+  let offTop = drawn.filter((c) => !sweepCodes.has(c)).length;
+  const kept = [];
+  for (let i = places.length - 1; i >= 0; i--) {
+    const p = places[i];
+    if (p.sweep ? drawn.includes(p.sweep.code) : offTop-- > 0) continue;
+    kept.unshift(p);
+  }
+  return kept.map((p, i) => {
+    if (p.sweep) {
+      return {
+        key: p.sweep.code,
         zone: name,
         index: i,
-        code: sweep.code,
+        code: p.sweep.code,
         faceUp: true,
         item: null,
         pose: lying({
-          x: zone.x - side * sweep.k * zone.sweepStep,
+          x: zone.x - side * p.sweep.k * zone.sweepStep,
           z: zone.z + side * (CARD.height / 2 - CARD.width / 4),
           height: REST + i * STEP,
           yaw: 90 * DEG,
         }),
-      });
-    } else {
-      slots.push({
-        key: `${name}:${plain}`,
-        zone: name,
-        index: i,
-        code: null,
-        faceUp: false,
-        item: null,
-        pose: lying({ x: zone.x, z: zone.z, height: REST + i * STEP, faceUp: false, yaw: jitter(`${name}${plain}`, 2) }),
-      });
-      plain++;
+      };
     }
-  }
-  return slots;
+    return {
+      key: `${name}:${p.plain}`,
+      zone: name,
+      index: i,
+      code: null,
+      faceUp: false,
+      item: null,
+      pose: lying({ x: zone.x, z: zone.z, height: REST + i * STEP, faceUp: false, yaw: jitter(`${name}${p.plain}`, 2) }),
+    };
+  });
+}
+
+// The count row: the aces and Casinos a player's count names, face up and
+// in the count's order, laid out from their pile toward the middle of the
+// table, which is clear by then.
+function countRow(who, codes) {
+  const zone = who === "you" ? ZONES.yourPile : ZONES.theirPile;
+  const toward = who === "you" ? -1 : 1;
+  return codes.map((code, k) => ({
+    key: code,
+    zone: who === "you" ? "your-count" : "their-count",
+    index: k,
+    code,
+    faceUp: true,
+    item: null,
+    pose: lying({ x: zone.x + toward * (ZONES.count.first + k * ZONES.count.step), z: zone.z, height: REST, yaw: jitter(code, 1.5) }),
+  }));
+}
+
+// The cards a finished hand's count names, by whose they are.
+export function countedCards(state) {
+  const out = { you: [], them: [] };
+  for (const line of countLines(countOf(state))) if (line.code) out[line.who].push(line.code);
+  return out;
 }
 
 function stock(count, dealer) {
@@ -177,12 +214,15 @@ function stock(count, dealer) {
 }
 
 export function layout(state, { chosen = null, picked = [], sweeps = { you: [], them: [] } } = {}) {
+  const counted = countedCards(state);
   return [
     ...yourHand(state.hand.map((c) => c.card), chosen),
     ...theirHand(state.opponent_holds),
     ...middle(state.table, picked),
-    ...pileOf("you", state.piles.you.cards, sweeps.you ?? []),
-    ...pileOf("them", state.piles.them.cards, sweeps.them ?? []),
+    ...pileOf("you", state.piles.you.cards, sweeps.you ?? [], counted.you),
+    ...pileOf("them", state.piles.them.cards, sweeps.them ?? [], counted.them),
+    ...countRow("you", counted.you),
+    ...countRow("them", counted.them),
     ...stock(state.undealt, state.dealer),
   ];
 }
