@@ -38,7 +38,7 @@ the same record of commands always replays into the same game.
 | `build 8 3D 5C` | `prompt == "play"` | A new build: value, played card, loose cards |
 | `build 9 2S on 3C 9D` | `prompt == "play"` | Onto the build containing 3C, absorbing 9D |
 | `next` | `prompt == "next_hand"` | Deal the next hand, once the count has been seen |
-| `undo` | `can_undo` | Take back the last decision, with the opponent's replies and anything the table did for the person after it |
+| `undo` | `can_undo` | Take back the last decision, with the opponent's replies and anything the table did for the person after it; refused (`deal_seen`) once a deal has come since it, whose cards the person has seen |
 | `set <aid> on` / `off` | any time | `hints`, `explain`, `play_forced` |
 
 A refused command leaves the game as it was, and `state.error` says why in a
@@ -111,7 +111,7 @@ client cannot show more than the person at the table could know.
 | `scores`, `target` | The game's totals before this hand, and 21 |
 | `events` | Everything that has happened, in order (see below) |
 | `can_undo`, `aids`, `error` | |
-| `error_code` | Why the last command was refused, as a code: an `Illegal` reason (`not_holding`, `does_not_split`, …) or `not_a_move`, `game_over`, `hand_over`, `hand_not_over`, `nothing_to_undo`, `bad_setting`, `watching` |
+| `error_code` | Why the last command was refused, as a code: an `Illegal` reason (`not_holding`, `does_not_split`, …) or `not_a_move`, `game_over`, `hand_over`, `hand_not_over`, `nothing_to_undo`, `deal_seen`, `bad_setting`, `watching` |
 | `saved`, `record_version` | The sitting as text, to keep across a reload (see "Saving and restoring") |
 | `unseen` | The counting aid: `{aces, big_casino, little_casino, spades, cards}` that you cannot see |
 | `sweep_values` | The values a single card could sweep the table with |

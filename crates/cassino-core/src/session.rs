@@ -501,7 +501,7 @@ impl Session {
     /// Why the last command was refused, as a code a client can test: the
     /// `Illegal` reason's name for a move the rules forbid, else
     /// `not_a_move`, `not_your_turn`, `game_over`, `hand_over`,
-    /// `nothing_to_undo`, `bad_setting` or `watching`.
+    /// `nothing_to_undo`, `deal_seen`, `bad_setting` or `watching`.
     pub fn error_code(&self) -> Option<&'static str> {
         self.error_code
     }
@@ -530,9 +530,16 @@ impl Session {
             );
         }
         if command == "undo" {
-            let Some(snap) = self.snapshots.pop() else {
+            if self.snapshots.is_empty() {
                 return refuse("nothing_to_undo", "There is nothing to undo.");
-            };
+            }
+            if self.dealt_since_decision() {
+                return refuse(
+                    "deal_seen",
+                    "The next cards have been dealt and seen, so that move can't be taken back.",
+                );
+            }
+            let snap = self.snapshots.pop().expect("one to take back");
             self.game = snap.game;
             self.events.truncate(snap.events);
             self.record.truncate(snap.record);
@@ -971,8 +978,19 @@ impl Session {
         }
     }
 
+    /// Whether the last decision can be taken back: not once a deal has
+    /// come since it, whose cards the person has seen (the table review's
+    /// T20).
     pub fn can_undo(&self) -> bool {
-        !self.snapshots.is_empty()
+        !self.snapshots.is_empty() && !self.dealt_since_decision()
+    }
+
+    fn dealt_since_decision(&self) -> bool {
+        self.snapshots.last().is_some_and(|snap| {
+            self.events[snap.events..]
+                .iter()
+                .any(|e| matches!(e.kind, EventKind::Dealt { .. }))
+        })
     }
 }
 
@@ -1193,6 +1211,37 @@ mod tests {
         assert_eq!(s.error_code(), Some("bad_setting"));
         assert!(s.send(&s.candidates()[0].to_string()));
         assert_eq!(s.error_code(), None);
+    }
+
+    #[test]
+    fn no_undo_once_the_next_cards_are_seen() {
+        // The table review's T20: a move that brought a deal, undone, would
+        // be made again knowing the next four cards.
+        let mut s = Session::new(21, settings());
+        assert!(s.send("set hints on"));
+        let mut checked = false;
+        while s.prompt() != Prompt::Over && !checked {
+            if s.prompt() == Prompt::NextHand {
+                assert!(s.send("next"));
+                assert!(!s.can_undo(), "nor once the next hand is dealt");
+                continue;
+            }
+            let before = s.events().len();
+            let mv = s.candidates()[0];
+            assert!(s.send(&mv.to_string()));
+            let dealt = s.events()[before..]
+                .iter()
+                .any(|e| matches!(e.kind, EventKind::Dealt { .. }));
+            if dealt && s.prompt() == Prompt::Play {
+                assert!(!s.can_undo());
+                assert!(!s.send("undo"));
+                assert_eq!(s.error_code(), Some("deal_seen"));
+                checked = true;
+            } else if s.prompt() == Prompt::Play {
+                assert!(s.can_undo(), "an ordinary move can be taken back");
+            }
+        }
+        assert!(checked, "a move brought a deal");
     }
 
     #[test]

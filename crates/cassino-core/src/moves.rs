@@ -246,6 +246,15 @@ pub fn canonical(table: &Table, mv: Move) -> Move {
     }
 }
 
+/// A number with its article, as it is said: "an 8", "an 11", "a 7".
+fn a_number(n: u8) -> String {
+    if matches!(n, 8 | 11 | 18) {
+        format!("an {n}")
+    } else {
+        format!("a {n}")
+    }
+}
+
 impl fmt::Display for Illegal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -260,7 +269,9 @@ impl fmt::Display for Illegal {
             Illegal::PartOfABuild => write!(f, "A build is only ever taken whole, never split."),
             Illegal::BuildOfAnotherValue { build, value } => write!(
                 f,
-                "That is a build of {build}, so only a {build} can take it, not a {value}."
+                "That is a build of {build}, so only {} can take it, not {}.",
+                a_number(*build),
+                a_number(*value)
             ),
             Illegal::DoesNotSplit(v) => write!(f, "Those cards don't make groups of {v}."),
             Illegal::CourtTakesOne => {
@@ -1499,5 +1510,23 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn a_refusal_says_its_numbers_as_they_are_said() {
+        let why = Illegal::BuildOfAnotherValue { build: 8, value: 7 }.to_string();
+        assert_eq!(
+            why,
+            "That is a build of 8, so only an 8 can take it, not a 7."
+        );
+        let why = Illegal::BuildOfAnotherValue {
+            build: 9,
+            value: 11,
+        }
+        .to_string();
+        assert!(
+            why.contains("only a 9") && why.contains("not an 11"),
+            "{why}"
+        );
     }
 }
