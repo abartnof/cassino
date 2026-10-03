@@ -507,6 +507,7 @@ class Plan {
       const pose = shownAt(side);
       const out = peelOff(mesh.pose, (lifted) => toss(lifted, pose, { clearance: 3 }), { toward: TOWARD[who] });
       const shown = this.move(mesh.id, { ...this.via(mesh.id, pose), code }, out, start + (who === "them" ? 90 : 0), TIMING.cutOut);
+      this.moments.shown = Math.max(this.moments.shown ?? 0, shown); // whose deal it is, said
       const back = this.move(mesh.id, home, peelOff(pose, (lifted) => toss(lifted, home.pose, { clearance: 3 }), { toward: TOWARD[who] }), shown + TIMING.cutShow, TIMING.cutBack);
       end = Math.max(end, back);
     }
@@ -721,7 +722,7 @@ class Plan {
 // moment is when it has landed; a sweep and cash, which move no cards of
 // their own, are heard at their moments within the capture (`moments`).
 const HEARD_AT_START = new Set(["collect", "count", "deal", "residue", "cut"]);
-const HEARD_WITHIN = { swept: "held", cash: "landed" };
+const HEARD_WITHIN = { swept: "held", cash: "landed", first_dealer: "shown" };
 
 export function choreograph(prev, next, placement, view = {}, options = {}) {
   const plan = new Plan(placement, view);

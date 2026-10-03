@@ -416,21 +416,27 @@ def check_cheers(browser, failures):
 
 
 def check_talk(browser, failures):
-    """The opening: the cards dealt while the house rules are agreed, and
-    what one speaker says at once said in one box; and quiet, nothing."""
-    page = open_page(browser, "seed=7&manual", calm=True)
-    page.evaluate("window.cassino3d.tick(1200)")
-    if not page.evaluate("window.cassino3d.said().length"):
-        failures.append("nothing said as the game opens")
-    if not set(page.evaluate("window.cassino3d.faces()")) & {c["card"] for c in page.evaluate("window.cassino3d.state().hand")}:
+    """The opening: the cards dealt while the house rules are still being
+    agreed, and what one speaker says at once said in one box; and quiet,
+    nothing."""
+    page = open_page(browser, "seed=7&manual&game=royal", calm=True)
+    hand = {c["card"] for c in page.evaluate("window.cassino3d.state().hand")}
+    theirs, dealt_at, after = set(), None, set()
+    for k in range(120):
+        page.evaluate("window.cassino3d.tick(100)")
+        said = page.evaluate("window.cassino3d.said()")
+        boxes = {(l["who"], l["words"]) for l in said}
+        if dealt_at is None and set(page.evaluate("window.cassino3d.faces()")) & hand:
+            dealt_at, before = k, boxes
+        elif dealt_at is not None:
+            after |= boxes - before
+        theirs |= {l["words"] for l in said if l["who"] == "them"}
+    if dealt_at is None or not after:
         failures.append("the deal waited for the house rules to be agreed")
-    # Your opponent asks about sweeps, and after your answer says the rest
-    # (low deals, whose deal) at once: two boxes, not one a line.
-    theirs = set()
-    for _ in range(40):
-        page.evaluate("window.cassino3d.tick(150)")
-        theirs |= {l["words"] for l in page.evaluate("window.cassino3d.said()") if l["who"] == "them"}
-    if len(theirs) != 2:
+    # Royal: your opponent asks about sweeps; after your answer says the rest
+    # of the house rules at once (Royal, low deals); and, the cut seen, whose
+    # deal it is: three boxes, not one a line.
+    if len(theirs) != 3:
         failures.append(f"your opponent's lines at one moment were not said as one: {sorted(theirs)}")
     page.evaluate("localStorage.setItem('cassino.prefs', JSON.stringify({ talk: 'none' }))")
     page.reload()

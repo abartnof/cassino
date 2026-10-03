@@ -160,6 +160,12 @@ test("the cut: each player's card shown face up beside the pack, then back on it
     assert.ok(back.delay + back.duration <= firstDeal + 1e-6, "the cut is over before the deal");
   }
   assert.equal(result.beats[k], 0, "heard as it begins: the house rules agreed as the cards are cut");
+  const first = state.events.findIndex((e) => e.kind === "first_dealer");
+  const shownAt = Math.max(...[cut.yours.card, cut.theirs.card].map((code) => {
+    const m = result.motions.find((x) => x.reveal?.code === code);
+    return m.delay + m.duration;
+  }));
+  assert.equal(result.beats[first], shownAt, "whose deal it is, said as the cut cards are seen");
 });
 
 test("the opening deal goes in twos: elder, table, dealer, and round again", { skip }, () => {
