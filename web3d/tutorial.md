@@ -16,7 +16,7 @@ This page can be opened at any time with the question mark. With the tutorial on
 
 ## The score
 
-At the end of each hand: **3** for most cards (27 or more), **1** for most spades (7 or more), **2** for Big Casino (the ten of diamonds), **1** for Little Casino (the two of spades), **1** for each ace, and **1** for each sweep (taking every card on the table). The first to **21** wins.
+At the end of each hand: **3** for most cards (27 or more), **1** for most spades (7 or more), **2** for Big Casino (the ten of diamonds), **1** for Little Casino (the two of spades), and **1** for each ace: 11 points in all. If you choose to score sweeps (a setting, off unless chosen), each sweep, taking every card on the table, scores **1** more. The first to **21** wins.
 
 # Pairing
 
