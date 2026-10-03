@@ -128,8 +128,9 @@ pub fn by_level(level: u8, rng: Rng) -> Box<dyn Agent> {
     }
 }
 
-/// An agent by name, for experiments: the levels' agents and the
-/// searcher's playout policies (`search-greedy`, `search-counter`).
+/// An agent by name, for experiments: the levels' agents, the searcher's
+/// playout policies (`search-greedy`, `search-counter`), and erratic
+/// opponents as `<level>e<erraticism>` (`4e0.5`).
 pub fn by_name(name: &str, rng: Rng) -> Option<Box<dyn Agent>> {
     use crate::search::{Policy, SearchAgent};
     let agent: Box<dyn Agent> = match name {
@@ -137,6 +138,20 @@ pub fn by_name(name: &str, rng: Rng) -> Option<Box<dyn Agent>> {
         "greedy" => by_level(2, rng),
         "counter" => by_level(3, rng),
         "searcher" => by_level(4, rng),
+        other if other.contains('e') && other.starts_with(|c: char| c.is_ascii_digit()) => {
+            let (level, erraticism) = other.split_once('e')?;
+            let level: u8 = level.parse().ok().filter(|l| (1..=TOP).contains(l))?;
+            let erraticism: f64 = erraticism
+                .parse()
+                .ok()
+                .filter(|e| (0.0..=1.0).contains(e))?;
+            let mut rng = rng;
+            Box::new(crate::opponent::Opponent::new(
+                level,
+                erraticism,
+                rng.next_u64(),
+            ))
+        }
         other => {
             let mut s = SearchAgent::new(rng);
             s.policy = match other.strip_prefix("search-")? {
