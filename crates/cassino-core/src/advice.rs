@@ -291,15 +291,18 @@ pub fn advisor_seed(view: &View) -> u64 {
     h
 }
 
-/// The advisor's value of every candidate, and of `extra` if given.
+/// The advisor's values: the counter's shortlist (as the top rung would
+/// consider), and `extra` if given (a move to rate). Not every candidate: a
+/// busy table can offer hundreds (the engine review's F3).
 fn assessed(view: &View, extra: Option<Move>) -> Vec<(Move, f64)> {
-    let mut moves = view.candidates();
+    let mut advisor = SearchAgent::new(Rng::seeded(advisor_seed(view)));
+    let mut moves = advisor.shortlist(view);
     if let Some(m) = extra {
         if !moves.contains(&m) {
             moves.push(m);
         }
     }
-    SearchAgent::new(Rng::seeded(advisor_seed(view))).evaluate(view, &moves)
+    advisor.evaluate(view, &moves)
 }
 
 /// The best of the assessed moves, the first among equals.
@@ -343,17 +346,27 @@ pub struct Hint {
     pub notes: Vec<Note>,
 }
 
-pub fn hint(view: &View) -> Hint {
+/// `None` when it is not the viewer's turn.
+pub fn hint(view: &View) -> Option<Hint> {
+    if view.to_move != Some(view.me) {
+        return None;
+    }
     let (mv, value) = best_of(&assessed(view, None));
-    Hint {
+    Some(Hint {
         mv,
         value,
         notes: notes(view, view.me, &mv),
-    }
+    })
 }
 
-/// `mv` rated against the top rung's best.
-pub fn rate(view: &View, mv: &Move) -> Rating {
+/// `mv` rated against the top rung's best; `None` unless it is the viewer's
+/// turn and `mv` is legal for them.
+pub fn rate(view: &View, mv: &Move) -> Option<Rating> {
+    if view.to_move != Some(view.me)
+        || moves::check(&view.rules, &view.table, view.hand, view.me, mv).is_err()
+    {
+        return None;
+    }
     let values = assessed(view, Some(*mv));
     let (best, best_value) = best_of(&values);
     let value = values.iter().find(|(m, _)| m == mv).expect("assessed").1;
@@ -365,12 +378,12 @@ pub fn rate(view: &View, mv: &Move) -> Rating {
     } else {
         Quality::Blunder
     };
-    Rating {
+    Some(Rating {
         best,
         best_value,
         value,
         quality,
-    }
+    })
 }
 
 #[cfg(test)]
@@ -611,10 +624,14 @@ mod tests {
         for _ in 0..10 {
             let seat = h.to_move().unwrap();
             let v = h.view(seat, [0, 0]);
-            let a = hint(&v);
-            assert_eq!(a, hint(&v), "the same position, the same hint");
+            let a = hint(&v).unwrap();
+            assert_eq!(
+                Some(a.clone()),
+                hint(&v),
+                "the same position, the same hint"
+            );
             assert!(v.candidates().contains(&a.mv));
-            let r = rate(&v, &a.mv);
+            let r = rate(&v, &a.mv).unwrap();
             assert_eq!(r.quality, Quality::Sound);
             assert_eq!(r.best, a.mv);
             h.play(&a.mv).unwrap();
@@ -626,10 +643,51 @@ mod tests {
     }
 
     #[test]
+    fn hints_and_ratings_are_quick_on_a_busy_table() {
+        // The review's F3: deal 4, twelve loose cards; the hint once took
+        // 40 s, evaluating all 456 candidates.
+        let rules = Rules::CLASSIC;
+        let hands = [set("9C TD 8S 7H"), set("KC QD JH 9H")];
+        let mut table = Table::new();
+        for r in 1..=3 {
+            table.loose |= CardSet::of_rank(r);
+        }
+        let rest: Vec<Card> = (!(hands[0] | hands[1] | table.loose)).iter().collect();
+        let undealt: Vec<Card> = rest[..16].to_vec();
+        let piles = [
+            rest[16..24].iter().copied().collect(),
+            rest[24..].iter().copied().collect(),
+        ];
+        let h = Hand::from_parts(
+            rules,
+            Seat::North,
+            4,
+            Some(Seat::South),
+            hands,
+            table,
+            piles,
+            [0, 0],
+            None,
+            &undealt,
+        );
+        let v = h.view(Seat::South, [0, 0]);
+        let started = std::time::Instant::now();
+        let a = hint(&v).expect("a hint");
+        let r = rate(&v, &v.candidates()[0]).expect("a rating");
+        assert!(
+            started.elapsed().as_secs_f64() < 3.0,
+            "{:?}",
+            started.elapsed()
+        );
+        assert!(v.candidates().contains(&a.mv));
+        assert!(r.best_value >= r.value);
+    }
+
+    #[test]
     fn a_blunder_is_called_one() {
         // Trailing the ten next to Big Casino when the ten could take it.
         let v = view(Rules::CLASSIC, "TD 4C KH", "TC 3S 7H 8C", "2H");
-        let r = rate(&v, &mv("trail TC"));
+        let r = rate(&v, &mv("trail TC")).unwrap();
         assert_eq!(r.quality, Quality::Blunder, "{r:?}");
         assert_eq!(r.best, mv("take TC TD"));
     }

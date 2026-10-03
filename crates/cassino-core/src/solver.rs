@@ -42,15 +42,15 @@ pub struct Solver<'u> {
     table: HashMap<Hand, (i32, Bound)>,
     /// Positions searched, for measuring.
     pub nodes: u64,
+    /// The most positions to search before giving up.
+    budget: u64,
+    /// The budget ran out: values since are not to be trusted.
+    exhausted: bool,
 }
 
 impl<'u> Solver<'u> {
     pub fn new(utility: &'u dyn Utility) -> Solver<'u> {
-        Solver {
-            utility,
-            table: HashMap::new(),
-            nodes: 0,
-        }
+        Solver::with_budget(utility, u64::MAX)
     }
 
     /// The value of `hand` to `seat` under best play by both, searching the
@@ -62,6 +62,34 @@ impl<'u> Solver<'u> {
         } else {
             -south
         }
+    }
+
+    /// A solver that gives up after searching `budget` positions.
+    pub fn with_budget(utility: &'u dyn Utility, budget: u64) -> Solver<'u> {
+        Solver {
+            utility,
+            table: HashMap::new(),
+            nodes: 0,
+            budget,
+            exhausted: false,
+        }
+    }
+
+    /// The best move and its value, or `None` if the budget ran out first.
+    pub fn try_best(&mut self, hand: &Hand) -> Option<(Move, i32)> {
+        let best = self.best(hand);
+        (!self.exhausted).then_some(best)
+    }
+
+    /// The value of `hand` to `seat`, or `None` if the budget ran out first.
+    pub fn try_value(&mut self, hand: &Hand, seat: Seat) -> Option<i32> {
+        let v = self.value(hand, seat);
+        (!self.exhausted).then_some(v)
+    }
+
+    /// Whether the budget has run out.
+    pub fn exhausted(&self) -> bool {
+        self.exhausted
     }
 
     /// The best move for the player to move, and its value to them.
@@ -82,6 +110,11 @@ impl<'u> Solver<'u> {
     /// Fail-soft alpha-beta; values are South's.
     fn search(&mut self, hand: &Hand, mut alpha: i32, mut beta: i32) -> i32 {
         self.nodes += 1;
+        if self.nodes > self.budget {
+            // Out of budget: an untrusted value, never stored.
+            self.exhausted = true;
+            return 0;
+        }
         let Some(mover) = hand.to_move() else {
             return self
                 .utility
@@ -122,7 +155,9 @@ impl<'u> Solver<'u> {
         } else {
             Bound::Exact
         };
-        self.table.insert(*hand, (best, bound));
+        if !self.exhausted {
+            self.table.insert(*hand, (best, bound));
+        }
         best
     }
 }
@@ -138,7 +173,7 @@ fn ordered(mut moves: Vec<Move>) -> Vec<Move> {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use crate::cards::{pack, Card, CardSet};
     use crate::rng::Rng;
@@ -232,6 +267,49 @@ mod tests {
                 solver.nodes
             );
         }
+    }
+
+    /// A last deal with a crowded table: A–4 of every suit loose.
+    pub(crate) fn busy_last_deal() -> Hand {
+        let rules = Rules::CLASSIC;
+        let s = |t: &str| CardSet::parse(t).unwrap();
+        let hands = [s("9C TD 8S 7H"), s("KC QD JH 9H")];
+        let mut table = Table::new();
+        for r in 1..=4 {
+            table.loose |= CardSet::of_rank(r);
+        }
+        let rest: Vec<Card> = (!(hands[0] | hands[1] | table.loose)).iter().collect();
+        let piles = [
+            rest[..14].iter().copied().collect(),
+            rest[14..].iter().copied().collect(),
+        ];
+        Hand::from_parts(
+            rules,
+            Seat::North,
+            6,
+            Some(Seat::South),
+            hands,
+            table,
+            piles,
+            [0, 0],
+            Some(Seat::North),
+            &[],
+        )
+    }
+
+    #[test]
+    fn a_budget_stops_the_search_and_says_so() {
+        let h = busy_last_deal();
+        assert!(
+            Solver::with_budget(&Margin, 1_000).try_best(&h).is_none(),
+            "1,000 positions are not enough"
+        );
+        let small = endgame(Rules::CLASSIC, 3, 4);
+        let exact = Solver::new(&Margin).best(&small);
+        assert_eq!(
+            Solver::with_budget(&Margin, 1_000_000).try_best(&small),
+            Some(exact)
+        );
     }
 
     #[test]

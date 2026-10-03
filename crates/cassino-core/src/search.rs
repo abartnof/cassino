@@ -98,7 +98,20 @@ pub fn rollout_deal(mut world: Hand, seat: Seat, policy: Policy, rng: &mut Rng) 
     banked(seat) - banked(seat.other())
 }
 
+/// The most positions the exact solver may search for one decision before
+/// the searcher falls back to its playouts (about a second natively; the
+/// engine review's F3 found a crowded last deal that took 18 s unbounded).
+pub const SOLVER_BUDGET: u64 = 300_000;
+
 impl SearchAgent {
+    /// The candidates the searcher considers: the counter's best few.
+    pub fn shortlist(&mut self, view: &View) -> Vec<Move> {
+        let mut ranked = self.counter.assess(view);
+        ranked.sort_by(|a, b| b.1.total().total_cmp(&a.1.total()));
+        ranked.truncate(self.width);
+        ranked.into_iter().map(|(m, _)| m).collect()
+    }
+
     /// The searcher's value of each of `moves` (candidates of `view`), in
     /// points to the player: in the last deal the exact margin of the hand;
     /// before it, the average worth banked by the end of the deal over the
@@ -107,15 +120,20 @@ impl SearchAgent {
     pub fn evaluate(&mut self, view: &View, moves: &[Move]) -> Vec<(Move, f64)> {
         if view.perfect_information() {
             let world = view.world(view.unseen(), &[]);
-            let mut solver = Solver::new(&Margin);
-            return moves
+            let mut solver = Solver::with_budget(&Margin, SOLVER_BUDGET);
+            let exact: Option<Vec<(Move, f64)>> = moves
                 .iter()
                 .map(|&m| {
                     let mut next = world;
                     next.play(&m).expect("a candidate is legal");
-                    (m, f64::from(solver.value(&next, view.me)))
+                    solver.try_value(&next, view.me).map(|v| (m, f64::from(v)))
                 })
                 .collect();
+            if let Some(exact) = exact {
+                return exact;
+            }
+            // Too big to solve in budget: the playouts below, in the one
+            // world there is.
         }
         // The same worlds, and the same playout luck in each, for every move.
         let worlds: Vec<(Hand, u64)> = (0..self.worlds)
@@ -147,15 +165,14 @@ impl Agent for SearchAgent {
     fn choose(&mut self, view: &View) -> Move {
         if view.perfect_information() {
             let world = view.world(view.unseen(), &[]);
-            return Solver::new(&Margin).best(&world).0;
+            if let Some((m, _)) = Solver::with_budget(&Margin, SOLVER_BUDGET).try_best(&world) {
+                return m;
+            }
         }
-        let mut ranked = self.counter.assess(view);
-        if ranked.len() == 1 {
-            return ranked[0].0;
+        let shortlist = self.shortlist(view);
+        if shortlist.len() == 1 {
+            return shortlist[0];
         }
-        ranked.sort_by(|a, b| b.1.total().total_cmp(&a.1.total()));
-        ranked.truncate(self.width);
-        let shortlist: Vec<Move> = ranked.into_iter().map(|(m, _)| m).collect();
         self.evaluate(view, &shortlist)
             .into_iter()
             .fold(None, |best: Option<(f64, Move)>, (m, v)| match best {
@@ -277,6 +294,21 @@ mod tests {
                 .unwrap();
         }
         assert_eq!(checked, 48);
+    }
+
+    #[test]
+    fn a_crowded_last_deal_is_decided_in_good_time() {
+        // The review's F3: the exact solver once took 18 s here.
+        let h = crate::solver::tests::busy_last_deal();
+        let v = h.view(Seat::South, [0, 0]);
+        let started = std::time::Instant::now();
+        let m = SearchAgent::new(Rng::seeded(1)).choose(&v);
+        assert!(
+            started.elapsed().as_secs_f64() < 3.0,
+            "{:?}",
+            started.elapsed()
+        );
+        assert!(v.candidates().contains(&m));
     }
 
     #[test]

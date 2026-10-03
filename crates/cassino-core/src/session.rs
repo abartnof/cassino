@@ -461,7 +461,7 @@ impl Session {
         }
         self.tell_hand(&before, Some(&observer), events.as_slice());
         if seat == Seat::South && self.aids.explain && !self.watching() {
-            let rating = advice::rate(&observer, &mv);
+            let rating = advice::rate(&observer, &mv).expect("a legal move on the person's turn");
             if rating.quality != Quality::Sound {
                 let loss = rating.best_value - rating.value;
                 let verdict = if rating.quality == Quality::Blunder {
@@ -776,7 +776,11 @@ impl Session {
     /// The top rung's move in the person's place, when the hints aid is on
     /// and it is their turn.
     pub fn hint(&self) -> Option<advice::Hint> {
-        (self.aids.hints && self.prompt() == Prompt::Play).then(|| advice::hint(&self.view()))
+        if self.aids.hints && self.prompt() == Prompt::Play {
+            advice::hint(&self.view())
+        } else {
+            None
+        }
     }
 
     pub fn can_undo(&self) -> bool {
