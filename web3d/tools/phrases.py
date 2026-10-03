@@ -52,6 +52,8 @@ SOURCES = {
          "the luck of the deal\" [05-S74]",
     "L": "Jack London's players (1912): \"Do you count sweeps?\" \"Certainly not.\" \"Low deals.\" "
          "\"I'll make 'cards'\" [04-S28]",
+    "Ha": "Harper's Bazaar (1883), a father at the count: \"The cards are a tie, Katy, so neither "
+          "of us takes that point.\" [04-S135]",
     "Ar": "Ardmore's novel To Love Is to Listen (1967): at Big Casino, a player \"screamed the "
           "word, 'Luck!'\" [04-S82]",
     "Fe": "Feydeau, in English translation: the count chanted, \"Cards... Spades... "
@@ -177,7 +179,10 @@ def phrase_groups():
     add("residue", ("And the rest are mine.", "T"), ("The last cards come to me.", "T"), ("I'll take what's left.", "T"),
         ("The last trick is mine.", "F"), ("Last to take, so the rest are mine.", "T"), ("Those come to me.", "T"))
 
-    # The count, chanted line by line, each line by whoever wins it.
+    # The count, chanted line by line, each line by whoever wins it; a tie on
+    # the cards, which scores nobody, said first.
+    add("count-cards-tie", ("The cards are a tie.", "Ha"), ("Twenty-six each.", "T"), ("A tie on the cards.", "T"),
+        ("Cards tie: no points.", "T"), ("Twenty-six all.", "T"))
     add("count-cards", ("Cards.", "Fe"), ("Most cards.", "T"), ("The cards.", "T"), ("Card majority!", "Hu"),
         ("The majority of the cards.", "Lo"), ("Three for cards.", "T"))
     add("count-spades", ("Spades.", "Fe"), ("Most spades.", "T"), ("The spades.", "T"), ("Spade majority!", "Hu"),

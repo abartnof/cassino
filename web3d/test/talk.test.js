@@ -148,6 +148,20 @@ test("the count is chanted line by line by whoever wins each", () => {
   assert.deepEqual(lines.slice(0, 4).map((l) => l.line), [0, 1, 2, 3]);
 });
 
+// Twenty-six cards each: nobody scores the cards, and your opponent says
+// so before the chant ("The cards are a tie, Katy, so neither of us takes
+// that point", Harper's Bazaar, 1883).
+test("cards tied at the count are said before the chant", () => {
+  const scored = (you, them, lines) => ({ kind: "scored", hand: 1, count: { lines, tallies: { you: { cards: you }, them: { cards: them } } } });
+  const spades = { item: "spades", suit: null, who: "you", points: 1 };
+  const tied = speech(state([scored(26, 26, [spades])]));
+  assert.deepEqual(said(tied), ["them:count-cards-tie", "you:count-spades"]);
+  assert.equal(tied[0].line, undefined, "said at the count's moment, not as a line of it");
+  assert.equal(tied[1].line, 0);
+  const cards = { item: "cards", suit: null, who: "them", points: 3 };
+  assert.deepEqual(said(speech(state([scored(25, 27, [cards, spades])]))), ["them:count-cards", "you:count-spades"]);
+});
+
 test("only the events since the last state are said", () => {
   const events = [{ kind: "swept", hand: 1, you: true }, { kind: "cash", hand: 1, you: true }];
   assert.deepEqual(said(speech(state(events), 1)), ["you:cash"]);

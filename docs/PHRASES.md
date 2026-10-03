@@ -21,6 +21,7 @@ Sources:
 - **M**: the modern rules on the web: "calling 5", "calling 8" [05-S77][05-S78]
 - **B**: BoardGameGeek's players on sweeps: "we play with them every single time"; "it's just the luck of the deal" [05-S74]
 - **L**: Jack London's players (1912): "Do you count sweeps?" "Certainly not." "Low deals." "I'll make 'cards'" [04-S28]
+- **Ha**: Harper's Bazaar (1883), a father at the count: "The cards are a tie, Katy, so neither of us takes that point." [04-S135]
 - **Ar**: Ardmore's novel To Love Is to Listen (1967): at Big Casino, a player "screamed the word, 'Luck!'" [04-S82]
 - **Fe**: Feydeau, in English translation: the count chanted, "Cards... Spades... Ten of diamonds...", "Deuce... Aces...", and "Clean sweep!" [04-S159]
 - **N**: the New York Dispatch's answers column (1877-1881): a build "calling 'seven'" or "calls it six", "sevens", "fives all", "I have three points, and am out" [04-S155][04-S130]
@@ -451,6 +452,11 @@ Sources:
 |  | The last trick is mine. | F |
 |  | Last to take, so the rest are mine. | T |
 |  | Those come to me. | T |
+| `count-cards-tie` | The cards are a tie. | Ha |
+|  | Twenty-six each. | T |
+|  | A tie on the cards. | T |
+|  | Cards tie: no points. | T |
+|  | Twenty-six all. | T |
 | `count-cards` | Cards. | Fe |
 |  | Most cards. | T |
 |  | The cards. | T |

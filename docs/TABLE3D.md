@@ -141,7 +141,8 @@ sweeps?" … "Low deals."), answered by your settings either way. A plain
 capture says nothing, so the table does not chatter on every move; one that
 takes a casino card ("Now I have Big Casino.") or a haul of four table cards
 or more ("A good haul.") is remarked by its maker, unless a sweep or cash
-speaks for it. `tools/phrases.py` holds the bank, each
+speaks for it. Cards tied at 26 each are said before the chant ("The cards
+are a tie.", Harper's Bazaar, 1883). `tools/phrases.py` holds the bank, each
 phrase in five or more wordings for the frequent moments, each with a source
 letter; `docs/PHRASES.md` is generated from it. The talk is kind
 (play-testing asked for it kid-friendly): nothing said belittles anyone, and

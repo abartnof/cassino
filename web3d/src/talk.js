@@ -16,7 +16,7 @@
 // singular and the plural and a raise by its new total (Dick, Foster, the
 // Hoyles), the dealer's "Last.", "Clear!" for a sweep, "Cash.", a casino
 // card or a haul of several taken, the clinches, the custom of pointing out
-// what an opponent left, and the count chanted.
+// what an opponent left, and the count chanted, a tie on the cards first.
 // All of it kind: nothing said belittles anyone.
 
 const POINT_CARDS = new Set(["AS", "AH", "AD", "AC", "TD", "2S"]);
@@ -103,9 +103,14 @@ export function speech(state, since = 0) {
       case "residue":
         if (e.you !== null) say(who, "residue");
         break;
-      case "scored":
+      case "scored": {
+        // A tie on the cards scores nobody, and is said first, where the
+        // cards would be counted: at the count's moment, not as a line of it.
+        const t = e.count.tallies;
+        if (t && t.you.cards === t.them.cards && !e.count.lines.some((l) => l.item === "cards")) say("them", "count-cards-tie");
         e.count.lines.forEach((line, i) => say(line.who, chant(line), { line: i }));
         break;
+      }
       case "game_ends":
         say(e.you_won ? "you" : "them", "game-won");
         say(e.you_won ? "them" : "you", "good-game");
