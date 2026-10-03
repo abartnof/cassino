@@ -13,8 +13,8 @@ skill dial; explanations, hints and the selection interface; the session
 and its JSON protocol; a module that plays a whole game in Node at 10–16 ms
 a command, byte for byte as the native build does. The table: all nine
 phases of `docs/TABLE3D.md`, the designer's score HUD, the fairness features
-and the match, on a desktop, a tablet or a phone held either way. 235 Rust
-tests and 163 Node tests of the table, all passing (`bin/gate`), and an
+and the match, on a desktop, a tablet or a phone held either way. 236 Rust
+tests and 183 Node tests of the table, all passing (`bin/gate`), and an
 offline browser test that plays whole games by clicking.
 
 **Reviewed.** A full code review by a separate agent
@@ -90,6 +90,27 @@ legal move. RULES.md now says each held card answers for one build value.
   once the game is over); the last move seen again; a World Series, the
   best of seven; the sweep warning before a move (the offer says which
   move leaves a sweep).
+- **The first play-testing** (2026-10-03), each note done, test first:
+  sweeps off by default (the table and the terminal; kept settings carry a
+  version so the old default is not taken for a choice); the scoring
+  board removed, the HUD already showing it; builds fanned so each card
+  reads, and a value badge that stays in view through the moves (a
+  setting, on with the tutorial); the trackers as a foldable table with
+  tips; a welcome on opening (Continue, New game, Tutorial); hints and
+  explanations toggled under the cards on a desktop; plain white speech
+  balloons; the talk kind, with five or more wordings for the frequent
+  moments, and each line timed to its moment, the count paced by what is
+  said and by the score's popups; scores celebrated on the table, a disc
+  on the card with its points bursting out; and card motion that starts
+  with a jerk, eases into place, peels off the table and settles on it
+  leading edge first. The tutorial's text is `web3d/tutorial.md`, for
+  editing (its pages are matched to their moments by position).
+- **The South African game, researched**
+  (`research/12-south-african-khasino.md`): KASA's rulebooks and its own
+  online game as the canonical sources, twenty open-source engines, and
+  readings with confidence for what an engine needs. Enough to write a
+  settled rules document for the two-player game, with a few points to
+  decide or ask KASA about.
 
 ## Settled decisions
 
@@ -177,6 +198,11 @@ legal move. RULES.md now says each held card answers for one build value.
   game shows what they truly share (`docs/DESIGN.md` §3).
 - A screen-reader narration of each move (the game log has the words; only
   the focused card is told now).
+- The South African game, Khasino, as a third game: first a settled rules
+  document with worked examples (as `docs/RULES.md`), checked against
+  KASA's online game; its turn (a hand card, free additions to your own
+  build, steals from the opponent's pile) is a larger change to the move
+  model than Royal was.
 
 ## Notes for a future session
 
