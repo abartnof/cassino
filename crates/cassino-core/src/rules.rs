@@ -84,6 +84,31 @@ impl Rules {
         }
     }
 
+    /// Whether `hand` can answer for every one of `values` at once: each
+    /// distinct value needs a card of its own that captures it (rule 7).
+    /// Only an ace, under "Aces count 1 or 14", has two values, and it
+    /// answers for one of them, not both.
+    pub fn guards(&self, hand: CardSet, values: &[u8]) -> bool {
+        let mut distinct: Vec<u8> = values.to_vec();
+        distinct.sort_unstable();
+        distinct.dedup();
+        // Every value but 1 and 14 is answered by its own rank alone.
+        if !distinct
+            .iter()
+            .filter(|&&v| v != 1 && v != 14)
+            .all(|&v| self.holds_value(hand, v))
+        {
+            return false;
+        }
+        // The aces answer for 1 and for 14, one value each.
+        let need = distinct.iter().filter(|&&v| v == 1 || v == 14).count() as u32;
+        let aces = (hand & CardSet::of_rank(ACE)).len();
+        if distinct.contains(&14) && !self.holds_value(hand, 14) {
+            return false;
+        }
+        aces >= need
+    }
+
     /// The highest value a build can have under these rules.
     pub fn max_build(&self) -> u8 {
         match self.game {
@@ -192,6 +217,28 @@ mod tests {
         assert!(ROYAL_14.holds_value(hand, 14));
         assert!(ROYAL_14.holds_value(hand, 1));
         assert!(!Rules::ROYAL.holds_value(CardSet::EMPTY, 5));
+    }
+
+    #[test]
+    fn one_card_answers_for_one_value() {
+        let s = |t: &str| CardSet::parse(t).unwrap();
+        let ace = s("AC");
+        assert!(ROYAL_14.guards(ace, &[1]));
+        assert!(ROYAL_14.guards(ace, &[14]));
+        assert!(!ROYAL_14.guards(ace, &[1, 14]), "one ace, not both");
+        assert!(ROYAL_14.guards(s("AC AD"), &[1, 14]));
+        assert!(ROYAL_14.guards(s("AC AD 9H"), &[14, 1, 9]));
+        assert!(!ROYAL_14.guards(s("AC 9H"), &[14, 1, 9]));
+        // The same value twice is one value: one card takes both builds.
+        assert!(Rules::CLASSIC.guards(s("8C"), &[8, 8]));
+        assert!(Rules::CLASSIC.guards(s("8C 9D"), &[8, 9]));
+        assert!(!Rules::CLASSIC.guards(s("8C"), &[8, 9]));
+        assert!(Rules::CLASSIC.guards(CardSet::EMPTY, &[]));
+        assert!(
+            !Rules::CLASSIC.guards(s("KC"), &[13]),
+            "a Classic king answers for nothing"
+        );
+        assert!(Rules::ROYAL.guards(s("KC QD"), &[13, 12]));
     }
 
     #[test]

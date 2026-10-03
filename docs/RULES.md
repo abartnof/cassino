@@ -129,6 +129,14 @@ a card whose capture value equals the build's value. You announce a number
 you can capture [02-S1]. Under the "1 or 14" option, a held ace meets this
 for a build of 14.
 
+**Each card answers for one value.** A player who controls builds of several
+values must hold a different card for each; two builds of the same value
+need only one. This matters only under "Aces count 1 or 14": one ace answers
+for a build of 1 or a build of 14, not both. *(Decision, 2026-10-03: without
+it, one ace could guard both, and the player could be left with no legal
+move at all, which breaks rule 7's consequences. The engine review found
+it.)*
+
 The value limits follow from the requirement: 10 in Classic, 13 in Royal, and
 14 in Royal with the option on.
 
@@ -179,7 +187,8 @@ V of an existing build, single or multiple, and joins it [02-S1].
 
 A player may never make a move that leaves them controlling a build without
 holding a card of its value. "You are not allowed to play so as to leave
-yourself with no card equal to the value of this build" [02-S1].
+yourself with no card equal to the value of this build" [02-S1]. A different
+card must answer for each distinct value (rule 5).
 
 Consequences, checked by the tests:
 

@@ -704,6 +704,75 @@ mod tests {
     }
 
     #[test]
+    fn a_legal_move_always_exists_even_for_eager_builders() {
+        // Random play that builds whenever it can, in every rule set: the
+        // positions where builds pile up, and where F1 hid (one ace
+        // answering for a 1-build and a 14-build at once).
+        for rules in [Rules::CLASSIC, Rules::ROYAL, ROYAL_14] {
+            for seed in 0..3_000 {
+                let mut rng = Rng::seeded(seed + 70_000);
+                let (mut h, _) = Hand::deal(rules, Seat::South, shuffled(seed + 80_000));
+                while let Some(seat) = h.to_move() {
+                    let moves = h.candidates();
+                    assert!(
+                        !moves.is_empty(),
+                        "{rules:?} seed {seed}: no move at {} / {}",
+                        h.table(),
+                        h.hand_of(seat)
+                    );
+                    let builds: Vec<Move> = moves
+                        .iter()
+                        .copied()
+                        .filter(|m| matches!(m, Move::Build { .. }))
+                        .collect();
+                    let pool = if builds.is_empty() || rng.below(4) == 0 {
+                        &moves
+                    } else {
+                        &builds
+                    };
+                    h.play(&pool[rng.below(pool.len() as u64) as usize])
+                        .unwrap();
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn a_last_card_sweep_counts_and_leaves_no_residue() {
+        // South's last card takes everything left: a sweep, and an empty
+        // residue (rules 8 and 9).
+        let rules = Rules::CLASSIC;
+        let hands = [set("7S"), CardSet::EMPTY];
+        let table = Table::parse(&rules, "3H 4D").unwrap();
+        let rest: Vec<Card> = (!(hands[0] | hands[1] | table.cards())).iter().collect();
+        let piles = [
+            rest[..20].iter().copied().collect(),
+            rest[20..].iter().copied().collect(),
+        ];
+        let mut h = Hand::from_parts(
+            rules,
+            Seat::South,
+            6,
+            Some(Seat::South),
+            hands,
+            table,
+            piles,
+            [0, 0],
+            Some(Seat::North),
+            &[],
+        );
+        let events = h.play(&Move::parse("take 7S 3H 4D").unwrap()).unwrap();
+        assert!(events
+            .as_slice()
+            .contains(&Event::Swept { seat: Seat::South }));
+        assert!(events.as_slice().contains(&Event::Residue {
+            seat: Some(Seat::South),
+            cards: CardSet::EMPTY
+        }));
+        assert_eq!(h.breakdown().unwrap().sweeps, [1, 0]);
+    }
+
+    #[test]
     fn a_hand_copies_without_allocating() {
         fn is_copy<T: Copy>() {}
         is_copy::<Hand>();

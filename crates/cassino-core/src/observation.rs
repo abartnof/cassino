@@ -112,7 +112,7 @@ pub fn sample_hidden(view: &View, rng: &mut Rng) -> (CardSet, Vec<Card>) {
         "the unseen cards are the opponent's and the undealt"
     );
     let must = view.opponent_must_hold();
-    let holds_all = |hidden: CardSet| must.iter().all(|&v| view.rules.holds_value(hidden, v));
+    let holds_all = |hidden: CardSet| view.rules.guards(hidden, &must);
     for _ in 0..1000 {
         rng.shuffle(&mut pool);
         let hidden: CardSet = pool[..n].iter().copied().collect();
@@ -123,8 +123,8 @@ pub fn sample_hidden(view: &View, rng: &mut Rng) -> (CardSet, Vec<Card>) {
     // Place a card for each required value first, then fill at random.
     rng.shuffle(&mut pool);
     let mut hidden = CardSet::EMPTY;
-    for &v in &must {
-        if view.rules.holds_value(hidden, v) {
+    for (k, &v) in must.iter().enumerate() {
+        if view.rules.guards(hidden, &must[..=k]) {
             continue;
         }
         let rank = if v == 14 { crate::cards::ACE } else { v };

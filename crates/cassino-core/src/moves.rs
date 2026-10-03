@@ -395,10 +395,11 @@ fn generate(
     out
 }
 
-/// Rule 7 after `mv`: every build `me` still controls, other than one the
-/// move takes or changes, has its card in `rest` (the hand without the card
-/// played). A build move's own value is the held-value requirement of rule 5,
-/// checked where the move is made.
+/// Rule 7 after `mv`: `rest` (the hand without the card played) can answer
+/// for every build `me` would control: those it keeps, other than one the
+/// move takes or changes, and the build the move makes. Each distinct value
+/// needs a card of its own (`Rules::guards`), so one ace never answers for a
+/// build of 1 and a build of 14 at once.
 fn guarded(
     rules: &Rules,
     table: &Table,
@@ -406,20 +407,39 @@ fn guarded(
     me: Seat,
     mv: &Move,
 ) -> Result<(), Illegal> {
-    let gone = match *mv {
-        Move::Trail { .. } => CardSet::EMPTY,
-        Move::Capture { taken, .. } => taken,
-        Move::Build { onto, .. } => onto
-            .and_then(|o| table.build_of(o))
-            .map_or(CardSet::EMPTY, |b| b.cards),
+    let (gone, made) = match *mv {
+        Move::Trail { .. } => (CardSet::EMPTY, None),
+        Move::Capture { taken, .. } => (taken, None),
+        Move::Build { value, onto, .. } => (
+            onto.and_then(|o| table.build_of(o))
+                .map_or(CardSet::EMPTY, |b| b.cards),
+            Some(value),
+        ),
     };
-    let unguarded = table.builds.iter().find(|b| {
-        b.controller == me && b.cards.is_disjoint(gone) && !rules.holds_value(rest, b.value)
-    });
-    match unguarded {
-        Some(b) => Err(Illegal::LeavesBuildUnguarded(b.value)),
-        None => Ok(()),
+    let kept: Vec<u8> = table
+        .builds
+        .iter()
+        .filter(|b| b.controller == me && b.cards.is_disjoint(gone))
+        .map(|b| b.value)
+        .collect();
+    let mut all = kept.clone();
+    all.extend(made);
+    if rules.guards(rest, &all) {
+        return Ok(());
     }
+    // Name a build that is left without its card.
+    let unguarded = kept
+        .iter()
+        .copied()
+        .find(|&v| !rules.guards(rest, &[v]))
+        .or_else(|| {
+            kept.iter()
+                .copied()
+                .find(|&v| made.is_some_and(|m| !rules.guards(rest, &[v, m])))
+        })
+        .or(made)
+        .expect("something is unguarded");
+    Err(Illegal::LeavesBuildUnguarded(unguarded))
 }
 
 /// The kind of build a build move makes, if rule 5 allows it: whether the
@@ -1032,6 +1052,36 @@ mod tests {
         p.assert_legal("take 8C 5S 3H");
         p.assert_legal("take 8C 5S 3H 8D");
         assert_eq!(texts(&p.legal()), ["take 8C 5S 3H", "take 8C 5S 3H 8D"]);
+    }
+
+    #[test]
+    fn one_ace_cannot_guard_a_one_build_and_a_fourteen_build() {
+        // The review's position (F1): South controls building aces with one
+        // ace left; a 14-build on top would leave no legal move later.
+        let p = pos(ROYAL_14, "[1* @S: AS AD] 9S 2C 3C", "AC 5D 7H");
+        p.assert_illegal("build 14 5D 9S", Illegal::LeavesBuildUnguarded(1));
+        // The mirror: a 14-build held by one ace cannot take building aces.
+        let q = pos(ROYAL_14, "[14 @S: 9S 5D] AD 2C", "AS AC 7H");
+        q.assert_illegal("build 1 AS AD", Illegal::LeavesBuildUnguarded(14));
+        // With two aces in hand there is a card for each.
+        let ok = pos(ROYAL_14, "[1* @S: AS AD] 9S 2C 3C", "AC AH 5D");
+        ok.assert_legal("build 14 5D 9S");
+    }
+
+    #[test]
+    fn a_build_of_aces() {
+        // Building aces: an ace on an ace, holding another ("building aces").
+        let p = pos(Rules::CLASSIC, "AD 5C", "AS AC 9H");
+        p.assert_legal("build 1 AS AD");
+        let mut q = pos(Rules::CLASSIC, "AD 5C", "AS AC 9H");
+        q.play("build 1 AS AD");
+        assert_eq!(q.table.to_string(), "5C [1* @S: AS AD]");
+        assert_eq!(
+            crate::words::call(&q.rules, &p.table, &mv("build 1 AS AD")).as_deref(),
+            Some("Building aces.")
+        );
+        pos(Rules::CLASSIC, "AD 5C", "AS 9H")
+            .assert_illegal("build 1 AS AD", Illegal::NotHolding(1));
     }
 
     #[test]

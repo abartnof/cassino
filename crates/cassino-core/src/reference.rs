@@ -52,13 +52,31 @@ fn subsets(set: CardSet) -> impl Iterator<Item = CardSet> {
     })
 }
 
-/// Every build `me` controls has a card of its value in `hand` (rule 7).
+/// Every build `me` controls has a card of its value in `hand`, a
+/// different card for each distinct value (rule 7). Brute force: try every
+/// way of giving the values distinct cards that capture them.
 pub fn obligation_kept(rules: &Rules, table: &Table, hand: CardSet, me: Seat) -> bool {
-    table
+    let mut values: Vec<u8> = table
         .builds
         .iter()
         .filter(|b| b.controller == me)
-        .all(|b| rules.holds_value(hand, b.value))
+        .map(|b| b.value)
+        .collect();
+    values.sort_unstable();
+    values.dedup();
+    let cards: Vec<Card> = hand.iter().collect();
+    fn assign(rules: &Rules, values: &[u8], cards: &[Card], used: u32) -> bool {
+        let Some((&v, rest)) = values.split_first() else {
+            return true;
+        };
+        cards.iter().enumerate().any(|(i, &c)| {
+            used >> i & 1 == 0
+                && !rules.pairs_only(c)
+                && rules.capture_values(c).contains(&v)
+                && assign(rules, rest, cards, used | 1 << i)
+        })
+    }
+    assign(rules, &values, &cards, 0)
 }
 
 /// The table after a legal-looking build move, by the letter of rule 5.
@@ -147,7 +165,12 @@ pub fn is_legal(rules: &Rules, table: &Table, hand: CardSet, me: Seat, mv: &Move
             let Some(x) = rules.build_value(card) else {
                 return false;
             };
-            if !table.loose.contains_all(loose) || !rules.holds_value(rest, value) {
+            // A card in what remains that captures the value (rule 5); rule
+            // 7, checked on the result below, asks the rest of the matching.
+            let held = rest
+                .iter()
+                .any(|c| !rules.pairs_only(c) && rules.capture_values(c).contains(&value));
+            if !table.loose.contains_all(loose) || !held {
                 return false;
             }
             let Some(lv) = values(rules, loose) else {
