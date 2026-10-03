@@ -215,6 +215,34 @@ def check_tutorial(browser, failures):
         failures.append(f"tutorial: console errors {page.errors[:5]}")
 
 
+def check_phone(browser, failures):
+    """A phone held upright: the stacked table framed between the HUD and
+    the controls, decisions made by tapping, Large Text faces; and held
+    sideways, between the HUD's column and the controls'."""
+    page = open_page(browser, "seed=7&speed=8&skill=2&faces=jumbo", viewport={"width": 390, "height": 844})
+    settle(page)
+    if page.evaluate("window.cassino3d.facesShown()") != "jumbo":
+        failures.append("phone: the Large Text faces are not shown")
+    made = 0
+    while made < 10 and play_by_clicking(page, failures, made + 200):
+        made += 1
+    settle(page)
+    shot(page, "t8-phone")
+    if made < 10:
+        failures.append(f"phone: only {made} decisions made by tapping")
+    if page.errors:
+        failures.append(f"phone: console errors {page.errors[:5]}")
+    page = open_page(browser, "seed=7&speed=8&skill=2", viewport={"width": 844, "height": 390})
+    settle(page)
+    made = 0
+    while made < 4 and play_by_clicking(page, failures, made + 300):
+        made += 1
+    settle(page)
+    shot(page, "t8-phone-sideways")
+    if page.errors:
+        failures.append(f"phone sideways: console errors {page.errors[:5]}")
+
+
 def check_settings(browser, failures):
     """The settings: hints and undo turned on in the dialog; a hint shown,
     lit and chosen; a move taken back; the sitting kept across a reload;
@@ -351,6 +379,7 @@ def main() -> int:
         # them: a pair and a sum taken with 9C; all four cards with 10C).
         check_settings(browser, failures)
         check_tutorial(browser, failures)
+        check_phone(browser, failures)
         page = open_page(browser, "seed=11&skill=4&manual", calm=True)
         page.evaluate("window.cassino3d.tick(2500)")
         shot(page, "t5-talk")  # the house rules agreed before the deal

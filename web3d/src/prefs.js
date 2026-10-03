@@ -12,6 +12,8 @@ export const DEFAULTS = Object.freeze({
   skill: 3,
   speed: 1,
   surface: "random",
+  // The card faces: "auto" (Large Text on a phone), "classic" or "jumbo".
+  faces: "auto",
   // The engine's aids (docs/PROTOCOL.md), and the page's own.
   aids: Object.freeze({ hints: false, explain: false, play_forced: false }),
   undo: false,
@@ -80,6 +82,7 @@ export function loadPrefs(store) {
     skill: SKILLS.some((s) => s.value === kept.skill) ? kept.skill : DEFAULTS.skill,
     speed: Number.isFinite(kept.speed) && kept.speed > 0 ? kept.speed : DEFAULTS.speed,
     surface: typeof kept.surface === "string" ? kept.surface : DEFAULTS.surface,
+    faces: ["auto", "classic", "jumbo"].includes(kept.faces) ? kept.faces : DEFAULTS.faces,
     aids: Object.fromEntries(Object.entries(DEFAULTS.aids).map(([k, v]) => [k, isBool(aids[k]) ? aids[k] : v])),
     undo: isBool(kept.undo) ? kept.undo : DEFAULTS.undo,
     trackers: isBool(kept.trackers) ? kept.trackers : DEFAULTS.trackers,
@@ -105,6 +108,7 @@ export function withUrl(prefs, params) {
   const speed = Number(params.get("speed"));
   if (params.has("speed") && speed > 0) out.speed = speed;
   if (params.has("table")) out.surface = params.get("table");
+  if (["auto", "classic", "jumbo"].includes(params.get("faces"))) out.faces = params.get("faces");
   if (params.has("tutorial")) out.tutorial = params.get("tutorial") !== "0";
   return out;
 }

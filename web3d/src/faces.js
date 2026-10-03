@@ -1,4 +1,5 @@
-// From piquet web3d/src/faces.js @ 254cb3c.
+// From piquet web3d/src/faces.js @ 254cb3c; cassino's change is the strip
+// (below).
 // The Jumbo Index faces: for a phone, where a fanned hand shows each card
 // only by its corner, faces that are nothing but corner -- the rank large in
 // the platform's bold UI font (San Francisco on an iPhone), the suit larger
@@ -40,7 +41,10 @@ export const JUMBO = Object.freeze({
   // on a phone -- so no rank or suit is ever under the next card (the user:
   // "shrink the card graphics to be visible within that space (with a few
   // pixels at least of space on the side, for visibility's sake)").
-  strip: 1.46,
+  // Cassino's change: its hand of four shows at least 3.0 units of each card
+  // on a phone (faces.test.js measures it), so the strip is 2.9, and the
+  // index reaches the recipe's own sizes: legible on the table's cards too.
+  strip: 2.9,
   margin: 0.25,
 });
 

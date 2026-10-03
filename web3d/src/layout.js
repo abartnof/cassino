@@ -42,8 +42,8 @@ function toward(centre, side) {
   return centre.clone().add(new Vector3(0, 0, 300 * side));
 }
 
-function yourHand(codes, chosen) {
-  const zone = ZONES.yourHand;
+function yourHand(codes, chosen, Z) {
+  const zone = Z.yourHand;
   const centre = new Vector3(...zone.centre);
   const poses = fan({
     count: codes.length,
@@ -60,8 +60,8 @@ function yourHand(codes, chosen) {
   });
 }
 
-function theirHand(count) {
-  const zone = ZONES.theirHand;
+function theirHand(count, Z) {
+  const zone = Z.theirHand;
   const centre = new Vector3(...zone.centre);
   return fan({
     count,
@@ -76,28 +76,28 @@ function theirHand(count) {
 // Where the item at `slot` of `count` lies on the grid: rows of at most
 // `columns`, centred across, the first row at the zone's line and later rows
 // away from you (never toward you, where your hand would hide them).
-export function gridPlace(slot, count) {
-  const m = ZONES.middle;
+export function gridPlace(slot, count, Z = ZONES) {
+  const m = Z.middle;
   const rows = Math.ceil(count / m.columns);
   const row = Math.floor(slot / m.columns);
   const inRow = row < rows - 1 ? m.columns : count - row * m.columns;
   const col = slot - row * m.columns;
-  const pitchX = CARD.width + m.gapX + ZONES.stack.dx * 2;
-  const pitchZ = CARD.height + m.gapZ + ZONES.stack.dz * 2;
+  const pitchX = CARD.width + m.gapX + Z.stack.dx * 2;
+  const pitchZ = CARD.height + m.gapZ + Z.stack.dz * 2;
   return { x: m.x + (col - (inRow - 1) / 2) * pitchX, z: m.z - row * pitchZ };
 }
 
-function middle(items, picked) {
+function middle(items, picked, Z) {
   const slots = [];
   const chosen = new Set(picked);
   items.forEach((item, slot) => {
-    const { x, z } = gridPlace(slot, items.length);
+    const { x, z } = gridPlace(slot, items.length, Z);
     const codes = item.cards.map((c) => c.card);
     // A build's cards from the first laid, each a little down and to the
     // right of the last; centred on the grid place.
     const n = codes.length;
-    const x0 = x - ((n - 1) * ZONES.stack.dx) / 2;
-    const z0 = z - ((n - 1) * ZONES.stack.dz) / 2;
+    const x0 = x - ((n - 1) * Z.stack.dx) / 2;
+    const z0 = z - ((n - 1) * Z.stack.dz) / 2;
     const lifted = codes.some((c) => chosen.has(c)) ? PICKED_LIFT : 0;
     codes.forEach((code, i) => {
       slots.push({
@@ -108,8 +108,8 @@ function middle(items, picked) {
         faceUp: true,
         item: item.id,
         pose: lying({
-          x: x0 + i * ZONES.stack.dx,
-          z: z0 + i * ZONES.stack.dz,
+          x: x0 + i * Z.stack.dx,
+          z: z0 + i * Z.stack.dz,
           height: REST + i * STEP + lifted,
           yaw: n > 1 ? 0 : jitter(code, 1.5),
         }),
@@ -128,8 +128,8 @@ function middle(items, picked) {
 // Once the hand is counted, the cards the count names (`drawn`) are out of
 // the pile, in the count row: a sweep card from its place, and the rest off
 // the top of the plain cards, which are anonymous.
-function pileOf(who, count, sweeps, drawn = []) {
-  const zone = who === "you" ? ZONES.yourPile : ZONES.theirPile;
+function pileOf(who, count, sweeps, drawn, Z) {
+  const zone = who === "you" ? Z.yourPile : Z.theirPile;
   const name = who === "you" ? "your-pile" : "their-pile";
   const side = who === "you" ? 1 : -1;
   const crosswise = new Map(sweeps.filter((s) => s.at < count).map((s, k) => [s.at, { code: s.code, k }]));
@@ -179,8 +179,8 @@ function pileOf(who, count, sweeps, drawn = []) {
 // The count row: the aces and Casinos a player's count names, face up and
 // in the count's order, laid out from their pile toward the middle of the
 // table, which is clear by then.
-function countRow(who, codes) {
-  const zone = who === "you" ? ZONES.yourPile : ZONES.theirPile;
+function countRow(who, codes, Z) {
+  const zone = who === "you" ? Z.yourPile : Z.theirPile;
   const toward = who === "you" ? -1 : 1;
   return codes.map((code, k) => ({
     key: code,
@@ -189,7 +189,7 @@ function countRow(who, codes) {
     code,
     faceUp: true,
     item: null,
-    pose: lying({ x: zone.x + toward * (ZONES.count.first + k * ZONES.count.step), z: zone.z, height: REST, yaw: jitter(code, 1.5) }),
+    pose: lying({ x: zone.x + toward * (Z.count.first + k * Z.count.step), z: zone.z, height: REST + k * STEP, yaw: jitter(code, 1.5) }),
   }));
 }
 
@@ -200,8 +200,8 @@ export function countedCards(state) {
   return out;
 }
 
-function stock(count, dealer) {
-  const at = ZONES.stock[dealer === "you" ? "you" : "them"];
+function stock(count, dealer, Z) {
+  const at = Z.stock[dealer === "you" ? "you" : "them"];
   return Array.from({ length: count }, (_, i) => ({
     key: `stock:${i}`,
     zone: "stock",
@@ -213,17 +213,19 @@ function stock(count, dealer) {
   }));
 }
 
-export function layout(state, { chosen = null, picked = [], sweeps = { you: [], them: [] } } = {}) {
+// `zones`: where things rest (units.js): ZONES across a table, or
+// ZONES_PORTRAIT on a phone held upright.
+export function layout(state, { chosen = null, picked = [], sweeps = { you: [], them: [] }, zones = ZONES } = {}) {
   const counted = countedCards(state);
   return [
-    ...yourHand(state.hand.map((c) => c.card), chosen),
-    ...theirHand(state.opponent_holds),
-    ...middle(state.table, picked),
-    ...pileOf("you", state.piles.you.cards, sweeps.you ?? [], counted.you),
-    ...pileOf("them", state.piles.them.cards, sweeps.them ?? [], counted.them),
-    ...countRow("you", counted.you),
-    ...countRow("them", counted.them),
-    ...stock(state.undealt, state.dealer),
+    ...yourHand(state.hand.map((c) => c.card), chosen, zones),
+    ...theirHand(state.opponent_holds, zones),
+    ...middle(state.table, picked, zones),
+    ...pileOf("you", state.piles.you.cards, sweeps.you ?? [], counted.you, zones),
+    ...pileOf("them", state.piles.them.cards, sweeps.them ?? [], counted.them, zones),
+    ...countRow("you", counted.you, zones),
+    ...countRow("them", counted.them, zones),
+    ...stock(state.undealt, state.dealer, zones),
   ];
 }
 

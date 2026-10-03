@@ -150,6 +150,11 @@ export function createChrome(root, on) {
   };
   const speed = select("speed", "Animation", SPEEDS.map((s) => [s.value, s.words]));
   const surface = select("surface", "The table", [["random", "A new one each time the page opens"], ...PATTERNS.map((p) => [p.id, p.name])]);
+  const faces = select("faces", "Card faces", [
+    ["auto", "Automatic: Large Text on a phone"],
+    ["classic", "Classic"],
+    ["jumbo", "Large Text (Optimized for smaller screens)"],
+  ]);
   const copy = el("md-text-button", { class: "copy", onclick: () => on.copy(copy) }, "Copy game record");
   const creditsOpen = el("md-text-button", { onclick: () => (settings.close(), credits.show()) }, "Credits");
   const settings = el(
@@ -169,7 +174,7 @@ export function createChrome(root, on) {
       aidSwitches,
       pageSwitches,
       el("h3", {}, "The table"),
-      el("div", { class: "selects" }, speed, surface),
+      el("div", { class: "selects" }, speed, surface, faces),
     ),
     el("div", { slot: "actions" }, copy, creditsOpen, el("md-filled-tonal-button", { onclick: () => settings.close() }, "Done")),
   );
@@ -257,6 +262,7 @@ export function createChrome(root, on) {
     for (const s of settings.querySelectorAll("md-switch[data-pref]")) s.selected = Boolean(prefs[s.dataset.pref]);
     speed.value = String(prefs.speed);
     surface.value = prefs.surface;
+    faces.value = prefs.faces;
     const watching = Boolean(state?.watching);
     hint.hidden = watching || !state?.aids?.hints;
     hint.disabled = state?.prompt !== "play";

@@ -261,7 +261,19 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   browser test reads the introduction, meets a page of the ladder in play,
   and pages through the help.
 - **T8. Phones.** Piquet's phone framing and Large Text faces, fitted to a
-  middle that grows.
+  middle that grows. **Done**: cassino's own stacked arrangement
+  (`units.js` `ZONES_PORTRAIT`: the middle three wide, your hand held up
+  near the eye, the piles and stocks at the corners); the layout and
+  choreography take their zones from the view; a staging test measures the
+  portrait camera's reach over whole games and holds `CAMERA_PORTRAIT.reach`
+  to it; the page measures the overlay's strips (upright: under the HUD and
+  the aids' panel, above the controls and the bar of icons at the foot;
+  sideways: between the HUD's column and the controls') and frames the table
+  between them, laying the cards out afresh when the phone turns. The Large
+  Text faces (automatic on a phone, or chosen in the settings) are fitted
+  to the 2.9 units of each card cassino's hand of four shows, which the
+  faces test measures. The browser test plays by tapping on a phone held
+  either way.
 - **T9. Traditional objects.** The pegboard, the sweep tally, the stock as a
   clock, polished.
 

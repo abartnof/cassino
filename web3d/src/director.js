@@ -190,12 +190,13 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
   }
 
   // Where on the screen to point at a card so that it is the one hit: near
-  // the index corner for a card in a fanned hand, its centre on the table.
+  // the index corner for a card in a fanned hand; on the table, the middle of
+  // its far half, clear of a hand card standing up in front of it.
   function screenPoint(code) {
     const m = placement.find((x) => x.code === code);
     if (!m) return null;
     const mesh = meshes[m.id];
-    const local = m.zone === "your-hand" ? new Vector3(-CARD.width / 2 + 0.8, CARD.height / 2 - 1.4, CARD.thickness / 2) : new Vector3(0, 0, CARD.thickness / 2);
+    const local = m.zone === "your-hand" ? new Vector3(-CARD.width / 2 + 0.8, CARD.height / 2 - 1.4, CARD.thickness / 2) : new Vector3(0, CARD.height / 4, CARD.thickness / 2);
     return toScreen(local.applyQuaternion(mesh.quaternion).add(mesh.position));
   }
 
@@ -246,6 +247,11 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
       const start = opening(s);
       settle(start);
       return animate(start, s, waits);
+    },
+    // The same state laid out afresh, at once (the phone turned, the
+    // zones changed), keeping what is timed to the moves.
+    relayout() {
+      settle(state);
     },
     // The next state, animated from this one.
     advance(next) {

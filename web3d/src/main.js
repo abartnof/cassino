@@ -12,11 +12,12 @@
 // moment, and at any time from the question mark (tutorial.js).
 
 import { Vector3 } from "three";
-import { loadTextures } from "./art.js";
+import { loadTextures, vectorWidth } from "./art.js";
 import { createChrome } from "./chrome.js";
 import { createDeck } from "./deck.js";
 import { createDialogue } from "./dialogue.js";
 import { createDirector } from "./director.js";
+import { facesFor, jumboTextures, phoneHere } from "./faces.js";
 import { decodeBase64, loadEngine } from "./engine.js";
 import { createHud, hudEvents, ledgerOf } from "./hud.js";
 import { createOverlay } from "./overlay.js";
@@ -28,7 +29,7 @@ import { chooseSurface } from "./surfaces.js";
 import { speech } from "./talk.js";
 import { pageDue, parseTutorial } from "./tutorial.js";
 import TUTORIAL_TEXT from "../tutorial.md";
-import { CARD } from "./units.js";
+import { CARD, ZONES, ZONES_PORTRAIT } from "./units.js";
 
 /* global WASM_BASE64, ART, WORDS */
 
@@ -66,6 +67,23 @@ async function main() {
   const textures = await loadTextures(ART, { anisotropy, pixelRatio: stage.renderer.getPixelRatio() });
   const deck = createDeck(stage, textures);
 
+  // The card faces: Large Text on a phone and the classic faces elsewhere,
+  // or whichever is chosen in the settings, changed where the cards lie
+  // (faces.js, after piquet's main.js).
+  const phone = phoneHere();
+  const faceSets = { classic: textures.faces };
+  let facesShown = "classic";
+  function showFaces(choice) {
+    const want = facesFor(choice, phone);
+    if (want === facesShown) return;
+    faceSets[want] ??= jumboTextures(Object.keys(textures.faces), { width: textures.width ?? vectorWidth(stage.renderer.getPixelRatio()), anisotropy });
+    deck.setFaces(faceSets[want]);
+    for (const texture of Object.values(faceSets[facesShown])) texture.dispose();
+    facesShown = want;
+    stage.render();
+  }
+  showFaces(prefs.faces);
+
   // The cards' lines: while choosing, the hand card chosen and the table
   // cards picked in amber, what could join in cyan, what cannot dimmed; with
   // nothing chosen, the hint's cards in cyan.
@@ -85,7 +103,9 @@ async function main() {
   const director = createDirector({
     stage,
     deck,
-    view: () => sel,
+    // A phone held upright (or sideways, between columns) lays the table
+    // out stacked (units.js ZONES_PORTRAIT).
+    view: () => ({ ...sel, zones: stage.portrait ? ZONES_PORTRAIT : ZONES }),
     decorate,
     rested: () => {
       placeBadges();
@@ -154,6 +174,7 @@ async function main() {
       keep();
       if (name === "speed") director.setSpeed(value);
       if (name === "surface") stage.setSurface(chooseSurface({ chosen: value, saved: null }));
+      if (name === "faces") showFaces(value);
       refresh();
     },
     copy: async (button) => {
@@ -331,6 +352,38 @@ async function main() {
   }
   window.addEventListener("resize", placeBadges);
 
+  // ---- phones ------------------------------------------------------------
+
+  // On a phone the table is framed in the band the overlay leaves: upright,
+  // between the HUD (and the aids' panel under it) and the controls; held
+  // sideways, between the HUD's column and the controls' (framing.js). The
+  // strips are measured as the overlay lays itself out.
+  const sideways = window.matchMedia("(orientation: landscape) and (max-height: 500px)");
+  const upright = window.matchMedia("(orientation: portrait) and (max-width: 700px)");
+  function fitStrips() {
+    const rect = (sel) => document.querySelector(sel).getBoundingClientRect();
+    const panel = document.querySelector(".aids-panel");
+    const hud = rect(".info");
+    panel.style.top = upright.matches ? `${hud.bottom + 6}px` : "";
+    if (sideways.matches) {
+      stage.setStrips({ top: 0, foot: 0, left: hud.right + 8, right: window.innerWidth - rect(".controls").left + 8, raised: 0 });
+      return;
+    }
+    const top = (upright.matches && !panel.hidden ? panel.getBoundingClientRect().bottom : hud.bottom) + 6;
+    const foot = window.innerHeight - Math.min(rect(".controls").top, rect(".bar").top) + 6;
+    stage.setStrips({ top, foot, raised: 0 });
+  }
+  new ResizeObserver(() => {
+    fitStrips();
+    placeBadges();
+  }).observe(document.getElementById("overlay"));
+  for (const sel of [".info", ".controls", ".aids-panel"]) new ResizeObserver(fitStrips).observe(document.querySelector(sel));
+  // The phone turned: the cards to their places in the other arrangement.
+  stage.onReframe = () => {
+    director.relayout();
+    placeBadges();
+  };
+
   // ---- the prompt, the aids and the log ----------------------------------
 
   // The line the aids add under the prompt: the hint, or the sweep warning.
@@ -429,6 +482,7 @@ async function main() {
     hud: () => ({ shown: hud.shown(), totals: hud.totals(), hands: hud.hands(), idle: hud.idle() }),
     hint: () => hint,
     tutorialOpen: () => chrome.tutorialOpen(),
+    facesShown: () => facesShown,
     pageDue: () => pageDue(state, prefs.seen, tutorialSince),
     screenPoint: (code) => director.screenPoint(code),
     busy: () => director.busy(),

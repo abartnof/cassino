@@ -94,7 +94,7 @@ export function initialPlacement(state, view = {}) {
 
 // A state laid out, its sweep cards taken from its own events.
 function layoutOf(state, view = {}) {
-  return layout(state, { chosen: view.chosen ?? null, picked: view.picked ?? [], sweeps: sweepCards(state.events, state.hand_number) });
+  return layout(state, { chosen: view.chosen ?? null, picked: view.picked ?? [], sweeps: sweepCards(state.events, state.hand_number), zones: view.zones });
 }
 
 // Before the first deal of a sitting: the whole pack squared at the first
@@ -340,6 +340,12 @@ class Plan {
     this.marks = []; // cards lit a while: { ids, at, until }
   }
 
+  // A state between, laid out where this view lays things (its zones), but
+  // as nobody has chosen anything in it.
+  layout(state) {
+    return layoutOf(state, { zones: this.view.zones });
+  }
+
   // A motion for a mesh, never overlapping the motion before it.
   add(id, path, start, duration, reveal) {
     const begin = Math.max(start, this.free.get(id) ?? 0);
@@ -443,7 +449,7 @@ class Plan {
   // highest leave first, each landing on those before it, and a card face
   // up turns over on its way.
   collect({ state }) {
-    const target = layoutOf(state);
+    const target = this.layout(state);
     const stock = target.filter((s) => s.zone === "stock");
     const kept = new Set(this.now.filter((m) => m.zone === "stock").map((m) => m.key));
     const open = stock.filter((s) => !kept.has(s.key));
@@ -463,7 +469,7 @@ class Plan {
   // will rest: up into a hand (yours turning to face you, and showing their
   // faces), or face up onto the table.
   deal({ state, order }) {
-    const target = layoutOf(state);
+    const target = this.layout(state);
     const top = this.now.filter((m) => m.zone === "stock").sort((a, b) => b.index - a.index);
     const slotsOf = {
       you: target.filter((s) => s.zone === "your-hand"),
@@ -489,7 +495,7 @@ class Plan {
   // the rest of the table moving up to make room.
   trail({ state, who }) {
     this.think(who);
-    const target = layoutOf(state);
+    const target = this.layout(state);
     const start = this.clock;
     this.stage(
       target,
@@ -506,7 +512,7 @@ class Plan {
   // takes the card played and then the loose cards on top of it.
   build({ state, who, event }) {
     this.think(who);
-    const target = layoutOf(state);
+    const target = this.layout(state);
     const start = this.clock;
     const raising = Boolean(event.onto);
     const loose = new Set(event.loose.map((c) => c.card));
@@ -532,7 +538,7 @@ class Plan {
   // the pile once the heap is in.
   take({ state, who, event, sweep }) {
     this.think(who);
-    const target = layoutOf(state);
+    const target = this.layout(state);
     const card = this.played(who, event.card.card);
     const groups = event.groups.map((g) => g.map((c) => this.now.find((m) => m.code === c.card)).filter(Boolean)).filter((g) => g.length);
     if (!groups.length) return; // nothing to gather: the settle places it
@@ -543,7 +549,7 @@ class Plan {
   // The last cards on the table to the last capturer, gathered as a capture
   // is, item by item in the order they lie.
   residue({ state, who, items }) {
-    const target = layoutOf(state);
+    const target = this.layout(state);
     const groups = items.map((codes) => codes.map((c) => this.now.find((m) => m.code === c)).filter(Boolean)).filter((g) => g.length);
     if (!groups.length) return;
     this.clock = Math.max(this.clock, this.end) + TIMING.beat;
@@ -618,7 +624,7 @@ class Plan {
   // is said (a sweep card from its place in the pile, any other off the
   // top). `this.count` keeps each line's moment, for the score sheet.
   count({ state, event }) {
-    const target = layoutOf(state);
+    const target = this.layout(state);
     let t = Math.max(this.clock, this.end) + TIMING.beat;
     const lines = [];
     for (const line of event.count.lines) {
