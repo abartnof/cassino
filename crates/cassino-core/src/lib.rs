@@ -7,6 +7,7 @@ pub mod cards;
 pub mod moves;
 pub mod rng;
 pub mod rules;
+pub mod scoring;
 pub mod sums;
 pub mod table;
 
