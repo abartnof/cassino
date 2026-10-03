@@ -98,6 +98,47 @@ pub fn rollout_deal(mut world: Hand, seat: Seat, policy: Policy, rng: &mut Rng) 
     banked(seat) - banked(seat.other())
 }
 
+impl SearchAgent {
+    /// The searcher's value of each of `moves` (candidates of `view`), in
+    /// points to the player: in the last deal the exact margin of the hand;
+    /// before it, the average worth banked by the end of the deal over the
+    /// sampled worlds, the same worlds for every move. For hints and for
+    /// rating a move against the best.
+    pub fn evaluate(&mut self, view: &View, moves: &[Move]) -> Vec<(Move, f64)> {
+        if view.perfect_information() {
+            let world = view.world(view.unseen(), &[]);
+            let mut solver = Solver::new(&Margin);
+            return moves
+                .iter()
+                .map(|&m| {
+                    let mut next = world;
+                    next.play(&m).expect("a candidate is legal");
+                    (m, f64::from(solver.value(&next, view.me)))
+                })
+                .collect();
+        }
+        // The same worlds, and the same playout luck in each, for every move.
+        let worlds: Vec<(Hand, u64)> = (0..self.worlds)
+            .map(|_| (view.sample_world(&mut self.rng), self.rng.next_u64()))
+            .collect();
+        moves
+            .iter()
+            .map(|&m| {
+                let now = immediate_worth(&view.rules, &view.table, &m).total();
+                let total: f64 = worlds
+                    .iter()
+                    .map(|&(w, luck)| {
+                        let mut next = w;
+                        next.play(&m).expect("a candidate is legal in every world");
+                        now + rollout_deal(next, view.me, self.policy, &mut Rng::seeded(luck))
+                    })
+                    .sum();
+                (m, total / worlds.len() as f64)
+            })
+            .collect()
+    }
+}
+
 impl Agent for SearchAgent {
     fn name(&self) -> String {
         "searcher".into()
@@ -114,27 +155,15 @@ impl Agent for SearchAgent {
         }
         ranked.sort_by(|a, b| b.1.total().total_cmp(&a.1.total()));
         ranked.truncate(self.width);
-        // The same worlds, and the same playout luck in each, for every
-        // candidate.
-        let worlds: Vec<(Hand, u64)> = (0..self.worlds)
-            .map(|_| (view.sample_world(&mut self.rng), self.rng.next_u64()))
-            .collect();
-        let mut best: Option<(f64, Move)> = None;
-        for (m, _) in ranked {
-            let now = immediate_worth(&view.rules, &view.table, &m).total();
-            let total: f64 = worlds
-                .iter()
-                .map(|&(w, luck)| {
-                    let mut next = w;
-                    next.play(&m).expect("a candidate is legal in every world");
-                    now + rollout_deal(next, view.me, self.policy, &mut Rng::seeded(luck))
-                })
-                .sum();
-            if best.is_none_or(|(bt, _)| total > bt) {
-                best = Some((total, m));
-            }
-        }
-        best.expect("a candidate").1
+        let shortlist: Vec<Move> = ranked.into_iter().map(|(m, _)| m).collect();
+        self.evaluate(view, &shortlist)
+            .into_iter()
+            .fold(None, |best: Option<(f64, Move)>, (m, v)| match best {
+                Some((bv, _)) if bv >= v => best,
+                _ => Some((v, m)),
+            })
+            .expect("a candidate")
+            .1
     }
 }
 
@@ -220,6 +249,34 @@ mod tests {
         let v = rollout_deal(h, Seat::South, Policy::Greedy, &mut Rng::seeded(1));
         let want = crate::worth::Worth::of_cards(s("7C 7D")).total() + 1.0;
         assert!((v - want).abs() < 1e-9, "{v} vs {want}");
+    }
+
+    #[test]
+    fn evaluation_ranks_what_the_searcher_chooses_first() {
+        let mut deck = pack();
+        Rng::seeded(21).shuffle(&mut deck);
+        let (mut h, _) = Hand::deal(Rules::CLASSIC, Seat::North, deck);
+        let mut rng = Rng::seeded(22);
+        let mut checked = 0;
+        while let Some(seat) = h.to_move() {
+            let v = h.view(seat, [0, 0]);
+            let candidates = v.candidates();
+            let mut a = SearchAgent::new(Rng::seeded(5));
+            let mut b = SearchAgent::new(Rng::seeded(5));
+            let values = a.evaluate(&v, &candidates);
+            assert_eq!(values.len(), candidates.len());
+            assert!(values.iter().all(|(_, x)| x.is_finite()));
+            let chosen = b.choose(&v);
+            let best = values.iter().map(|(_, x)| *x).fold(f64::MIN, f64::max);
+            let of_chosen = values.iter().find(|(m, _)| *m == chosen).unwrap().1;
+            if v.perfect_information() {
+                assert_eq!(of_chosen, best, "the solver's move is the best");
+            }
+            checked += 1;
+            h.play(&candidates[rng.below(candidates.len() as u64) as usize])
+                .unwrap();
+        }
+        assert_eq!(checked, 48);
     }
 
     #[test]
