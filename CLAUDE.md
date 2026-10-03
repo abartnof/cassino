@@ -12,8 +12,9 @@ Standing rules:
   current as work lands.
 - **The gate before every commit**: `bin/gate && git commit ...`. It runs
   `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and
-  `cargo test`, and exits non-zero on any failure, so nothing slips through a
-  pipe.
+  `cargo test`, prints a one-line summary, and exits non-zero on any
+  failure. **Never pipe it** (`bin/gate | tail` reports tail's status, not
+  the gate's: twice a broken build was committed that way).
 - **Simulations stop when the signal is clear.** Run in batches, look between
   them, and stop when the effect crosses an O'Brien–Fleming boundary fixed
   before the first batch; otherwise report the interval at the last look
