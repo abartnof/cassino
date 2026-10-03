@@ -562,6 +562,44 @@ pub fn hint(session: &Session) -> String {
 }
 
 // ---------------------------------------------------------------------------
+// Scripted games, for checking that every build plays alike.
+// ---------------------------------------------------------------------------
+
+/// FNV-1a over the bytes: the same function the Node check computes.
+pub fn fnv(bytes: &[u8]) -> u64 {
+    let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+    for &b in bytes {
+        h ^= u64::from(b);
+        h = h.wrapping_mul(0x0100_0000_01b3);
+    }
+    h
+}
+
+/// Plays a scripted game to its end: at its `n`th decision the person plays
+/// the move at index `n` modulo how many are offered, or deals the next
+/// hand. Returns the hash of the final state's JSON. The Node check
+/// (`tests/smoke.mjs`) plays the same script through the module and must
+/// get the same hash.
+pub fn scripted(game: u32, aces_fourteen: u32, sweeps: u32, skill_milli: u32, seed: u32) -> u64 {
+    let mut session = sit_down(game, aces_fourteen, sweeps, skill_milli, seed);
+    let mut n = 0;
+    loop {
+        match session.prompt() {
+            Prompt::Over => break,
+            Prompt::NextHand => {
+                session.send("next");
+            }
+            Prompt::Play => {
+                let moves = session.candidates();
+                session.send(&moves[n % moves.len()].to_string());
+            }
+        }
+        n += 1;
+    }
+    fnv(state(&session).as_bytes())
+}
+
+// ---------------------------------------------------------------------------
 // The exports.
 // ---------------------------------------------------------------------------
 
@@ -972,6 +1010,66 @@ mod tests {
             .unwrap()
             .iter()
             .any(|e| e["text"].as_str().unwrap().starts_with("North ")));
+    }
+
+    /// The golden games: each line is `game aces14 sweeps skill seed hash`.
+    const GOLDEN: &str = include_str!("../tests/golden.txt");
+
+    #[test]
+    fn scripted_games_end_as_the_golden_record_says() {
+        let mut checked = 0;
+        for line in GOLDEN
+            .lines()
+            .filter(|l| !l.starts_with('#') && !l.trim().is_empty())
+        {
+            let n: Vec<u64> = line
+                .split_whitespace()
+                .map(|w| w.parse().unwrap())
+                .collect();
+            let got = scripted(
+                n[0] as u32,
+                n[1] as u32,
+                n[2] as u32,
+                n[3] as u32,
+                n[4] as u32,
+            );
+            assert_eq!(
+                got, n[5],
+                "{line}: the game plays differently. If that is intended, bump session::RECORD_VERSION and regenerate tests/golden.txt"
+            );
+            checked += 1;
+        }
+        assert!(checked >= 12, "{checked}");
+    }
+
+    /// Regenerates the golden lines: `cargo test -p cassino-wasm print_golden
+    /// -- --ignored --nocapture`.
+    #[test]
+    #[ignore]
+    fn print_golden() {
+        for (i, (game, aces, sweeps, skill)) in [
+            (0, 0, 1, 1000),
+            (0, 0, 1, 2000),
+            (0, 0, 1, 3000),
+            (0, 0, 1, 4000),
+            (0, 0, 0, 3500),
+            (1, 0, 1, 1000),
+            (1, 0, 1, 2500),
+            (1, 0, 1, 4000),
+            (1, 1, 1, 3000),
+            (1, 1, 1, 4000),
+            (1, 1, 0, 2000),
+            (0, 0, 1, 3700),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let seed = 1000 + i as u32;
+            println!(
+                "{game} {aces} {sweeps} {skill} {seed} {}",
+                scripted(game, aces, sweeps, skill, seed)
+            );
+        }
     }
 
     #[test]

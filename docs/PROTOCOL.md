@@ -169,5 +169,11 @@ The module exports, with no `wasm-bindgen`:
 | `cassino_out() -> ptr`, `cassino_out_len() -> len` | The last rendered JSON |
 
 `crates/cassino-wasm/tests/smoke.mjs` plays whole games through the module in
-Node, exactly as a page would. The module is about 330 KB. The top level of
+Node, exactly as a page would. It first replays the golden games of
+`crates/cassino-wasm/tests/golden.txt`: scripted games whose final state must
+hash exactly as the native build's does (`cargo test` checks the native
+side). Every build of the engine therefore plays alike, byte for byte. A
+change that alters play fails both checks: bump `session::RECORD_VERSION` and
+regenerate the file (`cargo test -p cassino-wasm print_golden -- --ignored
+--nocapture`). The module is about 330 KB. The top level of
 opponent averages 10–16 ms a command in Node, with the slowest under 100 ms.
