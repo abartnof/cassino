@@ -143,6 +143,17 @@ pub enum EventKind {
     },
 }
 
+/// Something lying on the table, as a client draws it: a loose card or a
+/// build, with an id that stays the same while it lies there. Items are kept
+/// in the order they arrived; a build's cards are in the order they were
+/// laid, the last on top. A new build takes the place of the first loose
+/// card it was made from; a trailed card goes to the end.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Item {
+    pub id: u32,
+    pub cards: Vec<Card>,
+}
+
 /// The version of the engine's play a record replays against: bump it
 /// whenever a change alters the cards dealt or the opponent's choices, so a
 /// saved record from before is refused rather than replayed into another
@@ -160,8 +171,10 @@ pub struct Session {
     error: Option<String>,
     /// The sitting before each of the person's decisions, for undo. The
     /// opponent's decisions are pure functions of the position, so the game,
-    /// the events and the record are all there is to restore.
+    /// the events, the record and the items are all there is to restore.
     snapshots: Vec<Snapshot>,
+    items: Vec<Item>,
+    next_id: u32,
 }
 
 #[derive(Clone)]
@@ -169,6 +182,8 @@ struct Snapshot {
     game: Game,
     events: usize,
     record: usize,
+    items: Vec<Item>,
+    next_id: u32,
 }
 
 impl Session {
@@ -187,6 +202,8 @@ impl Session {
             aids: Aids::default(),
             error: None,
             snapshots: Vec::new(),
+            items: Vec::new(),
+            next_id: 1,
         };
         let cuts = session.game.cuts().to_vec();
         for (i, cut) in cuts.iter().enumerate() {
@@ -277,6 +294,8 @@ impl Session {
             self.game = snap.game;
             self.events.truncate(snap.events);
             self.record.truncate(snap.record);
+            self.items = snap.items;
+            self.next_id = snap.next_id;
             return Ok(());
         }
         if let Some(rest) = command.strip_prefix("set ") {
@@ -327,6 +346,8 @@ impl Session {
             game: self.game.clone(),
             events: self.events.len(),
             record: self.record.len(),
+            items: self.items.clone(),
+            next_id: self.next_id,
         });
     }
 
@@ -358,6 +379,10 @@ impl Session {
         let before = *self.game.hand().table();
         let observer = self.view();
         let events = self.game.play(&mv).expect("checked before it was played");
+        self.place(&before, &mv);
+        if self.game.hand().is_over() {
+            self.items.clear();
+        }
         self.tell_hand(&before, Some(&observer), events.as_slice());
         if seat == Seat::South && self.aids.explain {
             let rating = advice::rate(&observer, &mv);
@@ -380,6 +405,70 @@ impl Session {
                     ),
                 );
             }
+        }
+    }
+
+    /// Updates the items for a move made on `before`.
+    fn place(&mut self, before: &Table, mv: &Move) {
+        let slot_order = |items: &[Item], set: CardSet| -> Vec<Card> {
+            items
+                .iter()
+                .filter(|i| i.cards.len() == 1 && set.contains(i.cards[0]))
+                .map(|i| i.cards[0])
+                .collect()
+        };
+        match *mv {
+            Move::Trail { card } => {
+                self.items.push(Item {
+                    id: self.next_id,
+                    cards: vec![card],
+                });
+                self.next_id += 1;
+            }
+            Move::Capture { taken, .. } => self.items.retain(|i| !taken.contains(i.cards[0])),
+            Move::Build {
+                card, onto, loose, ..
+            } => {
+                let laid = slot_order(&self.items, loose);
+                let target = onto.and_then(|o| before.build_of(o)).map(|b| b.cards);
+                let mut placed = false;
+                let mut items = Vec::with_capacity(self.items.len());
+                for item in self.items.drain(..) {
+                    let first = item.cards[0];
+                    if target.is_some_and(|t| t.contains(first)) {
+                        let mut cards = item.cards;
+                        cards.push(card);
+                        cards.extend(&laid);
+                        items.push(Item { id: item.id, cards });
+                    } else if item.cards.len() == 1 && loose.contains(first) {
+                        if target.is_none() && !placed {
+                            let mut cards = laid.clone();
+                            cards.push(card);
+                            items.push(Item {
+                                id: self.next_id,
+                                cards,
+                            });
+                            self.next_id += 1;
+                            placed = true;
+                        }
+                    } else {
+                        items.push(item);
+                    }
+                }
+                self.items = items;
+            }
+        }
+    }
+
+    /// The items of a freshly dealt table.
+    fn lay_out(&mut self) {
+        self.items.clear();
+        for card in self.game.hand().table().loose {
+            self.items.push(Item {
+                id: self.next_id,
+                cards: vec![card],
+            });
+            self.next_id += 1;
         }
     }
 
@@ -407,6 +496,9 @@ impl Session {
         for e in events {
             match *e {
                 hand::Event::Dealt { deal, last } => {
+                    if deal == 1 {
+                        self.lay_out();
+                    }
                     let you_deal = self.game.hand().dealer() == Seat::South;
                     let mut text = format!("Deal {deal} of 6.");
                     if last {
@@ -587,6 +679,11 @@ impl Session {
         self.error.as_deref()
     }
 
+    /// What lies on the table, in arrival order, with stable ids.
+    pub fn items(&self) -> &[Item] {
+        &self.items
+    }
+
     /// The top rung's move in the person's place, when the hints aid is on
     /// and it is their turn.
     pub fn hint(&self) -> Option<advice::Hint> {
@@ -761,6 +858,91 @@ mod tests {
         assert_eq!(s.hint(), Some(h), "asked twice, the same");
         assert!(!s.send("set nonsense on"));
         assert!(!s.send("set hints maybe"));
+    }
+
+    /// The items are the table: each card once, each build whole.
+    fn assert_items_match(s: &Session) {
+        let table = s.game().hand().table();
+        let mut all = CardSet::EMPTY;
+        for item in s.items() {
+            let set: CardSet = item.cards.iter().copied().collect();
+            assert_eq!(set.len() as usize, item.cards.len());
+            assert!(all.is_disjoint(set));
+            all |= set;
+            if item.cards.len() > 1 {
+                assert!(
+                    table.builds.iter().any(|b| b.cards == set),
+                    "{set} is a build"
+                );
+            } else {
+                assert!(
+                    table.loose.contains(item.cards[0])
+                        || table.builds.iter().any(|b| b.cards == set)
+                );
+            }
+        }
+        assert_eq!(all, table.cards());
+        let mut ids: Vec<u32> = s.items().iter().map(|i| i.id).collect();
+        ids.sort_unstable();
+        ids.dedup();
+        assert_eq!(ids.len(), s.items().len(), "ids are unique");
+    }
+
+    #[test]
+    fn table_items_follow_the_table_with_stable_ids() {
+        for seed in 0..6 {
+            let mut s = Session::new(seed, settings());
+            assert_items_match(&s);
+            for _ in 0..300 {
+                let before: Vec<Item> = s.items().to_vec();
+                match s.prompt() {
+                    Prompt::Play => {
+                        let m = s.candidates()[(seed as usize) % s.candidates().len()];
+                        assert!(s.send(&m.to_string()));
+                    }
+                    Prompt::NextHand => assert!(s.send("next")),
+                    Prompt::Over => break,
+                }
+                assert_items_match(&s);
+                // An item that is still there kept its id and its cards
+                // underneath anything laid on it.
+                for item in s.items() {
+                    if let Some(old) = before.iter().find(|o| o.id == item.id) {
+                        assert_eq!(&item.cards[..old.cards.len()], &old.cards[..]);
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn a_trail_goes_to_the_end_and_a_build_takes_its_cards_place() {
+        let mut s = Session::new(2, settings());
+        // Find a position where the person can trail and see it appended.
+        for _ in 0..50 {
+            if s.prompt() != Prompt::Play {
+                assert!(s.send("next"));
+                continue;
+            }
+            let trail = s
+                .candidates()
+                .into_iter()
+                .find(|m| matches!(m, Move::Trail { .. }));
+            if let Some(m) = trail {
+                let count = s.items().len();
+                let next_id = s.items().iter().map(|i| i.id).max().unwrap_or(0);
+                assert!(s.send(&m.to_string()));
+                assert!(s.send("undo"));
+                assert_eq!(s.items().len(), count, "undo restores the items");
+                assert!(s.send(&m.to_string()));
+                let mine = s.items().iter().find(|i| i.cards == vec![m.card()]);
+                if let Some(item) = mine {
+                    assert!(item.id > next_id, "a new id");
+                }
+                return;
+            }
+            assert!(s.send(&s.candidates()[0].to_string()));
+        }
     }
 
     #[test]
