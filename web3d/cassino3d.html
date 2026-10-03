@@ -201,7 +201,11 @@ html, body {
 }
 .dialogue {
   position: fixed;
-  max-width: min(78vw, 360px);
+  /* As wide as its words, up to a limit, past which they wrap, the lines
+     balanced (play-testing found long lines running past the box). */
+  width: max-content;
+  max-width: min(78vw, 340px);
+  text-wrap: balance;
   padding: 9px 18px 10px;
   border-radius: 20px;
   font-size: 18px;
@@ -212,7 +216,6 @@ html, body {
   background: var(--md-sys-color-surface-container-lowest);
   box-shadow: var(--elevation-2);
   pointer-events: none;
-  white-space: nowrap;
   animation: box-in 420ms var(--ease-in) both;
   animation: box-in 420ms var(--spring) both;
 }

@@ -442,6 +442,10 @@ def check_talk(browser, failures):
         elif dealt_at is not None:
             after |= boxes - before
         theirs |= {l["words"] for l in said if l["who"] == "them"}
+        spill = page.evaluate("[...document.querySelectorAll('.dialogue')].filter((d) => d.scrollWidth > d.clientWidth + 1).map((d) => d.textContent)")
+        if spill:
+            failures.append(f"words past their box's edge: {spill[0]}")
+            break
     if dealt_at is None or not after:
         failures.append("the deal waited for the house rules to be agreed")
     # Royal: your opponent asks about sweeps; after your answer says the rest
