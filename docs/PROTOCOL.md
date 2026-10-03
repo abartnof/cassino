@@ -75,7 +75,10 @@ offer("3H AC 2D")  ->  {
 
 - `moves`: every move the selection makes exactly. The client shows them as
   chips and sends the chosen one's `move`. It never guesses between capturing
-  and building.
+  and building. Each also has `leaves_sweep`: `null`, or
+  `{values, unseen}` when the move would leave a table your opponent could
+  sweep, with the capture values that would clear it and how many such
+  cards you cannot see (the sweep warning, before the move is made).
 - `can_add`: table cards that could still join the selection on the way to
   some move. Light them up.
 - `why_not`: for every other table item, named by one of its cards, why it

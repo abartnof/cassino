@@ -547,6 +547,7 @@ pub fn offer(session: &Session, selection: &str) -> String {
                 "call",
                 or_null(words::call(&rules, &view.table, m).as_deref().map(text)),
             ),
+            ("leaves_sweep", leaves_sweep(&view, m)),
         ])
     });
     object(&[
@@ -564,6 +565,28 @@ pub fn offer(session: &Session, selection: &str) -> String {
             ),
         ),
     ])
+}
+
+/// Whether a move of the person's would leave the table to a sweep by the
+/// opponent: the capture values that would clear it and how many cards of
+/// them the person cannot see (the sweep warning, before the move is made),
+/// or `null`.
+fn leaves_sweep(view: &cassino_core::observation::View, mv: &Move) -> String {
+    advice::notes(view, Seat::South, mv)
+        .into_iter()
+        .find_map(|n| match n {
+            advice::Note::SweepOpen {
+                next: Seat::North,
+                values,
+                unseen,
+                ..
+            } => Some(object(&[
+                ("values", list(values.iter().map(|v| v.to_string()))),
+                ("unseen", unseen.to_string()),
+            ])),
+            _ => None,
+        })
+        .unwrap_or_else(|| "null".into())
 }
 
 /// The hint, as JSON, or `null` when hints are off or it is not the
@@ -1025,6 +1048,43 @@ mod tests {
             .all(|m| ["trail", "take", "build"].contains(&m["chip"]["kind"].as_str().unwrap())));
         assert!(parse(&offer(&s, "ZZ"))["error"].is_string());
         assert!(parse(&offer(&s, "")).get("error").is_some());
+    }
+
+    #[test]
+    fn an_offer_warns_of_a_sweep_left_open() {
+        // Over a game, every offered move says whether it leaves a sweep,
+        // and some do: the values that would clear the table, and how many
+        // cards of them the person has not seen. The person captures when
+        // they can, which keeps the table small enough to be swept.
+        let mut warned = 0;
+        for seed in [11, 12, 13] {
+            let mut s = sit_down(1, 0, 1, 1000, seed);
+            while s.prompt() != Prompt::Over {
+                if s.prompt() == Prompt::NextHand {
+                    assert!(s.send("next"));
+                    continue;
+                }
+                for card in s.view().hand {
+                    let v = parse(&offer(&s, &card.to_string()));
+                    for m in v["moves"].as_array().unwrap() {
+                        let w = &m["leaves_sweep"];
+                        if w.is_null() {
+                            continue;
+                        }
+                        warned += 1;
+                        assert!(!w["values"].as_array().unwrap().is_empty());
+                        assert!(w["unseen"].as_u64().unwrap() >= 1);
+                    }
+                }
+                let moves = s.candidates();
+                let mv = moves
+                    .iter()
+                    .find(|m| matches!(m, Move::Capture { .. }))
+                    .unwrap_or(&moves[0]);
+                assert!(s.send(&mv.to_string()));
+            }
+        }
+        assert!(warned > 0, "some move left a sweep open");
     }
 
     #[test]
