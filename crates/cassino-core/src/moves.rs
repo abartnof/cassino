@@ -1069,6 +1069,24 @@ mod tests {
     }
 
     #[test]
+    fn checking_a_claim_on_a_crowded_table_is_quick() {
+        // The review's F2, end to end: `take KS` and 29 cards.
+        let table = "2S 3S 4S 5S 6S 7S QS 2H 3H 4H 5H 6H 7H 8H 2D 3D 4D 5D 6D 7D 8D 2C 3C 4C 5C 6C 7C 8C QH";
+        let p = pos(Rules::ROYAL, table, "KS 9C");
+        let started = std::time::Instant::now();
+        // check() alone: listing every legal move here is astronomical.
+        assert_eq!(
+            p.check(&format!("take KS {table}")),
+            Err(Illegal::DoesNotSplit(13))
+        );
+        assert!(
+            started.elapsed().as_millis() < 500,
+            "{:?}",
+            started.elapsed()
+        );
+    }
+
+    #[test]
     fn a_build_of_aces() {
         // Building aces: an ace on an ace, holding another ("building aces").
         let p = pos(Rules::CLASSIC, "AD 5C", "AS AC 9H");

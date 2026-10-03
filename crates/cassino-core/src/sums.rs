@@ -4,6 +4,8 @@
 //! (`docs/RULES.md` rule 4). Captures and builds are unions of disjoint groups,
 //! so everything the move generator does starts here.
 
+use std::collections::HashMap;
+
 use crate::cards::CardSet;
 use crate::rules::Rules;
 
@@ -70,28 +72,78 @@ pub fn subsets_summing(rules: &Rules, pool: CardSet, target: u8) -> Vec<CardSet>
 
 /// Whether `set` splits into groups that each total `v`. The empty set does
 /// (into no groups); a set with a valueless card never does.
+///
+/// Whether a set splits depends only on the multiset of its values, so the
+/// search runs on counts of each value and remembers the counts it has
+/// already tried: fast even for the whole table at once (the engine review's
+/// F2: 29 cards once took seconds).
 pub fn partitions_into(rules: &Rules, set: CardSet, v: u8) -> bool {
-    let Some(total) = value_sum(rules, set) else {
-        return false;
-    };
-    if v == 0 || total % u32::from(v) != 0 {
-        return set.is_empty();
+    let mut counts = [0u8; 14];
+    let mut total = 0u32;
+    for c in set {
+        let Some(x) = rules.build_value(c) else {
+            return false;
+        };
+        if x > v {
+            return false;
+        }
+        counts[x as usize] += 1;
+        total += u32::from(x);
     }
-    // The lowest card belongs to exactly one group; try each, and split the
-    // rest the same way.
-    let Some(lowest) = set.first() else {
+    if set.is_empty() {
+        return true;
+    }
+    if v == 0 || !total.is_multiple_of(u32::from(v)) {
+        return false;
+    }
+    split(&mut counts, v, &mut HashMap::new())
+}
+
+/// The counts as a key: three bits for each of the values 1 to 13.
+fn key(counts: &[u8; 14]) -> u64 {
+    counts[1..].iter().fold(0, |k, &c| k << 3 | u64::from(c))
+}
+
+/// Splits the counted values into groups of `v`: the largest value left
+/// must be in some group, so try each set of companions for it.
+fn split(counts: &mut [u8; 14], v: u8, memo: &mut HashMap<u64, bool>) -> bool {
+    let Some(x) = (1..=13usize).rev().find(|&i| counts[i] > 0) else {
         return true;
     };
-    let Some(need) = v.checked_sub(rules.build_value(lowest).expect("valued above")) else {
-        return false;
-    };
-    let rest = set.without(lowest);
-    if need == 0 {
-        return partitions_into(rules, rest, v);
+    let k = key(counts);
+    if let Some(&known) = memo.get(&k) {
+        return known;
     }
-    subsets_summing(rules, rest, need)
-        .into_iter()
-        .any(|g| partitions_into(rules, rest - g, v))
+    counts[x] -= 1;
+    let ok = companions(counts, v - x as u8, x, v, memo);
+    counts[x] += 1;
+    memo.insert(k, ok);
+    ok
+}
+
+/// Chooses companions totalling `need`, each no larger than `max` (so each
+/// set is tried once), then splits what is left.
+fn companions(
+    counts: &mut [u8; 14],
+    need: u8,
+    max: usize,
+    v: u8,
+    memo: &mut HashMap<u64, bool>,
+) -> bool {
+    if need == 0 {
+        return split(counts, v, memo);
+    }
+    for y in (1..=max.min(need as usize)).rev() {
+        if counts[y] > 0 {
+            counts[y] -= 1;
+            let ok = companions(counts, need - y as u8, y, v, memo);
+            counts[y] += 1;
+            if ok {
+                return true;
+            }
+        }
+    }
+    false
 }
 
 /// Every distinct union of pairwise-disjoint groups from `groups`, the empty
@@ -219,6 +271,74 @@ mod tests {
             "a Classic king has no value"
         );
         assert!(partitions_into(&Rules::ROYAL, s("KS 6H 7D"), 13));
+    }
+
+    /// The search as first written: exact, and exponential.
+    fn slow_partitions(rules: &Rules, set: CardSet, v: u8) -> bool {
+        let Some(total) = value_sum(rules, set) else {
+            return false;
+        };
+        if v == 0 || total % u32::from(v) != 0 {
+            return set.is_empty();
+        }
+        let Some(lowest) = set.first() else {
+            return true;
+        };
+        let Some(need) = v.checked_sub(rules.build_value(lowest).unwrap()) else {
+            return false;
+        };
+        let rest = set.without(lowest);
+        if need == 0 {
+            return slow_partitions(rules, rest, v);
+        }
+        subsets_summing(rules, rest, need)
+            .into_iter()
+            .any(|g| slow_partitions(rules, rest - g, v))
+    }
+
+    #[test]
+    fn the_fast_partition_search_agrees_with_the_slow_one() {
+        let mut rng = crate::rng::Rng::seeded(31);
+        let pack = crate::cards::pack();
+        for _ in 0..4_000 {
+            let n = 1 + rng.below(12) as usize;
+            let mut deck = pack;
+            rng.shuffle(&mut deck);
+            let set: CardSet = deck[..n].iter().copied().collect();
+            for v in 1..=14 {
+                for rules in [Rules::CLASSIC, Rules::ROYAL] {
+                    assert_eq!(
+                        partitions_into(&rules, set, v),
+                        slow_partitions(&rules, set, v),
+                        "{set} into {v}"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn a_crowded_claim_is_refused_quickly() {
+        // The review's F2: 29 cards totalling a multiple of 13 that cannot
+        // split into thirteens (no ace to pair a queen).
+        let set = s("2S 3S 4S 5S 6S 7S QS 2H 3H 4H 5H 6H 7H 8H 2D 3D 4D 5D 6D 7D 8D 2C 3C 4C 5C 6C 7C 8C QH");
+        assert_eq!(set.len(), 29);
+        assert_eq!(value_sum(&Rules::ROYAL, set).unwrap() % 13, 0);
+        let started = std::time::Instant::now();
+        assert!(!partitions_into(&Rules::ROYAL, set, 13));
+        assert!(
+            started.elapsed().as_millis() < 10,
+            "{:?}",
+            started.elapsed()
+        );
+        // And one that does split, as fast.
+        let fine = s("2S 3S 4S 5S 6S 7S 8S 9S TS 2H 3H 4H 5H 6H 7H 8H 9H TH");
+        let started = std::time::Instant::now();
+        assert!(
+            partitions_into(&Rules::CLASSIC, fine, 10)
+                == slow_partitions(&Rules::CLASSIC, fine, 10)
+        );
+        assert!(started.elapsed().as_millis() < 2_000);
     }
 
     #[test]
