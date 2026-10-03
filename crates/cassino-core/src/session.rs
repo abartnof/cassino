@@ -20,7 +20,7 @@ use crate::agents::Agent;
 use crate::cards::{Card, CardSet};
 use crate::game::Game;
 use crate::hand::{self, Clinch};
-use crate::moves::{self, Move};
+use crate::moves::{self, BuildKind, Move};
 use crate::observation::View;
 use crate::opponent::{Opponent, Skill};
 use crate::rng::{purpose, Rng};
@@ -101,12 +101,17 @@ pub enum EventKind {
         yours: CardSet,
         table: CardSet,
     },
-    /// A move, with the groups a capture took and the call a build makes.
+    /// A move, with the groups a capture took and the call a build makes;
+    /// what kind of build it was (new, raised, added to) and whether it is
+    /// now multiple; and the cards the card played could also have taken
+    /// (the table talk's "You left the five.").
     Played {
         you: bool,
         mv: Move,
         groups: Vec<CardSet>,
         call: Option<String>,
+        build: Option<(BuildKind, bool)>,
+        left: CardSet,
     },
     Swept {
         you: bool,
@@ -782,6 +787,8 @@ impl Session {
                             mv,
                             groups,
                             call,
+                            build: moves::build_kind(&rules, before, &mv),
+                            left: advice::left_behind(&rules, before, &mv),
                         },
                         text,
                     );
@@ -1238,6 +1245,49 @@ mod tests {
         assert_eq!(s.hint(), Some(h), "asked twice, the same");
         assert!(!s.send("set nonsense on"));
         assert!(!s.send("set hints maybe"));
+    }
+
+    #[test]
+    fn a_played_event_tells_the_build_and_what_was_left_behind() {
+        let (mut raises, mut adds, mut left) = (0, 0, 0);
+        for seed in 0..16 {
+            // Two counting players build and raise more than the first
+            // candidate does.
+            let mut s = Session::watch(seed, Rules::CLASSIC, [3.0, 3.0]);
+            while s.step() {}
+            for e in s.events() {
+                let EventKind::Played {
+                    mv, build, left: l, ..
+                } = &e.kind
+                else {
+                    continue;
+                };
+                match (mv, build) {
+                    (Move::Build { value, .. }, Some((kind, _))) => {
+                        assert!(l.is_empty(), "a build leaves nothing behind");
+                        match kind {
+                            BuildKind::Raise { from } => {
+                                assert!(from < value);
+                                raises += 1;
+                            }
+                            BuildKind::Add => adds += 1,
+                            BuildKind::New => {}
+                        }
+                    }
+                    (Move::Build { .. }, None) => panic!("a build without its kind"),
+                    (Move::Capture { taken, .. }, None) => {
+                        assert!(l.is_disjoint(*taken));
+                        left += usize::from(!l.is_empty());
+                    }
+                    (Move::Trail { .. }, None) => left += usize::from(!l.is_empty()),
+                    (_, Some(_)) => panic!("a build kind for {mv}"),
+                }
+            }
+        }
+        assert!(
+            raises > 0 && adds > 0 && left > 0,
+            "{raises} raises, {adds} adds, {left} left"
+        );
     }
 
     #[test]

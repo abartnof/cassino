@@ -222,7 +222,7 @@ pub fn notes(observer_view: &View, mover: Seat, mv: &Move) -> Vec<Note> {
 /// The cards the played card could have taken besides what it took: the
 /// largest capture of the same value (any value, for a trail) that contains
 /// what was taken, less it.
-fn left_behind(rules: &Rules, table: &Table, mv: &Move) -> CardSet {
+pub fn left_behind(rules: &Rules, table: &Table, mv: &Move) -> CardSet {
     let (card, taken, values): (Card, CardSet, Vec<u8>) = match *mv {
         Move::Trail { card } => (card, CardSet::EMPTY, rules.capture_values(card).to_vec()),
         Move::Capture { card, taken, value } => (card, taken, vec![value]),

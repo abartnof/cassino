@@ -24,7 +24,7 @@
 use cassino_core::advice::{self, Quality};
 use cassino_core::cards::{Card, CardSet};
 use cassino_core::hand::Clinch;
-use cassino_core::moves::Move;
+use cassino_core::moves::{BuildKind, Move};
 use cassino_core::rules::{Game, Rules};
 use cassino_core::scoring::{Breakdown, Item as Line};
 use cassino_core::select;
@@ -253,11 +253,28 @@ fn event(e: &Event) -> String {
             mv,
             groups,
             call,
+            build,
+            left,
         } => {
             fields.push(("you", boolean(*you)));
             fields.extend(move_fields(mv));
             fields.push(("groups", list(groups.iter().map(|g| cards(*g)))));
             fields.push(("call", or_null(call.as_deref().map(text))));
+            let (kind, from, multiple) = match build {
+                None => ("null".to_string(), "null".to_string(), "null".to_string()),
+                Some((kind, multiple)) => {
+                    let (name, from) = match kind {
+                        BuildKind::New => ("new", "null".to_string()),
+                        BuildKind::Raise { from } => ("raise", from.to_string()),
+                        BuildKind::Add => ("add", "null".to_string()),
+                    };
+                    (text(name), from, boolean(*multiple))
+                }
+            };
+            fields.push(("build_kind", kind));
+            fields.push(("raised_from", from));
+            fields.push(("multiple", multiple));
+            fields.push(("left", cards(*left)));
             "played"
         }
         EventKind::Swept { you } => {
