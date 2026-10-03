@@ -6,16 +6,27 @@
 
 ## Where we are
 
-**2026-10-03: the literature review is finished; the engine begins.**
+**2026-10-03: the rules engine is complete for both games, and playable in a
+terminal.** 133 tests, all passing (`bin/gate`).
 
-- `cassino-lit-review.md` (and its PDF): the review, with 400+ sources,
-  simulations and a fact-check pass. Its research notes and scripts are in
-  `research/`, and its build tools in `tools/`.
-- `docs/RULES.md`: both games as they will be implemented, every contested
-  point settled once, and twenty worked examples ready to become fixtures.
-- `docs/DESIGN.md`: architecture, what carries over from piquet and bezique,
-  the move model, observation, the opponent, and the fun: table talk,
-  traditional objects, digital aids, explanations and hints.
+- **The engine** (`crates/cassino-core`): cards, values for Classic, Royal
+  and Royal with aces at 14, the table and builds, move generation, checking
+  with a reason for every refusal, the hand (six deals, residue, events) and
+  the game (cut, hands to 21). All twenty worked examples of `RULES.md` are
+  fixtures. The fast move generator matches a brute-force, literal reading of
+  the rules on 1,200 synthetic and 4,000+ real-play positions, and planted
+  bugs are caught.
+- **Observation**: the `View`, with a leak test that redistributes the
+  hidden cards and requires an identical view.
+- **Agents and measurement**: rung 1 (legal) and rung 2 (greedy);
+  mirrored pairs; sequential runs with O'Brien–Fleming boundaries, whose
+  false-alarm rate a self-test holds at 5%.
+- **The terminal client** (`cargo run -p cassino-cli`): play by number or
+  by typed move, or `--watch` two computer players, with the calls, the
+  count and the dealer's "Last." narrated. It runs on `Game` directly for
+  now and moves onto the session in milestone 8.
+- Earlier, on the same day: the literature review was finished, and
+  `docs/RULES.md`, `docs/DESIGN.md` and this plan were written.
 
 ## Settled decisions
 
@@ -39,14 +50,15 @@
 
 ## Milestones
 
-- [ ] 1. **Cards and rules**: `CardSet`, notation, values for both games.
-- [ ] 2. **The table and moves**: move generation, the reference generator,
-  `apply`, the `RULES.md` fixtures.
-- [ ] 3. **The hand and the game**: dealing, the residue, events, scoring, the
+- [x] 1. **Cards and rules**: `CardSet`, notation, values for both games.
+- [x] 2. **The table and moves**: move generation, the reference generator,
+  `apply`, the `RULES.md` fixtures, narration groups.
+- [x] 3. **The hand and the game**: dealing, the residue, events, scoring, the
   game to 21. Invariants over random play.
-- [ ] 4. **Agents and measurement**: random and greedy agents, the
-  mirrored-pair harness, the anatomy of a hand.
-- [ ] 5. **The terminal client**: play against the computer, and **watch
+- [ ] 4. **Agents and measurement**: random and greedy agents and the
+  mirrored, sequential harness are done; the measurement binary and the
+  anatomy of a hand remain.
+- [x] 5. **The terminal client**: play against the computer, and **watch
   mode**.
 - [ ] 6. **Observation and the stronger rungs**: the view and its leak test,
   the build inference, counting, the exact last-deal solver, sampled search.
