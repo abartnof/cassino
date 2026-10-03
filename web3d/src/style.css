@@ -845,3 +845,74 @@ md-dialog {
   width: min(20rem, calc(100vw - 24px));
   max-height: 45vh;
 }
+
+/* ---- the tutorial's pages -------------------------------------------------
+   After piquet's: Back at the left, the dots centred, Next at the right. */
+.tutorial-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.tutorial-head md-icon-button {
+  margin: -8px -12px -8px 0;
+}
+.tutorial-actions {
+  flex: 1;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 100%;
+  gap: 4px;
+}
+.tutorial-pager {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.tutorial-note {
+  margin: 0 8px;
+  font-size: 13px;
+  line-height: 1.35;
+  text-align: center;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.tutorial-dots {
+  display: inline-flex;
+  gap: 6px;
+  flex: none;
+}
+.tutorial-dots .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--md-sys-color-outline-variant);
+  transition: background 200ms var(--ease), transform 200ms var(--ease);
+}
+.tutorial-dots .dot.on {
+  background: var(--md-sys-color-primary);
+  transform: scale(1.25);
+}
+.tutorial-page {
+  line-height: 1.45;
+  font-size: 15px;
+}
+.tutorial-page p {
+  margin: 0 0 10px;
+}
+.tutorial-page h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 18px 0 6px;
+  color: var(--md-sys-color-primary);
+}
+.tutorial-page ul,
+.tutorial-page ol {
+  margin: 0 0 10px;
+  padding-left: 22px;
+  display: grid;
+  gap: 6px;
+}
+.tutorial-page strong {
+  font-weight: 600;
+}

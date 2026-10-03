@@ -51,6 +51,9 @@ def open_page(browser, query="seed=7", viewport=None, calm=False):
     page.on("request", lambda r: page.requests.append(r.url))
     page.on("console", lambda m: m.type == "error" and page.errors.append(m.text))
     page.on("pageerror", lambda e: page.errors.append(str(e)))
+    # The tutorial's pages would hold the table: off, unless being tested.
+    if "tutorial" not in query:
+        query += "&tutorial=0"
     page.goto(f"{PAGE.as_uri()}?{query}")
     page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
     return page
@@ -166,6 +169,50 @@ def check_count(page, s, failures):
     counted = len([e for e in s["events"] if e["kind"] == "scored"])
     if hud["hands"] != counted:
         failures.append(f"hand {s['hand_number']}: the HUD's ledger has {hud['hands']} hands, {counted} were counted")
+
+
+def check_tutorial(browser, failures):
+    """The tutorial: the introduction as the game begins, holding the table;
+    then, playing on, a page of the teaching ladder at its moment; and the
+    question mark's pages at any time."""
+    page = open_page(browser, "seed=7&speed=8&skill=2&tutorial=1")
+    page.wait_for_function("window.cassino3d.tutorialOpen()", timeout=30_000)
+    page.wait_for_timeout(1200)
+    shot(page, "t7-intro")
+    title = page.locator(".tutorial-title").inner_text()
+    if title != "Cassino":
+        failures.append(f"tutorial: the first page is {title!r}")
+    page.locator(".tutorial-close").click()
+    page.wait_for_timeout(800)
+    ladder = {"Pairing", "Summing", "Building", "Raising a build", "Multiple builds"}
+    seen = set()
+    for n in range(24):
+        # A page opens once the cards are still after a move.
+        settle(page)
+        if page.evaluate("window.cassino3d.pageDue()"):
+            page.wait_for_function("window.cassino3d.tutorialOpen()", timeout=20_000)
+        if page.evaluate("window.cassino3d.tutorialOpen()"):
+            page.wait_for_timeout(800)
+            seen.add(page.locator(".tutorial-title").inner_text())
+            if len(seen) == 1:
+                shot(page, "t7-ladder")
+            page.locator(".tutorial-close").click()
+            page.wait_for_timeout(800)
+            continue
+        if seen & ladder or not play_by_clicking(page, failures, n + 100):
+            break
+    if not seen & ladder:
+        failures.append(f"tutorial: no page of the ladder came in play: {seen}")
+    # The question mark: the pages at any time, Next paging on.
+    if not page.evaluate("window.cassino3d.tutorialOpen()"):
+        page.locator("md-icon-button.help").click()
+        page.wait_for_timeout(1000)
+    page.locator(".tutorial-next").click()
+    page.wait_for_timeout(300)
+    if page.locator(".tutorial-title").inner_text() == "Cassino":
+        failures.append("tutorial: Next did not page on")
+    if page.errors:
+        failures.append(f"tutorial: console errors {page.errors[:5]}")
 
 
 def check_settings(browser, failures):
@@ -303,6 +350,7 @@ def main() -> int:
         # The gather and the sweep, frame by frame (seeds found to open with
         # them: a pair and a sum taken with 9C; all four cards with 10C).
         check_settings(browser, failures)
+        check_tutorial(browser, failures)
         page = open_page(browser, "seed=11&skill=4&manual", calm=True)
         page.evaluate("window.cassino3d.tick(2500)")
         shot(page, "t5-talk")  # the house rules agreed before the deal

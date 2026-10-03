@@ -7,8 +7,9 @@
 // choreography.js); the score HUD, its popups timed to the sweeps and to
 // the count as its cards turn up (hud.js), and the trackers (scorebug.js);
 // what is said at the table, in boxes by each speaker's hand (talk.js,
-// dialogue.js); and the settings, the aids and the sitting kept across a
-// reload (chrome.js, prefs.js).
+// dialogue.js); the settings, the aids and the sitting kept across a
+// reload (chrome.js, prefs.js); and the tutorial's pages, each at its first
+// moment, and at any time from the question mark (tutorial.js).
 
 import { Vector3 } from "three";
 import { loadTextures } from "./art.js";
@@ -25,12 +26,15 @@ import { trackers } from "./scorebug.js";
 import { EMPTY, choose, chipsOf, itemState, pick, selectionOf, selectionText, whyNot } from "./selection.js";
 import { chooseSurface } from "./surfaces.js";
 import { speech } from "./talk.js";
+import { pageDue, parseTutorial } from "./tutorial.js";
+import TUTORIAL_TEXT from "../tutorial.md";
 import { CARD } from "./units.js";
 
 /* global WASM_BASE64, ART, WORDS */
 
 const params = new URL(window.location.href).searchParams;
 const WATCH_PAUSE = 650; // ms between the moves of a watched game
+const PAGES = parseTutorial(TUTORIAL_TEXT);
 
 // The browser's storage, if there is any to have.
 function storage() {
@@ -88,6 +92,7 @@ async function main() {
       overlay.trackers(trackers(state));
       show();
       if (state.watching) watchOn();
+      else introduce();
     },
     manual: params.has("manual"),
     speed: prefs.speed,
@@ -106,12 +111,16 @@ async function main() {
 
   const hud = createHud(overlay.hudSlot, { later: (ms, fn) => director.at(ms, fn) });
   const seats = () => (state.watching ? { you: "South", them: "North" } : { you: "You", them: "Opp" });
-  // The HUD and the panel's names, shown at once from the state.
-  function scoreShown() {
+  // The HUD and the panel's names, shown at once from the state -- or, as a
+  // game opens, from its deal (`upTo`: the events seen so far), so nothing
+  // shows before the cards have shown it.
+  function scoreShown(upTo = state.events.length) {
     const who = seats();
-    hud.reset(ledgerOf(state), { you: who.you, opp: who.them });
+    const seen = { ...state, events: state.events.slice(0, upTo) };
+    hud.reset(ledgerOf(seen), { you: who.you, opp: who.them });
     overlay.names(who);
-    overlay.trackers(trackers(state));
+    const none = { cards: 0, spades: 0, aces: 0, big_casino: false, little_casino: false, sweeps: 0 };
+    overlay.trackers(trackers(upTo < state.events.length ? { ...seen, piles: { you: none, them: none } } : state));
   }
 
   const keep = () => savePrefs(store, prefs);
@@ -178,7 +187,7 @@ async function main() {
       logOpen = open;
       drawLog();
     },
-    help: () => chrome.credits.show(),
+    help: () => readPages(0),
   });
 
   // ---- the game -----------------------------------------------------------
@@ -198,10 +207,39 @@ async function main() {
     message = null;
     const dealt = !params.has("nodeal");
     const timing = director.restart(state, { dealt, waits: dealt ? openingTalk(state) : {} });
-    if (dealt) talk(state, 0, timing);
-    scoreShown();
+    if (dealt) {
+      talk(state, 0, timing);
+      const deal = state.events.findIndex((e) => e.kind === "dealt") + 1;
+      scoreShown(deal);
+      playScore(deal, timing);
+    } else scoreShown();
     persist();
     refresh();
+    tutorialSince = 0;
+    introduce();
+  }
+
+  // ---- the tutorial -------------------------------------------------------
+
+  // Each page the first time its moment comes, the table held still while
+  // it is read; a page read already (paging on from the introduction, or
+  // from the question mark) does not come again.
+  let tutorialSince = 0;
+  function markSeen(key) {
+    if (prefs.seen.includes(key)) return;
+    prefs = { ...prefs, seen: [...prefs.seen, key] };
+    keep();
+  }
+  function introduce() {
+    if (!prefs.tutorial || chrome.tutorialOpen()) return;
+    if (director.held()) return; // a page is up, or closing
+    const key = pageDue(state, prefs.seen, tutorialSince);
+    tutorialSince = state.events.length;
+    if (key) readPages(PAGES.findIndex((p) => p.key === key));
+  }
+  function readPages(at) {
+    if (chrome.tutorialOpen()) return;
+    director.gate(0, (release) => chrome.showTutorial(PAGES, at, { seen: markSeen, done: release, popups: prefs.tutorial }));
   }
 
   // The engine's next state, played out.
@@ -372,6 +410,7 @@ async function main() {
     director.restart(state);
     scoreShown();
     refresh();
+    tutorialSince = state.events.length;
   } else {
     newGame({ watch: params.has("watch") });
   }
@@ -389,6 +428,8 @@ async function main() {
     said: () => overlay.said(),
     hud: () => ({ shown: hud.shown(), totals: hud.totals(), hands: hud.hands(), idle: hud.idle() }),
     hint: () => hint,
+    tutorialOpen: () => chrome.tutorialOpen(),
+    pageDue: () => pageDue(state, prefs.seen, tutorialSince),
     screenPoint: (code) => director.screenPoint(code),
     busy: () => director.busy(),
     skip: () => director.skip(),

@@ -26,9 +26,13 @@ const ICONS = {
   hint: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>',
 };
 // Material Symbols (Outlined, weight 400, 24 px), Apache License 2.0, Google:
-// the plus for a new game and the question mark for help. The paths are
-// bundled, so nothing is fetched (CREDITS.md).
+// the plus for a new game, the question mark for help, and back, forward
+// and close on the tutorial's pages. The paths are bundled, so nothing is
+// fetched (CREDITS.md).
 const SYMBOLS = {
+  back: "m313-440 224 224-57 56-320-320 320-320 57 56-224 224h487v80H313Z",
+  forward: "M647-440H160v-80h487L423-744l57-56 320 320-320 320-57-56 224-224Z",
+  close: "m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z",
   add: "M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z",
   help: "M478-240q21 0 35.5-14.5T528-290q0-21-14.5-35.5T478-340q-21 0-35.5 14.5T428-290q0 21 14.5 35.5T478-240Zm-36-154h74q0-33 7.5-52t42.5-52q26-26 41-49.5t15-56.5q0-56-41-86t-97-30q-57 0-92.5 30T342-618l66 26q5-18 22.5-39t53.5-21q32 0 48 17.5t16 38.5q0 20-12 37.5T506-526q-44 39-54 59t-10 73Zm38 314q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z",
 };
@@ -75,6 +79,7 @@ const AIDS = [
   ["play_forced", "Play forced moves", "Make my move for me when it is the only one"],
 ];
 const PAGE_AIDS = [
+  ["tutorial", "Tutorial", "Its pages open by themselves the first time each idea comes up. The question mark has them at any time"],
   ["trackers", "Trackers", "Each player's captures under their score: cards, spades, aces, the Casinos, sweeps"],
   ["unseen", "Cards still out", "Which aces and Casinos, and how many spades, you have not seen"],
   ["sweepWarning", "Sweep warning", "Say when a single card would clear the table"],
@@ -178,7 +183,65 @@ export function createChrome(root, on) {
     el("div", { slot: "actions" }, el("md-filled-tonal-button", { onclick: () => credits.close() }, "Close")),
   );
 
-  root.append(bar, settings, credits);
+  // ---- the tutorial's pages ----------------------------------------------------
+  const tutorial = el("md-dialog", { class: "tutorial-dialog" });
+
+  // The pages, from page `at`; `seen(key)` as each is shown, `done()` when
+  // the dialog closes. `popups`: the tutorial is on, and the introduction
+  // says the pages come by themselves.
+  function showTutorial(pages, at, { seen, done, popups = false } = {}) {
+    let i = at;
+    const spans = (list) => list.map((x) => (x.bold ? el("strong", {}, x.text) : x.italic ? el("em", {}, x.text) : x.text));
+    const block = (b) =>
+      b.type === "h" ? el("h3", {}, spans(b.spans)) : b.type === "p" ? el("p", {}, spans(b.spans)) : el(b.type, {}, b.items.map((it) => el("li", {}, spans(it))));
+    const title = el("span", { class: "tutorial-title" });
+    const dots = el("span", { class: "tutorial-dots", "aria-hidden": "true" }, pages.map(() => el("span", { class: "dot" })));
+    const content = el("div", { slot: "content", class: "tutorial-page" });
+    const close = el("md-icon-button", { class: "tutorial-close", title: "Close", "aria-label": "Close", onclick: () => tutorial.close() }, symbol("close"));
+    const back = el("md-text-button", { class: "tutorial-back" }, symbol("back"), "Back");
+    const next = el("md-text-button", { class: "tutorial-next", "trailing-icon": true }, "Next", symbol("forward"));
+    back.firstChild.setAttribute("slot", "icon");
+    next.lastChild.setAttribute("slot", "icon");
+    const note = el("p", { class: "tutorial-note" }, "Next shows the other pages now, but there is no need: each opens by itself when its moment comes.");
+    const show = (to) => {
+      i = Math.max(0, Math.min(pages.length - 1, to));
+      const page = pages[i];
+      title.textContent = page.title;
+      content.replaceChildren(...page.blocks.map(block));
+      dots.querySelectorAll(".dot").forEach((d, n) => d.classList.toggle("on", n === i));
+      back.disabled = i === 0;
+      next.disabled = i === pages.length - 1;
+      note.hidden = !(popups && page.key === "intro");
+      tutorial.shadowRoot?.querySelector(".scroller")?.scrollTo(0, 0);
+      seen?.(page.key);
+    };
+    back.addEventListener("click", () => show(i - 1));
+    next.addEventListener("click", () => show(i + 1));
+    tutorial.replaceChildren(
+      el("div", { slot: "headline", class: "tutorial-head" }, title, close),
+      content,
+      el("div", { slot: "actions", class: "tutorial-actions" }, note, el("div", { class: "tutorial-pager" }, back, dots, next)),
+    );
+    const keys = (e) => {
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        e.preventDefault();
+        show(i + (e.key === "ArrowRight" ? 1 : -1));
+      }
+    };
+    document.addEventListener("keydown", keys);
+    tutorial.addEventListener(
+      "closed",
+      () => {
+        document.removeEventListener("keydown", keys);
+        done?.();
+      },
+      { once: true },
+    );
+    show(at);
+    tutorial.show();
+  }
+
+  root.append(bar, settings, credits, tutorial);
 
   // Everything drawn from the person's settings and the state.
   let last = { prefs: null, state: null };
@@ -216,6 +279,8 @@ export function createChrome(root, on) {
     },
     settings,
     credits,
+    showTutorial,
+    tutorialOpen: () => tutorial.open,
   };
 }
 

@@ -249,7 +249,17 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   a watched game that plays itself. The director now draws only when a
   card moved. The browser test turns hints and undo on in the dialog, takes
   a hinted move back, reloads, reads the credits and watches a game.
-- **T7. Teaching.** Tutorial and help pages.
+- **T7. Teaching.** Tutorial and help pages. **Done**: ten pages in
+  `web3d/tutorial.md` (the introduction; pairing, summing, building,
+  raising, multiple builds; the court cards count; the ace's 1 or 14; the
+  count; what is said at the table), each opening by itself at its first
+  moment in a real game with the table held still (`tutorial.js`:
+  `pageDue`, from the moves on offer and what your opponent has just done;
+  node-tested against real games, every page reached), and all of them at
+  any time from the question mark. The tutorial is on for a new player and
+  a switch in the settings; a page read already does not come again. The
+  browser test reads the introduction, meets a page of the ladder in play,
+  and pages through the help.
 - **T8. Phones.** Piquet's phone framing and Large Text faces, fitted to a
   middle that grows.
 - **T9. Traditional objects.** The pegboard, the sweep tally, the stock as a

@@ -18,6 +18,9 @@ export const DEFAULTS = Object.freeze({
   trackers: true,
   unseen: false,
   sweepWarning: false,
+  // The tutorial: its pages open by themselves, each once (`seen`).
+  tutorial: true,
+  seen: Object.freeze([]),
 });
 
 // The skill dial, in halves: each rung as your opponent plays it (DESIGN.md
@@ -82,6 +85,8 @@ export function loadPrefs(store) {
     trackers: isBool(kept.trackers) ? kept.trackers : DEFAULTS.trackers,
     unseen: isBool(kept.unseen) ? kept.unseen : DEFAULTS.unseen,
     sweepWarning: isBool(kept.sweepWarning) ? kept.sweepWarning : DEFAULTS.sweepWarning,
+    tutorial: isBool(kept.tutorial) ? kept.tutorial : DEFAULTS.tutorial,
+    seen: Array.isArray(kept.seen) ? kept.seen.filter((k) => typeof k === "string") : [],
   };
 }
 
@@ -100,6 +105,7 @@ export function withUrl(prefs, params) {
   const speed = Number(params.get("speed"));
   if (params.has("speed") && speed > 0) out.speed = speed;
   if (params.has("table")) out.surface = params.get("table");
+  if (params.has("tutorial")) out.tutorial = params.get("tutorial") !== "0";
   return out;
 }
 

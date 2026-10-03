@@ -44,6 +44,7 @@ test("the skill dial runs from 1 to 4 in halves", () => {
 test("the URL overrides what is kept, for tests and shared links", () => {
   const url = new URLSearchParams("game=royal&aces14&nosweeps&skill=1.5&speed=6");
   const p = withUrl(DEFAULTS, url);
+  assert.equal(withUrl(DEFAULTS, new URLSearchParams("tutorial=0")).tutorial, false);
   assert.deepEqual(p.rules, { game: "royal", aces14: true, sweeps: false });
   assert.equal(p.skill, 1.5);
   assert.equal(p.speed, 6);
