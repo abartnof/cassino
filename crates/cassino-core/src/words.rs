@@ -115,6 +115,22 @@ pub fn describe(rules: &Rules, table: &Table, mv: &Move) -> String {
     }
 }
 
+/// The move as advice, in the imperative: "take 8♦ with 8♠", "trail 7♦",
+/// "raise the six to eight with 2♥".
+pub fn advise(rules: &Rules, table: &Table, mv: &Move) -> String {
+    let text = describe(rules, table, mv);
+    let (verb, rest) = text.split_once(' ').unwrap_or((&text, ""));
+    let base = match verb {
+        "takes" => "take",
+        "trails" => "trail",
+        "builds" => "build",
+        "raises" => "raise",
+        "adds" => "add",
+        other => other,
+    };
+    format!("{base} {rest}")
+}
+
 /// A card that captures as `v`, with its article: "an 8", "a king", "an ace".
 pub fn card_for(v: u8) -> String {
     match v {
@@ -470,6 +486,28 @@ mod tests {
         assert_eq!(
             text(Note::CanTakeBuild { value: 8 }),
             "You hold an 8: you can take it."
+        );
+    }
+
+    #[test]
+    fn advice_is_imperative() {
+        let r = Rules::CLASSIC;
+        assert_eq!(advise(&r, &t(&r, "5C"), &mv("trail 7D")), "trail 7♦");
+        assert_eq!(
+            advise(&r, &t(&r, "8D"), &mv("take 8S 8D")),
+            "take 8♦ with 8♠"
+        );
+        assert_eq!(
+            advise(&r, &t(&r, "5C"), &mv("build 8 3D 5C")),
+            "build eight: 3♦ on 5♣"
+        );
+        assert_eq!(
+            advise(&r, &t(&r, "[6: 3S 3D]"), &mv("build 8 2H on 3S")),
+            "raise the six to eight with 2♥"
+        );
+        assert_eq!(
+            advise(&r, &t(&r, "[8: 5S 3H] 6D"), &mv("build 8 2C on 3H 6D")),
+            "add 2♣ to the eight, with 6♦"
         );
     }
 

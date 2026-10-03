@@ -2,7 +2,7 @@
 //!
 //! ```text
 //! cassino [--royal [--aces-14]] [--no-sweeps] [--seed N] [--skill 1-TOP]
-//!         [--watch [--skills A,B] [--reveal] [--fast]] [--no-colour]
+//!         [--watch [--skills A,B] [--reveal] [--fast]] [--explain] [--no-colour]
 //! ```
 
 mod table;
@@ -25,6 +25,7 @@ fn main() {
         reveal: false,
         pause: true,
         colour: io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none(),
+        explain: false,
     };
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
@@ -45,6 +46,7 @@ fn main() {
             "--reveal" => options.reveal = true,
             "--fast" => options.pause = false,
             "--no-colour" | "--no-color" => options.colour = false,
+            "--explain" => options.explain = true,
             "-h" | "--help" => {
                 help();
                 return;
@@ -83,6 +85,8 @@ fn help() {
     println!("  --seed       deals the same cards again (the seed is printed at the top)");
     println!("  --watch      two computer players (--skills South,North); Enter after each");
     println!("               move (--fast: no pauses; --reveal: both hands face up)");
+    println!("  --explain    say what each move means, and how yours compares with the best");
+    println!("               (type hint at your turn for a suggestion)");
     println!("  --no-colour  plain text");
 }
 

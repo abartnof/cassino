@@ -4,11 +4,13 @@
 
 use std::io::{self, BufRead, Write};
 
+use cassino_core::advice::{self, Quality};
 use cassino_core::agents::Agent;
 use cassino_core::cards::{Card, CardSet, Suit};
 use cassino_core::game::Game;
 use cassino_core::hand::{Clinch, Event};
 use cassino_core::moves::Move;
+use cassino_core::observation::View;
 use cassino_core::opponent::Skill;
 use cassino_core::rules::{Game as Kind, Rules};
 use cassino_core::scoring::{Breakdown, Item};
@@ -32,6 +34,9 @@ pub struct Options {
     pub pause: bool,
     /// Red hearts and diamonds.
     pub colour: bool,
+    /// After every move, what it means, as South sees it; after the
+    /// person's own move, how it compares with the best.
+    pub explain: bool,
 }
 
 pub struct Table<R, W> {
@@ -108,7 +113,7 @@ impl<R: BufRead, W: Write> Table<R, W> {
         if self.human().is_some() {
             writeln!(
                 self.out,
-                "Choose a move by its number, or type one: trail 7H, take 8S 5S 3H, build 8 3D 5C, build 9 2S on 3C. ? lists them, q quits."
+                "Choose a move by its number, or type one: trail 7H, take 8S 5S 3H, build 8 3D 5C, build 9 2S on 3C. ? lists them, hint suggests one, q quits."
             )?;
         }
         let (mut game, opening) = Game::new(rules, self.options.seed);
@@ -125,6 +130,7 @@ impl<R: BufRead, W: Write> Table<R, W> {
         loop {
             while let Some(seat) = game.hand().to_move() {
                 let before = *game.hand().table();
+                let observer = game.hand().view(Seat::South, game.scores());
                 let mv = match agents[seat.index()].as_mut() {
                     Some(agent) => {
                         let view = game.hand().view(seat, game.scores());
@@ -140,6 +146,9 @@ impl<R: BufRead, W: Write> Table<R, W> {
                 };
                 let events = game.play(&mv).expect("checked before it was played");
                 self.tell(&game, &before, events.as_slice())?;
+                if self.options.explain {
+                    self.explain(&observer, seat, &mv)?;
+                }
                 if self.options.watch && self.options.pause {
                     self.wait()?;
                 }
@@ -309,7 +318,7 @@ impl<R: BufRead, W: Write> Table<R, W> {
             let shown = if viewer.is_none() && self.options.reveal {
                 self.cards(held)
             } else {
-                format!("{} cards", held.len())
+                plural(held.len(), "card")
             };
             writeln!(
                 self.out,
@@ -354,11 +363,41 @@ impl<R: BufRead, W: Write> Table<R, W> {
     fn pile_line(&self, game: &Game, seat: Seat) -> String {
         let pile = game.hand().pile(seat);
         let sweeps = game.hand().sweeps(seat);
-        let mut line = format!("pile {} ({} spades)", pile.len(), pile.spades());
+        let mut line = format!("pile {} ({})", pile.len(), plural(pile.spades(), "spade"));
         if sweeps > 0 {
             line += &format!(", sweeps {sweeps}");
         }
         line
+    }
+
+    /// What a move means, as South saw the table before it; and, for the
+    /// person's own move, how it compares with the best.
+    fn explain(&mut self, observer: &View, mover: Seat, mv: &Move) -> io::Result<()> {
+        let rules = self.options.rules;
+        for note in advice::notes(observer, mover, mv) {
+            writeln!(
+                self.out,
+                "    · {}",
+                words::note_text(&rules, &note, Seat::South)
+            )?;
+        }
+        if self.human() == Some(mover) {
+            let rating = advice::rate(observer, mv);
+            let verdict = match rating.quality {
+                Quality::Sound => None,
+                Quality::Dubious => Some("Doubtful"),
+                Quality::Blunder => Some("A mistake"),
+            };
+            if let Some(verdict) = verdict {
+                writeln!(
+                    self.out,
+                    "    · {verdict}: better to {} (about {:.1} points better).",
+                    words::advise(&rules, &observer.table, &rating.best),
+                    rating.best_value - rating.value
+                )?;
+            }
+        }
+        Ok(())
     }
 
     /// Asks the person for a move: a number from the list, or the text form.
@@ -392,6 +431,23 @@ impl<R: BufRead, W: Write> Table<R, W> {
                 "" => continue,
                 "?" | "h" | "help" => {
                     listed = false;
+                    continue;
+                }
+                "hint" => {
+                    let view = hand.view(me, game.scores());
+                    let hint = advice::hint(&view);
+                    let n = moves
+                        .iter()
+                        .position(|m| *m == hint.mv)
+                        .map_or(String::new(), |i| format!(" ({})", i + 1));
+                    writeln!(
+                        self.out,
+                        "Hint{n}: {}.",
+                        words::describe(&rules, hand.table(), &hint.mv)
+                    )?;
+                    for note in hint.notes {
+                        writeln!(self.out, "    · {}", words::note_text(&rules, &note, me))?;
+                    }
                     continue;
                 }
                 _ => {}
@@ -432,6 +488,15 @@ impl<R: BufRead, W: Write> Table<R, W> {
     }
 }
 
+/// "1 card", "3 cards".
+fn plural(n: u32, noun: &str) -> String {
+    if n == 1 {
+        format!("1 {noun}")
+    } else {
+        format!("{n} {noun}s")
+    }
+}
+
 fn suit_name(suit: Suit) -> &'static str {
     match suit {
         Suit::Spades => "spades",
@@ -454,6 +519,7 @@ mod tests {
             reveal: true,
             pause: false,
             colour: false,
+            explain: false,
         }
     }
 
@@ -496,6 +562,15 @@ mod tests {
             text.contains("win the game") || text.contains("wins the game"),
             "{text}"
         );
+    }
+
+    #[test]
+    fn explanations_and_hints() {
+        let mut o = options(false, 5, Rules::CLASSIC);
+        o.explain = true;
+        let text = run("hint\n1\n1\n1\nq\n", o);
+        assert!(text.contains("Hint ("), "{text}");
+        assert!(text.contains("    · "), "notes are printed: {text}");
     }
 
     #[test]
