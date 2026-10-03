@@ -199,6 +199,10 @@ impl Session {
     }
 
     fn start(seed: u64, settings: Settings, watched: Option<Opponent>) -> Session {
+        let settings = Settings {
+            rules: settings.rules.normalized(),
+            ..settings
+        };
         let (game, opening) = Game::new(settings.rules, seed);
         let opponent_seed = Rng::stream(seed, purpose::agent(Seat::North.index())).next_u64();
         let mut session = Session {
@@ -1108,6 +1112,32 @@ mod tests {
             "a person's game is not stepped"
         );
         assert!(!s.send("trail 7H"), "nobody sits at a watched table");
+    }
+
+    #[test]
+    fn odd_settings_never_panic() {
+        let s = Session::new(
+            1,
+            Settings {
+                skill: f64::NAN,
+                ..settings()
+            },
+        );
+        assert_eq!(s.prompt(), Prompt::Play);
+        let classic_14 = Rules {
+            aces_fourteen: true,
+            ..Rules::CLASSIC
+        };
+        let s = Session::new(
+            1,
+            Settings {
+                rules: classic_14,
+                skill: 2.0,
+            },
+        );
+        assert_eq!(s.settings().rules, Rules::CLASSIC, "normalized");
+        let mut w = Session::watch(1, classic_14, [f64::NAN, -3.0]);
+        assert!(w.step());
     }
 
     #[test]

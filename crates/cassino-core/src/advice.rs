@@ -269,9 +269,10 @@ pub fn advisor_seed(view: &View) -> u64 {
             h = h.wrapping_mul(0x0100_0000_01b3);
         }
     };
-    eat(view.rules.game as u64);
-    eat(u64::from(view.rules.aces_fourteen));
-    eat(u64::from(view.rules.sweeps));
+    let rules = view.rules.normalized();
+    eat(rules.game as u64);
+    eat(u64::from(rules.aces_fourteen));
+    eat(u64::from(rules.sweeps));
     eat(view.me as u64);
     eat(view.dealer as u64);
     eat(u64::from(view.deal));

@@ -118,6 +118,15 @@ impl Rules {
         }
     }
 
+    /// The same rules with "Aces count 1 or 14" switched off in Classic,
+    /// where it means nothing: identical games then hash alike.
+    pub fn normalized(self) -> Rules {
+        Rules {
+            aces_fourteen: self.aces_fourteen_apply(),
+            ..self
+        }
+    }
+
     fn aces_fourteen_apply(&self) -> bool {
         self.game == Game::Royal && self.aces_fourteen
     }
@@ -239,6 +248,13 @@ mod tests {
             "a Classic king answers for nothing"
         );
         assert!(Rules::ROYAL.guards(s("KC QD"), &[13, 12]));
+    }
+
+    #[test]
+    fn rules_normalize_aces_fourteen_to_royal_only() {
+        assert_eq!(CLASSIC_14.normalized(), Rules::CLASSIC);
+        assert_eq!(ROYAL_14.normalized(), ROYAL_14);
+        assert_eq!(Rules::ROYAL.normalized(), Rules::ROYAL);
     }
 
     #[test]

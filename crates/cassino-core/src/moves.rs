@@ -692,8 +692,16 @@ fn smallest_partition(rules: &Rules, set: CardSet, v: u8) -> Option<Vec<CardSet>
     })
 }
 
-/// Makes a move already known to be legal.
-pub fn apply(rules: &Rules, table: &mut Table, hand: &mut CardSet, me: Seat, mv: &Move) -> Played {
+/// Makes a move already known to be legal (an illegal one can corrupt the
+/// table: check first). Crate-internal: a client plays through `Hand::play`
+/// or the session, which check.
+pub(crate) fn apply(
+    rules: &Rules,
+    table: &mut Table,
+    hand: &mut CardSet,
+    me: Seat,
+    mv: &Move,
+) -> Played {
     let card = mv.card();
     hand.remove(card);
     match *mv {

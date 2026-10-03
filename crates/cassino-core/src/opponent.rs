@@ -83,7 +83,13 @@ pub struct Skill(pub f64);
 impl Skill {
     /// The level and erraticism this skill plays at.
     pub fn setting(self) -> (u8, f64) {
-        let s = self.0.clamp(1.0, f64::from(agents::TOP));
+        // Not a number, or infinite: the top of the dial.
+        let s = if self.0.is_finite() {
+            self.0
+        } else {
+            f64::from(agents::TOP)
+        };
+        let s = s.clamp(1.0, f64::from(agents::TOP));
         let level = s.ceil();
         (level as u8, level - s)
     }
@@ -188,6 +194,12 @@ mod tests {
         assert!((e - 0.5).abs() < 1e-12);
         assert_eq!(Skill(9.0).setting(), (agents::TOP, 0.0), "clamped");
         assert_eq!(Skill(0.0).setting(), (1, 0.0), "clamped");
+        assert_eq!(
+            Skill(f64::NAN).setting(),
+            (agents::TOP, 0.0),
+            "not a number: the top"
+        );
+        assert_eq!(Skill(f64::INFINITY).setting(), (agents::TOP, 0.0));
     }
 
     #[test]

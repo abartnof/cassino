@@ -62,6 +62,10 @@ impl Events {
     }
 
     fn push(&mut self, e: Event) {
+        assert!(
+            (self.len as usize) < self.items.len(),
+            "more events from one move than Events holds"
+        );
         self.items[self.len as usize] = e;
         self.len += 1;
     }

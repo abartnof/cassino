@@ -20,9 +20,12 @@ const WORDS: [&str; 15] = [
     "eleven", "twelve", "thirteen", "fourteen",
 ];
 
-/// A build value in words: "eight".
-pub fn value_word(v: u8) -> &'static str {
-    WORDS[v as usize]
+/// A build value in words: "eight"; a number beyond fourteen in figures
+/// (only a mistyped move has one).
+pub fn value_word(v: u8) -> String {
+    WORDS
+        .get(v as usize)
+        .map_or_else(|| v.to_string(), |w| w.to_string())
 }
 
 /// A build value in the plural: "eights", "sixes", and "aces" for ones.
@@ -39,7 +42,7 @@ fn called(value: u8, multiple: bool) -> String {
     if multiple {
         value_plural(value)
     } else {
-        value_word(value).into()
+        value_word(value)
     }
 }
 
@@ -289,6 +292,25 @@ mod tests {
 
     fn mv(s: &str) -> Move {
         Move::parse(s).unwrap()
+    }
+
+    #[test]
+    fn descriptions_never_panic_on_odd_values() {
+        // The review's F6: a value beyond 14 in a typed move.
+        let r = Rules::CLASSIC;
+        let table = t(&r, "5C 3D");
+        for text in [
+            "take 8S=200 5C 3D",
+            "build 99 3D 5C",
+            "build 0 3D 5C",
+            "take 8S=0 5C",
+        ] {
+            let m = mv(text);
+            let _ = describe(&r, &table, &m);
+            let _ = advise(&r, &table, &m);
+            let _ = call(&r, &table, &m);
+        }
+        assert_eq!(value_word(200), "200");
     }
 
     #[test]
