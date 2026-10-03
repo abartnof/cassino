@@ -84,3 +84,15 @@ from, per hand, averaged over both seats of N mirrored pairs (Classic).
 - **The searcher's edge is the end of the hand.** It takes twice the
   residue: the exact last-deal solver wins the last capture. It also builds
   a little more, and sweeps more.
+
+## The ladder in the other settings
+
+| Date | A | B | Rules | Unit | Plan | Result |
+|---|---|---|---|---|---|---|
+| 2026-10-03 | 2 greedy | 1 legal | Royal, aces 1 or 14 | hand | 50 × 4 | **Clear at look 1**: +9.88 ± 0.99 |
+| 2026-10-03 | 3 counter | 2 greedy | Royal, aces 1 or 14 | hand | 50 × 4 | **Clear at look 1**: +9.56 ± 0.88 |
+| 2026-10-03 | 4 searcher | 3 counter | Royal, aces 1 or 14 | hand | 50 × 4 | **Clear at look 1**: +3.76 ± 0.84 |
+| 2026-10-03 | 3 counter | 2 greedy | Classic, sweeps not scored | hand | 50 × 4 | **Clear at look 1**: +6.58 ± 0.96 |
+| 2026-10-03 | 4 searcher | 3 counter | Classic, sweeps not scored | hand | 50 × 4 | **Clear at look 1**: +4.06 ± 0.90 |
+
+Every rung beats the one below in every setting.

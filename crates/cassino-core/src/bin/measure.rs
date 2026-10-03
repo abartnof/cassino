@@ -2,7 +2,7 @@
 //! sequentially with O'Brien–Fleming looks (`docs/DESIGN.md` §11.4).
 //!
 //! ```text
-//! measure A B [--rules classic|royal|royal14] [--unit hand|game]
+//! measure A B [--rules classic|royal|royal14] [--no-sweeps] [--unit hand|game]
 //!             [--batch N] [--looks K] [--seed S] [--out FILE.tsv]
 //! ```
 //!
@@ -51,6 +51,8 @@ fn main() {
         let value = args.get(i + 1).cloned().unwrap_or_default();
         match args[i].as_str() {
             "--rules" => {
+                // The game only: --no-sweeps holds wherever it is given.
+                let sweeps = rules.sweeps;
                 rules = match value.as_str() {
                     "classic" => Rules::CLASSIC,
                     "royal" => Rules::ROYAL,
@@ -60,9 +62,15 @@ fn main() {
                         sweeps: true,
                     },
                     _ => panic!("{usage}"),
-                }
+                };
+                rules.sweeps = sweeps;
             }
             "--unit" => games = value == "game",
+            "--no-sweeps" => {
+                rules.sweeps = false;
+                i += 1;
+                continue;
+            }
             "--batch" => plan.batch = value.parse().expect("--batch N"),
             "--looks" => plan.looks = value.parse().expect("--looks K"),
             "--seed" => first_seed = value.parse().expect("--seed S"),
