@@ -518,9 +518,9 @@ async function main() {
     state.events.forEach((e, k) => {
       if (k >= since && e.kind === "dealt" && e.deal === 1) at(beats[k], () => hud.dealt(e.hand));
     });
-    const pace = count && count.lines.length > 1 ? count.lines[1] - count.lines[0] : 600;
+    // The hand ends with its count (its last line said).
     for (const e of hudEvents(state, since)) {
-      const ms = e.line !== undefined && count ? (count.lines[e.line] ?? (count.lines.at(-1) ?? 0) + pace) : beats[e.at];
+      const ms = e.line !== undefined && count ? (count.lines[e.line] ?? count.end) : beats[e.at];
       at(ms, () => (e.end ? hud.endHand(e.hand) : hud.score(e)));
       // A sweep scored, celebrated on its card once it is held up.
       if (e.cat === "sweeps") {

@@ -161,7 +161,7 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
     }
     const beats = {};
     for (const [k, ms] of Object.entries(result.beats)) beats[k] = ms / timeline.speed;
-    const count = result.count ? { at: result.count.at, lines: result.count.lines.map((ms) => ms / timeline.speed) } : null;
+    const count = result.count ? { at: result.count.at, lines: result.count.lines.map((ms) => ms / timeline.speed), end: result.count.end / timeline.speed } : null;
     // Once the cards are still: dressed, drawn once more, and the page told
     // -- once, and only for the latest animation (an earlier one's idle,
     // resolved by the skip that began this one, is stale: the table

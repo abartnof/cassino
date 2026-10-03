@@ -670,7 +670,7 @@ class Plan {
       }
       t += Math.max(TIMING.countLine, pace.gaps?.[i] ?? 0);
     }
-    this.counted = { at: event.at, lines };
+    this.counted = { at: event.at, lines, end: t };
     this.clock = t;
     this.stage(target, null, t);
   }

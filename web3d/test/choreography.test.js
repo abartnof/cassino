@@ -335,6 +335,7 @@ test("the count paced by what is said: a lead before the first line, and each li
       assert.ok(paced.count.lines[0] - paced.beats[paced.count.at] >= 1500, "the lead said before the first line");
       assert.equal(paced.count.lines[2] - paced.count.lines[1], 2400, "a long line holds the next");
       assert.equal(paced.count.lines[1] - paced.count.lines[0], TIMING.countLine, "a short one keeps the usual pace");
+      assert.equal(paced.count.end, paced.count.lines.at(-1) + TIMING.countLine, "the count ends a line's time after its last");
       // A player's popup on the score holds that player's next line back.
       const popups = lines.map(() => "you");
       const held = choreograph(state, next, placement, {}, { pace: { lead: 0, gaps: lines.map(() => 0), popups, busy: 1960 } });
