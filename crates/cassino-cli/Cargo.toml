@@ -1,0 +1,14 @@
+[package]
+name = "cassino-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "A table in the terminal: Cassino against the computer, or two computer players watched."
+
+[[bin]]
+name = "cassino"
+path = "src/main.rs"
+
+[dependencies]
+cassino-core = { path = "../cassino-core" }
