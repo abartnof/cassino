@@ -107,7 +107,8 @@ export function trackerTable(t, { watching = false } = {}) {
     : { you: { name: "You", who: "You", has: "have", own: "yours" }, them: { name: "Opp", who: "Your opponent", has: "has", own: "your opponent's" } };
   const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
   const columns = t.you.map((x) => ({ key: x.key, ...COLUMNS[x.key] }));
-  const rows = ["you", "them"].map((who) => {
+  // North above South: your opponent sits across the table, above you.
+  const rows = ["them", "you"].map((who) => {
     const other = who === "you" ? "them" : "you";
     const me = seats[who];
     const cells = t[who].map((x) => {

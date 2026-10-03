@@ -56,7 +56,7 @@ test("the trackers as a table: a column for each point, a row for each player, a
   assert.deepEqual(table.columns.map((c) => c.head), ["Cards", "Spades", "Aces", "10♦", "2♠"], "no sweeps column when sweeps are not scored");
   assert.ok(table.columns.every((c) => c.tip.length > 20), "every column says what it counts and what it scores");
   assert.match(table.columns[0].tip, /27/);
-  assert.deepEqual(table.rows.map((r) => r.name), ["You", "Opp"]);
+  assert.deepEqual(table.rows.map((r) => r.name), ["Opp", "You"], "your opponent's row above yours, as they sit across the table");
   const cell = (who, key) => table.rows.find((r) => r.who === who).cells.find((c) => c.key === key);
   // Values only in the cells; the meaning is in the headers and the tips.
   assert.equal(cell("you", "cards").text, "27");
@@ -75,8 +75,8 @@ test("the trackers as a table: a column for each point, a row for each player, a
   assert.match(cell("them", "little_casino").tip, /not taken yet/i);
   // A watched game names its seats.
   const watched = trackerTable(trackers(state), { watching: true });
-  assert.deepEqual(watched.rows.map((r) => r.name), ["South", "North"]);
-  assert.match(watched.rows[1].cells[0].tip, /^North has taken 10 cards/);
+  assert.deepEqual(watched.rows.map((r) => r.name), ["North", "South"]);
+  assert.match(watched.rows[0].cells[0].tip, /^North has taken 10 cards/);
 });
 
 test("a celebration on the table for each line of the count: its words, its points, where", () => {

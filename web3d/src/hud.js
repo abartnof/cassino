@@ -166,7 +166,11 @@ export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms) } = {})
     const pop = el("div", { class: "hud-pop", "aria-live": "polite" }, popLabel, popPts);
     return { node: el("div", { class: `hud-block ${side}` }, score, pop), nameNode, num, popLabel, popPts };
   };
-  const linesNode = el("div", { class: "hud-lines", role: "img" }, line("you"), line("opp"));
+  // Each player's line named at its left; your opponent's above yours, as
+  // they sit across the table (play-testing: "so it's clear who's who").
+  const lineNames = { you: el("span", { class: "hud-line-name" }, "You"), opp: el("span", { class: "hud-line-name" }, "Opp") };
+  const named = (side) => el("div", { class: `hud-line-row ${side}` }, lineNames[side], line(side));
+  const linesNode = el("div", { class: "hud-lines", role: "img" }, named("opp"), named("you"));
   const blocks = { you: block("you", "You"), opp: block("opp", "Opp") };
   const chevron = el("button", { class: "hud-chev", type: "button", "aria-expanded": "false", "aria-label": "Show hand-by-hand scores" });
   chevron.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>';
@@ -326,6 +330,8 @@ export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms) } = {})
       names = who;
       blocks.you.nameNode.textContent = who.you;
       blocks.opp.nameNode.textContent = who.opp;
+      lineNames.you.textContent = who.you;
+      lineNames.opp.textContent = who.opp;
       headYou.textContent = who.you;
       headOpp.textContent = who.opp;
       ledger = new Map(given.hands.map((h, i) => [i + 1, JSON.parse(JSON.stringify(h))]));
