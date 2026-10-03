@@ -42,6 +42,13 @@ if [ -d web3d/node_modules ]; then
     echo "gate: FAILED: the built page is stale" >&2
     exit 1
   fi
+  # Built but not staged: the commit would leave it behind (a warning only:
+  # the gate runs before staging).
+  if ! git diff --quiet -- web3d/cassino3d.html; then
+    echo "gate: note: web3d/cassino3d.html is rebuilt but not staged" >&2
+  fi
   passed="$passed + $node_passed in Node"
+else
+  passed="$passed; the table's tests and the page check skipped (no web3d/node_modules)"
 fi
 echo "gate: ok ($passed tests passed)"
