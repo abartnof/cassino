@@ -6,3 +6,4 @@
 pub mod cards;
 pub mod rng;
 pub mod rules;
+pub mod sums;
