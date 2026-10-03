@@ -33,7 +33,7 @@ SOURCES = {
     "Tw": "Townsend (1891): \"I build seven\", a raise as \"I build nine\", \"I call sixes\" [03-S20]",
     "F": "Foster's Hoyles (1897-1914): \"Nine\", \"Ten\", \"Two Sevens\"; Royal's \"Jack is worth 11, "
          "the Queen 12, and the King 13\", the ace \"14 or 1 at the option of the holder\" (1907); "
-         "the last trick; \"claim the game\" [03-S31][03-S28]",
+         "\"Taking In\"; the last trick; \"claim the game\" [03-S31][03-S28]",
     "Us": "the United States Playing Card Company's rules (1898): Royal's aces \"either ones or "
           "fourteens, as the player may elect\" [03-S24]",
     "St": "the Standard Hoyle (1904): sweeps \"should be scored, as there is fine play made in "
@@ -41,7 +41,8 @@ SOURCES = {
     "H": "the mid-century Hoyles (1945-1952): \"Building eight\", \"Building sevens\", the dealer's "
          "announcement of the last cards, \"Sweeps do not count\" [03-S35][03-S36]",
     "Lo": "Long's Short Rules (1792), the first: \"The Majority of the Cards\", \"The Majority of "
-          "the Spades\", a player who \"clears the Board\" [03-S1]",
+          "the Spades\", a player who \"clears the Board\", \"take up as many as you can with one "
+          "Card\" [03-S1]",
     "Po": "the mock-heroic poem Casino (1793): \"the Great Casino nam'd\", and the deuce of "
           "spades, \"Casino's younger Brother\" [04-S21]",
     "P": "pagat.com, the modern rules: \"building 5\", \"last\", a \"clear\", \"cash\", the Good Ten "
@@ -51,6 +52,8 @@ SOURCES = {
          "the luck of the deal\" [05-S74]",
     "L": "Jack London's players (1912): \"Do you count sweeps?\" \"Certainly not.\" \"Low deals.\" "
          "\"I'll make 'cards'\" [04-S28]",
+    "Ar": "Ardmore's novel To Love Is to Listen (1967): at Big Casino, a player \"screamed the "
+          "word, 'Luck!'\" [04-S82]",
     "Fe": "Feydeau, in English translation: the count chanted, \"Cards... Spades... "
           "Ten of diamonds...\", \"Deuce... Aces...\", and \"Clean sweep!\" [04-S159]",
     "N": "the New York Dispatch's answers column (1877-1881): a build \"calling 'seven'\" or "
@@ -58,9 +61,10 @@ SOURCES = {
          "[04-S155][04-S130]",
     "Sw": "the Swedish game's calls, in translation: \"bygger till knekt\" (building to jack), "
           "\"sistan\" (the last one), \"sista given\" (last deal), \"storan\" and \"lillan\" "
-          "(the big one, the little one) [10-S24][10-S25]",
-    "Fi": "the Finnish game's call, in translation: \"rakennan ässälle\" (I'm building for the ace) "
-          "[10-S1]",
+          "(the big one, the little one) [10-S24][10-S25]; two players in Finland, \"Nu har jag "
+          "stora kasino\", \"och jag har lilla\" (now I have Big Casino; and I have Little) [10-S13]",
+    "Fi": "the Finnish game, in translation: the call \"rakennan ässälle\" (I'm building for the "
+          "ace) [10-S1]; a big capture, a \"kahmaisu\" (a grab) [10-S8]",
     "Hu": "Tandori's Hungarian count, in translation: \"Card majority! Spade majority! big c., "
           "little c., the four aces!\" [10-S56]",
     "Ru": "the Russian rules, in translation: a sweep is \"to sweep clean\" [10-S57]",
@@ -149,6 +153,15 @@ def phrase_groups():
         ("That clears the board.", "Lo"), ("Swept clean!", "Ru"), ("The table's clear.", "T"))
     add("cash", ("Cash.", "P"), ("Cash!", "T"), ("An ace for an ace.", "T"), ("Ace takes ace.", "T"),
         ("That's cash.", "T"), ("Ace on ace: cash.", "T"))
+    # A capture that takes a casino card, or a haul of several cards, when no
+    # sweep or cash speaks for it.
+    add("take-big-casino", ("Now I have Big Casino.", "Sw"), ("Luck! Big Casino.", "Ar"),
+        ("The big one's mine.", "Sw"), ("I'll have the good ten.", "P"), ("That's two points.", "T"),
+        ("Big Casino comes to me.", "T"))
+    add("take-little-casino", ("I have Little Casino.", "Sw"), ("The little one's mine.", "Sw"),
+        ("I'll have the good two.", "P"), ("Little Casino, and a point.", "T"), ("That's a point.", "T"))
+    add("take-many", ("A good haul.", "T"), ("That's a grab!", "Fi"), ("Taken in, every one.", "F"),
+        ("As many as I can, with one card.", "Lo"), ("In they all come.", "T"), ("Quite a pile.", "T"))
     add("clinch-cards", ("That's the cards.", "P"), ("Twenty-seven. The cards are mine.", "T"),
         ("That's twenty-seven.", "T"), ("I've made cards.", "L"), ("Twenty-seven cards. Three points.", "T"),
         ("The cards are made.", "T"))

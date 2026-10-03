@@ -137,8 +137,15 @@ build calls ("Building eight." / "Building eights."), the dealer's "Last.",
 the clinches ("That's the cards." / "Seven spades."), sometimes "You left
 the five." (the *dejado* custom), and the count's chant. Before the game,
 the settings are staged as Jack London's players' negotiation ("Do you count
-sweeps?" … "Low deals."). `tools/phrases.py` holds the bank, each phrase in
-several wordings with a source letter; `docs/PHRASES.md` is generated from it.
+sweeps?" … "Low deals."), answered by your settings either way. A plain
+capture says nothing, so the table does not chatter on every move; one that
+takes a casino card ("Now I have Big Casino.") or a haul of four table cards
+or more ("A good haul.") is remarked by its maker, unless a sweep or cash
+speaks for it. `tools/phrases.py` holds the bank, each
+phrase in five or more wordings for the frequent moments, each with a source
+letter; `docs/PHRASES.md` is generated from it. The talk is kind
+(play-testing asked for it kid-friendly): nothing said belittles anyone, and
+a test keeps a list of unkind words out of the bank.
 
 ## 8. The overlay
 

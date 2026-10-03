@@ -85,6 +85,41 @@ test("the dealer says 'Last.'; a sweep, cash and the clinches are claimed by the
   assert.deepEqual(said(lines), ["them:last", "you:sweep", "them:cash", "them:clinch-spades", "you:residue"]);
 });
 
+// A capture says nothing as a rule; it speaks when it takes a casino card,
+// or a haul of several cards at once (Long: "take up as many as you can
+// with one Card").
+const take = (you, played, taken) => ({ kind: "played", hand: 1, you, type: "take", card: card(played, 0), taken: taken.map((c) => card(c, 0)), left: [] });
+
+test("a capture taking a casino card, or a haul of several, is remarked by its maker", () => {
+  const lines = speech(
+    state([
+      take(true, "TC", ["TD"]),
+      take(false, "2S", ["2H"]),
+      take(true, "9H", ["2C", "3C", "4C", "4D", "5D"]),
+      take(false, "5H", ["5C"]),
+      take(true, "8H", ["2D", "6C", "3H", "5S"]),
+    ]),
+  );
+  assert.deepEqual(said(lines), ["you:take-big-casino", "them:take-little-casino", "you:take-many", "you:take-many"]);
+  assert.deepEqual(lines.map((l) => l.at), [0, 1, 2, 4]);
+  // Three cards taken is no haul.
+  assert.deepEqual(said(speech(state([take(true, "9H", ["2C", "3C", "4C"])]))), []);
+});
+
+test("a sweep or cash speaks for its capture, which says nothing more", () => {
+  const lines = speech(
+    state([
+      take(true, "TC", ["TD", "4H", "6H", "3S", "7S"]),
+      { kind: "swept", hand: 1, you: true },
+      take(false, "AH", ["AC", "2S"]),
+      { kind: "cash", hand: 1, you: false },
+      take(true, "TS", ["TD"]),
+      { kind: "clinched", hand: 1, you: true, what: "spades" },
+    ]),
+  );
+  assert.deepEqual(said(lines), ["you:sweep", "them:cash", "you:take-big-casino", "you:clinch-spades"]);
+});
+
 test("your opponent points out what you left: always a point card, otherwise now and then", () => {
   const trail = (at, left) => ({ kind: "played", hand: 1, you: true, type: "trail", left });
   const events = [trail(0, [card("AH", 1)]), trail(1, [card("5C", 5)]), trail(2, [card("5C", 5)]), trail(3, [card("3D", 3), card("4D", 4)])];
@@ -136,5 +171,5 @@ test("over real games every phrase asked for is in the bank", { skip: !existsSyn
       s = engine.step().state;
     }
   }
-  for (const kind of ["build", "last", "count"]) assert.ok([...asked].some((p) => p.startsWith(kind)), `nothing said for ${kind}`);
+  for (const kind of ["build", "last", "take", "count"]) assert.ok([...asked].some((p) => p.startsWith(kind)), `nothing said for ${kind}`);
 });

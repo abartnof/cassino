@@ -14,10 +14,32 @@
 // person would say, we say); the talk is cassino's: the house rules agreed
 // aloud before the game (Jack London's players), the build calls in the
 // singular and the plural and a raise by its new total (Dick, Foster, the
-// Hoyles), the dealer's "Last.", "Clear!" for a sweep, "Cash.", the clinches,
-// the custom of pointing out what an opponent left, and the count chanted.
+// Hoyles), the dealer's "Last.", "Clear!" for a sweep, "Cash.", a casino
+// card or a haul of several taken, the clinches, the custom of pointing out
+// what an opponent left, and the count chanted.
+// All of it kind: nothing said belittles anyone.
 
 const POINT_CARDS = new Set(["AS", "AH", "AD", "AC", "TD", "2S"]);
+// Table cards taken at once that make a haul worth remarking.
+const HAUL = 4;
+
+// The kinds of the events a move brings with it: a sweep, cash, a clinch.
+function following(events, at) {
+  const kinds = new Set();
+  for (let k = at + 1; k < events.length && ["swept", "cash", "clinched"].includes(events[k].kind); k++) kinds.add(events[k].kind);
+  return kinds;
+}
+
+// What a capture says, if nothing else speaks for it (a sweep, cash): a
+// casino card taken, or a haul of several cards. A plain capture says
+// nothing, so the table does not chatter on every move.
+function taking(e, then) {
+  if (then.has("swept") || then.has("cash")) return null;
+  const cards = [e.card, ...(e.taken ?? [])].map((c) => c?.card);
+  if (cards.includes("TD")) return "take-big-casino";
+  if (cards.includes("2S")) return "take-little-casino";
+  return (e.taken?.length ?? 0) >= HAUL ? "take-many" : null;
+}
 
 // The chant of a line of the count.
 function chant(line) {
@@ -58,6 +80,10 @@ export function speech(state, since = 0) {
         break;
       case "played":
         if (e.type === "build") say(who, call(e));
+        if (e.type === "take") {
+          const remark = taking(e, following(state.events, at));
+          if (remark) say(who, remark);
+        }
         // What you left, pointed out (the Dominican dejado): always when it
         // holds a point card or more than one card, otherwise now and then.
         if (e.you && e.left?.length) {
