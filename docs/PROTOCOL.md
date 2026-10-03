@@ -148,8 +148,8 @@ position, so asking twice gives the same answer, and asking changes nothing.
 ## Watching
 
 `watch(game, aces14, sweeps, south_skill, north_skill, seed)` seats two
-computer players. `step` makes South's move and North's replies, or deals the
-next hand. The narration names the seats South and North, and every other
+computer players. `step` makes the next move, one move whoever's it is, or
+deals the next hand. The narration names the seats South and North, and every other
 command is refused.
 
 ## WebAssembly

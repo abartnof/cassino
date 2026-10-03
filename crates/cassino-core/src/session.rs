@@ -252,7 +252,9 @@ impl Session {
             text,
         );
         session.tell_hand(&Table::new(), None, opening.as_slice());
-        session.advance();
+        if !session.watching() {
+            session.advance();
+        }
         session
     }
 
@@ -273,8 +275,9 @@ impl Session {
         self.watched.is_some()
     }
 
-    /// Makes the next move of a watched game, or deals its next hand, and
-    /// tells it. False once the game is over, or if nobody is being watched.
+    /// Makes the next move of a watched game (one move, whoever's it is), or
+    /// deals its next hand, and tells it. False once the game is over, or if
+    /// nobody is being watched.
     pub fn step(&mut self) -> bool {
         let Some(mut south) = self.watched else {
             return false;
@@ -286,11 +289,17 @@ impl Session {
                 self.tell_hand(&Table::new(), None, opening.as_slice());
             }
             Prompt::Play => {
-                let mv = south.choose(&self.view());
-                self.play_move(Seat::South, mv);
+                // One move a step, whoever is to move, so a client can show
+                // each in turn.
+                let seat = self.game.hand().to_move().expect("a move to make");
+                let view = self.game.hand().view(seat, self.game.scores());
+                let mv = match seat {
+                    Seat::South => south.choose(&view),
+                    Seat::North => self.opponent.choose(&view),
+                };
+                self.play_move(seat, mv);
             }
         }
-        self.advance();
         true
     }
 
@@ -1063,7 +1072,19 @@ mod tests {
         let mut s = Session::watch(8, Rules::ROYAL, [2.0, 4.0]);
         assert!(s.watching());
         let mut steps = 0;
-        while s.step() {
+        let played = |s: &Session| {
+            s.events()
+                .iter()
+                .filter(|e| matches!(e.kind, EventKind::Played { .. }))
+                .count()
+        };
+        assert_eq!(played(&s), 0, "nothing is played before the first step");
+        while {
+            let before = played(&s);
+            let stepped = s.step();
+            assert!(played(&s) - before <= 1, "one move a step");
+            stepped
+        } {
             steps += 1;
             assert!(steps < 2_000);
             assert_items_match(&s);
