@@ -5,7 +5,7 @@
 //! opponent slips down one rung with probability `erraticism`, so level L at
 //! erraticism e plays between rungs L and L − 1: erraticism 0 is the rung
 //! itself, erraticism 1 the rung below. The slips are drawn from the
-//! opponent's own stream, so they never change the cards.
+//! opponent's own draws, so they never change the cards.
 //!
 //! A first version let the opponent slip again and again, down to the first
 //! rung, which plays at random; level 4 at erraticism 0.5 then lost to level 3
@@ -19,20 +19,21 @@ use crate::moves::Move;
 use crate::observation::View;
 use crate::rng::Rng;
 
-/// The stream the slips are drawn from (the rungs use 1 to `TOP`).
-const SLIPS: u64 = 100;
-
+/// The opponent: a level, an erraticism, and a seed. Each decision is a
+/// pure function of the seed and the position it sees: its random draws (the
+/// slip, the rung's sampling) are seeded from a hash of the view. So an
+/// opponent asked twice answers the same, a record replays into the same
+/// game, and undo needs only to restore the position.
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Opponent {
-    /// Rungs 1 to `level`, lowest first.
-    rungs: Vec<Box<dyn Agent>>,
+    level: u8,
     erraticism: f64,
-    slips: Rng,
+    seed: u64,
 }
 
 impl Opponent {
     /// The opponent at `level` (1 to [`agents::TOP`]) with `erraticism`
-    /// (0 to 1). Rung `l` draws its own choices from stream `l` of `seed`,
-    /// and the slips from a stream of their own.
+    /// (0 to 1), drawing from `seed`.
     pub fn new(level: u8, erraticism: f64, seed: u64) -> Opponent {
         assert!(
             (1..=agents::TOP).contains(&level),
@@ -41,32 +42,31 @@ impl Opponent {
         );
         assert!((0.0..=1.0).contains(&erraticism), "erraticism 0 to 1");
         Opponent {
-            rungs: (1..=level)
-                .map(|l| agents::by_level(l, Rng::stream(seed, u64::from(l))))
-                .collect(),
+            level,
             erraticism,
-            slips: Rng::stream(seed, SLIPS),
+            seed,
         }
     }
 
-    /// The rung the next decision is made at, as an index: `level` less the
-    /// slips.
-    fn rung(&mut self) -> usize {
-        let top = self.rungs.len() - 1;
-        if top > 0 && self.erraticism > 0.0 && self.uniform() < self.erraticism {
-            top - 1
+    /// The draws for a decision in `view`.
+    fn draws(&self, view: &View) -> Rng {
+        Rng::stream(self.seed, crate::advice::advisor_seed(view))
+    }
+
+    /// The rung a decision in `view` is made at: `level`, or one below it
+    /// with probability `erraticism`.
+    fn rung(&self, view: &View) -> u8 {
+        let mut draws = self.draws(view);
+        let uniform = (draws.next_u64() >> 11) as f64 / (1u64 << 53) as f64;
+        if self.level > 1 && self.erraticism > 0.0 && uniform < self.erraticism {
+            self.level - 1
         } else {
-            top
+            self.level
         }
-    }
-
-    /// A uniform draw in [0, 1).
-    fn uniform(&mut self) -> f64 {
-        (self.slips.next_u64() >> 11) as f64 / (1u64 << 53) as f64
     }
 
     pub fn level(&self) -> u8 {
-        self.rungs.len() as u8
+        self.level
     }
 
     pub fn erraticism(&self) -> f64 {
@@ -96,20 +96,19 @@ impl Skill {
 
 impl Agent for Opponent {
     fn name(&self) -> String {
+        let name = agents::by_level(self.level, Rng::seeded(0)).name();
         if self.erraticism == 0.0 {
-            self.rungs.last().expect("a rung").name()
+            name
         } else {
-            format!(
-                "{} (erratic {:.2})",
-                self.rungs.last().expect("a rung").name(),
-                self.erraticism
-            )
+            format!("{name} (erratic {:.2})", self.erraticism)
         }
     }
 
     fn choose(&mut self, view: &View) -> Move {
-        let rung = self.rung();
-        self.rungs[rung].choose(view)
+        let mut draws = self.draws(view);
+        draws.next_u64(); // the slip's draw, made in `rung`
+        let rung = self.rung(view);
+        agents::by_level(rung, Rng::seeded(draws.next_u64())).choose(view)
     }
 }
 
@@ -127,44 +126,52 @@ mod tests {
         deck
     }
 
-    #[test]
-    fn no_erraticism_is_the_rung_itself() {
-        for level in 1..=agents::TOP {
-            let mut deck_rng = Rng::seeded(u64::from(level));
-            let (mut h, _) = Hand::deal(Rules::CLASSIC, Seat::North, shuffled(deck_rng.next_u64()));
-            let mut steady = Opponent::new(level, 0.0, 7);
-            let mut plain = agents::by_level(level, Rng::stream(7, u64::from(level)));
+    /// Views from random play: many distinct positions.
+    fn views(n: usize) -> Vec<View> {
+        let mut out = Vec::new();
+        let mut seed = 0;
+        while out.len() < n {
+            let mut rng = Rng::seeded(seed);
+            let (mut h, _) = Hand::deal(Rules::CLASSIC, Seat::North, shuffled(seed));
             while let Some(seat) = h.to_move() {
-                let v = h.view(seat, [0, 0]);
-                let m = steady.choose(&v);
-                assert_eq!(m, plain.choose(&v), "level {level}");
-                h.play(&m).unwrap();
+                out.push(h.view(seat, [0, 0]));
+                let moves = h.candidates();
+                h.play(&moves[rng.below(moves.len() as u64) as usize])
+                    .unwrap();
             }
+            seed += 1;
+        }
+        out.truncate(n);
+        out
+    }
+
+    #[test]
+    fn a_decision_is_a_function_of_the_seed_and_the_view() {
+        for v in views(60) {
+            let mut a = Opponent::new(3, 0.3, 7);
+            let mut b = Opponent::new(3, 0.3, 7);
+            let first = a.choose(&v);
+            assert_eq!(first, a.choose(&v), "asked twice, the same answer");
+            assert_eq!(first, b.choose(&v));
+            assert!(v.candidates().contains(&first));
         }
     }
 
     #[test]
-    fn a_slip_is_one_rung() {
-        let mut o = Opponent::new(4, 0.3, 1);
-        let mut counts = [0u32; 4];
-        let n = 40_000;
-        for _ in 0..n {
-            counts[o.rung()] += 1;
-        }
-        assert_eq!(
-            counts[0] + counts[1],
-            0,
-            "never below the rung beneath: {counts:?}"
-        );
-        let p = f64::from(counts[2]) / f64::from(n);
-        assert!((p - 0.3).abs() < 0.01, "{counts:?}");
-        let mut always = Opponent::new(4, 1.0, 2);
-        assert!((0..100).all(|_| always.rung() == 2));
-        let mut never = Opponent::new(4, 0.0, 3);
-        assert!((0..100).all(|_| never.rung() == 3));
-        let mut bottom = Opponent::new(1, 1.0, 4);
+    fn a_slip_is_one_rung_as_often_as_the_erraticism() {
+        let vs = views(4_000);
+        let o = Opponent::new(4, 0.3, 1);
+        let slipped = vs.iter().filter(|v| o.rung(v) == 3).count();
         assert!(
-            (0..100).all(|_| bottom.rung() == 0),
+            vs.iter().all(|v| o.rung(v) >= 3),
+            "never below the rung beneath"
+        );
+        let p = slipped as f64 / vs.len() as f64;
+        assert!((p - 0.3).abs() < 0.03, "{p}");
+        assert!(vs.iter().all(|v| Opponent::new(4, 1.0, 2).rung(v) == 3));
+        assert!(vs.iter().all(|v| Opponent::new(4, 0.0, 3).rung(v) == 4));
+        assert!(
+            vs.iter().all(|v| Opponent::new(1, 1.0, 4).rung(v) == 1),
             "rung 1 has nowhere to slip"
         );
     }
