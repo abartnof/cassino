@@ -420,6 +420,24 @@ md-dialog {
   background: #e1e3e8;
   color: #1b1f24;
 }
+/* On a phone the bar is a row of the controls: compact buttons that wrap
+   in a narrow column (a phone held sideways). */
+html.upright .move-bar,
+html.sideways .move-bar {
+  --move-h: 40px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+html.upright .move-bar .chips,
+html.sideways .move-bar .chips {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+html.upright .move-bar md-filled-button,
+html.sideways .move-bar md-filled-button {
+  min-width: 0;
+}
 html:not(.upright):not(.sideways) .move-bar {
   position: fixed;
   left: 50%;
