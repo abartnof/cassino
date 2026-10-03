@@ -939,8 +939,13 @@ md-dialog {
   .brand {
     display: none;
   }
+  /* Room kept for the prompt, a hint and a row of chips, so they come and
+     go without the table being framed again under a finger. */
   .controls {
     bottom: 60px;
+    min-height: 128px;
+    box-sizing: border-box;
+    align-content: flex-end;
     padding: 6px 10px 8px;
   }
   .aids-panel {

@@ -275,7 +275,15 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   faces test measures. The browser test plays by tapping on a phone held
   either way.
 - **T9. Traditional objects.** The pegboard, the sweep tally, the stock as a
-  clock, polished.
+  clock, polished. **Done**: the scoring board (`pegboard.js`): a wooden
+  board of 21 holes a player in fives, a start hole and two pegs each, at
+  the table's edge at your left (not on a phone; a switch in the settings).
+  The pegs stand where `pegsOf` says, a pure function of the hands' ends:
+  the front peg at the total, the back where the front stood before the
+  last hand; at the end of each count the back peg is lifted over the
+  front and dropped in its new hole, so the gap is always the last hand's
+  points. The sweep tally (the sweep cards crosswise, where later captures
+  cover them) and the stock's thickness as the hand's clock came with T3.
 
 ## 11. Testing
 

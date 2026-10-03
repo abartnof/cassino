@@ -21,6 +21,7 @@ import { facesFor, jumboTextures, phoneHere } from "./faces.js";
 import { decodeBase64, loadEngine } from "./engine.js";
 import { createHud, hudEvents, ledgerOf } from "./hud.js";
 import { createOverlay } from "./overlay.js";
+import { createPegboard, pegsOf } from "./pegboard.js";
 import { dailySeed, loadPrefs, loadSitting, savePrefs, saveSitting, withUrl } from "./prefs.js";
 import { createScene } from "./scene.js";
 import { trackers } from "./scorebug.js";
@@ -84,6 +85,13 @@ async function main() {
   }
   showFaces(prefs.faces);
 
+  // The scoring board, at the table's edge across a table (not on a phone).
+  const board = createPegboard(stage);
+  const boardShown = () => {
+    board.group.visible = prefs.pegboard && !stage.portrait;
+    stage.render();
+  };
+
   // The cards' lines: while choosing, the hand card chosen and the table
   // cards picked in amber, what could join in cyan, what cannot dimmed; with
   // nothing chosen, the hint's cards in cyan.
@@ -138,6 +146,7 @@ async function main() {
     const who = seats();
     const seen = { ...state, events: state.events.slice(0, upTo) };
     hud.reset(ledgerOf(seen), { you: who.you, opp: who.them });
+    board.reset(pegsOf(seen.events));
     overlay.names(who);
     const none = { cards: 0, spades: 0, aces: 0, big_casino: false, little_casino: false, sweeps: 0 };
     overlay.trackers(trackers(upTo < state.events.length ? { ...seen, piles: { you: none, them: none } } : state));
@@ -175,6 +184,7 @@ async function main() {
       if (name === "speed") director.setSpeed(value);
       if (name === "surface") stage.setSurface(chooseSurface({ chosen: value, saved: null }));
       if (name === "faces") showFaces(value);
+      if (name === "pegboard") boardShown();
       refresh();
     },
     copy: async (button) => {
@@ -333,7 +343,11 @@ async function main() {
     const pace = count && count.lines.length > 1 ? count.lines[1] - count.lines[0] : 600;
     for (const e of hudEvents(state, since)) {
       const ms = e.line !== undefined && count ? (count.lines[e.line] ?? (count.lines.at(-1) ?? 0) + pace) : beats[e.at];
-      at(ms, () => (e.end ? hud.endHand() : hud.score(e)));
+      at(ms, () => {
+        if (!e.end) return hud.score(e);
+        hud.endHand();
+        board.peg(pegsOf(state.events));
+      });
     }
   }
 
@@ -382,7 +396,9 @@ async function main() {
   stage.onReframe = () => {
     director.relayout();
     placeBadges();
+    boardShown();
   };
+  boardShown();
 
   // ---- the prompt, the aids and the log ----------------------------------
 
@@ -485,7 +501,11 @@ async function main() {
     facesShown: () => facesShown,
     pageDue: () => pageDue(state, prefs.seen, tutorialSince),
     screenPoint: (code) => director.screenPoint(code),
-    busy: () => director.busy(),
+    pickAt: (x, y) => {
+      const m = director.pick(x, y);
+      return m ? { zone: m.zone, code: m.code } : null;
+    },
+    busy: () => director.busy() || stage.reframing(),
     skip: () => director.skip(),
     tick: (ms) => director.tick(ms),
   };

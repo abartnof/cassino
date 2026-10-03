@@ -10,7 +10,7 @@
 A measured four-rung opponent with a skill dial; explanations, hints and the
 selection interface; the session and its JSON protocol; a 334 KB module that
 plays a whole game in Node at 10–16 ms a command, byte for byte as the native
-build does. 230 Rust tests and 144 Node tests of the table, all passing
+build does. 230 Rust tests and 148 Node tests of the table, all passing
 (`bin/gate`).
 
 **Reviewed.** A full code review by a separate agent
@@ -73,7 +73,9 @@ legal move. RULES.md now says each held card answers for one build value.
   multiple builds; Royal's court cards; the count), and all of them from
   the question mark. T8 phones: a stacked table framed between the HUD and
   the controls, upright or sideways, and Large Text faces fitted to the
-  hand. Next: T9, the traditional objects, then a review of the table.
+  hand. T9 the scoring board: a 21-hole cribbage-style board at the table's
+  edge, the back peg leapfrogging the front at each hand's end. Next: a
+  review of the table's code by a separate agent.
 
 ## Settled decisions
 
@@ -117,7 +119,7 @@ legal move. RULES.md now says each held card answers for one build value.
   native and wasm byte for byte; a Node smoke test.
 - [ ] 9. **The 3D table**, adapted from piquet's: art for 52 cards, the
   middle-of-the-table layout, builds, the cribbage board, the table talk.
-  Phases T0–T9 in `docs/TABLE3D.md`; T0–T8 done.
+  Phases T0–T9 in `docs/TABLE3D.md`, all done.
 - [ ] 10. **Teaching**: tutorial pages, on-screen help.
 
 ## Working conventions

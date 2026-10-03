@@ -226,6 +226,8 @@ export function createScene(
   return Object.assign(stage, {
     scene, camera, renderer, key, render, registerInk, setInset, setStrips, setSurface,
     strips: () => ({ ...target }),
+    // Whether the framing is still easing to new strips.
+    reframing: () => easing !== null,
     // How far your hand's fan is drawn out to fill the width, for the
     // framing the table is on its way to (framing.js).
     fill: () => {
