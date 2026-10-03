@@ -21,7 +21,7 @@ import { facesFor, jumboTextures, phoneHere } from "./faces.js";
 import { decodeBase64, loadEngine } from "./engine.js";
 import { POPUP_BUSY, createHud, hudEvents, ledgerOf, popupsOf } from "./hud.js";
 import { createOverlay } from "./overlay.js";
-import { badgeText, badgeTitle, badgesShown } from "./badges.js";
+import { badgeFontPx, badgeText, badgeTitle, badgesShown } from "./badges.js";
 import { badgesOn, choosePlay, dailySeed, loadPrefs, welcomeWanted, loadSeries, loadSitting, savePrefs, saveSeries, saveSitting, withUrl } from "./prefs.js";
 import { recordGame, seriesLine } from "./series.js";
 import { createScene } from "./scene.js";
@@ -569,8 +569,11 @@ async function main() {
       const top = director.meshOf(item.cards[item.cards.length - 1].card);
       if (!top) continue;
       const corner = new Vector3(CARD.width / 2 - 0.5, CARD.height / 2 - 0.5, CARD.thickness / 2);
+      const below = corner.clone().add(new Vector3(0, -1, 0)); // a centimetre down the card
       const at = director.toScreen(corner.applyQuaternion(top.quaternion).add(top.position));
-      list.push({ id: item.id, text: badgeText(item.build), title: badgeTitle(item, whose), ...at });
+      const by = director.toScreen(below.applyQuaternion(top.quaternion).add(top.position));
+      const font = badgeFontPx(facesShown, Math.hypot(by.x - at.x, by.y - at.y));
+      list.push({ id: item.id, text: badgeText(item.build), title: badgeTitle(item, whose), font, ...at });
     }
     overlay.placeBadges(list);
   }

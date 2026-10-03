@@ -2,7 +2,7 @@
 // what each badge says.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { badgeText, badgeTitle, badgesShown } from "../src/badges.js";
+import { RANK_CAP, badgeFontPx, badgeText, badgeTitle, badgesShown } from "../src/badges.js";
 
 const card = (code, label = code) => ({ card: code, label });
 const build = (id, value, codes, { multiple = false, controller = "you" } = {}) => ({ id, cards: codes.map((c) => card(c)), build: { value, multiple, controller } });
@@ -35,4 +35,13 @@ test("a badge says the value, a multiple build its plural; its title, whose and 
   assert.equal(badgeTitle(b), "Your build of 7: 6♠ A♠");
   const theirs = build(3, 8, ["4C", "4D", "8H"], { multiple: true, controller: "them" });
   assert.equal(badgeTitle(theirs), "Your opponent's build of 8s: 4C 4D 8H");
+});
+
+test("a badge's number is as tall as the ranks in the cards' corners, at any size of table", () => {
+  assert.equal(RANK_CAP.classic, 0.9, "the classic faces' rank, measured on the art, in cm");
+  assert.ok(RANK_CAP.jumbo > 1.3 && RANK_CAP.jumbo < 1.6, "Large Text's, larger");
+  // A font's capitals are 0.72 of its size: the size that makes them 0.9 cm
+  // where a centimetre of table is 20 pixels.
+  assert.equal(Math.round(badgeFontPx("classic", 20)), 25);
+  assert.equal(badgeFontPx("classic", 10) * 2, badgeFontPx("classic", 20), "and in proportion");
 });

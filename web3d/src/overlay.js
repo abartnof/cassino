@@ -117,7 +117,7 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
   const placed = new Map();
   function placeBadges(list) {
     const keep = new Set();
-    for (const { id, text, title, x, y } of list) {
+    for (const { id, text, title, x, y, font } of list) {
       keep.add(id);
       let badge = placed.get(id);
       if (!badge) {
@@ -131,6 +131,7 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
       if (badge.title !== title) badge.title = title;
       badge.style.left = `${x}px`;
       badge.style.top = `${y}px`;
+      if (font) badge.style.fontSize = `${font.toFixed(1)}px`;
     }
     for (const [id, badge] of placed) {
       if (keep.has(id)) continue;

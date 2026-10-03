@@ -154,16 +154,18 @@ html, body {
 /* A build's value: a white number on a dark disc, ringed in white and
    outlined dark, as an inked cel is, so it reads on any table. It takes a
    tap as its build does, and its title tells the build's cards. */
+/* Sized in ems from the font the page sets on it: its number as tall as the
+   ranks in the cards' corners (badges.js badgeFontPx). */
 .badge {
   position: absolute;
   transform: translate(-50%, -50%);
   box-sizing: border-box;
-  min-width: 32px;
-  height: 32px;
-  padding: 0 7px;
+  min-width: 2em;
+  height: 2em;
+  padding: 0 0.42em;
   display: grid;
   place-items: center;
-  border: 2.5px solid #fff;
+  border: max(2px, 0.15em) solid #fff;
   border-radius: 999px;
   background: #1b1f24;
   color: #fff;
@@ -173,7 +175,7 @@ html, body {
   line-height: 1;
   font-variant-numeric: tabular-nums;
   box-shadow:
-    0 0 0 1.5px #1b1f24,
+    0 0 0 max(1px, 0.09em) #1b1f24,
     0 2px 5px rgba(0, 0, 0, 0.35);
   pointer-events: auto;
   cursor: pointer;

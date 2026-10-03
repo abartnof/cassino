@@ -2,6 +2,9 @@
 // kept in view through the moves, as pure functions of the states. The page
 // places them where the build's top card is drawn, frame by frame.
 
+import { JUMBO } from "./faces.js";
+import { CARD } from "./units.js";
+
 const sameCards = (a, b) => a.cards.length === b.cards.length && a.cards.every((c, i) => c.card === b.cards[i].card);
 const sameBuild = (a, b) => a.build.value === b.build.value && a.build.multiple === b.build.multiple && a.build.controller === b.build.controller && sameCards(a, b);
 
@@ -26,4 +29,17 @@ export function badgeText(build) {
 export function badgeTitle(item, whose = { you: "Your", them: "Your opponent's" }) {
   const owner = whose[item.build.controller];
   return `${owner} build of ${badgeText(item.build)}: ${item.cards.map((c) => c.label).join(" ")}`;
+}
+
+// How tall the rank in a card's corner is, in cm: the classic faces' as
+// measured on the art; Large Text's at its recipe size (faces.js), its
+// capitals 0.72 of it.
+export const RANK_CAP = Object.freeze({ classic: 0.9, jumbo: ((JUMBO.rankSize * CARD.width) / JUMBO.w) * 0.72 });
+
+// The badge's font size in pixels, so its number stands as tall as the ranks
+// on the cards around it (play-testing asked for the same size): `faces`,
+// the faces shown; `pxPerCm`, how many pixels a centimetre of the table
+// takes where the badge is.
+export function badgeFontPx(faces, pxPerCm) {
+  return (RANK_CAP[faces] * pxPerCm) / 0.72;
 }
