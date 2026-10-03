@@ -21,7 +21,6 @@ import { facesFor, jumboTextures, phoneHere } from "./faces.js";
 import { decodeBase64, loadEngine } from "./engine.js";
 import { createHud, hudEvents, ledgerOf } from "./hud.js";
 import { createOverlay } from "./overlay.js";
-import { createPegboard, pegsOf } from "./pegboard.js";
 import { dailySeed, loadPrefs, loadSeries, loadSitting, savePrefs, saveSeries, saveSitting, withUrl } from "./prefs.js";
 import { recordGame, seriesLine } from "./series.js";
 import { createScene } from "./scene.js";
@@ -93,13 +92,6 @@ async function main() {
   }
   showFaces(prefs.faces);
 
-  // The scoring board, at the table's edge across a table (not on a phone).
-  const board = createPegboard(stage);
-  const boardShown = () => {
-    board.group.visible = prefs.pegboard && !stage.portrait;
-    stage.render();
-  };
-
   // The card the keyboard's focus is on (below), once the keyboard is used.
   let focusedCard = () => null;
 
@@ -160,7 +152,6 @@ async function main() {
     const who = seats();
     const seen = { ...state, events: state.events.slice(0, upTo) };
     hud.reset(ledgerOf(seen), { you: who.you, opp: who.them });
-    board.reset(pegsOf(seen.events));
     overlay.names(who);
     const none = { cards: 0, spades: 0, aces: 0, big_casino: false, little_casino: false, sweeps: 0 };
     overlay.trackers(trackers(upTo < state.events.length ? { ...seen, piles: { you: none, them: none } } : state));
@@ -196,7 +187,6 @@ async function main() {
       if (name === "speed") director.setSpeed(value);
       if (name === "surface") stage.setSurface(chooseSurface({ chosen: value, saved: null }));
       if (name === "faces") showFaces(value);
-      if (name === "pegboard") boardShown();
       if (name === "match") {
         series = { format: value, you: 0, them: 0, counted: [] };
         saveSeries(store, series);
@@ -489,11 +479,7 @@ async function main() {
     const pace = count && count.lines.length > 1 ? count.lines[1] - count.lines[0] : 600;
     for (const e of hudEvents(state, since)) {
       const ms = e.line !== undefined && count ? (count.lines[e.line] ?? (count.lines.at(-1) ?? 0) + pace) : beats[e.at];
-      at(ms, () => {
-        if (!e.end) return hud.score(e);
-        hud.endHand(e.hand);
-        board.peg(pegsOf(state.events));
-      });
+      at(ms, () => (e.end ? hud.endHand(e.hand) : hud.score(e)));
     }
   }
 
@@ -553,9 +539,7 @@ async function main() {
   stage.onReframe = () => {
     director.relayout();
     placeBadges();
-    boardShown();
   };
-  boardShown();
 
   // ---- the prompt, the aids and the log ----------------------------------
 

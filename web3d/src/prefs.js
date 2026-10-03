@@ -15,8 +15,6 @@ export const DEFAULTS = Object.freeze({
   surface: "random",
   // The card faces: "auto" (Large Text on a phone), "classic" or "jumbo".
   faces: "auto",
-  // The scoring board at the table's edge.
-  pegboard: true,
   // The match: one game to 21, or a World Series, the best of seven.
   match: "single",
   // The engine's aids (docs/PROTOCOL.md), and the page's own.
@@ -88,7 +86,6 @@ export function loadPrefs(store) {
     speed: Number.isFinite(kept.speed) && kept.speed > 0 ? kept.speed : DEFAULTS.speed,
     surface: typeof kept.surface === "string" ? kept.surface : DEFAULTS.surface,
     faces: ["auto", "classic", "jumbo"].includes(kept.faces) ? kept.faces : DEFAULTS.faces,
-    pegboard: isBool(kept.pegboard) ? kept.pegboard : DEFAULTS.pegboard,
     match: kept.match === "best-of-7" ? "best-of-7" : "single",
     aids: Object.fromEntries(Object.entries(DEFAULTS.aids).map(([k, v]) => [k, isBool(aids[k]) ? aids[k] : v])),
     undo: isBool(kept.undo) ? kept.undo : DEFAULTS.undo,

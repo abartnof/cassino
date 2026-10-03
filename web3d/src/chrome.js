@@ -191,7 +191,6 @@ export function createChrome(root, on) {
       aidSwitches,
       pageSwitches,
       el("h3", {}, "The table"),
-      row("Scoring board", "A cribbage-style board at the table's edge, pegged at the end of each hand: the gap between a player's pegs is their last hand", sw({ "data-pref": "pegboard" }, (v) => on.pref("pegboard", v))),
       el("div", { class: "selects" }, speed, surface, faces),
     ),
     el("div", { slot: "actions" }, copy, creditsOpen, el("md-filled-tonal-button", { onclick: () => settings.close() }, "Done")),

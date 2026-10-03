@@ -290,6 +290,9 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   front and dropped in its new hole, so the gap is always the last hand's
   points. The sweep tally (the sweep cards crosswise, where later captures
   cover them) and the stock's thickness as the hand's clock came with T3.
+  **The board removed** after the first play-testing: with the score HUD on
+  screen (its segmented lines to 21 and the per-hand ledger) the board said
+  the same thing again, and took a corner of the table.
 
 ## 11. Testing
 

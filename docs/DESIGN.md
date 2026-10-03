@@ -512,7 +512,9 @@ Notes on the design:
   hand**: an audit trail built into the object. Pegs lift, travel and drop
   with a small settle, using piquet's motion primitives. No Cassino-specific
   board exists [06 §1.7], so the 21-hole board is our adaptation of the
-  cribbage board.
+  cribbage board. *Built, then removed after the first play-testing: the
+  score HUD's lines to 21 and its per-hand ledger already show the score
+  and each hand's points, and the board repeated them.*
 - **Counters** are the alternative scorekeeper: 1804's "little box of
   Cassino Markers of tortoiseshell" [04-S36], and the period charts for
   marking points with counters [10-S46].
@@ -663,8 +665,7 @@ All of these are pure functions of public state, so none can leak:
   badge.
 - **Capture piles** sit at each player's right, face down, with sweeps
   crosswise.
-- **The stock** sits at the dealer's left. The cribbage board sits at the
-  table's edge.
+- **The stock** sits at the dealer's left.
 - On a phone, the layout grows as the table fills, and builds collapse to
   their badge with a tap to fan them. Piquet's phone work (framing, the
   Large Text faces) carries over.
@@ -703,5 +704,5 @@ tie exactly, so any tolerance must be checked for whether it does any work.
   generator as the speed baseline.
 - **Royal's arithmetic** to 13 or 14 is harder to teach than Classic's to 10.
   The running sum and the court-value labels must carry it.
-- **Scorekeeper choice** (cribbage board, counters, or both) is a look to try
-  in the 3D phase, not a decision yet.
+- **Scorekeeper choice** (cribbage board, counters, or both): settled by the
+  score HUD; the board was built and then removed (§12.2).

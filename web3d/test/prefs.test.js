@@ -36,6 +36,13 @@ test("storage that throws, or holds nonsense, gives the defaults and never fails
   assert.equal(p.rules.aces14, false, "aces 1 or 14 only with Royal");
 });
 
+test("the scoring board is gone: a setting kept for it is forgotten", () => {
+  const store = memory();
+  store.setItem("cassino.prefs", JSON.stringify({ pegboard: false }));
+  assert.equal("pegboard" in loadPrefs(store), false);
+  assert.equal("pegboard" in DEFAULTS, false);
+});
+
 test("the skill dial runs from 1 to 4 in halves", () => {
   assert.deepEqual(SKILLS.map((s) => s.value), [1, 1.5, 2, 2.5, 3, 3.5, 4]);
   assert.ok(SKILLS.every((s) => s.words.length > 0));

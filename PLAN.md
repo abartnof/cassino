@@ -77,8 +77,8 @@ legal move. RULES.md now says each held card answers for one build value.
   multiple builds; Royal's court cards; the count), and all of them from
   the question mark. T8 phones: a stacked table framed between the HUD and
   the controls, upright or sideways, and Large Text faces fitted to the
-  hand. T9 the scoring board: a 21-hole cribbage-style board at the table's
-  edge, the back peg leapfrogging the front at each hand's end.
+  hand. T9 the scoring board, a 21-hole cribbage-style board, was built and
+  then removed after the first play-testing: the HUD already shows it.
 - **The table reviewed twice** (`docs/reviews/2026-10-03-table.md`: one
   critical finding, an upright tablet's overlay and framing disagreeing; four
   major; fifteen minor; an engine one, undo across a deal; five on the tests.
@@ -132,7 +132,7 @@ legal move. RULES.md now says each held card answers for one build value.
   `docs/PROTOCOL.md`; the CLI on the session; saved sittings; golden games,
   native and wasm byte for byte; a Node smoke test.
 - [x] 9. **The 3D table**, adapted from piquet's: art for 52 cards, the
-  middle-of-the-table layout, builds, the cribbage board, the table talk.
+  middle-of-the-table layout, builds, the table talk.
   Phases T0–T9 in `docs/TABLE3D.md`, the designer's HUD, two reviews.
 - [x] 10. **Teaching**: tutorial pages at each idea's first moment, and all
   of them from the question mark (T7).
