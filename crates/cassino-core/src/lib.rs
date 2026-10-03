@@ -17,6 +17,7 @@ pub mod rules;
 pub mod scoring;
 pub mod search;
 pub mod select;
+pub mod session;
 pub mod solver;
 pub mod sums;
 pub mod table;
