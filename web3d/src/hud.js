@@ -157,21 +157,22 @@ export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms) } = {})
     }
     return row;
   };
+  // A row a player (play-testing): their name once, at its left; their line
+  // of segments; and their score at its end. Your opponent's row first, as
+  // they sit across the table, yours second. A score's popup rolls in over
+  // its whole row, and the line's new segments ripple as it rolls back.
   const block = (side, name) => {
     const nameNode = el("div", { class: "hud-name" }, name);
     const num = el("div", { class: "hud-num" }, "0");
-    const score = el("div", { class: "hud-score" }, nameNode, num);
+    const score = el("div", { class: "hud-score" }, line(side), num);
     const popLabel = el("span", { class: "hud-pop-label" });
     const popPts = el("span", { class: "hud-pop-pts" });
     const pop = el("div", { class: "hud-pop", "aria-live": "polite" }, popLabel, popPts);
-    return { node: el("div", { class: `hud-block ${side}` }, score, pop), nameNode, num, popLabel, popPts };
+    const stage = el("div", { class: `hud-block ${side}` }, score, pop);
+    return { node: stage, row: el("div", { class: `hud-side ${side}` }, nameNode, stage), nameNode, num, popLabel, popPts };
   };
-  // Each player's line named at its left; your opponent's above yours, as
-  // they sit across the table (play-testing: "so it's clear who's who").
-  const lineNames = { you: el("span", { class: "hud-line-name" }, "You"), opp: el("span", { class: "hud-line-name" }, "Opp") };
-  const named = (side) => el("div", { class: `hud-line-row ${side}` }, lineNames[side], line(side));
-  const linesNode = el("div", { class: "hud-lines", role: "img" }, named("opp"), named("you"));
   const blocks = { you: block("you", "You"), opp: block("opp", "Opp") };
+  const linesNode = el("div", { class: "hud-lines", role: "img" }, blocks.opp.row, blocks.you.row);
   const chevron = el("button", { class: "hud-chev", type: "button", "aria-expanded": "false", "aria-label": "Show hand-by-hand scores" });
   chevron.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>';
   const headYou = el("div", { class: "hud-head-you" }, "You");
@@ -195,8 +196,7 @@ export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms) } = {})
   const hud = el(
     "section",
     { class: "hud", "aria-label": "The score" },
-    linesNode,
-    el("div", { class: "hud-row" }, blocks.you.node, chevron, blocks.opp.node),
+    el("div", { class: "hud-top" }, linesNode, chevron),
     panel,
   );
   root.append(hud);
@@ -295,7 +295,6 @@ export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms) } = {})
     ledger.get(hand)[e.cat][side] += e.pts;
     totals = { ...totals, [side]: totals[side] + e.pts };
     flash = { cat: e.cat, side };
-    drawSegments(side, from);
     drawList();
     const b = blocks[side];
     b.popLabel.textContent = e.label;
@@ -308,7 +307,11 @@ export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms) } = {})
         drawNumbers();
       });
     }
-    later(POPUP_MS, () => mine === epoch && b.node.classList.remove("popped"));
+    later(POPUP_MS, () => {
+      if (mine !== epoch) return;
+      b.node.classList.remove("popped");
+      drawSegments(side, from); // the new segments ripple as the row comes back
+    });
     later(POP_AT, () => mine === epoch && replay(b.num, "pop"));
     busyUntil[side] = true;
     later(POPUP_BUSY, () => {
@@ -330,8 +333,6 @@ export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms) } = {})
       names = who;
       blocks.you.nameNode.textContent = who.you;
       blocks.opp.nameNode.textContent = who.opp;
-      lineNames.you.textContent = who.you;
-      lineNames.opp.textContent = who.opp;
       headYou.textContent = who.you;
       headOpp.textContent = who.opp;
       ledger = new Map(given.hands.map((h, i) => [i + 1, JSON.parse(JSON.stringify(h))]));

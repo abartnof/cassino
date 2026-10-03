@@ -495,7 +495,7 @@ html.sideways .aid-toggles {
   position: fixed;
   top: 12px;
   left: 12px;
-  width: min(366px, calc(100vw - 24px));
+  width: min(470px, calc(100vw - 24px));
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -513,23 +513,25 @@ html.sideways .aid-toggles {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
   pointer-events: auto;
 }
-/* The lines: 21 segments each, in groups of five, the finish wider. */
+/* A row a player, your opponent's first: the name, the line of 21
+   segments in groups of five (the finish wider), and the score at its end;
+   the ledger's chevron at the right, across both rows. */
+.hud-top {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
 .hud-lines {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
-.hud-line-row {
-  display: flex;
+.hud-side {
+  display: grid;
+  grid-template-columns: 2.6em 1fr;
   align-items: center;
   gap: 8px;
-}
-.hud-line-name {
-  flex: none;
-  width: 2.7em;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: #9aa3ad;
 }
 .hud-line {
   flex: 1;
@@ -581,46 +583,33 @@ html.sideways .aid-toggles {
     animation-timing-function: var(--sp-fast);
   }
 }
-/* The scores, and the popup that rolls in over a player's score. */
-.hud-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-top: 14px;
-}
+/* The score at the end of its row; the popup rolls in over the row. */
 .hud-block {
   position: relative;
-  flex: 1 1 0;
-  min-width: 0;
-  height: 69px;
+  height: 40px;
   overflow: hidden;
 }
 .hud-score {
   position: absolute;
-  inset: 0 0 auto 0;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 2.2em;
+  align-items: center;
+  gap: 10px;
   transition: transform 460ms var(--sp-fast) 120ms, opacity 140ms var(--sp-fx) 120ms;
 }
-.hud-block.opp .hud-score {
-  align-items: flex-end;
-  text-align: right;
-}
 .hud-name {
-  font-size: 13px;
-  line-height: 17px;
+  font-size: 12.5px;
+  font-weight: 600;
   color: #9aa3ad;
 }
 .hud-num {
-  font-size: 48px;
-  line-height: 52px;
+  font-size: 30px;
+  line-height: 40px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: #f7f8fa;
-  transform-origin: left center;
-}
-.hud-block.opp .hud-num {
+  text-align: right;
   transform-origin: right center;
 }
 .hud-num.pop {
@@ -634,27 +623,25 @@ html.sideways .aid-toggles {
 }
 .hud-pop {
   position: absolute;
-  inset: 0 0 auto 0;
-  height: 69px;
+  inset: 0;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: flex-end;
+  gap: 10px;
   opacity: 0;
-  transform: translateY(76px);
+  transform: translateY(44px);
   transition: transform 240ms var(--sp-fx), opacity 120ms var(--sp-fx) 100ms;
 }
 .hud-pop-label {
-  flex: 1 1 0;
-  min-width: 0;
-  font-size: 18px;
+  font-size: 16px;
   line-height: 20px;
   font-weight: 700;
   color: #f7f8fa;
-  text-align: center;
+  text-align: right;
 }
 .hud-pop-pts {
   flex: none;
-  font-size: 36px;
+  font-size: 30px;
   line-height: 40px;
   font-weight: 700;
   color: #f7f8fa;
@@ -662,7 +649,7 @@ html.sideways .aid-toggles {
 }
 .hud-block.popped .hud-score {
   opacity: 0;
-  transform: translateY(-76px);
+  transform: translateY(-44px);
   transition: transform 260ms var(--sp-fx), opacity 120ms var(--sp-fx) 100ms;
 }
 .hud-block.popped .hud-pop {
@@ -673,9 +660,8 @@ html.sideways .aid-toggles {
 /* The chevron: a circle that morphs to a rounded square as it opens. */
 .hud-chev {
   flex: none;
-  width: 48px;
-  height: 48px;
-  margin-top: 12px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border: 0;
   border-radius: 24px;

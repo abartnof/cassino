@@ -206,15 +206,18 @@ Material Design 3, from piquet's shell.
   reference implementation are commit c484091; the reference's numbers are
   the source of truth, and `hud.js` and `style.css` port them). A dark card
   at the top left, neutral greys only, the system font, tabular numerals:
-  - two **segmented lines** to 21, yours above, in groups of five with a
-    wider finish; a segment is reached (6 px), the cursor (12 px) or
-    unreached (4 px). The lines never slide: scoring lights the next
-    segments in a wave (each flares to 20 px at 38% of 760 ms, 70 ms apart)
-    and dims the old cursor. Only the lines' tones tell the players apart;
-  - the **scores**, with a **chevron** between them. When a player scores,
-    a **popup** rolls in over their score ("Big Casino +2", the word left,
-    the points at twice its size), the number ticks up beneath it, and after
-    1.7 s the score rolls back with a pop;
+  - **a row a player** (play-testing, after the handoff: the HUD made
+    wider, your opponent's row first, as they sit across the table, and
+    each name said once): the name, the **segmented line** to 21 in groups
+    of five with a wider finish, and the **score** at its end; a segment is
+    reached (6 px), the cursor (12 px) or unreached (4 px). The lines never
+    slide: scoring lights the next segments in a wave (each flares to 20 px
+    at 38% of 760 ms, 70 ms apart) and dims the old cursor;
+  - when a player scores, a **popup** rolls in over their row ("Big Casino
+    +2", the word left, the points larger), the number ticks up beneath
+    it, and after 1.7 s the row rolls back, its line's new segments
+    rippling and the score popping. The **chevron** sits at the right,
+    across both rows;
   - the chevron opens the **ledger**: every hand's six lines in the
     counting order (most cards, most spades, Big Casino, Little Casino,
     aces, sweeps), its subtotal under them, "Hand N · live" for the hand
