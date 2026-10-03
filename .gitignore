@@ -18,3 +18,7 @@ __pycache__/
 
 # Claude Code worktrees and local state
 .claude/
+
+# The built page: committed once it is playable (docs/TABLE3D.md)
+web3d/cassino3d.html
+web3d/cassino3d-svg.html
