@@ -12,7 +12,7 @@ use crate::observation::View;
 use crate::rng::Rng;
 use crate::rules::Rules;
 use crate::table::Table;
-use crate::worth::Worth;
+use crate::worth::{Weights, Worth};
 
 pub trait Agent {
     /// A short name for tables of results.
@@ -59,9 +59,14 @@ impl GreedyAgent {
 /// What `mv` banks at once on `table`: the cards it wins, and a sweep when
 /// sweeps score. Nothing for a trail or a build.
 pub fn immediate_worth(rules: &Rules, table: &Table, mv: &Move) -> Worth {
+    immediate_worth_with(rules, table, mv, &Weights::FLAT)
+}
+
+/// [`immediate_worth`] under `weights`.
+pub fn immediate_worth_with(rules: &Rules, table: &Table, mv: &Move, weights: &Weights) -> Worth {
     match *mv {
         Move::Capture { card, taken, .. } => {
-            let mut w = Worth::of_cards(taken.with(card));
+            let mut w = Worth::of_cards_with(taken.with(card), weights);
             if rules.sweeps && taken == table.cards() {
                 w += Worth::sweep();
             }
@@ -138,6 +143,17 @@ pub fn by_name(name: &str, rng: Rng) -> Option<Box<dyn Agent>> {
         "greedy" => by_level(2, rng),
         "counter" => by_level(3, rng),
         "searcher" => by_level(4, rng),
+        "counter-dyn" | "counter-scaled" => {
+            let mut c = crate::counter::CounterAgent::new(rng);
+            c.dynamic = true;
+            c.scaled = name == "counter-scaled";
+            Box::new(c)
+        }
+        "search-dyn" => {
+            let mut s = SearchAgent::new(rng);
+            s.dynamic = true;
+            Box::new(s)
+        }
         other if other.contains('e') && other.starts_with(|c: char| c.is_ascii_digit()) => {
             let (level, erraticism) = other.split_once('e')?;
             let level: u8 = level.parse().ok().filter(|l| (1..=TOP).contains(l))?;

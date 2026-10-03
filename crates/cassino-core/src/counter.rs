@@ -17,12 +17,12 @@
 
 #[cfg(test)]
 use crate::agents::GreedyAgent;
-use crate::agents::{immediate_worth, Agent};
+use crate::agents::{immediate_worth_with, Agent};
 use crate::cards::CardSet;
 use crate::moves::{self, Move};
 use crate::observation::{sample_hidden, View};
 use crate::rng::Rng;
-use crate::worth::Worth;
+use crate::worth::{Weights, Worth};
 
 /// A move's assessment, by term and by item of the count.
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
@@ -47,11 +47,21 @@ pub struct CounterAgent {
     rng: Rng,
     /// How many of the opponent's possible hands to sample.
     pub samples: usize,
+    /// Weigh cards and spades by the state of the piles rather than flatly:
+    /// `Weights::for_piles`, or scaled to the flat level at the start
+    /// (`Weights::scaled_for_piles`) when `scaled`.
+    pub dynamic: bool,
+    pub scaled: bool,
 }
 
 impl CounterAgent {
     pub fn new(rng: Rng) -> CounterAgent {
-        CounterAgent { rng, samples: 24 }
+        CounterAgent {
+            rng,
+            samples: 24,
+            dynamic: false,
+            scaled: false,
+        }
     }
 
     /// Assesses each candidate move against the same sampled hands.
@@ -59,6 +69,11 @@ impl CounterAgent {
         let rules = view.rules;
         let me = view.me;
         let opp = me.other();
+        let weights = if self.dynamic {
+            Weights::for_piles(view.piles)
+        } else {
+            Weights::FLAT
+        };
         let hands: Vec<CardSet> = if view.opponent_holds == 0 {
             Vec::new()
         } else {
@@ -71,7 +86,9 @@ impl CounterAgent {
                 .builds
                 .iter()
                 .filter(|b| b.controller == me)
-                .fold(Worth::default(), |acc, b| acc + Worth::of_cards(b.cards))
+                .fold(Worth::default(), |acc, b| {
+                    acc + Worth::of_cards_with(b.cards, &weights)
+                })
         };
         view.candidates()
             .into_iter()
@@ -79,7 +96,7 @@ impl CounterAgent {
                 let mut table = view.table;
                 let mut hand = view.hand;
                 moves::apply(&rules, &mut table, &mut hand, me, &m);
-                let banked = immediate_worth(&rules, &view.table, &m);
+                let banked = immediate_worth_with(&rules, &view.table, &m, &weights);
                 if hands.is_empty() {
                     return (
                         m,
@@ -96,7 +113,7 @@ impl CounterAgent {
                     // Their best immediate reply, as greedy would see it.
                     let reply = moves::candidate_moves(&rules, &table, theirs, opp)
                         .into_iter()
-                        .map(|r| (immediate_worth(&rules, &table, &r), r))
+                        .map(|r| (immediate_worth_with(&rules, &table, &r, &weights), r))
                         .fold(None, |best: Option<(Worth, Move)>, (w, r)| match best {
                             Some((bw, _)) if bw.total() >= w.total() => best,
                             _ => Some((w, r)),
