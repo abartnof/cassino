@@ -197,6 +197,8 @@ pub enum Illegal {
     DoesNotMake(u8),
     /// The move would leave a build you control without its card (rule 7).
     LeavesBuildUnguarded(u8),
+    /// The hand is over: there is nothing left to play.
+    HandIsOver,
 }
 
 impl fmt::Display for Illegal {
@@ -241,6 +243,7 @@ impl fmt::Display for Illegal {
                 f,
                 "That would leave you without a card to take your build of {v}."
             ),
+            Illegal::HandIsOver => write!(f, "The hand is over."),
         }
     }
 }

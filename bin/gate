@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# The gate before every commit: formatting, lints, tests. Any failure stops it
+# with a non-zero status, so `bin/gate && git commit ...` cannot let one by.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+[ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env"
+cargo fmt --all -- --check
+cargo clippy --all-targets --quiet -- -D warnings
+if ! out=$(cargo test --quiet 2>&1); then
+  echo "$out" | tail -60 >&2
+  echo "gate: tests FAILED" >&2
+  exit 1
+fi
+echo "$out" | grep -E "^test result: ok\. [1-9]" || true
+echo "gate: ok"
