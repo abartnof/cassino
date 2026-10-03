@@ -25,7 +25,7 @@ use crate::hand::Hand;
 use crate::moves::Move;
 use crate::observation::View;
 use crate::rng::Rng;
-use crate::solver::{GameAware, Margin, Solver, Utility};
+use crate::solver::{Margin, Solver};
 use crate::table::Seat;
 use crate::worth::Worth;
 
@@ -46,9 +46,6 @@ pub struct SearchAgent {
     /// The most candidates searched; the counter ranks them.
     pub width: usize,
     pub policy: Policy,
-    /// In the last deal, play for the game (`solver::GameAware`) rather than
-    /// the hand's margin.
-    pub game_aware: bool,
 }
 
 impl SearchAgent {
@@ -61,7 +58,6 @@ impl SearchAgent {
             worlds: 32,
             width: 8,
             policy: Policy::Counter,
-            game_aware: false,
         }
     }
 }
@@ -111,11 +107,7 @@ impl SearchAgent {
     pub fn evaluate(&mut self, view: &View, moves: &[Move]) -> Vec<(Move, f64)> {
         if view.perfect_information() {
             let world = view.world(view.unseen(), &[]);
-            let aware = GameAware {
-                scores: view.scores,
-            };
-            let utility: &dyn Utility = if self.game_aware { &aware } else { &Margin };
-            let mut solver = Solver::new(utility);
+            let mut solver = Solver::new(&Margin);
             return moves
                 .iter()
                 .map(|&m| {
@@ -155,11 +147,7 @@ impl Agent for SearchAgent {
     fn choose(&mut self, view: &View) -> Move {
         if view.perfect_information() {
             let world = view.world(view.unseen(), &[]);
-            let aware = GameAware {
-                scores: view.scores,
-            };
-            let utility: &dyn Utility = if self.game_aware { &aware } else { &Margin };
-            return Solver::new(utility).best(&world).0;
+            return Solver::new(&Margin).best(&world).0;
         }
         let mut ranked = self.counter.assess(view);
         if ranked.len() == 1 {

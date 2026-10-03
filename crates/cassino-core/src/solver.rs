@@ -29,33 +29,6 @@ impl Utility for Margin {
     }
 }
 
-/// The game, not just the hand: a hand that decides the game is worth a
-/// game (100) to the winner, plus the margin; otherwise the margin alone.
-/// Near 21 the points that carry a player over are worth more than three
-/// that do not.
-pub struct GameAware {
-    /// The game's totals before this hand.
-    pub scores: [u32; 2],
-}
-
-/// What deciding the game is worth, in points of margin.
-pub const GAME: i32 = 100;
-
-impl Utility for GameAware {
-    fn value(&self, b: &Breakdown, seat: Seat) -> i32 {
-        let margin = Margin.value(b, seat);
-        let totals = [
-            self.scores[0] + u32::from(b.points(Seat::South)),
-            self.scores[1] + u32::from(b.points(Seat::North)),
-        ];
-        match crate::game::winner_of(totals) {
-            Some(w) if w == seat => GAME + margin,
-            Some(_) => -GAME + margin,
-            None => margin,
-        }
-    }
-}
-
 #[derive(Copy, Clone)]
 enum Bound {
     Exact,
@@ -170,7 +143,6 @@ mod tests {
     use crate::cards::{pack, Card, CardSet};
     use crate::rng::Rng;
     use crate::rules::{Game, Rules};
-    use crate::scoring::Breakdown;
     use crate::table::Table;
 
     /// Plain minimax over every candidate move: the reference.
@@ -260,34 +232,6 @@ mod tests {
                 solver.nodes
             );
         }
-    }
-
-    #[test]
-    fn the_game_aware_utility_is_zero_sum_and_puts_the_game_first() {
-        let rules = Rules::CLASSIC;
-        let s = |t: &str| CardSet::parse(t).unwrap();
-        // South takes 7 spades and Big Casino (3 points), North the rest (8).
-        let south = s("3S 4S 5S 6S 7S 8S 9S TD");
-        let b = Breakdown::new(&rules, [south, !south], [0, 0]);
-        assert_eq!(b.points(Seat::South), 3);
-        // Far from 21: just the margin.
-        let far = GameAware { scores: [0, 0] };
-        assert_eq!(far.value(&b, Seat::South), -5);
-        assert_eq!(far.value(&b, Seat::North), 5);
-        // South at 18: 3 points win the game despite losing the hand.
-        let near = GameAware { scores: [18, 5] };
-        assert_eq!(near.value(&b, Seat::South), GAME - 5);
-        assert_eq!(near.value(&b, Seat::North), -(GAME - 5));
-        // Both over 21: the higher total wins.
-        let both = GameAware { scores: [19, 15] };
-        assert_eq!(
-            both.value(&b, Seat::South),
-            -(GAME + 5),
-            "North 23 beats South 22"
-        );
-        // Equal past 21: nobody yet.
-        let level = GameAware { scores: [18, 13] };
-        assert_eq!(level.value(&b, Seat::South), -5, "21 each: another hand");
     }
 
     #[test]
