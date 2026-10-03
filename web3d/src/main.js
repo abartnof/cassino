@@ -408,6 +408,7 @@ async function main() {
     sel = EMPTY;
     offer = null;
     director.restart(state);
+    badgeFrom = state; // laid out at once: this is the table moves start from
     scoreShown();
     refresh();
   }
@@ -564,7 +565,10 @@ async function main() {
     if (!state || !badgesOn(prefs)) return overlay.placeBadges([]);
     const whose = state.watching ? { you: "South's", them: "North's" } : undefined;
     const list = [];
-    for (const item of badgesShown(badgeFrom ?? state, state, director.busy())) {
+    // With no table known before the cards moved (a new game's deal, whose
+    // first state may hold your opponent's opening build), none until they
+    // rest.
+    for (const item of badgesShown(badgeFrom, state, director.busy())) {
       const top = director.meshOf(item.cards[item.cards.length - 1].card);
       if (!top) continue;
       const corner = new Vector3(CARD.width / 2 - 0.5, CARD.height / 2 - 0.5, CARD.thickness / 2);
@@ -811,6 +815,7 @@ async function main() {
     for (const [aid, on] of Object.entries(prefs.aids)) if (Boolean(state.aids[aid]) !== on) state = engine.send(`set ${aid} ${on ? "on" : "off"}`).state;
     tutorialSince = state.events.length; // the history restored is not news (review T8)
     director.restart(state);
+    badgeFrom = state;
     scoreShown();
     refresh();
     if (welcomeWanted(params)) chrome.showWelcome({ canContinue: true }, begin);

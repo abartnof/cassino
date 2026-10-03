@@ -292,6 +292,17 @@ def check_badges(browser, failures):
     if page.locator(".badge").count():
         failures.append("badges shown with the build values off")
     page.context.close()
+    # Your opponent leads with a build (seed 11): its badge waits for the
+    # deal to be played, not shown on a card still in the pack.
+    page = open_page(browser, "seed=11&skill=3&values&manual", calm=True)
+    early = []
+    for _ in range(40):
+        page.evaluate("window.cassino3d.tick(100)")
+        if page.evaluate("window.cassino3d.busy()"):
+            early.append(page.locator(".badge").count())
+    if any(early):
+        failures.append(f"a build's badge shown before its cards were dealt: {early}")
+    page.context.close()
 
 
 def check_trackers(browser, failures):

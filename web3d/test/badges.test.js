@@ -27,6 +27,14 @@ test("while the cards move, a build the move leaves alone keeps its badge", () =
   assert.deepEqual(badgesShown(before, taken, true).map((i) => i.id), [3]);
 });
 
+test("with no table known before the cards moved (a new game's deal), no badge until they rest", () => {
+  // Your opponent leads, and their first move, a build, is in the game's
+  // first state: its cards are still in the pack as the deal is played.
+  const after = { table: [loose(1, "5H"), build(2, 7, ["6S", "AS"], { controller: "them" })] };
+  assert.deepEqual(badgesShown(null, after, true), []);
+  assert.deepEqual(badgesShown(null, after, false).map((i) => i.id), [2]);
+});
+
 test("a badge says the value, a multiple build its plural; its title, whose and of what", () => {
   const b = build(2, 7, ["6S", "AS"]);
   b.cards = [card("6S", "6♠"), card("AS", "A♠")];
