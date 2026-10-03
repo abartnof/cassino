@@ -70,7 +70,10 @@ export const ZONES = Object.freeze({
   // row, the first row nearest you and later rows away from you: a row
   // nearer than this would lie under your floating hand, as the eye sees
   // it, and could not be tapped.
-  middle: Object.freeze({ x: 0, z: -7, columns: 6, gapX: 1.8, gapZ: 2.2 }),
+  // Cassino's change after the first play-testing: four centimetres further
+  // from you (from -7), for the move bar between the table and your hand,
+  // clear of a card chosen and standing up out of the hand.
+  middle: Object.freeze({ x: 0, z: -11, columns: 6, gapX: 1.8, gapZ: 2.2 }),
   // A build's cards, each laid down and to the right of the last, enough
   // that every card's index and a strip of its face show: a ten of
   // diamonds in a build should be seen at a glance.

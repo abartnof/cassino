@@ -2,7 +2,7 @@
 // (docs/TABLE3D.md section 8).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { EMPTY, choose, pick, selectionText, chipsOf, itemState } from "../src/selection.js";
+import { EMPTY, chipsOf, choose, itemState, moveBar, pick, selectionText } from "../src/selection.js";
 
 test("tapping a hand card chooses it, and again lets it go", () => {
   const a = choose(EMPTY, "3H");
@@ -109,4 +109,24 @@ test("the sweep warning, before the move: which chip leaves a sweep, and what wo
   assert.deepEqual(chips.find((c) => c.kind === "trail").leaves, { values: [9], unseen: 2 });
   assert.equal(sweepWarning(chips), "Trail leaves a sweep: a 9 would clear the table, and 2 you have not seen.");
   assert.equal(sweepWarning(chips.filter((c) => c.kind !== "trail")), null);
+});
+
+test("the move bar: Take, Build and Trail always there, lit when the choice makes one", () => {
+  const off = moveBar([]);
+  assert.deepEqual(off.map((b) => [b.label, b.enabled]), [["Take", false], ["Build", false], ["Trail", false]]);
+  const chips = [
+    { kind: "build", label: "Build 6", move: "build 6 3H 2D AC" },
+    { kind: "build", label: "Build 3s", move: "build 3 3H 2D AC" },
+    { kind: "take", label: "Take", move: "take 3H 2D AC" },
+  ];
+  assert.deepEqual(
+    moveBar(chips).map((b) => [b.kind, b.label, b.enabled, b.move ?? null]),
+    [
+      ["take", "Take", true, "take 3H 2D AC"],
+      ["build", "Build 6", true, "build 6 3H 2D AC"],
+      ["build", "Build 3s", true, "build 3 3H 2D AC"],
+      ["trail", "Trail", false, null],
+    ],
+    "each kind in its place, as many of it as the choice makes",
+  );
 });

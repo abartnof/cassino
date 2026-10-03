@@ -25,7 +25,7 @@ const DEG = Math.PI / 180;
 const REST = 0.02; // a card on the table rests a hair above it
 const GAP = 0.02; // and a hair above whatever it lies on
 const STEP = CARD.thickness + GAP;
-const CHOSEN_LIFT = 2.2; // the hand card chosen stands clear of the hand
+const CHOSEN_LIFT = 1.6; // the hand card chosen stands clear of the hand (and of the move bar above it)
 const PICKED_LIFT = 0.6; // a table card picked rises a little
 
 // A small fixed turn for each card, so piles look placed by a hand rather than

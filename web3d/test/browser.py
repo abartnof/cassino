@@ -444,6 +444,31 @@ def check_talk(browser, failures):
     page.context.close()
 
 
+def check_move_bar(browser, failures):
+    """The move bar, always there on your turn: Take, Build and Trail dimmed
+    with nothing chosen, lit by a choice, and on a desktop between the
+    table and your hand."""
+    page = open_page(browser, "seed=2&skill=1&speed=6", calm=True)
+    settle(page)
+    chips = page.locator(".move-bar md-assist-chip")
+    labels = [chips.nth(i).get_attribute("label") or chips.nth(i).evaluate("c => c.label") for i in range(chips.count())]
+    if labels != ["Take", "Build", "Trail"] or page.evaluate("window.cassino3d.chips()"):
+        failures.append(f"the move bar with nothing chosen: {labels}, lit {page.evaluate('window.cassino3d.chips()')}")
+    s = page.evaluate("window.cassino3d.state()")
+    trail = next(m for m in s["moves"] if m.startswith("trail"))
+    card = trail.split()[1]
+    click_card(page, card)
+    settle(page)
+    if "Trail" not in page.evaluate("window.cassino3d.chips()"):
+        failures.append("choosing a card did not light Trail")
+    bar = page.locator(".move-bar").bounding_box()
+    table_y = max(page.evaluate("(c) => window.cassino3d.screenPoint(c).y", c["card"]) for i in s["table"] for c in i["cards"])
+    hand_y = min(page.evaluate("(c) => window.cassino3d.screenPoint(c).y", c["card"]) for c in s["hand"] if c["card"] != card)
+    if not (table_y < bar["y"] and bar["y"] + bar["height"] < hand_y):
+        failures.append(f"the move bar is not between the table and your hand: {bar}, table at {table_y}, hand at {hand_y}")
+    page.context.close()
+
+
 def check_tutorial(browser, failures):
     """The tutorial: the introduction as the game begins, holding the table;
     then, playing on, a page of the teaching ladder at its moment; and the
@@ -756,6 +781,7 @@ def main() -> int:
         check_aid_toggles(browser, failures)
         check_cheers(browser, failures)
         check_talk(browser, failures)
+        check_move_bar(browser, failures)
         check_tutorial(browser, failures)
         check_phone(browser, failures)
         page = open_page(browser, "seed=11&skill=4&manual", calm=True)

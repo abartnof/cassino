@@ -188,7 +188,17 @@ Material Design 3, from piquet's shell.
   could take or build with light up (`offer.can_add`); tap them; a running
   sum shows; chips offer exactly what the selection makes (`offer.moves`:
   *Take*, *Build 8*, *Build 8s*, *Trail*). A card that cannot join says why
-  on tap (`offer.why_not`).
+  on tap (`offer.why_not`). **The move bar** (play-testing: nothing to hunt
+  for below the hand after each choice): the running sum and Take, Build
+  and Trail are always there on your turn, each lit with its move when the
+  choice makes one (as many of a kind as it makes) and dimmed under its
+  plain name when not (`selection.js` `moveBar`). On a desktop the bar sits
+  just under the table's first row, above your hand and a card chosen from
+  it, and stays put as the table fills (the rows grow away from you; the
+  middle was moved four centimetres further off to make room, and a chosen
+  card stands 1.6 cm out of the hand, not 2.2); your own words are then
+  said beside your hand, the tail pointing back at it. On a phone the bar
+  is a row of the controls.
 - **The score HUD**, from the designer's handoff (the spec and its approved
   reference implementation are commit c484091; the reference's numbers are
   the source of truth, and `hud.js` and `style.css` port them). A dark card

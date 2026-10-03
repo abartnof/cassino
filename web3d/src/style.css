@@ -231,6 +231,19 @@ html, body {
 .dialogue.them::after {
   top: -6px;
 }
+/* Beside your hand on a desktop, its tail pointing left at it, clear of
+   the move bar above the hand. */
+.dialogue.you.side {
+  translate: 0 -50%;
+  transform-origin: 0 50%;
+}
+.dialogue.you.side::after {
+  left: -6px;
+  top: 50%;
+  bottom: auto;
+  margin-left: 0;
+  margin-top: -7px;
+}
 .dialogue.leaving {
   animation: box-out 260ms var(--ease-out) forwards;
 }
@@ -348,6 +361,30 @@ md-dialog {
 .credit p {
   margin: 2px 0;
   color: var(--md-sys-color-on-surface-variant);
+}
+
+/* The move bar: the running sum and Take, Build and Trail, always there on
+   your turn. On a phone it is a row of the controls; on a desktop it sits
+   between the table and your hand, where the page measures it to be. */
+.move-bar {
+  flex-basis: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+.move-bar[hidden] {
+  display: none;
+}
+.move-bar .sum {
+  margin: 0;
+}
+html:not(.upright):not(.sideways) .move-bar {
+  position: fixed;
+  left: 50%;
+  top: var(--move-bar-y, 55%);
+  translate: -50% -50%;
+  flex-basis: auto;
 }
 
 /* The hints and the explanations toggled at the foot of the controls, on a

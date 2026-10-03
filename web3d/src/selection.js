@@ -50,6 +50,23 @@ export function chipsOf(offer) {
     .sort((a, b) => ORDER[a.kind] - ORDER[b.kind] || (a.value ?? 0) - (b.value ?? 0));
 }
 
+// The move bar (play-testing: the buttons always there, lighting up and
+// dimming, so nothing is hunted for after each choice): Take, Build and
+// Trail in their places, each lit with its move when the choice makes one,
+// as many of a kind as it makes (Build 6, Build 3s), and dimmed under its
+// plain name when it makes none. `chips` as chipsOf gives them.
+const KINDS = [
+  ["take", "Take"],
+  ["build", "Build"],
+  ["trail", "Trail"],
+];
+export function moveBar(chips) {
+  return KINDS.flatMap(([kind, name]) => {
+    const mine = chips.filter((c) => c.kind === kind);
+    return mine.length ? mine.map((c) => ({ ...c, kind, enabled: true })) : [{ kind, label: name, enabled: false }];
+  });
+}
+
 // The cards of the table item a card belongs to (a build's all of them).
 function itemCards(code, table) {
   const item = (table ?? []).find((i) => i.cards.some((c) => c.card === code));

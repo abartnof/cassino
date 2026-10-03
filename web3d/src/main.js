@@ -500,7 +500,7 @@ async function main() {
         }))
         .sort((a, b) => a.delay - b.delay),
     );
-    dialogue.say(lines, (line, words, ms) => director.at(ms, () => overlay.say(line.who, words, director.handEdge(line.who)), "talk"));
+    dialogue.say(lines, (line, words, ms) => director.at(ms, () => overlay.say(line.who, words, speakerAt(line.who)), "talk"));
   }
 
   // ---- the score ------------------------------------------------------------
@@ -577,7 +577,42 @@ async function main() {
     overlay.placeBadges(list);
   }
   window.addEventListener("resize", placeBadges);
-  stage.onRender = placeBadges;
+  stage.onRender = () => {
+    placeBadges();
+    placeMoveBar();
+  };
+
+  // On a desktop (not a phone, upright or sideways, where the controls hold
+  // it): your hand's cards as they rest, a card chosen not lifted.
+  const desktop = () => !document.documentElement.classList.contains("upright") && !document.documentElement.classList.contains("sideways");
+  function yourHandOnScreen() {
+    const all = director.placement().filter((m) => m.zone === "your-hand");
+    const resting = all.filter((m) => m.code !== sel.chosen);
+    const cards = resting.length ? resting : all;
+    if (!cards.length) return null;
+    const points = cards.flatMap((m) => cardCorners(m.pose).map((c) => director.toScreen(c)));
+    const ys = points.map((p) => p.y);
+    const xs = points.map((p) => p.x);
+    return { top: Math.min(...ys), bottom: Math.max(...ys), right: Math.max(...xs) };
+  }
+  // The move bar, just under the table's first row (its near edge, a
+  // build's fan included), above your hand and a card chosen from it: where
+  // a move is chosen from. It stays put as the table fills, the rows
+  // growing away from you.
+  function placeMoveBar() {
+    if (!desktop()) return;
+    const near = director.toScreen(new Vector3(ZONES.middle.x, 0, ZONES.middle.z + CARD.height / 2 + ZONES.stack.dz)).y;
+    const hand = yourHandOnScreen();
+    const top = hand ? hand.top : director.handEdge("you").y;
+    overlay.placeMoveBar(Math.min(near + 14, top - 24));
+  }
+  // Where a line is said from: by the speaker's hand; yours, on a desktop,
+  // beside it, the move bar being above it.
+  function speakerAt(who) {
+    const hand = who === "you" && desktop() ? yourHandOnScreen() : null;
+    if (!hand) return director.handEdge(who);
+    return { x: hand.right + 18, y: hand.top + (hand.bottom - hand.top) * 0.35, side: true };
+  }
 
   // ---- phones ------------------------------------------------------------
 

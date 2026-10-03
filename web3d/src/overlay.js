@@ -14,6 +14,7 @@ import "@material/web/chips/assist-chip.js";
 import "@material/web/chips/chip-set.js";
 import "@material/web/iconbutton/icon-button.js";
 import { trackerTable } from "./scorebug.js";
+import { moveBar } from "./selection.js";
 
 // `later(ms, fn)` runs `fn` after `ms` on the table's clock (director.at),
 // so a box lingers as long as the table runs, and holds when it is held.
@@ -37,8 +38,7 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
       <p class="prompt" aria-live="polite"></p>
       <p class="note" aria-live="polite"></p>
       <p class="aid-line" hidden></p>
-      <div class="sum" hidden></div>
-      <md-chip-set class="chips"></md-chip-set>
+      <div class="move-bar" hidden><div class="sum" hidden></div><md-chip-set class="chips" aria-label="Your move"></md-chip-set></div>
       <md-filled-button class="next" hidden>Next hand</md-filled-button>
       <md-filled-button class="again" hidden>New game</md-filled-button>
       <md-outlined-button class="replay" hidden>Replay with both hands</md-outlined-button>
@@ -75,6 +75,7 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
   // `aid`: a line the aids add under the prompt (a hint, the sweep warning).
   // `replay`: { k, n, playing } while the game is replayed.
   // `after`: a line for the end of the game (the series, if one is played).
+  const bar = $(".move-bar");
   function show({ state, chips, sum: total, message, busy = false, aid = null, replay = null, after = null }) {
     prompt.textContent = replay ? "The game replayed, both hands face up." : busy ? "" : promptText(state, chips);
     if (!replay && !busy && after && state.prompt === "over") prompt.textContent += ` ${after}`;
@@ -90,15 +91,25 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
     note.textContent = message ?? "";
     sum.hidden = total == null;
     sum.textContent = total == null ? "" : `Sum ${total}`;
-    // The chips are made again only when the moves change, so one that has
-    // the keyboard's focus keeps it (the table review's T15).
-    const moves = chips.map((c) => `${c.move}|${c.label}`).join("\n");
+    // The move bar, always there on your turn (play-testing): Take, Build
+    // and Trail, lit when the choice makes one and dimmed when not
+    // (selection.js moveBar). The chips are made again only when what they
+    // offer changes, so one that has the keyboard's focus keeps it (the
+    // table review's T15).
+    bar.hidden = Boolean(replay) || state.watching || state.prompt !== "play";
+    const offered = moveBar(chips);
+    const moves = offered.map((c) => `${c.kind}|${c.label}|${c.move ?? ""}`).join("\n");
     if (chipSet.dataset.moves !== moves) {
       chipSet.dataset.moves = moves;
       chipSet.replaceChildren(
-        ...chips.map((c) => {
+        ...offered.map((c) => {
           const chip = document.createElement("md-assist-chip");
           chip.label = c.label;
+          chip.classList.add(c.kind);
+          if (!c.enabled) {
+            chip.disabled = true;
+            return chip;
+          }
           chip.dataset.move = c.move;
           if (c.call) chip.title = c.call;
           chip.addEventListener("click", () => onChip(c));
@@ -331,6 +342,17 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
   function say(who, words, anchor) {
     takeDown(who, true);
     if (!anchor || !words) return;
+    // Beside the hand, its tail pointing back at it (`anchor.side`): your
+    // words on a desktop, where the move bar sits above your hand.
+    if (anchor.side) {
+      const node = el("div", { class: `dialogue ${who} side`, role: "status" }, words);
+      afloat.append(node);
+      node.style.left = `${Math.min(anchor.x, window.innerWidth - node.offsetWidth - 8)}px`;
+      node.style.top = `${anchor.y}px`;
+      boxes[who] = node;
+      later(LINGER, () => boxes[who] === node && takeDown(who));
+      return;
+    }
     const node = el("div", { class: `dialogue ${who}`, role: "status" }, words);
     afloat.append(node);
     // Centred on the hand, kept on the screen, and clear of the HUD (the
@@ -375,7 +397,12 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
     log,
     hudSlot: $(".hud-slot"),
     said: () => [...afloat.querySelectorAll(".dialogue")].map((d) => ({ who: d.classList.contains("you") ? "you" : "them", words: d.textContent })),
-    chips: () => [...chipSet.children].map((c) => c.label),
+    chips: () => [...chipSet.children].filter((c) => !c.disabled).map((c) => c.label),
+    // Where the move bar is to sit on a desktop, between the table and your
+    // hand (the page measures it as the cards are drawn).
+    placeMoveBar(y) {
+      bar.style.setProperty("--move-bar-y", `${Math.round(y)}px`);
+    },
   };
 }
 
