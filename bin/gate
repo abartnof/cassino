@@ -1,15 +1,23 @@
 #!/usr/bin/env bash
-# The gate before every commit: formatting, lints, tests. Any failure stops it
-# with a non-zero status, so `bin/gate && git commit ...` cannot let one by.
+# The gate before every commit: formatting, lints, tests. It prints a short
+# summary and exits non-zero on any failure. Never pipe it (`| tail` would
+# hide its status): run it bare, as `bin/gate && git commit ...`.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env"
-cargo fmt --all -- --check
-cargo clippy --all-targets --quiet -- -D warnings
-if ! out=$(cargo test --quiet 2>&1); then
-  echo "$out" | tail -60 >&2
-  echo "gate: tests FAILED" >&2
+if ! cargo fmt --all -- --check >/dev/null 2>&1; then
+  echo "gate: FAILED: cargo fmt (run cargo fmt)" >&2
   exit 1
 fi
-echo "$out" | grep -E "^test result: ok\. [1-9]" || true
-echo "gate: ok"
+if ! out=$(cargo clippy --all-targets --quiet -- -D warnings 2>&1); then
+  echo "$out" | head -40 >&2
+  echo "gate: FAILED: clippy" >&2
+  exit 1
+fi
+if ! out=$(cargo test --quiet 2>&1); then
+  echo "$out" | grep -E "FAILED|panicked|error" | head -40 >&2
+  echo "gate: FAILED: tests" >&2
+  exit 1
+fi
+passed=$(echo "$out" | grep -oE "test result: ok\. [0-9]+ passed" | awk '{s += $4} END {print s}')
+echo "gate: ok ($passed tests passed)"

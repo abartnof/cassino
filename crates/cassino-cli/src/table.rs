@@ -4,24 +4,26 @@
 
 use std::io::{self, BufRead, Write};
 
-use cassino_core::agents::{self, Agent};
+use cassino_core::agents::Agent;
 use cassino_core::cards::{Card, CardSet, Suit};
 use cassino_core::game::Game;
 use cassino_core::hand::{Clinch, Event};
 use cassino_core::moves::Move;
+use cassino_core::opponent::Skill;
 use cassino_core::rules::{Game as Kind, Rules};
 use cassino_core::scoring::{Breakdown, Item};
 use cassino_core::table::{Seat, Table as Layout};
 use cassino_core::tournament::agent_rng;
+
 use cassino_core::words;
 
 #[derive(Clone, Debug)]
 pub struct Options {
     pub rules: Rules,
     pub seed: u64,
-    /// The computer players' levels, South then North. South's is used only
-    /// when watching.
-    pub levels: [u8; 2],
+    /// The computer players' skills (1 to `agents::TOP`), South then North.
+    /// South's is used only when watching.
+    pub skills: [f64; 2],
     /// Two computer players, no person.
     pub watch: bool,
     /// When watching, show both hands.
@@ -114,9 +116,9 @@ impl<R: BufRead, W: Write> Table<R, W> {
         let mut agents: [Option<Box<dyn Agent>>; 2] = [None, None];
         for seat in Seat::BOTH {
             if Some(seat) != self.human() {
-                let level = self.options.levels[seat.index()];
-                agents[seat.index()] =
-                    Some(agents::by_level(level, agent_rng(self.options.seed, seat)));
+                let skill = Skill(self.options.skills[seat.index()]);
+                let seed = agent_rng(self.options.seed, seat).next_u64();
+                agents[seat.index()] = Some(Box::new(skill.opponent(seed)));
             }
         }
         self.tell(&game, &Layout::new(), opening.as_slice())?;
@@ -447,7 +449,7 @@ mod tests {
         Options {
             rules,
             seed,
-            levels: [1, 2],
+            skills: [1.0, 2.5],
             watch,
             reveal: true,
             pause: false,
