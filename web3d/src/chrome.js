@@ -5,6 +5,7 @@
 // After piquet's overlay.js @ 254cb3c (the bar, its icons, the settings
 // dialog's rows and selects, the credits); the settings are cassino's.
 
+import "@material/web/button/filled-button.js";
 import "@material/web/button/filled-tonal-button.js";
 import "@material/web/button/outlined-button.js";
 import "@material/web/button/text-button.js";
@@ -206,6 +207,49 @@ export function createChrome(root, on) {
     el("div", { slot: "actions" }, el("md-filled-tonal-button", { onclick: () => credits.close() }, "Close")),
   );
 
+  // ---- the welcome ------------------------------------------------------------
+
+  // On opening the page: carry on with the game kept (if there is one),
+  // a new game, or the tutorial. `choose(choice)` is called once, with
+  // "continue", "new" or "tutorial"; closing the dialog any other way (the
+  // Escape key) carries on, or starts a new game.
+  const welcome = el("md-dialog", { class: "welcome-dialog" });
+  // Up from the call, not from when the dialog has drawn itself open (its
+  // `open` follows a render), so nothing else opens over it meanwhile.
+  let welcoming = false;
+  function showWelcome({ canContinue }, choose) {
+    welcoming = true;
+    let chosen = null;
+    const pick = (choice) => () => {
+      chosen = choice;
+      welcome.close();
+    };
+    const tutorialButton = el("md-outlined-button", { class: "welcome-tutorial", onclick: pick("tutorial") }, "Tutorial");
+    const fresh = canContinue
+      ? el("md-filled-tonal-button", { class: "welcome-new", onclick: pick("new") }, "New game")
+      : el("md-filled-button", { class: "welcome-new", onclick: pick("new"), autofocus: true }, "New game");
+    const carryOn = canContinue ? el("md-filled-button", { class: "welcome-continue", onclick: pick("continue"), autofocus: true }, "Continue") : null;
+    welcome.replaceChildren(
+      el("div", { slot: "headline" }, "Cassino"),
+      el(
+        "div",
+        { slot: "content", class: "welcome" },
+        el("p", {}, canContinue ? "Your game is where you left it." : "Two-handed Cassino, against the computer."),
+        el("p", {}, "New to the game? The tutorial explains each idea the first time it comes up, and shows the value of every build."),
+      ),
+      el("div", { slot: "actions" }, tutorialButton, fresh, carryOn),
+    );
+    welcome.addEventListener(
+      "closed",
+      () => {
+        welcoming = false;
+        choose(chosen ?? (canContinue ? "continue" : "new"));
+      },
+      { once: true },
+    );
+    welcome.show();
+  }
+
   // ---- the tutorial's pages ----------------------------------------------------
   const tutorial = el("md-dialog", { class: "tutorial-dialog" });
 
@@ -264,7 +308,7 @@ export function createChrome(root, on) {
     tutorial.show();
   }
 
-  root.append(bar, settings, credits, tutorial);
+  root.append(bar, settings, credits, tutorial, welcome);
 
   // Everything drawn from the person's settings and the state.
   let last = { prefs: null, state: null, busy: false };
@@ -323,7 +367,8 @@ export function createChrome(root, on) {
     settings,
     credits,
     showTutorial,
-    tutorialOpen: () => tutorial.open,
+    showWelcome,
+    tutorialOpen: () => tutorial.open || welcoming,
   };
 }
 

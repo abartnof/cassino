@@ -22,7 +22,7 @@ import { decodeBase64, loadEngine } from "./engine.js";
 import { createHud, hudEvents, ledgerOf } from "./hud.js";
 import { createOverlay } from "./overlay.js";
 import { badgeText, badgeTitle, badgesShown } from "./badges.js";
-import { badgesOn, dailySeed, loadPrefs, loadSeries, loadSitting, savePrefs, saveSeries, saveSitting, withUrl } from "./prefs.js";
+import { badgesOn, choosePlay, dailySeed, loadPrefs, welcomeWanted, loadSeries, loadSitting, savePrefs, saveSeries, saveSitting, withUrl } from "./prefs.js";
 import { recordGame, seriesLine } from "./series.js";
 import { createScene } from "./scene.js";
 import { trackers } from "./scorebug.js";
@@ -248,8 +248,9 @@ async function main() {
   // ---- the game -----------------------------------------------------------
 
   // A new sitting, played or watched, with the next game's rules; the
-  // opening deal waits for the house rules to be agreed aloud.
-  function newGame({ seed = randomSeed(), watch = false } = {}) {
+  // opening deal waits for the house rules to be agreed aloud. `welcome`:
+  // the table held at the pack while the welcome asks how to begin.
+  function newGame({ seed = randomSeed(), watch = false, welcome = false } = {}) {
     replay = null;
     badgeFrom = null;
     lastMove = null;
@@ -267,6 +268,17 @@ async function main() {
     const dealt = !params.has("nodeal");
     const opening = dialogue.words(speech(state, 0));
     const timing = director.restart(state, { dealt, waits: dealt ? openingTalk(state, opening) : {} });
+    // The welcome holds the clock before anything timed on it, the talk
+    // included, can come (a line scheduled first would slip out behind it).
+    if (welcome)
+      director.gate(0, (release) =>
+        chrome.showWelcome({ canContinue: false }, (choice) => {
+          change(choosePlay(choice));
+          release();
+          refresh();
+          introduce();
+        }),
+      );
     if (dealt) {
       talk(state, 0, timing, opening);
       const deal = state.events.findIndex((e) => e.kind === "dealt") + 1;
@@ -276,6 +288,14 @@ async function main() {
     persist();
     refresh();
     tutorialSince = 0;
+    introduce();
+  }
+
+  // The welcome's choice over a game kept: carry on, or begin afresh.
+  function begin(choice) {
+    change(choosePlay(choice));
+    if (choice !== "continue") return newGame();
+    refresh();
     introduce();
   }
 
@@ -713,8 +733,9 @@ async function main() {
     director.restart(state);
     scoreShown();
     refresh();
+    if (welcomeWanted(params)) chrome.showWelcome({ canContinue: true }, begin);
   } else {
-    newGame({ watch: params.has("watch") });
+    newGame({ watch: params.has("watch"), welcome: welcomeWanted(params) });
   }
   document.getElementById("loading").remove();
 

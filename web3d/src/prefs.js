@@ -137,6 +137,21 @@ export function withUrl(prefs, params) {
   return out;
 }
 
+// The welcome on opening the page (Continue, New game, Tutorial): shown
+// unless the address asks for a game (a shared game's seed, watch mode)
+// or for none (welcome=0, for tests).
+export function welcomeWanted(params) {
+  return !params.has("seed") && !params.has("watch") && params.get("welcome") !== "0";
+}
+
+// What a choice at the welcome sets: the tutorial on from its first page
+// again, or a game without it; continuing changes nothing.
+export function choosePlay(choice) {
+  if (choice === "tutorial") return { tutorial: true, seen: [] };
+  if (choice === "new") return { tutorial: false };
+  return {};
+}
+
 // The sitting under way, as the engine saves it (state.saved), to restore
 // on reload; null to forget it.
 export function loadSitting(store) {

@@ -54,6 +54,9 @@ def open_page(browser, query="seed=7", viewport=None, calm=False):
     # The tutorial's pages would hold the table: off, unless being tested.
     if "tutorial" not in query:
         query += "&tutorial=0"
+    # Nor the welcome, unless it is what is tested.
+    if "welcome" not in query:
+        query += "&welcome=0"
     page.goto(f"{PAGE.as_uri()}?{query}")
     page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
     return page
@@ -314,6 +317,39 @@ def check_trackers(browser, failures):
     settle(page)
     if page.locator(".tracker-table").is_visible() or not page.locator(".aids-title").is_visible():
         failures.append("the trackers' panel did not stay folded across a reload")
+    page.context.close()
+
+
+def check_welcome(browser, failures):
+    """The welcome on opening: the table held at the pack until a choice;
+    the tutorial chosen turns the tutorial on, from its first page; with a
+    game kept, Continue is offered and carries on with it."""
+    page = open_page(browser, "welcome=1&tutorial")
+    page.wait_for_timeout(1500)
+    dialog = page.locator(".welcome-dialog")
+    if not dialog.is_visible() or page.locator(".welcome-continue").count():
+        failures.append("the welcome did not open, or offered to continue with no game kept")
+        return
+    if page.evaluate("window.cassino3d.state().events.length") and page.evaluate("window.cassino3d.said().length"):
+        failures.append("the table talked behind the welcome")
+    shot(page, "t10-welcome")
+    page.locator(".welcome-tutorial").click()
+    page.locator(".tutorial-dialog .tutorial-close").wait_for(state="visible", timeout=10_000)
+    prefs = page.evaluate("window.cassino3d.prefs()")
+    if not prefs["tutorial"] or prefs["seen"] not in ([], ["intro"]):
+        failures.append(f"the tutorial chosen did not turn it on from its first page: {prefs['tutorial']}, {prefs['seen']}")
+    page.locator(".tutorial-close").click()
+    settle(page)
+    page.reload()
+    page.wait_for_timeout(1500)
+    if not page.locator(".welcome-continue").is_visible():
+        failures.append("no Continue offered with a game kept")
+    else:
+        saved = page.evaluate("window.cassino3d.state().saved")
+        page.locator(".welcome-continue").click()
+        page.wait_for_timeout(500)
+        if page.evaluate("window.cassino3d.state().saved") != saved:
+            failures.append("Continue did not carry on with the game kept")
     page.context.close()
 
 
@@ -625,6 +661,7 @@ def main() -> int:
         check_settings(browser, failures)
         check_badges(browser, failures)
         check_trackers(browser, failures)
+        check_welcome(browser, failures)
         check_tutorial(browser, failures)
         check_phone(browser, failures)
         page = open_page(browser, "seed=11&skill=4&manual", calm=True)

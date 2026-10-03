@@ -2,7 +2,7 @@
 // fail, the URL's overrides, and the daily deal.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DEFAULTS, SKILLS, badgesOn, dailySeed, loadPrefs, savePrefs, loadSitting, saveSitting, withUrl } from "../src/prefs.js";
+import { DEFAULTS, SKILLS, badgesOn, choosePlay, dailySeed, loadPrefs, welcomeWanted, savePrefs, loadSitting, saveSitting, withUrl } from "../src/prefs.js";
 
 function memory() {
   const items = new Map();
@@ -71,6 +71,20 @@ test("the trackers' panel starts open, and stays as it was left", () => {
   const store = memory();
   savePrefs(store, { ...DEFAULTS, trackersOpen: false });
   assert.equal(loadPrefs(store).trackersOpen, false);
+});
+
+test("the welcome: shown on opening, unless the address asks for a game", () => {
+  assert.equal(welcomeWanted(new URLSearchParams("")), true);
+  assert.equal(welcomeWanted(new URLSearchParams("skill=2")), true);
+  assert.equal(welcomeWanted(new URLSearchParams("seed=7")), false, "a shared game's link goes straight to it");
+  assert.equal(welcomeWanted(new URLSearchParams("watch")), false);
+  assert.equal(welcomeWanted(new URLSearchParams("welcome=0")), false);
+});
+
+test("the welcome's choices: the tutorial from its first page, or a game without it", () => {
+  assert.deepEqual(choosePlay("tutorial"), { tutorial: true, seen: [] });
+  assert.deepEqual(choosePlay("new"), { tutorial: false });
+  assert.deepEqual(choosePlay("continue"), {});
 });
 
 test("the skill dial runs from 1 to 4 in halves", () => {
