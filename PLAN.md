@@ -9,8 +9,14 @@
 **2026-10-03: the engine is complete for both games and runs in WebAssembly.**
 A measured four-rung opponent with a skill dial; explanations, hints and the
 selection interface; the session and its JSON protocol; a 334 KB module that
-plays a whole game in Node at 10–16 ms a command. 205 tests, all passing
-(`bin/gate`). A full code review by a separate agent is under way.
+plays a whole game in Node at 10–16 ms a command, byte for byte as the native
+build does. 228 tests, all passing (`bin/gate`).
+
+**Reviewed.** A full code review by a separate agent
+(`docs/reviews/2026-10-03-engine.md`) found one rules-level hole and seven
+robustness problems; all are fixed, test first. The hole: under aces 1 or
+14, one ace could guard a build of 1 and a build of 14 at once, leaving no
+legal move. RULES.md now says each held card answers for one build value.
 
 - **The engine** (`crates/cassino-core`): cards, values for Classic, Royal
   and Royal with aces at 14, the table and builds, move generation, checking
@@ -42,7 +48,12 @@ plays a whole game in Node at 10–16 ms a command. 205 tests, all passing
 - **The terminal client** (`cargo run -p cassino-cli`): a client of the
   session, at `--skill 1-4` with `--explain`, `hint` and undo, or `--watch`.
 - **Measurement**: mirrored pairs, sequential with O'Brien–Fleming
-  boundaries (`cargo run --release --bin measure`); `bench` for speeds.
+  boundaries (`cargo run --release --bin measure`); `anatomy` for where an
+  agent's points come from; `bench` for speeds. Two principled ideas were
+  measured and dropped: card weights that follow the piles, and playing the
+  last deal for the game (`measurements/README.md`).
+- **Determinism**: golden games (`crates/cassino-wasm/tests/golden.txt`)
+  checked natively and through the module in Node.
 
 ## Settled decisions
 
@@ -82,8 +93,8 @@ plays a whole game in Node at 10–16 ms a command. 205 tests, all passing
 - [x] 7. **Explanations and hints**: notes, hints, ratings, the selection
   offer with reasons, sweep warnings, the unseen-card summary.
 - [x] 8. **The session, the protocol and the wasm module**:
-  `docs/PROTOCOL.md`; the CLI on the session; a Node smoke test. (A
-  byte-for-byte native/wasm replay test is still to add.)
+  `docs/PROTOCOL.md`; the CLI on the session; saved sittings; golden games,
+  native and wasm byte for byte; a Node smoke test.
 - [ ] 9. **The 3D table**, adapted from piquet's: art for 52 cards, the
   middle-of-the-table layout, builds, the cribbage board, the table talk.
 - [ ] 10. **Teaching**: tutorial pages, on-screen help.
