@@ -273,15 +273,14 @@ three", and fly the cards over group by group.
   Swept { seat }
   Cash { seat }                      // an ace took an ace
   Clinched { seat, what: Cards | Spades }   // 27th card / 7th spade
-  Left { seat, could_take: CardSet } // the card played could have taken these
   Residue { seat: Option<Seat>, cards }
   Scored { breakdown }               // in Foster's count order
   ```
 
   `Clinched` is the moment physical players claim mid-hand: "spades or cards
-  as soon as one player has captured 7 or 27 of them" [02-S1]. `Left` is the
-  Dominican custom of pointing out *dejado* ("left behind") cards [02-S3]
-  (§12.1).
+  as soon as one player has captured 7 or 27 of them" [02-S1]. The Dominican
+  custom of pointing out *dejado* ("left behind") cards [02-S3] is a note
+  (`advice::Note::LeftBehind`), not an event (§12.1).
 - **The breakdown** follows Foster's count order: cards, spades, Big Casino,
   Little Casino, aces in the order ♠ ♣ ♥ ♦, then sweeps [03-S31][02-S1]. It
   carries the checksum (eleven, or eight with a tie for cards).
@@ -387,11 +386,14 @@ player reads, never a proper name.
 
 After the sixth deal, both hands are known to a counting player. That leaves
 eight plies of perfect information. Alpha-beta search with move ordering and
-a small transposition table solves it in milliseconds. The objective is the
-*game*, not the hand: near 21, one point that carries you over is worth more
-than three that do not. Piquet's "a point is not a point in a partie" lesson
-applies directly. The solver maximizes the probability of winning the game,
-given both totals, through the end-of-hand scoring.
+a transposition table solves it, in a median of 5 ms natively.
+
+The objective is the hand's points margin. Piquet's lesson, that "a point is
+not a point in a partie", suggested playing the last deal for the *game*
+instead: a hand that carries a player over 21 is worth more than its points.
+That was built and measured over 400 pairs of whole games, and made no
+difference (+0.005 games a pair). The last deal of the deciding hand rarely
+turns on it, so it was taken out (`measurements/README.md`).
 
 ### 11.3 Earlier deals
 

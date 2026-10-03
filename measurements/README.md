@@ -96,3 +96,9 @@ from, per hand, averaged over both seats of N mirrored pairs (Classic).
 | 2026-10-03 | 4 searcher | 3 counter | Classic, sweeps not scored | hand | 50 × 4 | **Clear at look 1**: +4.06 ± 0.90 |
 
 Every rung beats the one below in every setting.
+
+## Playing the last deal for the game
+
+| Date | A | B | Rules | Unit | Plan | Result |
+|---|---|---|---|---|---|---|
+| 2026-10-03 | searcher, last deal solved for the game (100 for deciding it, plus the margin) | 4 searcher | Classic | game | 100 × 4 | No clear difference after 400 pairs: +0.005 games a pair, 95% interval −0.005 to +0.015. Reverted (code in 49aed21) |
