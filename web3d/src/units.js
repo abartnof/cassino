@@ -106,7 +106,7 @@ export const ZONES = Object.freeze({
   // cards crosswise in the pile, each offset a little from the last.
   yourPile: Object.freeze({ x: 34, z: 6, sweepStep: 1.4 }),
   theirPile: Object.freeze({ x: -34, z: -20, sweepStep: 1.4 }),
-  // The count row: a finished hand's counted aces and Casinos, face up from
+  // The count row: a finished hand's counted aces and Cassinos, face up from
   // their taker's pile toward the middle, `first` from the pile and `step`
   // apart.
   count: Object.freeze({ first: 10, step: 7.75 }),

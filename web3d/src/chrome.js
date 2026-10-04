@@ -83,9 +83,9 @@ const AIDS = [
 ];
 const PAGE_AIDS = [
   ["tutorial", "Tutorial", "Its pages open by themselves the first time each idea comes up. The question mark has them at any time"],
-  ["trackers", "Trackers", "Each player's captures under their score: cards, spades, aces, the Casinos, sweeps"],
+  ["trackers", "Trackers", "Each player's captures under their score: cards, spades, aces, the Cassinos, sweeps"],
   ["buildValues", "Build values", "A badge with each build's value, always in view. Always on while the tutorial is"],
-  ["unseen", "Cards still out", "Which aces and Casinos, and how many spades, you have not seen"],
+  ["unseen", "Cards still out", "Which aces and Cassinos, and how many spades, you have not seen"],
   ["sweepWarning", "Sweep warning", "Say when a single card would clear the table"],
   ["undo", "Undo", "Allow taking back a move"],
 ];

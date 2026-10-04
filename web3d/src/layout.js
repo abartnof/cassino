@@ -184,7 +184,7 @@ function pileOf(who, count, sweeps, drawn, Z) {
   });
 }
 
-// The count row: the aces and Casinos a player's count names, face up and
+// The count row: the aces and Cassinos a player's count names, face up and
 // in the count's order, laid out from their pile toward the middle of the
 // table, which is clear by then.
 function countRow(who, codes, Z) {

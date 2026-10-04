@@ -132,7 +132,7 @@ test("a sweep lies where it was laid: later captures cover it, its ends showing"
   );
 });
 
-test("a finished hand's counted aces and Casinos lie face up before their taker's pile, in the count's order", () => {
+test("a finished hand's counted aces and Cassinos lie face up before their taker's pile, in the count's order", () => {
   const scored = {
     kind: "scored",
     hand: 1,
