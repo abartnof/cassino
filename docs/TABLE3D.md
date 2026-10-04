@@ -187,7 +187,7 @@ play-testing found "Your deal." said after your opponent had played: your
 opponent's first move now waits for the opening's calls (`main.js`
 `openingWaits`, planned on the opening's moments, `director.preview`),
 which the deal does not. A capture that
-takes a casino card ("Now I have Big Casino.") or a haul of four table cards
+takes a cassino card ("Now I have Big Cassino.") or a haul of four table cards
 or more ("A good haul.") is remarked by its maker, unless a sweep or cash
 speaks for it. Cards tied at 26 each are said before the chant ("The cards
 are a tie.", Harper's Bazaar, 1883).
@@ -196,12 +196,12 @@ are a tie.", Harper's Bazaar, 1883).
 the conversation a part of the game, as it is in Cuarenta, played loud and
 full of sayings: "you have to turn into a chatterbox", research/05). With
 everything said, every move is remarked: a trail named ("A seven for the
-table."; Little Casino laid down as "a point, if you take it"), a pair or a
+table."; Little Cassino laid down as "a point, if you take it"), a pair or a
 sum claimed ("Nine takes nine.", "That makes eight."), your own build taken
 in ("Eight out.", KASA's call) or your opponent's ("I'll have your eight.",
 "My build!"), a build answered with what it tells of the builder's hand
 ("So you have an eight."), a raise felt by the builder ("Hey, that was my
-eight!"), a sweep, a Casino or an ace felt by the other ("It's hard on
+eight!"), a sweep, a Cassino or an ace felt by the other ("It's hard on
 those who get swept.", 1878; "Such luck!"). The dealer announces a new hand
 and each deal, "Last." is answered ("The boat's leaving!"), your opponent
 thinks aloud now and then before a move ("With this one, I'll fall on
@@ -272,13 +272,13 @@ Material Design 3, from piquet's shell.
     reached (6 px), the cursor (12 px) or unreached (4 px). The lines never
     slide: scoring lights the next segments in a wave (each flares to 20 px
     at 38% of 760 ms, 70 ms apart) and dims the old cursor;
-  - when a player scores, a **popup** rolls in over their row ("Big Casino
+  - when a player scores, a **popup** rolls in over their row ("Big Cassino
     +2", the word left, the points larger), the number ticks up beneath
     it, and after 1.7 s the row rolls back, its line's new segments
     rippling and the score popping. The **chevron** sits at the right,
     across both rows;
   - the chevron opens the **ledger**: every hand's six lines in the
-    counting order (most cards, most spades, Big Casino, Little Casino,
+    counting order (most cards, most spades, Big Cassino, Little Cassino,
     aces, sweeps), its subtotal under them, "Hand N · live" for the hand
     under way, and the total. One level, no further toggles;
   - three springs, sampled for CSS `linear()`: fast spatial (damping 0.6,
@@ -292,7 +292,7 @@ Material Design 3, from piquet's shell.
   the count's aces come as one popup a player, at the first ace's line;
   popups queue one side at a time (about 2 s each), and a hand joins the
   ledger once its popups have played; the line stops at 21 but the scores
-  go past it; the card names keep the game's spelling (Big Casino). Not
+  go past it; the card names keep the game's spelling (Big Cassino). Not
   carried over from the spec, as it says: no 18-20 endgame zone, no marks
   under the scores. Our own aids keep to their own panel (below).
 - **Trackers** (each a toggle), in a panel of the HUD's palette at the foot
@@ -300,7 +300,7 @@ Material Design 3, from piquet's shell.
   by default; kept as left): a table with a column for each point (Cards,
   Spades, Aces, 10♦, 2♠, and Sweeps when they score) and a row for each
   player, only the value in each cell (`scorebug.js` `trackerTable`). A
-  point certain to be a player's (27 cards, 7 spades, a Casino taken) is
+  point certain to be a player's (27 cards, 7 spades, a Cassino taken) is
   filled in; one that is the other's is dimmed. Every header and cell has
   a tip: what the column counts and scores, and in the cell how far the
   player is from making a point certain. Then the cards still out
@@ -310,7 +310,7 @@ Material Design 3, from piquet's shell.
   what would clear the table now (`state.sweep_values`).
 - **Scores celebrated on the table** (play-testing asked for the HUD's
   popups on the table too): as each line of the count is scored, a disc
-  with its words ("Big Casino", "Ace", "Most cards") pops in just above the
+  with its words ("Big Cassino", "Ace", "Most cards") pops in just above the
   card it names, turned up in the count row, or its taker's pile, clear of
   it (below it where there is no room above, under the HUD), and four of
   its points ("+2", white, inked as the disc is) burst out of it like a
@@ -320,7 +320,7 @@ Material Design 3, from piquet's shell.
   motion, the disc and its points fade in place (`scorebug.js`
   `celebrationOf`, `overlay.js` `celebrate`).
 - **The count ritual**: at the end of a hand, the lines of `scored.count` one
-  at a time in Foster's order: each ace and Casino turns up out of its
+  at a time in Foster's order: each ace and Cassino turns up out of its
   taker's pile into a row (`layout.js` lays out a counted hand; the
   choreography's `count` stage times each card to its line), the HUD's
   popups tell each line's points, and the winner of each line chants it.
@@ -374,7 +374,7 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   clicking with the motion on, and saves strips of the deal, a gather and a
   sweep (`t3-deal`, `t3-gather`, `t3-sweep`).
 - **T4. The score and the count.** Score, trackers, the count ritual, the
-  end of the game. **Done**: at the end of a hand, each ace and Casino the
+  end of the game. **Done**: at the end of a hand, each ace and Cassino the
   count names turned up out of its taker's pile into a count row as its
   line is told; trackers (`scorebug.js`, pure and node-tested). The score
   was first a broadcast's bug and a paper score sheet; both gave way to the

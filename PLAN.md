@@ -64,7 +64,7 @@ legal move. RULES.md now says each held card answers for one build value.
   origin headers. Done: T0 the scaffold, T1 the state laid out, T2 a move
   chosen by tapping, T3 the motion (the deal in twos, trails, builds, the
   gather of a capture turned over into its pile, sweeps held up and laid
-  crosswise), T4 the score and the count (each ace and Casino turned up as
+  crosswise), T4 the score and the count (each ace and Cassino turned up as
   its line is told; live trackers), T5 the table talk (a sourced phrase bank, `docs/PHRASES.md`; the
   house rules agreed aloud as the cards are dealt, the build calls, "Last.",
   "Clear!", the count chanted), T6 settings and aids (rules, skill, today's
@@ -156,7 +156,11 @@ legal move. RULES.md now says each held card answers for one build value.
   a desktop, from 71); and on a phone held upright the move bar between
   the table and your hand, as on a desktop. The trackers' panel folded at
   first, its whole heading the button that opens and folds it. The
-  tutorial's page on the ace's 1 or 14 folded into Royal's.
+  tutorial's page on the ace's 1 or 14 folded into Royal's. "Cassino" the
+  canonical spelling everywhere the game speaks or the documents name it
+  (Big and Little Cassino in the sentences, the score, the tips, the talk,
+  the tutorial and the terminal); quotations, the titles of pagat's pages,
+  the research notes and code identifiers such as `big_casino` keep theirs.
 - **The South African game, researched**
   (`research/12-south-african-khasino.md`): KASA's rulebooks and its own
   online game as the canonical sources, twenty open-source engines, and

@@ -19,12 +19,12 @@
 export const CATS = Object.freeze([
   ["cards", "Most cards"],
   ["spades", "Most spades"],
-  ["big", "Big Casino"],
-  ["little", "Little Casino"],
+  ["big", "Big Cassino"],
+  ["little", "Little Cassino"],
   ["aces", "Aces"],
   ["sweeps", "Sweeps"],
 ]);
-const POPUP = { cards: "Most cards", spades: "Most spades", big: "Big Casino", little: "Little Casino", aces: "Aces", sweeps: "Sweep" };
+const POPUP = { cards: "Most cards", spades: "Most spades", big: "Big Cassino", little: "Little Cassino", aces: "Aces", sweeps: "Sweep" };
 const CAT_OF = { cards: "cards", spades: "spades", big_casino: "big", little_casino: "little", ace: "aces", sweeps: "sweeps" };
 const sideOf = (you) => (you ? "you" : "opp");
 export const N = 21;

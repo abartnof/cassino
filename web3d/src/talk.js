@@ -14,7 +14,7 @@
 // person would say, we say); the talk is cassino's: the house rules agreed
 // aloud before the game (Jack London's players), the build calls in the
 // singular and the plural and a raise by its new total (Dick, Foster, the
-// Hoyles), the dealer's "Last.", "Clear!" for a sweep, "Cash.", a casino
+// Hoyles), the dealer's "Last.", "Clear!" for a sweep, "Cash.", a cassino
 // card or a haul of several taken, the clinches, the custom of pointing out
 // what an opponent left, and the count chanted, a tie on the cards first.
 // All of it kind: nothing said belittles anyone.
@@ -31,7 +31,7 @@ function following(events, at) {
 }
 
 // What a capture says, if nothing else speaks for it (a sweep, cash): a
-// casino card taken, or a haul of several cards. A plain capture says
+// cassino card taken, or a haul of several cards. A plain capture says
 // nothing, so the table does not chatter on every move.
 function taking(e, then) {
   if (then.has("swept") || then.has("cash")) return null;
@@ -263,7 +263,7 @@ function played(e, at, who, did, events, since, remark, say) {
         else remark(who, "take-sum", { value: number(e.value ?? card.rank) });
       }
     }
-    // What the other player feels: a build lost, a Casino or an ace gone,
+    // What the other player feels: a build lost, a Cassino or an ace gone,
     // a haul (a sweep is felt as it is claimed).
     if (stolen) remark(them, "lost-build", { value: number(stolen.value) });
     else if (!loud && taken.includes("TD")) remark(them, "big-casino-gone");

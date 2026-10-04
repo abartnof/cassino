@@ -471,7 +471,7 @@ def check_cheers(browser, failures):
                 look();
             })""")
             labels = {label for label, _ in seen}
-            if not labels or not labels <= {"Most cards", "Most spades", "Big Casino", "Little Casino", "Ace"}:
+            if not labels or not labels <= {"Most cards", "Most spades", "Big Cassino", "Little Cassino", "Ace"}:
                 failures.append(f"the count was not celebrated on the table: {seen}")
             if any(n != 4 for _, n in seen):
                 failures.append(f"a celebration without its four bursts: {seen}")

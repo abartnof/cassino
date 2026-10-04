@@ -227,8 +227,8 @@ At the end of each hand [02-S1]:
 |---|---|
 | Most cards (27 or more of 52) | 3 |
 | Most spades (7 or more of 13) | 1 |
-| Big Casino, the ten of diamonds | 2 |
-| Little Casino, the two of spades | 1 |
+| Big Cassino, the ten of diamonds | 2 |
+| Little Cassino, the two of spades | 1 |
 | Each ace | 1 |
 | Each sweep (when scored) | 1 |
 

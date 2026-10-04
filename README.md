@@ -34,7 +34,7 @@ saved to your own machine plays offline.
   how each rung was measured against the others).
 - **The table** is drawn with three.js and Material Web (`web3d/`): the cards
   dealt in twos, captures gathered and turned into their taker's pile, the
-  count with each ace and Casino turned up, the table talk of the period
+  count with each ace and Cassino turned up, the table talk of the period
   books and a score HUD. It works on a phone held either way.
 - A **terminal version** plays the same game: `cargo run -p cassino-cli`.
 

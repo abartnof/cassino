@@ -22,18 +22,18 @@ Sources:
 - **B**: BoardGameGeek's players on sweeps: "we play with them every single time"; "it's just the luck of the deal" [05-S74]
 - **L**: Jack London's players (1912): "Do you count sweeps?" "Certainly not." "Low deals." "I'll make 'cards'" [04-S28]
 - **Ha**: Harper's Bazaar (1883), a father at the count: "The cards are a tie, Katy, so neither of us takes that point." [04-S135]
-- **Ar**: Ardmore's novel To Love Is to Listen (1967): at Big Casino, a player "screamed the word, 'Luck!'"; "You would have big cassino for the last. Such luck!" [04-S82]
+- **Ar**: Ardmore's novel To Love Is to Listen (1967): at Big Cassino, a player "screamed the word, 'Luck!'"; "You would have big cassino for the last. Such luck!" [04-S82]
 - **Fe**: Feydeau, in English translation: the count chanted, "Cards... Spades... Ten of diamonds...", "Deuce... Aces...", and "Clean sweep!" [04-S159]
 - **N**: the New York Dispatch's answers column (1877-1881): a build "calling 'seven'" or "calls it six", "sevens", "fives all", "I have three points, and am out" [04-S155][04-S130]
-- **Sw**: the Swedish game's calls, in translation: "bygger till knekt" (building to jack), "sistan" (the last one), "sista given" (last deal), "storan" and "lillan" (the big one, the little one) [10-S24][10-S25]; two players in Finland, "Nu har jag stora kasino", "och jag har lilla" (now I have Big Casino; and I have Little) [10-S13]
+- **Sw**: the Swedish game's calls, in translation: "bygger till knekt" (building to jack), "sistan" (the last one), "sista given" (last deal), "storan" and "lillan" (the big one, the little one) [10-S24][10-S25]; two players in Finland, "Nu har jag stora kasino", "och jag har lilla" (now I have Big Cassino; and I have Little) [10-S13]
 - **Fi**: the Finnish game, in translation: the call "rakennan ässälle" (I'm building for the ace) [10-S1]; a big capture, a "kahmaisu" (a grab) [10-S8]
 - **Hu**: Tandori's Hungarian count, in translation: "Card majority! Spade majority! big c., little c., the four aces!" [10-S56]
 - **Ru**: the Russian rules, in translation: a sweep is "to sweep clean" [10-S57]
 - **Ge**: pagat's German edition: the dealer's warning, "Letzte Runde" (last round), in translation [02-S29]
 - **Do**: the Dominican custom of pointing out the cards an opponent left behind (dejado) [02-S3]; the words are ours
 - **Ec**: Cuarenta, Ecuador's cousin of the game, played loud and full of sayings ("hay que ponerse charlatán": you have to turn into a chatterbox): "Dos, señor juez" (two, Mr. Judge), "Con esta te caigo" (with this one I'll fall on you), "As que no me caerás" (ace, you won't fall on me), in translation [05-S56][05-S57][05-S59]
-- **Fs**: Finnish, in translation: the story "Iso casino" (1938), "this was a big casino for me" [10-S6]
-- **Gu**: a French novel (1986), on laying down the deuce of spades: "Little Casino, a point for you, if you take it", in translation [10-S62]
+- **Fs**: Finnish, in translation: the story "Iso casino" (1938), "this was a big cassino for me" [10-S6]
+- **Gu**: a French novel (1986), on laying down the deuce of spades: "Little Cassino, a point for you, if you take it", in translation [10-S62]
 - **Ti**: the German "eine Karte für den Tisch bringen" (bring a card for the table), in translation [05-S45]
 - **Bt**: the Swedish dealer's warning, "Båten går!" (the boat's leaving), in translation [05-S34][10-S24]
 - **Ka**: KASA, the South African game: "8 out", said on taking your own build of eight [12-S6]
@@ -369,19 +369,19 @@ Sources:
 |  | Ace takes ace. | T |
 |  | That's cash. | T |
 |  | Ace on ace: cash. | T |
-| `take-big-casino` | Now I have Big Casino. | Sw |
-|  | Luck! Big Casino. | Ar |
+| `take-big-casino` | Now I have Big Cassino. | Sw |
+|  | Luck! Big Cassino. | Ar |
 |  | The big one's mine. | Sw |
 |  | I'll have the good ten. | P |
 |  | That's two points. | T |
-|  | Big Casino comes to me. | T |
+|  | Big Cassino comes to me. | T |
 |  | Two, Mr. Judge! | Ec |
-| `take-little-casino` | I have Little Casino. | Sw |
+| `take-little-casino` | I have Little Cassino. | Sw |
 |  | The little one's mine. | Sw |
 |  | I'll have the good two. | P |
-|  | Little Casino, and a point. | T |
+|  | Little Cassino, and a point. | T |
 |  | That's a point. | T |
-|  | Casino's younger brother! | Po |
+|  | Cassino's younger brother! | Po |
 |  | One, Mr. Judge! | Ec |
 | `take-many` | A good haul. | T |
 |  | That's a grab! | Fi |
@@ -389,7 +389,7 @@ Sources:
 |  | As many as I can, with one card. | Lo |
 |  | In they all come. | T |
 |  | Quite a pile. | T |
-|  | That was a big casino for me. | Fs |
+|  | That was a big cassino for me. | Fs |
 | `clinch-cards` | That's the cards. | P |
 |  | Twenty-seven. The cards are mine. | T |
 |  | That's twenty-seven. | T |
@@ -508,18 +508,18 @@ Sources:
 |  | Spade majority! | Hu |
 |  | Majority of spades. | Lo |
 |  | One for spades. | T |
-| `count-big-casino` | Big Casino. | T |
+| `count-big-casino` | Big Cassino. | T |
 |  | Ten of diamonds. | Fe |
 |  | The big one. | Sw |
-|  | Great Casino. | Po |
+|  | Great Cassino. | Po |
 |  | The good ten. | P |
-|  | Two for Big Casino. | T |
-| `count-little-casino` | Little Casino. | T |
+|  | Two for Big Cassino. | T |
+| `count-little-casino` | Little Cassino. | T |
 |  | Deuce. | Fe |
 |  | The little one. | Sw |
 |  | The deuce of spades. | Lo |
 |  | The good two. | P |
-|  | Little Casino, one. | T |
+|  | Little Cassino, one. | T |
 | `count-ace-S` | The ace of spades. | T |
 |  | Ace of spades. | T |
 |  | An ace. | Fe |
@@ -632,14 +632,14 @@ Sources:
 |  | I'll let an ace go. | T |
 |  | An ace for the table. | Ti |
 |  | An ace. Careful, now. | T |
-| `trail-little-casino` | Little Casino: a point, if you take it. | Gu |
+| `trail-little-casino` | Little Cassino: a point, if you take it. | Gu |
 |  | The deuce of spades. Yours, if you can. | T |
 |  | A point on the table. Who'll have it? | T |
-|  | Little Casino goes down. | T |
-| `trail-big-casino` | Big Casino goes down. | T |
+|  | Little Cassino goes down. | T |
+| `trail-big-casino` | Big Cassino goes down. | T |
 |  | Two points on the table. | T |
 |  | The good ten. Yours, if you can. | P |
-|  | Big Casino, for whoever can take it. | T |
+|  | Big Cassino, for whoever can take it. | T |
 | `take-pair` | {Cards}. | T |
 |  | A pair of {cards}. | T |
 |  | {Card} takes {card}. | T |
@@ -699,7 +699,7 @@ Sources:
 |  | Never leave one card alone, they say. | SM |
 |  | Oh, nicely done. | T |
 | `big-casino-gone` | Such luck! | Ar |
-|  | There goes Big Casino. | T |
+|  | There goes Big Cassino. | T |
 |  | I had my eye on that one. | T |
 |  | Ah, the good ten. | P |
 |  | Two points, just like that. | T |
@@ -707,7 +707,7 @@ Sources:
 | `little-casino-gone` | There goes the little one. | T |
 |  | Ah, the deuce of spades. | T |
 |  | A point for you. | T |
-|  | Little Casino, gone. | T |
+|  | Little Cassino, gone. | T |
 |  | The good two. Nicely done. | P |
 | `ace-gone` | There goes an ace. | T |
 |  | An ace for you. | T |
@@ -718,7 +718,7 @@ Sources:
 |  | That's a handful. | T |
 |  | Quite a haul. | T |
 |  | Save a few for me. | T |
-|  | That was a big casino for you. | Fs |
+|  | That was a big cassino for you. | Fs |
 | `think` | Hmm. | T |
 |  | Let me see. | T |
 |  | Now then. | T |
@@ -783,7 +783,7 @@ Sources:
 |  | No hurry. | T |
 |  | At your leisure. | Ol |
 |  | Tocca a te. Your turn. | It |
-|  | If I were a card, I'd be Big Casino. | Rd |
+|  | If I were a card, I'd be Big Cassino. | Rd |
 |  | Thinking it over? | T |
 |  | Whenever you're ready. | T |
 |  | A tough one? | T |

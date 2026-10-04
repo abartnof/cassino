@@ -1,7 +1,7 @@
 //! The count at the end of a hand (`docs/RULES.md` rule 10).
 //!
-//! The breakdown follows Foster's count order: cards, spades, Big Casino,
-//! Little Casino, the aces in the order ♠ ♣ ♥ ♦, then sweeps [03-S31][02-S1].
+//! The breakdown follows Foster's count order: cards, spades, Big Cassino,
+//! Little Cassino, the aces in the order ♠ ♣ ♥ ♦, then sweeps [03-S31][02-S1].
 //! That is the order the table calls them out, and the order the end-of-hand
 //! ritual stages them (`docs/DESIGN.md` §12.1).
 
@@ -63,7 +63,7 @@ pub struct Breakdown {
     pub cards: Option<Seat>,
     /// Most spades; `None` on a tie.
     pub spades: Option<Seat>,
-    /// Who took Big Casino; `None` if nobody did.
+    /// Who took Big Cassino; `None` if nobody did.
     pub big_casino: Option<Seat>,
     pub little_casino: Option<Seat>,
     /// Who took each ace, in [`ACE_ORDER`].
@@ -147,7 +147,7 @@ impl Breakdown {
     }
 }
 
-/// Whether the card is one that scores on its own: an ace or a Casino.
+/// Whether the card is one that scores on its own: an ace or a Cassino.
 pub fn is_point_card(card: Card) -> bool {
     card.rank() == ACE || card == Card::BIG_CASINO || card == Card::LITTLE_CASINO
 }
@@ -185,7 +185,7 @@ mod tests {
 
     #[test]
     fn eleven_points_a_hand() {
-        // South: 30 cards with 7 spades and Big Casino; North the rest.
+        // South: 30 cards with 7 spades and Big Cassino; North the rest.
         let mut south = CardSet::EMPTY;
         for c in "AS 3S 4S 5S 6S 7S 8S TD 2H 3H 4H 5H 6H 7H 8H 9H TH JH QH KH 2C 3C 4C 5C 6C 7C 8C 9C TC JC"
             .split(' ')

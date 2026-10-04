@@ -54,7 +54,7 @@ SOURCES = {
          "\"I'll make 'cards'\" [04-S28]",
     "Ha": "Harper's Bazaar (1883), a father at the count: \"The cards are a tie, Katy, so neither "
           "of us takes that point.\" [04-S135]",
-    "Ar": "Ardmore's novel To Love Is to Listen (1967): at Big Casino, a player \"screamed the "
+    "Ar": "Ardmore's novel To Love Is to Listen (1967): at Big Cassino, a player \"screamed the "
           "word, 'Luck!'\"; \"You would have big cassino for the last. Such luck!\" [04-S82]",
     "Fe": "Feydeau, in English translation: the count chanted, \"Cards... Spades... "
           "Ten of diamonds...\", \"Deuce... Aces...\", and \"Clean sweep!\" [04-S159]",
@@ -64,7 +64,7 @@ SOURCES = {
     "Sw": "the Swedish game's calls, in translation: \"bygger till knekt\" (building to jack), "
           "\"sistan\" (the last one), \"sista given\" (last deal), \"storan\" and \"lillan\" "
           "(the big one, the little one) [10-S24][10-S25]; two players in Finland, \"Nu har jag "
-          "stora kasino\", \"och jag har lilla\" (now I have Big Casino; and I have Little) [10-S13]",
+          "stora kasino\", \"och jag har lilla\" (now I have Big Cassino; and I have Little) [10-S13]",
     "Fi": "the Finnish game, in translation: the call \"rakennan ässälle\" (I'm building for the "
           "ace) [10-S1]; a big capture, a \"kahmaisu\" (a grab) [10-S8]",
     "Hu": "Tandori's Hungarian count, in translation: \"Card majority! Spade majority! big c., "
@@ -78,9 +78,9 @@ SOURCES = {
           "ponerse charlatán\": you have to turn into a chatterbox): \"Dos, señor juez\" (two, "
           "Mr. Judge), \"Con esta te caigo\" (with this one I'll fall on you), \"As que no me "
           "caerás\" (ace, you won't fall on me), in translation [05-S56][05-S57][05-S59]",
-    "Fs": "Finnish, in translation: the story \"Iso casino\" (1938), \"this was a big casino for "
+    "Fs": "Finnish, in translation: the story \"Iso casino\" (1938), \"this was a big cassino for "
           "me\" [10-S6]",
-    "Gu": "a French novel (1986), on laying down the deuce of spades: \"Little Casino, a point "
+    "Gu": "a French novel (1986), on laying down the deuce of spades: \"Little Cassino, a point "
           "for you, if you take it\", in translation [10-S62]",
     "Ti": "the German \"eine Karte für den Tisch bringen\" (bring a card for the table), in "
           "translation [05-S45]",
@@ -188,17 +188,17 @@ def phrase_groups():
         ("That clears the board.", "Lo"), ("Swept clean!", "Ru"), ("The table's clear.", "T"), ("Scopa!", "Sc"))
     add("cash", ("Cash.", "P"), ("Cash!", "T"), ("An ace for an ace.", "T"), ("Ace takes ace.", "T"),
         ("That's cash.", "T"), ("Ace on ace: cash.", "T"))
-    # A capture that takes a casino card, or a haul of several cards, when no
+    # A capture that takes a cassino card, or a haul of several cards, when no
     # sweep or cash speaks for it.
-    add("take-big-casino", ("Now I have Big Casino.", "Sw"), ("Luck! Big Casino.", "Ar"),
+    add("take-big-casino", ("Now I have Big Cassino.", "Sw"), ("Luck! Big Cassino.", "Ar"),
         ("The big one's mine.", "Sw"), ("I'll have the good ten.", "P"), ("That's two points.", "T"),
-        ("Big Casino comes to me.", "T"), ("Two, Mr. Judge!", "Ec"))
-    add("take-little-casino", ("I have Little Casino.", "Sw"), ("The little one's mine.", "Sw"),
-        ("I'll have the good two.", "P"), ("Little Casino, and a point.", "T"), ("That's a point.", "T"),
-        ("Casino's younger brother!", "Po"), ("One, Mr. Judge!", "Ec"))
+        ("Big Cassino comes to me.", "T"), ("Two, Mr. Judge!", "Ec"))
+    add("take-little-casino", ("I have Little Cassino.", "Sw"), ("The little one's mine.", "Sw"),
+        ("I'll have the good two.", "P"), ("Little Cassino, and a point.", "T"), ("That's a point.", "T"),
+        ("Cassino's younger brother!", "Po"), ("One, Mr. Judge!", "Ec"))
     add("take-many", ("A good haul.", "T"), ("That's a grab!", "Fi"), ("Taken in, every one.", "F"),
         ("As many as I can, with one card.", "Lo"), ("In they all come.", "T"), ("Quite a pile.", "T"),
-        ("That was a big casino for me.", "Fs"))
+        ("That was a big cassino for me.", "Fs"))
     add("clinch-cards", ("That's the cards.", "P"), ("Twenty-seven. The cards are mine.", "T"),
         ("That's twenty-seven.", "T"), ("I've made cards.", "L"), ("Twenty-seven cards. Three points.", "T"),
         ("The cards are made.", "T"))
@@ -223,10 +223,10 @@ def phrase_groups():
         ("Majority of cards.", "Lo"), ("Three for cards.", "T"))
     add("count-spades", ("Spades.", "Fe"), ("Most spades.", "T"), ("The spades.", "T"), ("Spade majority!", "Hu"),
         ("Majority of spades.", "Lo"), ("One for spades.", "T"))
-    add("count-big-casino", ("Big Casino.", "T"), ("Ten of diamonds.", "Fe"), ("The big one.", "Sw"),
-        ("Great Casino.", "Po"), ("The good ten.", "P"), ("Two for Big Casino.", "T"))
-    add("count-little-casino", ("Little Casino.", "T"), ("Deuce.", "Fe"), ("The little one.", "Sw"),
-        ("The deuce of spades.", "Lo"), ("The good two.", "P"), ("Little Casino, one.", "T"))
+    add("count-big-casino", ("Big Cassino.", "T"), ("Ten of diamonds.", "Fe"), ("The big one.", "Sw"),
+        ("Great Cassino.", "Po"), ("The good ten.", "P"), ("Two for Big Cassino.", "T"))
+    add("count-little-casino", ("Little Cassino.", "T"), ("Deuce.", "Fe"), ("The little one.", "Sw"),
+        ("The deuce of spades.", "Lo"), ("The good two.", "P"), ("Little Cassino, one.", "T"))
     for s, name in SUITS.items():
         add(f"count-ace-{s}", (f"The ace of {name}.", "T"), (f"Ace of {name}.", "T"), ("An ace.", "Fe"),
             ("And an ace.", "T"), (f"The {name[:-1]} ace.", "T"))
@@ -268,10 +268,10 @@ def phrase_groups():
         ("I'll let the {card} go.", "T"))
     add("trail-ace", ("Ace, you won't fall on me.", "Ec"), ("An ace, and I'll risk it.", "T"), ("I'll let an ace go.", "T"),
         ("An ace for the table.", "Ti"), ("An ace. Careful, now.", "T"))
-    add("trail-little-casino", ("Little Casino: a point, if you take it.", "Gu"), ("The deuce of spades. Yours, if you can.", "T"),
-        ("A point on the table. Who'll have it?", "T"), ("Little Casino goes down.", "T"))
-    add("trail-big-casino", ("Big Casino goes down.", "T"), ("Two points on the table.", "T"),
-        ("The good ten. Yours, if you can.", "P"), ("Big Casino, for whoever can take it.", "T"))
+    add("trail-little-casino", ("Little Cassino: a point, if you take it.", "Gu"), ("The deuce of spades. Yours, if you can.", "T"),
+        ("A point on the table. Who'll have it?", "T"), ("Little Cassino goes down.", "T"))
+    add("trail-big-casino", ("Big Cassino goes down.", "T"), ("Two points on the table.", "T"),
+        ("The good ten. Yours, if you can.", "P"), ("Big Cassino, for whoever can take it.", "T"))
     add("take-pair", ("{Cards}.", "T"), ("A pair of {cards}.", "T"), ("{Card} takes {card}.", "T"), ("{Acard} for {acard}.", "T"),
         ("{Card} on {card}.", "T"), ("I'll pair the {card}.", "T"), ("The {cards} go together.", "T"),
         ("{Cards}, thank you.", "T"), ("That {card} is mine.", "T"))
@@ -292,14 +292,14 @@ def phrase_groups():
     add("sweep-reply", ("Well played.", "T"), ("Clean as a whistle.", "T"), ("Not a card left!", "T"),
         ("It's hard on those who get swept.", "MP"), ("Never leave one card alone, they say.", "SM"),
         ("Oh, nicely done.", "T"))
-    add("big-casino-gone", ("Such luck!", "Ar"), ("There goes Big Casino.", "T"), ("I had my eye on that one.", "T"),
+    add("big-casino-gone", ("Such luck!", "Ar"), ("There goes Big Cassino.", "T"), ("I had my eye on that one.", "T"),
         ("Ah, the good ten.", "P"), ("Two points, just like that.", "T"), ("Everyone was after that one.", "Rd"))
     add("little-casino-gone", ("There goes the little one.", "T"), ("Ah, the deuce of spades.", "T"), ("A point for you.", "T"),
-        ("Little Casino, gone.", "T"), ("The good two. Nicely done.", "P"))
+        ("Little Cassino, gone.", "T"), ("The good two. Nicely done.", "P"))
     add("ace-gone", ("There goes an ace.", "T"), ("An ace for you.", "T"), ("Ah, that ace.", "T"), ("One ace gone.", "T"),
         ("A point, that ace.", "T"))
     add("haul-reply", ("Leave some for me!", "T"), ("That's a handful.", "T"), ("Quite a haul.", "T"),
-        ("Save a few for me.", "T"), ("That was a big casino for you.", "Fs"))
+        ("Save a few for me.", "T"), ("That was a big cassino for you.", "Fs"))
     add("think", ("Hmm.", "T"), ("Let me see.", "T"), ("Now then.", "T"), ("Decisions, decisions.", "T"),
         ("Let me think.", "T"), ("What have we here?", "T"), ("Keep track of the cards, they say.", "Mo"),
         ("Cards in hand aren't yours till taken.", "Bg"), ("Tocca a me. My turn.", "It"), ("Hmm, what to do.", "T"))
@@ -323,7 +323,7 @@ def phrase_groups():
     add("rematch-reply", ("You're on.", "T"), ("Gladly.", "T"), ("Let me win one back.", "T"), ("Let me win once!", "Tn"),
         ("Deal them up.", "T"))
     add("idle", ("Take your time.", "T"), ("No hurry.", "T"), ("At your leisure.", "Ol"), ("Tocca a te. Your turn.", "It"),
-        ("If I were a card, I'd be Big Casino.", "Rd"), ("Thinking it over?", "T"), ("Whenever you're ready.", "T"),
+        ("If I were a card, I'd be Big Cassino.", "Rd"), ("Thinking it over?", "T"), ("Whenever you're ready.", "T"),
         ("A tough one?", "T"))
     return out
 

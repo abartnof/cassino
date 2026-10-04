@@ -177,7 +177,7 @@ fn main() {
         ("spades", |t| t.spades),
         ("  most spades (share)", |t| t.most_spades),
         ("aces", |t| t.aces),
-        ("Casino points", |t| t.casinos),
+        ("Cassino points", |t| t.casinos),
         ("sweeps", |t| t.sweeps),
         ("captures", |t| t.captures),
         ("trails", |t| t.trails),

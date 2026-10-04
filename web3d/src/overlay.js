@@ -232,7 +232,7 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
   // Each player's captures this hand, as a table (scorebug.js): a column
   // for each point, a row for each player, only the value in each cell, a
   // dash for nothing. A point that is theirs for certain (a clinch, a
-  // Casino taken) is filled in. Every header and cell has its tip.
+  // Cassino taken) is filled in. Every header and cell has its tip.
   function trackers(t, watching = false) {
     const { columns, rows } = trackerTable(t, { watching });
     table.tHead.rows[0].replaceChildren(

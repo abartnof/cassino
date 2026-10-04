@@ -281,13 +281,13 @@ three", and fly the cards over group by group.
   as soon as one player has captured 7 or 27 of them" [02-S1]. The Dominican
   custom of pointing out *dejado* ("left behind") cards [02-S3] is a note
   (`advice::Note::LeftBehind`), not an event (§12.1).
-- **The breakdown** follows Foster's count order: cards, spades, Big Casino,
-  Little Casino, aces in the order ♠ ♣ ♥ ♦, then sweeps [03-S31][02-S1]. It
+- **The breakdown** follows Foster's count order: cards, spades, Big Cassino,
+  Little Cassino, aces in the order ♠ ♣ ♥ ♦, then sweeps [03-S31][02-S1]. It
   carries the checksum (eleven, or eight with a tie for cards).
 - **`Game`** runs hands to 21 (rule 10) and alternates the deal. It holds the
   rules, the totals and the hand history.
 - **Tallies** for the trackers come from the piles: cards, spades, aces, the
-  Casinos and sweeps, for each seat.
+  Cassinos and sweeps, for each seat.
 
 ## 9. Observation: what each player knows
 
@@ -475,7 +475,7 @@ traditional even though the engine makes them unambiguous.
 | An ace takes an ace | "Cash." | [02-S1] | `Cash` |
 | 27 cards / 7 spades | "That's the cards." / "Seven spades." | [02-S1] (counting as earned) | `Clinched` |
 | A missed capture | "You left the five." The Dominican *dejado*/*pisado* custom | [02-S3] | `Left` |
-| The count | "Cards… Spades… Big Casino… Little Casino… Aces…": the chant | [04-S159][10-S56][03-S31] | `Scored`, in order |
+| The count | "Cards… Spades… Big Cassino… Little Cassino… Aces…": the chant | [04-S159][10-S56][03-S31] | `Scored`, in order |
 | Before the game | "Do you count sweeps?" "Certainly not." / "Low deals." | [04-S28] | the settings and the cut |
 
 Notes on the design:
@@ -536,7 +536,7 @@ Notes on the design:
 - **The score sheet.** A paper sheet with a row for each hand is the history
   view and the place the count is written down. It is a sheet of paper, the
   third of Foster's options.
-- **Big and Little Casino have characters.** The 1793 poem calls them "Great
+- **Big and Little Cassino have characters.** The 1793 poem calls them "Great
   Casino" and "Casino's younger Brother" [04-S21]. That is flavour for the
   tutorial and for card tooltips.
 
@@ -564,10 +564,10 @@ shipped apps (§7.6).
   players (its title names the owner), a setting that the tutorial turns
   on; play-testing asked for it to stay in view through the moves.*
 - **Live trackers** with the clinch lines: cards towards 27, spades towards 7,
-  aces, the Casinos and sweeps. This meets the need behind the Reddit question
+  aces, the Cassinos and sweeps. This meets the need behind the Reddit question
   "Is it allowed to stack or track your spades separately so you can see if
   you have yet won seven?" [02-S63]. **Engine**: tallies, `Clinched`.
-- **Cards still out.** Which aces, which Casinos and how many spades are
+- **Cards still out.** Which aces, which Cassinos and how many spades are
   unseen. This is the card-counting aid, showing the counting rungs' summary.
   **Engine**: from the view.
 - **Sweep warning.** "A 9 would sweep this table", shown before you commit
@@ -612,15 +612,15 @@ specified a decomposed evaluation and never built it, and its tutor fell back
 to naming which rung would play a move (piquet `DESIGN.md` §8). Cassino's
 score is already a sum of categories, so a move's worth is naturally a vector:
 
-- **Banked:** cards (towards 27), spades (towards 7), aces, Big Casino,
-  Little Casino and sweeps, taken by this move.
+- **Banked:** cards (towards 27), spades (towards 7), aces, Big Cassino,
+  Little Cassino and sweeps, taken by this move.
 - **Exposed:** what your opponent's best reply could bank, including a
   sweep.
 - **Position:** builds you control and how safe they are, the court card kept
   for the residue, and the cards still out that your holding can take.
 
 An explanation names the largest terms in words a player can learn:
-- "takes Big Casino";
+- "takes Big Cassino";
 - "leaves a sweep for any 9";
 - "protects your 8-build";
 - "keeps a court card for the last".

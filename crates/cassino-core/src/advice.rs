@@ -8,7 +8,7 @@
 //!   card a build announces, a sweep it leaves open, cards it left behind
 //!   (the Dominican *dejado* custom [02-S3]), a build at risk.
 //! - **Sweep values**: which single card would clear a table.
-//! - **The unseen summary**: the aces, Casinos and spades still out, for the
+//! - **The unseen summary**: the aces, Cassinos and spades still out, for the
 //!   card-counting aid.
 //! - **Hints** are what the top rung would do in the observer's place, and
 //!   **ratings** compare a move with it. The advisor draws from a generator
@@ -28,7 +28,7 @@ use crate::table::{Seat, Table};
 /// One thing worth saying about a move.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Note {
-    /// The move took these point cards (the Casinos and aces).
+    /// The move took these point cards (the Cassinos and aces).
     TookPoints { seat: Seat, cards: CardSet },
     /// The move swept the table.
     Swept { seat: Seat },
@@ -458,7 +458,7 @@ mod tests {
 
     #[test]
     fn notes_on_a_capture() {
-        // South takes Big Casino and an ace, sweeping.
+        // South takes Big Cassino and an ace, sweeping.
         let v = view(Rules::CLASSIC, "TD", "TC AS 2H 3H", "");
         let n = notes(&v, Seat::South, &mv("take TC TD"));
         assert!(n.contains(&Note::TookPoints {
@@ -686,7 +686,7 @@ mod tests {
 
     #[test]
     fn a_blunder_is_called_one() {
-        // Trailing the ten next to Big Casino when the ten could take it.
+        // Trailing the ten next to Big Cassino when the ten could take it.
         let v = view(Rules::CLASSIC, "TD 4C KH", "TC 3S 7H 8C", "2H");
         let r = rate(&v, &mv("trail TC")).unwrap();
         assert_eq!(r.quality, Quality::Blunder, "{r:?}");

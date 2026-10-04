@@ -674,7 +674,7 @@ class Plan {
     this.stage(target, null, t);
   }
 
-  // The count, line by line in Foster's order: each ace and Casino it
+  // The count, line by line in Foster's order: each ace and Cassino it
   // names turned up out of its taker's pile into the count row as its line
   // is said (a sweep card from its place in the pile, any other off the
   // top). `this.count` keeps each line's moment, for the score sheet.

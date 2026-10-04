@@ -56,9 +56,9 @@ const RANK_LETTERS: [char; 13] = [
 ];
 
 impl Card {
-    /// Big Casino, the ten of diamonds.
+    /// Big Cassino, the ten of diamonds.
     pub const BIG_CASINO: Card = Card::new(10, Suit::Diamonds);
-    /// Little Casino, the two of spades.
+    /// Little Cassino, the two of spades.
     pub const LITTLE_CASINO: Card = Card::new(2, Suit::Spades);
 
     /// The card of `rank` (1 for the ace to 13 for the king) and `suit`.

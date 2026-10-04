@@ -112,12 +112,12 @@ test("the dealer says 'Last.'; a sweep, cash and the clinches are claimed by the
   assert.deepEqual(only(lines, ["last", "sweep", "cash", "clinch-spades", "residue"]), ["them:last", "you:sweep", "them:cash", "them:clinch-spades", "you:residue"]);
 });
 
-// A capture says nothing as a rule; it speaks when it takes a casino card,
+// A capture says nothing as a rule; it speaks when it takes a cassino card,
 // or a haul of several cards at once (Long: "take up as many as you can
 // with one Card").
 const take = (you, played, taken) => ({ kind: "played", hand: 1, you, type: "take", card: card(played, 0), taken: taken.map((c) => card(c, 0)), left: [] });
 
-test("a capture taking a casino card, or a haul of several, is remarked by its maker", () => {
+test("a capture taking a cassino card, or a haul of several, is remarked by its maker", () => {
   const lines = speech(
     state([
       take(true, "TC", ["TD"]),
@@ -262,11 +262,11 @@ test("the count's pace, from what is said: the words before the chant, and each 
     { who: "them", phrase: "count-cards-tie", at: 5, words: "The cards are a tie." },
     { who: "you", phrase: "count-spades", at: 5, line: 0, words: "Spades." },
     { who: "them", phrase: "count-ace-S", at: 5, line: 1, words: "The ace of spades." },
-    { who: "them", phrase: "count-big-casino", at: 5, line: 2, words: "Big Casino." },
+    { who: "them", phrase: "count-big-casino", at: 5, line: 2, words: "Big Cassino." },
   ];
   const pace = countPace(lines, plan);
   assert.equal(pace.lead, saying("The cards are a tie.") + TURN, "the tie said before the first line");
-  assert.deepEqual(pace.gaps, [saying("Spades.") + TURN, saying("The ace of spades.") + GAP, saying("Big Casino.")]);
+  assert.deepEqual(pace.gaps, [saying("Spades.") + TURN, saying("The ace of spades.") + GAP, saying("Big Cassino.")]);
   assert.equal(countPace(lines.slice(0, 1), plan), null, "no count, no pace");
   assert.equal(countPace(lines.filter((l) => l.phrase !== "count-cards-tie"), plan).lead, 0);
 });
@@ -330,7 +330,7 @@ test("every move says something: a trail, a pair, a sum, each in its own words",
   assert.equal(moves[2].vars.value, "eight");
   assert.equal(moves[3].vars.acard, "an eight");
   assert.deepEqual(chat(speech(state([play(true, "trail", "AH")]))), ["you:trail-ace"]);
-  // Big and Little Casino trailed are named: a point, if it is taken.
+  // Big and Little Cassino trailed are named: a point, if it is taken.
   assert.deepEqual(chat(speech(state([play(true, "trail", "2S"), play(false, "trail", "TD")]))), ["you:trail-little-casino", "them:trail-big-casino"]);
 });
 
@@ -357,7 +357,7 @@ test("a build taken by the other player, or raised from under its builder, is fe
   assert.deepEqual(said(speech(state([mine, play(true, "build", "2C", { value: 10, build_kind: "raise", raised_from: 8, multiple: false, onto: c("3H") })]), 1)), ["you:raise-10", "them:build-reply"]);
 });
 
-test("a sweep, a Casino or an ace taken is felt by the other player", () => {
+test("a sweep, a Cassino or an ace taken is felt by the other player", () => {
   const lines = speech(
     state([
       play(true, "take", "TC", { value: 10, taken: [c("4H"), c("6H")], groups: [[c("4H"), c("6H")]] }),

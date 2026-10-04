@@ -4,12 +4,12 @@
 //
 // Cassino scores only at the end of a hand, in the count; during the hand
 // the news is in the captures, which the trackers follow: cards towards 27,
-// spades towards 7, the aces, the two Casinos and the sweeps (DESIGN.md
+// spades towards 7, the aces, the two Cassinos and the sweeps (DESIGN.md
 // §12.3).
 
 const SUIT_NAME = { S: "spades", H: "hearts", D: "diamonds", C: "clubs" };
 
-// The card a line of the count names, if it names one: an ace, or a Casino.
+// The card a line of the count names, if it names one: an ace, or a Cassino.
 export function lineCard(line) {
   if (line.item === "ace") return `A${line.suit}`;
   if (line.item === "big_casino") return "TD";
@@ -25,9 +25,9 @@ export function lineLabel(line) {
     case "spades":
       return "Most spades";
     case "big_casino":
-      return "Big Casino, 10♦";
+      return "Big Cassino, 10♦";
     case "little_casino":
-      return "Little Casino, 2♠";
+      return "Little Cassino, 2♠";
     case "ace":
       return `Ace of ${SUIT_NAME[line.suit]}`;
     case "sweeps":
@@ -38,11 +38,11 @@ export function lineLabel(line) {
 }
 
 // A line of the count celebrated on the table, as the score's popup is on
-// the HUD: its words on a disc over the card it names (an ace, a Casino,
+// the HUD: its words on a disc over the card it names (an ace, a Cassino,
 // turned up in the count row) or over its taker's pile (most cards, most
 // spades), with its points bursting out. A sweep is celebrated as it is
 // made, so not again here.
-const CELEBRATED = { cards: "Most cards", spades: "Most spades", big_casino: "Big Casino", little_casino: "Little Casino", ace: "Ace" };
+const CELEBRATED = { cards: "Most cards", spades: "Most spades", big_casino: "Big Cassino", little_casino: "Little Cassino", ace: "Ace" };
 export function celebrationOf(line) {
   const label = CELEBRATED[line.item];
   if (!label) return null;
@@ -92,13 +92,13 @@ export function trackers(state) {
 // look ("won": the point is theirs for certain; otherwise "", every cell
 // alike), and a tip in words. `watching`: the seats are South and North.
 // Each header's tip says first what its point is worth (play-testing:
-// "Getting X (aka Big Casino) is worth n points"), then how it is won.
+// "Getting X (aka Big Cassino) is worth n points"), then how it is won.
 const COLUMNS = {
   cards: { head: "Cards", tip: "Taking the most cards is worth 3 points. 27 of the 52 makes it certain." },
   spades: { head: "Spades", tip: "Taking the most spades is worth 1 point. 7 of the 13 makes it certain." },
   aces: { head: "Aces", tip: "Each ace you take is worth 1 point." },
-  big_casino: { head: "10♦", tip: "Taking the ten of diamonds (Big Casino) is worth 2 points." },
-  little_casino: { head: "2♠", tip: "Taking the two of spades (Little Casino) is worth 1 point." },
+  big_casino: { head: "10♦", tip: "Taking the ten of diamonds (Big Cassino) is worth 2 points." },
+  little_casino: { head: "2♠", tip: "Taking the two of spades (Little Cassino) is worth 1 point." },
   sweeps: { head: "Sweeps", tip: "Each sweep, taking every card on the table, is worth 1 point." },
 };
 const GOAL = { cards: { of: 27, word: "cards", point: "most cards" }, spades: { of: 7, word: "spades", point: "most spades" } };
@@ -116,7 +116,7 @@ export function trackerTable(t, { watching = false } = {}) {
     const cells = t[who].map((x) => {
       if (x.have !== undefined) {
         const theirs = t[other].find((y) => y.key === x.key).have;
-        const name = x.key === "big_casino" ? "Big Casino" : "Little Casino";
+        const name = x.key === "big_casino" ? "Big Cassino" : "Little Cassino";
         const tip = x.have ? `${me.who} took ${name}.` : theirs ? `${seats[other].who} took ${name}.` : `${name} is not taken yet.`;
         return { key: x.key, text: x.have ? "✓" : "–", look: x.have ? "won" : "", tip };
       }

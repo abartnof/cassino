@@ -12,7 +12,7 @@
 
 **To play,** tap a card in your hand, then the table cards to use with it (the ones you can use light up), then **Take**, **Build** or **Trail**.
 
-**What scores,** at the end of each hand: **3** for the most cards, **1** for the most spades, **2** for the ten of diamonds (Big Casino), **1** for the two of spades (Little Casino), and **1** for each ace.
+**What scores,** at the end of each hand: **3** for the most cards, **1** for the most spades, **2** for the ten of diamonds (Big Cassino), **1** for the two of spades (Little Cassino), and **1** for each ace.
 
 The **?** button shows these pages at any time.
 
@@ -82,7 +82,7 @@ The sum shows beside the **Take** button as you tap cards.
 
 - **Most cards:** 3 points. 27 of the 52 is sure to be most; at 26 each, nobody scores.
 - **Most spades:** 1 point. 7 of the 13 is sure to be most.
-- **Big Casino** (the ten of diamonds) 2, **Little Casino** (the two of spades) 1, and **each ace** 1. They turn up from the piles as they are counted.
+- **Big Cassino** (the ten of diamonds) 2, **Little Cassino** (the two of spades) 1, and **each ace** 1. They turn up from the piles as they are counted.
 - **Each sweep** (taking every card on the table) 1, if sweeps are on in the settings.
 
 The cards left on the table at the end went to whoever took cards last. Points count only at the end of a hand: the first to **21** wins, and if both reach 21 in the same hand, the higher total wins (a tie plays another hand).

@@ -189,8 +189,8 @@ impl<R: BufRead, W: Write> Table<R, W> {
                     ts.spades.max(tn.spades),
                     ts.spades.min(tn.spades)
                 ),
-                Item::BigCasino => format!("Big Casino, {}", self.card(Card::BIG_CASINO)),
-                Item::LittleCasino => format!("Little Casino, {}", self.card(Card::LITTLE_CASINO)),
+                Item::BigCasino => format!("Big Cassino, {}", self.card(Card::BIG_CASINO)),
+                Item::LittleCasino => format!("Little Cassino, {}", self.card(Card::LITTLE_CASINO)),
                 Item::Ace(suit) => format!("The ace of {}", suit_name(suit)),
                 Item::Sweeps => format!("Sweeps, {}", b.sweeps[seat.index()]),
             };

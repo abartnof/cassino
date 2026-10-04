@@ -174,11 +174,11 @@ pub fn note_text(rules: &Rules, note: &Note, observer: Seat) -> String {
             let mut items = Vec::new();
             let mut total = 0;
             if cards.contains(Card::BIG_CASINO) {
-                items.push("Big Casino".to_string());
+                items.push("Big Cassino".to_string());
                 total += 2;
             }
             if cards.contains(Card::LITTLE_CASINO) {
-                items.push("Little Casino".to_string());
+                items.push("Little Cassino".to_string());
                 total += 1;
             }
             let aces = (*cards & CardSet::of_rank(ACE)).len();
@@ -392,7 +392,7 @@ mod tests {
                 seat: me,
                 cards: s("TD AS")
             }),
-            "You took Big Casino and an ace: 3 points."
+            "You took Big Cassino and an ace: 3 points."
         );
         assert_eq!(
             text(Note::TookPoints {
@@ -406,7 +406,7 @@ mod tests {
                 seat: me,
                 cards: s("2S")
             }),
-            "You took Little Casino: 1 point."
+            "You took Little Cassino: 1 point."
         );
         assert_eq!(
             text(Note::Swept { seat: me }),

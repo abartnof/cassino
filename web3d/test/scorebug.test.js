@@ -10,7 +10,7 @@ const line = (item, who, points, suit = null) => ({ item, suit, who, points });
 test("the count's lines in words, and the cards they name", () => {
   assert.equal(lineLabel(line("cards", "you", 3)), "Most cards");
   assert.equal(lineLabel(line("ace", "them", 1, "H")), "Ace of hearts");
-  assert.equal(lineLabel(line("big_casino", "you", 2)), "Big Casino, 10♦");
+  assert.equal(lineLabel(line("big_casino", "you", 2)), "Big Cassino, 10♦");
   assert.equal(lineLabel(line("sweeps", "you", 1)), "A sweep");
   assert.equal(lineLabel(line("sweeps", "them", 3)), "3 sweeps");
   assert.equal(lineCard(line("ace", "them", 1, "H")), "AH");
@@ -57,13 +57,13 @@ test("the trackers as a table: a column for each point, a row for each player, a
   assert.ok(table.columns.every((c) => c.tip.length > 20), "every column says what it counts and what it scores");
   assert.match(table.columns[0].tip, /27/);
   // Each header's tip says first what its point is worth (play-testing:
-  // "Getting X (aka Big Casino) is worth n points").
+  // "Getting X (aka Big Cassino) is worth n points").
   const tip = (key) => table.columns.find((c) => c.key === key).tip;
   assert.match(tip("cards"), /^Taking the most cards is worth 3 points/);
   assert.match(tip("spades"), /^Taking the most spades is worth 1 point/);
   assert.equal(tip("aces"), "Each ace you take is worth 1 point.");
-  assert.equal(tip("big_casino"), "Taking the ten of diamonds (Big Casino) is worth 2 points.");
-  assert.equal(tip("little_casino"), "Taking the two of spades (Little Casino) is worth 1 point.");
+  assert.equal(tip("big_casino"), "Taking the ten of diamonds (Big Cassino) is worth 2 points.");
+  assert.equal(tip("little_casino"), "Taking the two of spades (Little Cassino) is worth 1 point.");
   const sweeps = trackerTable(trackers({ ...state, rules: { sweeps: true } })).columns.find((c) => c.key === "sweeps").tip;
   assert.equal(sweeps, "Each sweep, taking every card on the table, is worth 1 point.");
   assert.deepEqual(table.rows.map((r) => r.name), ["Opp", "You"], "your opponent's row above yours, as they sit across the table");
@@ -86,7 +86,7 @@ test("the trackers as a table: a column for each point, a row for each player, a
   assert.match(cell("you", "cards").tip, /most cards is yours/i);
   assert.match(cell("them", "cards").tip, /10 cards/);
   assert.match(cell("you", "spades").tip, /4 more/, "how far from certain");
-  assert.equal(cell("them", "big_casino").tip, "You took Big Casino.");
+  assert.equal(cell("them", "big_casino").tip, "You took Big Cassino.");
   assert.match(cell("them", "little_casino").tip, /not taken yet/i);
   // A watched game names its seats.
   const watched = trackerTable(trackers(state), { watching: true });
@@ -95,8 +95,8 @@ test("the trackers as a table: a column for each point, a row for each player, a
 });
 
 test("a celebration on the table for each line of the count: its words, its points, where", () => {
-  assert.deepEqual(celebrationOf({ item: "big_casino", who: "you", points: 2 }), { label: "Big Casino", pts: 2, card: "TD", pile: "you" });
-  assert.deepEqual(celebrationOf({ item: "little_casino", who: "them", points: 1 }), { label: "Little Casino", pts: 1, card: "2S", pile: "them" });
+  assert.deepEqual(celebrationOf({ item: "big_casino", who: "you", points: 2 }), { label: "Big Cassino", pts: 2, card: "TD", pile: "you" });
+  assert.deepEqual(celebrationOf({ item: "little_casino", who: "them", points: 1 }), { label: "Little Cassino", pts: 1, card: "2S", pile: "them" });
   assert.deepEqual(celebrationOf({ item: "ace", suit: "H", who: "you", points: 1 }), { label: "Ace", pts: 1, card: "AH", pile: "you" });
   assert.deepEqual(celebrationOf({ item: "cards", who: "them", points: 3 }), { label: "Most cards", pts: 3, card: null, pile: "them" });
   assert.deepEqual(celebrationOf({ item: "spades", who: "you", points: 1 }), { label: "Most spades", pts: 1, card: null, pile: "you" });
