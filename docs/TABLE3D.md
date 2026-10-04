@@ -487,8 +487,12 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   yours beside it, and room for the move bar between); the layout and
   choreography take their zones from the view; a staging test measures the
   portrait camera's reach over whole games and holds `CAMERA_PORTRAIT.reach`
-  to it; the page measures the overlay's strips (upright: under the HUD and
-  the aids' panel, above the controls and the bar of icons at the foot;
+  to it; the page measures the overlay's strips (upright: under the HUD,
+  above the controls and the bar of icons at the foot; the aids' panel
+  folded into the HUD, open while its hand-by-hand scores are, the HUD a
+  little shorter, the foot kept for the prompt's one line and the note,
+  since the sixth play-testing found the table's cards too small in the
+  window a browser leaves on an iPhone;
   sideways: between the HUD's column and the controls') and frames the table
   between them, laying the cards out afresh when the phone turns. The Large
   Text faces (automatic on a phone or a tablet, or chosen in the settings)

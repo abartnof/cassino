@@ -1376,20 +1376,38 @@ html.upright .bar {
 html.upright .brand {
   display: none;
 }
-/* Room kept for the prompt, a hint and a row of chips, so they come and
-   go without the table being framed again under a finger. */
+/* Room kept for the prompt and the note, so they come and go without the
+   table being framed again under a finger (the move's choices are in the
+   move bar, between the table and your hand); the prompt one line (the
+   sixth play-testing: the table given the room). */
 html.upright .controls {
   bottom: 60px;
-  min-height: 72px;
+  min-height: 46px;
   box-sizing: border-box;
   align-content: flex-end;
-  padding: 6px 10px 8px;
+  row-gap: 2px;
+  padding: 4px 10px 6px;
 }
+html.upright .controls .prompt,
+html.upright .controls .note,
+html.upright .controls .aid-line {
+  font-size: 15px;
+  line-height: 19px;
+}
+/* The aids' panel folded into the score: no heading of its own, open while
+   the score's hand-by-hand scores are (overlay.js). */
 html.upright .aids-panel {
   left: 8px;
   bottom: auto;
   width: min(calc(100vw - 16px), 480px);
   padding: 8px 12px;
+}
+html.upright .aids-heading {
+  display: none;
+}
+/* The score a little shorter on a phone held upright. */
+html.upright .hud {
+  padding: 12px 16px 10px;
 }
 html.upright .game-log {
   top: 196px;

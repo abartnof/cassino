@@ -159,7 +159,7 @@ async function main() {
     later: (ms, fn) => director.at(ms, fn, "linger"),
   });
 
-  const hud = createHud(overlay.hudSlot, { later: (ms, fn) => director.at(ms, fn) });
+  const hud = createHud(overlay.hudSlot, { later: (ms, fn) => director.at(ms, fn), onToggle: (open) => overlay.setScoreOpen(open) });
   const seats = () => (state.watching ? { you: "South", them: "North" } : { you: "You", them: "Opp" });
   // The HUD and the panel's names, shown at once from the state -- or, as a
   // game opens, from its deal (`upTo`: the events seen so far), so nothing
@@ -884,8 +884,10 @@ async function main() {
   const sideways = window.matchMedia("(orientation: landscape) and (max-height: 500px)");
   const isUpright = () => !sideways.matches && window.innerWidth / Math.max(1, window.innerHeight) < PORTRAIT_BELOW;
   function arrange() {
+    const was = document.documentElement.className;
     document.documentElement.classList.toggle("upright", isUpright());
     document.documentElement.classList.toggle("sideways", sideways.matches);
+    if (document.documentElement.className !== was) overlay.refold();
   }
   arrange();
   function fitStrips() {

@@ -144,7 +144,9 @@ function replay(node, cls) {
 
 // `later(ms, fn)` runs on the table's clock (director.at), so the HUD holds
 // when the table is held and keeps time with the cards.
-export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms) } = {}) {
+// `onToggle(open)`: the chevron pressed, the ledger opened or folded (on a
+// phone held upright the trackers open and fold with it: main.js).
+export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms), onToggle = () => {} } = {}) {
   const lines = { you: [], opp: [] };
   const line = (side) => {
     const row = el("div", { class: `hud-line ${side}` });
@@ -281,6 +283,7 @@ export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms) } = {})
     chevron.setAttribute("aria-expanded", String(open));
     chevron.setAttribute("aria-label", open ? "Hide hand-by-hand scores" : "Show hand-by-hand scores");
     drawList();
+    onToggle(open);
   });
 
   // One scoring event, played out: the bars ripple at once, the popup rolls

@@ -257,6 +257,11 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
   const body = panel.querySelector(".aids-body");
   const outLine = $(".out");
   let showing = { trackers: true, unseen: false, open: false };
+  // On a phone held upright the panel has no heading of its own: it is
+  // folded into the score, open while the score's hand-by-hand scores are
+  // (the sixth play-testing: the table given the room its heading took).
+  let scoreOpen = false;
+  const upright = () => document.documentElement.classList.contains("upright");
   // Folded to its heading, or open; the heading says what is in it. The
   // whole heading is the button, the chevron at its end saying which way
   // it goes (play-testing: the chevron alone, a small target, "isn't
@@ -270,13 +275,14 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
     onFold(showing.open);
   });
   const fit = () => {
+    const open = upright() ? scoreOpen : showing.open;
     table.hidden = !showing.trackers;
-    body.hidden = !showing.open;
-    panel.classList.toggle("folded", !showing.open);
-    head.setAttribute("aria-expanded", String(showing.open));
-    head.title = showing.open ? "Fold the panel" : "Open the panel";
+    body.hidden = !open;
+    panel.classList.toggle("folded", !open);
+    head.setAttribute("aria-expanded", String(open));
+    head.title = open ? "Fold the panel" : "Open the panel";
     title.textContent = showing.trackers ? "Captured this hand" : "Still out";
-    panel.hidden = !showing.trackers && outLine.hidden;
+    panel.hidden = (!showing.trackers && outLine.hidden) || (upright() && !scoreOpen);
   };
 
   // Each player's captures this hand, as a table (scorebug.js): a column
@@ -306,6 +312,12 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
   }
   function setOpen(open) {
     showing.open = open;
+    fit();
+  }
+  // The score's hand-by-hand scores opened or folded; and the panel fitted
+  // again when the phone turns.
+  function setScoreOpen(open) {
+    scoreOpen = open;
     fit();
   }
 
@@ -495,6 +507,8 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
     trackers,
     showTrackers,
     setOpen,
+    setScoreOpen,
+    refold: () => fit(),
     unseen,
     log,
     hudSlot: $(".hud-slot"),
@@ -551,6 +565,6 @@ function promptText(state, chips) {
   const last = [...state.events].reverse().find((e) => e.kind === "game_ends" || e.kind === "hand_ends");
   if (state.prompt === "over") return last?.text ?? "The game is over.";
   if (state.prompt === "next_hand") return last?.text ?? "The hand is over.";
-  if (!chips.length) return "Choose a card from your hand, then the table cards to go with it.";
+  if (!chips.length) return "Choose a card from your hand, then the table cards.";
   return "Choose what to do.";
 }

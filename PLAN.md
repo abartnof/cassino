@@ -191,7 +191,11 @@ legal move. RULES.md now says each held card answers for one build value.
   "still too small to read" (34 by 45 px in Safari's window): the Large
   Text faces lose their upside-down corner (the user's choice), and below
   the corner a big rank and suit fill the card, about 1.7 times the
-  corner's rank.
+  corner's rank; and on a phone held upright the table given more of the
+  screen (the strips from 184 and 151 px to 120 and 115): "Captured this
+  hand" folded into the score, open with its hand-by-hand scores, the
+  score a little shorter, the prompt one line. A table card in Safari's
+  window on an iPhone, 34 by 45 px, is now 43 by 56.
 - **The South African game, researched**
   (`research/12-south-african-khasino.md`): KASA's rulebooks and its own
   online game as the canonical sources, twenty open-source engines, and

@@ -880,6 +880,39 @@ def check_desktop_frame(browser, failures):
         page.context.close()
 
 
+def check_phone_room(browser, failures):
+    """On a phone held upright, in the window a browser leaves it (390 by 664,
+    Safari's on an iPhone), the table has the room (the sixth play-testing:
+    the table's cards "still too small to read"): the top strip no more
+    than the score, "Captured this hand" folded into it (the score's
+    chevron shows the trackers with the hand-by-hand scores), the prompt
+    one line, and a table card at least 55 px tall."""
+    page = open_page(browser, "seed=2&speed=6&skill=1&faces=jumbo", viewport={"width": 390, "height": 664}, calm=True, device={"has_touch": True, "is_mobile": True})
+    settle(page)
+    strips = page.evaluate("window.cassino3d.strips()")
+    if strips["top"] > 125 or strips["foot"] > 125:
+        failures.append(f"upright phone: the strips take {strips['top']:.0f} px above the table and {strips['foot']:.0f} below")
+    if page.locator(".aids-panel").is_visible():
+        failures.append("upright phone: \"Captured this hand\" shown apart from the score")
+    card = page.evaluate("window.cassino3d.cardRects('middle')")[0]
+    if card["bottom"] - card["top"] < 55:
+        failures.append(f"upright phone: a table card {card['bottom'] - card['top']:.0f} px tall")
+    prompt = page.locator(".controls .prompt").bounding_box()
+    if prompt["height"] > 26:
+        failures.append(f"upright phone: the prompt runs to more than a line: {prompt}")
+    page.locator(".hud-chev").click()
+    page.wait_for_timeout(600)
+    if not page.locator(".tracker-table").is_visible():
+        failures.append("upright phone: the score's chevron did not show the trackers")
+    page.locator(".hud-chev").click()
+    page.wait_for_timeout(600)
+    if page.locator(".tracker-table").is_visible():
+        failures.append("upright phone: the trackers stayed with the score folded")
+    if page.errors:
+        failures.append(f"upright phone: console errors {page.errors[:3]}")
+    page.context.close()
+
+
 def check_phone_talk(browser, failures):
     """On a phone, held either way, what is said never covers the cards (the
     sixth play-testing: "in mobile mode, the dialog balloons can completely
@@ -1171,6 +1204,7 @@ def main() -> int:
         check_tablet_faces(browser, failures)
         check_desktop_frame(browser, failures)
         check_phone_talk(browser, failures)
+        check_phone_room(browser, failures)
         page = open_page(browser, "seed=11&skill=4&manual", calm=True)
         # The game proposed and accepted, then the house rules: both speak
         # within the opening's first seconds.
