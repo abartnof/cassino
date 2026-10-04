@@ -16,7 +16,7 @@ import { loadTextures, vectorWidth } from "./art.js";
 import { cardGeometry } from "./cards.js";
 import { createChrome } from "./chrome.js";
 import { createDeck } from "./deck.js";
-import { TURN, createDialogue } from "./dialogue.js";
+import { TURN, createDialogue, saying } from "./dialogue.js";
 import { createDirector } from "./director.js";
 import { facesFor, jumboTextures, largeTextHere } from "./faces.js";
 import { layout } from "./layout.js";
@@ -32,7 +32,7 @@ import { createScene } from "./scene.js";
 import { celebrationOf, trackers } from "./scorebug.js";
 import { EMPTY, choose, chipsOf, itemState, moveBarFit, pick, selectionOf, selectionText, sweepWarning, valuesSaid, whyNot } from "./selection.js";
 import { chooseSurface } from "./surfaces.js";
-import { chunk, countPace, heard, speech } from "./talk.js";
+import { chunk, heard, speech } from "./talk.js";
 import { commandsBetween, prefix, stops } from "./replay.js";
 import { pageDue, parseTutorial } from "./tutorial.js";
 import TUTORIAL_TEXT from "../tutorial.md";
@@ -359,12 +359,11 @@ async function main() {
     sel = EMPTY;
     offer = null;
     badgeFrom = before;
-    // The words chosen first, so the count can be paced by them.
-    // The count paced by them, and by the score's popups.
     const said = dialogue.words(heard(speech(state, before.events.length), prefs.talk));
-    const talkPace = countPace(said, dialogue.plan);
+    // The count paced by the score's popups, which tell it (nothing is said
+    // then: the sixth play-testing).
     const scored = state.events.slice(before.events.length).find((e) => e.kind === "scored");
-    const pace = talkPace && scored ? { ...talkPace, popups: popupsOf(scored.count.lines), busy: POPUP_BUSY } : null;
+    const pace = scored ? { popups: popupsOf(scored.count.lines), busy: POPUP_BUSY } : null;
     const timing = director.advance(state, { pace });
     playScore(before.events.length, timing);
     // At the game's end the camera pulls back first, and the last words are
@@ -527,15 +526,17 @@ async function main() {
     // event's motion ("Cash." as the ace lands, before the heap is carried
     // in), and is not held back behind what is said at the end of it.
     // And what one speaker says at one moment, said as one (chunk).
-    const lines = chunk(
-      said
-        .map((l) => ({
-          ...l,
-          delay: l.line !== undefined && count ? count.lines[l.line] : (beats[l.at] ?? 0),
-        }))
-        .sort((a, b) => a.delay - b.delay),
-    );
-    dialogue.say(lines, (line, words, ms) => director.at(ms, () => overlay.say(line.who, words, speakerAt(line.who)), "talk"));
+    const lines = chunk(said.map((l) => ({ ...l, delay: beats[l.at] ?? 0 })).sort((a, b) => a.delay - b.delay));
+    // Nothing said while a hand is scored, and what was still being said
+    // taken down as the count begins: the score's popups and the
+    // celebrations on the table tell it (the sixth play-testing: "Remove the
+    // dialog balloons during scoring, and let the pop-ups do the work").
+    const quiet = count ? { from: beats[count.at] ?? count.lines[0] ?? 0, to: count.end } : null;
+    if (quiet) director.at(quiet.from, () => overlay.hush(), "talk");
+    dialogue.say(lines, (line, words, ms) => {
+      if (quiet && ms + saying(words) > quiet.from && ms < quiet.to) return;
+      director.at(ms, () => overlay.say(line.who, words, speakerAt(line.who)), "talk");
+    });
   }
 
   // Your opponent, waiting on your move a while, says so: once a turn, on

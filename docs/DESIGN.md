@@ -475,7 +475,7 @@ traditional even though the engine makes them unambiguous.
 | An ace takes an ace | "Cash." | [02-S1] | `Cash` |
 | 27 cards / 7 spades | "That's the cards." / "Seven spades." | [02-S1] (counting as earned) | `Clinched` |
 | A missed capture | "You left the five." The Dominican *dejado*/*pisado* custom | [02-S3] | `Left` |
-| The count | "Cards… Spades… Big Cassino… Little Cassino… Aces…": the chant | [04-S159][10-S56][03-S31] | `Scored`, in order |
+| The count | "Cards… Spades… Big Cassino… Little Cassino… Aces…": the chant (said until the sixth play-testing; now told by the score's popups alone) | [04-S159][10-S56][03-S31] | `Scored`, in order |
 | Before the game | "Do you count sweeps?" "Certainly not." / "Low deals." | [04-S28] | the settings and the cut |
 
 Notes on the design:

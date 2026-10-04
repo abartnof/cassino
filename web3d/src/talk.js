@@ -4,20 +4,20 @@
 // several ways (docs/PHRASES.md); the dialogue picks among them. A pure
 // function, so the page only shows what it returns.
 //
-// speech(state, since) -> [{ who, phrase, at, kind, line? }] for the events
-// from index `since`: who is "you" or "them"; `at` is the index of the event
-// the phrase belongs to, so it is said when that event is seen to happen;
-// `line`, for the count's chant, is the index of its line, said as that line
-// is written on the score sheet.
+// speech(state, since) -> [{ who, phrase, at, kind }] for the events from
+// index `since`: who is "you" or "them"; `at` is the index of the event the
+// phrase belongs to, so it is said when that event is seen to happen.
 //
 // The idea is piquet's speech.js @ 254cb3c ("maximal speaking": anything a
 // person would say, we say); the talk is cassino's: the house rules agreed
 // aloud before the game (Jack London's players), the build calls in the
 // singular and the plural and a raise by its new total (Dick, Foster, the
 // Hoyles), the dealer's "Last.", "Clear!" for a sweep, "Cash.", a cassino
-// card or a haul of several taken, the clinches, the custom of pointing out
-// what an opponent left, and the count chanted, a tie on the cards first.
-// All of it kind: nothing said belittles anyone.
+// card or a haul of several taken, the clinches, and the custom of pointing
+// out what an opponent left. Nothing is said while a hand is scored: the
+// score's popups and the celebrations on the table tell it (the sixth
+// play-testing: "Remove the dialog balloons during scoring, and let the
+// pop-ups do the work"). All of it kind: nothing said belittles anyone.
 
 const POINT_CARDS = new Set(["AS", "AH", "AD", "AC", "TD", "2S"]);
 // Table cards taken at once that make a haul worth remarking.
@@ -39,13 +39,6 @@ function taking(e, then) {
   if (cards.includes("TD")) return "take-big-casino";
   if (cards.includes("2S")) return "take-little-casino";
   return (e.taken?.length ?? 0) >= HAUL ? "take-many" : null;
-}
-
-// The chant of a line of the count.
-function chant(line) {
-  if (line.item === "ace") return `count-ace-${line.suit}`;
-  if (line.item === "sweeps") return `count-sweeps-${Math.min(8, line.points)}`;
-  return `count-${line.item.replace("_", "-")}`;
 }
 
 // The call a build makes: a raise by its new total, a multiple build in the
@@ -144,10 +137,6 @@ const takers = (value) => ({ taker: taker(value), ataker: named(value === 14 ? 1
 
 // Who sits across: the other player.
 const other = (who) => (who === "you" ? "them" : "you");
-// A score this close to 21 is worth remarking, the points still needed:
-// no more than the cards' three, so that "I'll make cards. That's all I
-// need." is true when said.
-const NEAR = 3;
 
 export function speech(state, since = 0) {
   const out = [];
@@ -208,34 +197,6 @@ export function speech(state, since = 0) {
       case "residue":
         if (e.you !== null) remark(who, "residue");
         break;
-      case "scored": {
-        // A tie on the cards scores nobody, and is said first, where the
-        // cards would be counted: at the count's moment, not as a line of it.
-        const t = e.count.tallies;
-        if (t && t.you.cards === t.them.cards && !e.count.lines.some((l) => l.item === "cards")) say("them", "count-cards-tie");
-        e.count.lines.forEach((line, i) => say(line.who, chant(line), { line: i }));
-        break;
-      }
-      case "hand_ends": {
-        // The score said aloud by your opponent, who keeps it, and
-        // answered; the end in sight remarked. Not when the game is over:
-        // the winner claims it instead.
-        if (state.events.slice(at + 1).some((n) => n.kind === "game_ends" && n.hand === e.hand)) break;
-        const { you, them } = e.totals;
-        const vars = { mine: number(them), yours: number(you) };
-        if (you === them) {
-          remark("them", "score-tie", { n: number(you) });
-          remark("you", "score-reply-tie");
-        } else {
-          remark("them", them > you ? "score-mine" : "score-yours", vars);
-          remark("you", you > them ? "score-reply-ahead" : "score-reply-behind");
-        }
-        const target = state.target ?? 21;
-        const near = you >= them ? "you" : "them";
-        const need = target - e.totals[near];
-        if (need <= NEAR && need > 0) remark(near, "need", { need: number(need) });
-        break;
-      }
       case "game_ends": {
         const winner = e.you_won ? "you" : "them";
         say(winner, "game-won");
@@ -330,33 +291,14 @@ function played(e, at, who, did, events, since, remark, say) {
   }
 }
 
-// The count's pace, from what is to be said (lines with their words, as the
-// dialogue's `words` gives them) and the dialogue's `plan`: `lead`, the
-// time taken by what is said at the count's moment before the chant (a tie
-// on the cards); `gaps[i]`, from line i of the chant to the next, or to its
-// end for the last. The choreography turns each counted card up, and the
-// sheet is written, as its line is said. Null with no count among them.
-export function countPace(lines, plan) {
-  const first = lines.findIndex((l) => l.line !== undefined);
-  if (first < 0) return null;
-  const from = lines.findIndex((l) => l.at === lines[first].at);
-  const said = plan(lines.slice(from).map((l) => ({ ...l, delay: 0 })));
-  const chant = said.filter((l) => l.line !== undefined);
-  return {
-    lead: chant[0].ms - said[0].ms,
-    gaps: chant.map((l, i) => (i + 1 < chant.length ? chant[i + 1].ms - l.ms : l.end - l.ms)),
-  };
-}
-
 // Lines one speaker says at one moment, said as one (play-testing: waiting
 // through your opponent's lines one by one is time spent for nothing): the
-// first's phrase and moment, the words joined. The count's lines keep their
-// own moments, each with its card.
+// first's phrase and moment, the words joined.
 export function chunk(lines) {
   const out = [];
   for (const l of lines) {
     const last = out.at(-1);
-    if (last && last.who === l.who && last.delay === l.delay && last.line === undefined && l.line === undefined) {
+    if (last && last.who === l.who && last.delay === l.delay) {
       out[out.length - 1] = { ...last, words: `${last.words} ${l.words}`, chatter: !!(last.chatter && l.chatter) };
     } else out.push(l);
   }
@@ -365,8 +307,8 @@ export function chunk(lines) {
 
 // The table talk at a level (a setting): "none"; "calls", what carries the
 // game -- the house rules, the build calls, "Last.", a sweep, cash, the
-// count, the game won; or "all", the chatter too: every move remarked, the
-// builds answered, the score said aloud, the game proposed and the rematch.
+// game won; or "all", the chatter too: every move remarked, the builds
+// answered, the game proposed and the rematch.
 export function heard(lines, level) {
   if (level === "none") return [];
   if (level === "calls") return lines.filter((l) => !l.chatter);

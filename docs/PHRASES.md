@@ -21,13 +21,11 @@ Sources:
 - **M**: the modern rules on the web: "calling 5", "calling 8" [05-S77][05-S78]
 - **B**: BoardGameGeek's players on sweeps: "we play with them every single time"; "it's just the luck of the deal" [05-S74]
 - **L**: Jack London's players (1912): "Do you count sweeps?" "Certainly not." "Low deals." "I'll make 'cards'" [04-S28]
-- **Ha**: Harper's Bazaar (1883), a father at the count: "The cards are a tie, Katy, so neither of us takes that point." [04-S135]
 - **Ar**: Ardmore's novel To Love Is to Listen (1967): at Big Cassino, a player "screamed the word, 'Luck!'"; "You would have big cassino for the last. Such luck!" [04-S82]
-- **Fe**: Feydeau, in English translation: the count chanted, "Cards... Spades... Ten of diamonds...", "Deuce... Aces...", and "Clean sweep!" [04-S159]
+- **Fe**: Feydeau, in English translation: "Clean sweep!" [04-S159]
 - **N**: the New York Dispatch's answers column (1877-1881): a build "calling 'seven'" or "calls it six", "sevens", "fives all", "I have three points, and am out" [04-S155][04-S130]
 - **Sw**: the Swedish game's calls, in translation: "bygger till knekt" (building to jack), "sistan" (the last one), "sista given" (last deal), "storan" and "lillan" (the big one, the little one) [10-S24][10-S25]; two players in Finland, "Nu har jag stora kasino", "och jag har lilla" (now I have Big Cassino; and I have Little) [10-S13]
 - **Fi**: the Finnish game, in translation: the call "rakennan ässälle" (I'm building for the ace) [10-S1]; a big capture, a "kahmaisu" (a grab) [10-S8]
-- **Hu**: Tandori's Hungarian count, in translation: "Card majority! Spade majority! big c., little c., the four aces!" [10-S56]
 - **Ru**: the Russian rules, in translation: a sweep is "to sweep clean" [10-S57]
 - **Ge**: pagat's German edition: the dealer's warning, "Letzte Runde" (last round), in translation [02-S29]
 - **Do**: the Dominican custom of pointing out the cards an opponent left behind (dejado) [02-S3]; the words are ours
@@ -491,95 +489,6 @@ Sources:
 |  | The last trick is mine. | F |
 |  | Last to take, so the rest are mine. | T |
 |  | Those come to me. | T |
-| `count-cards-tie` | The cards are a tie. | Ha |
-|  | Twenty-six each. | T |
-|  | A tie on the cards. | T |
-|  | No points for cards. | T |
-|  | Twenty-six all. | T |
-| `count-cards` | Cards. | Fe |
-|  | Most cards. | T |
-|  | The cards. | T |
-|  | Card majority! | Hu |
-|  | Majority of cards. | Lo |
-|  | Three for cards. | T |
-| `count-spades` | Spades. | Fe |
-|  | Most spades. | T |
-|  | The spades. | T |
-|  | Spade majority! | Hu |
-|  | Majority of spades. | Lo |
-|  | One for spades. | T |
-| `count-big-casino` | Big Cassino. | T |
-|  | Ten of diamonds. | Fe |
-|  | The big one. | Sw |
-|  | Great Cassino. | Po |
-|  | The good ten. | P |
-|  | Two for Big Cassino. | T |
-| `count-little-casino` | Little Cassino. | T |
-|  | Deuce. | Fe |
-|  | The little one. | Sw |
-|  | The deuce of spades. | Lo |
-|  | The good two. | P |
-|  | Little Cassino, one. | T |
-| `count-ace-S` | The ace of spades. | T |
-|  | Ace of spades. | T |
-|  | An ace. | Fe |
-|  | And an ace. | T |
-|  | The spade ace. | T |
-| `count-ace-H` | The ace of hearts. | T |
-|  | Ace of hearts. | T |
-|  | An ace. | Fe |
-|  | And an ace. | T |
-|  | The heart ace. | T |
-| `count-ace-D` | The ace of diamonds. | T |
-|  | Ace of diamonds. | T |
-|  | An ace. | Fe |
-|  | And an ace. | T |
-|  | The diamond ace. | T |
-| `count-ace-C` | The ace of clubs. | T |
-|  | Ace of clubs. | T |
-|  | An ace. | Fe |
-|  | And an ace. | T |
-|  | The club ace. | T |
-| `count-sweeps-1` | A sweep. | T |
-|  | One sweep. | T |
-|  | And a sweep. | T |
-|  | One for the sweep. | T |
-|  | Sweeps: one. | T |
-| `count-sweeps-2` | Two sweeps. | T |
-|  | Sweeps: two. | T |
-|  | And two sweeps. | T |
-|  | Two for sweeps. | T |
-|  | That's two sweeps. | T |
-| `count-sweeps-3` | Three sweeps. | T |
-|  | Sweeps: three. | T |
-|  | And three sweeps. | T |
-|  | Three for sweeps. | T |
-|  | That's three sweeps. | T |
-| `count-sweeps-4` | Four sweeps. | T |
-|  | Sweeps: four. | T |
-|  | And four sweeps. | T |
-|  | Four for sweeps. | T |
-|  | That's four sweeps. | T |
-| `count-sweeps-5` | Five sweeps. | T |
-|  | Sweeps: five. | T |
-|  | And five sweeps. | T |
-|  | Five for sweeps. | T |
-|  | That's five sweeps. | T |
-| `count-sweeps-6` | Six sweeps. | T |
-|  | Sweeps: six. | T |
-|  | And six sweeps. | T |
-|  | Six for sweeps. | T |
-|  | That's six sweeps. | T |
-| `count-sweeps-7` | Seven sweeps. | T |
-|  | Sweeps: seven. | T |
-|  | And seven sweeps. | T |
-|  | Seven for sweeps. | T |
-|  | That's seven sweeps. | T |
-| `count-sweeps-8` | Eight sweeps. | T |
-|  | Sweeps: eight. | T |
-|  | And eight sweeps. | T |
-|  | Eight for sweeps. | T |
-|  | That's eight sweeps. | T |
 | `game-won` | And I am out. | N |
 |  | That's game. | T |
 |  | Game. Twenty-one. | T |
@@ -778,40 +687,6 @@ Sources:
 |  | Now, what have we here? | T |
 |  | Oh, I like this. | T |
 |  | Wait, wait. Yes. | T |
-| `score-mine` | I have {mine}; you have {yours}. | T |
-|  | {Mine} to {yours}, my way. | T |
-|  | That's {mine} to {yours}. | T |
-|  | {Mine}, {yours}. I lead. | T |
-|  | I lead, {mine} to {yours}. | T |
-| `score-yours` | You lead, {yours} to {mine}. | T |
-|  | {Yours} to {mine}. Your lead. | T |
-|  | You have {yours}; I have {mine}. | T |
-|  | {Yours}, {mine}. You're ahead. | T |
-|  | You're up, {yours} to {mine}. | T |
-| `score-tie` | {N} all. | T |
-|  | All square at {n}. | T |
-|  | {N} each. | T |
-|  | Level, at {n}. | T |
-|  | Even: {n} apiece. | T |
-| `score-reply-ahead` | So far, so good. | T |
-|  | I'll take it. | T |
-|  | Long may it last. | T |
-|  | Early days yet. | T |
-|  | The cards are kind tonight. | T |
-| `score-reply-behind` | I'll catch up. | T |
-|  | Plenty of game left. | T |
-|  | Not over yet. | T |
-|  | My turn next hand. | T |
-|  | We'll see about that. | T |
-| `score-reply-tie` | Neck and neck. | T |
-|  | Anyone's game. | T |
-|  | As it should be. | T |
-|  | Nothing in it. | T |
-| `need` | Just {need} more. | T |
-|  | {Need} to go. | T |
-|  | Only {need} more for me. | T |
-|  | {Need} more, and I'm out. | N |
-|  | I'll make cards. That's all I need. | L |
 | `rematch` | Another game? | T |
 |  | Same again? | T |
 |  | Shall we go again? | T |

@@ -360,22 +360,18 @@ test("the last deal is heard as it begins: the dealer says \"Last.\" while deali
   assert.fail("no last deal reached");
 });
 
-test("the count paced by what is said: a lead before the first line, and each line's own gap", { skip }, () => {
+test("the count told a line a beat, a player's popup on the score holding that player's next line back", { skip }, () => {
   let state = engine.start({ game: "classic", sweeps: false, skill: 1, seed: 7 });
   let placement = initialPlacement(state);
   for (let n = 0; n < 200; n++) {
     const next = engine.send(state.moves[state.moves.length - 1]).state;
     if (next.prompt === "next_hand") {
       const lines = countLines(countOf(next));
-      const gaps = lines.map((_, i) => (i === 1 ? 2400 : 0));
-      const paced = choreograph(state, next, placement, {}, { pace: { lead: 1500, gaps } });
-      assert.ok(paced.count.lines[0] - paced.beats[paced.count.at] >= 1500, "the lead said before the first line");
-      assert.equal(paced.count.lines[2] - paced.count.lines[1], 2400, "a long line holds the next");
-      assert.equal(paced.count.lines[1] - paced.count.lines[0], TIMING.countLine, "a short one keeps the usual pace");
-      assert.equal(paced.count.end, paced.count.lines.at(-1) + TIMING.countLine, "the count ends a line's time after its last");
-      // A player's popup on the score holds that player's next line back.
+      const plain = choreograph(state, next, placement, {});
+      for (let i = 1; i < lines.length; i++) assert.equal(plain.count.lines[i] - plain.count.lines[i - 1], TIMING.countLine, "a line a beat");
+      assert.equal(plain.count.end, plain.count.lines.at(-1) + TIMING.countLine, "the count ends a line's time after its last");
       const popups = lines.map(() => "you");
-      const held = choreograph(state, next, placement, {}, { pace: { lead: 0, gaps: lines.map(() => 0), popups, busy: 1960 } });
+      const held = choreograph(state, next, placement, {}, { pace: { popups, busy: 1960 } });
       for (let i = 1; i < lines.length; i++) assert.ok(held.count.lines[i] - held.count.lines[i - 1] >= 1960, "one popup at a time a player");
       return;
     }

@@ -190,7 +190,11 @@ The dialogue boxes say what Cassino players say (`DESIGN.md` §12.1): the
 build calls ("Building eight." / "Building eights."), the dealer's "Last.",
 "Clear!" and "Clean sweep!" for a sweep, "Cash." for an ace taking an ace,
 the clinches ("That's the cards." / "Seven spades."), sometimes "You left
-the five." (the *dejado* custom), and the count's chant. Whose deal it is
+the five." (the *dejado* custom). Nothing is said while a hand is scored
+(the sixth play-testing: "Remove the dialog balloons during scoring, and
+let the pop-ups do the work"): the count's chant and the score said after
+each hand are gone, and what was still being said is taken down as the
+count begins (`main.js` `talk`). Whose deal it is
 is said as the cut cards are seen ("Low deals. Your deal."); then, as the
 first deal begins, the settings are staged as Jack London's players'
 negotiation ("Do you count sweeps?"), answered by your settings either way,
@@ -201,8 +205,7 @@ opponent's first move now waits for the opening's calls (`main.js`
 which the deal does not. A capture that
 takes a cassino card ("Now I have Big Cassino.") or a haul of four table cards
 or more ("A good haul.") is remarked by its maker, unless a sweep or cash
-speaks for it. Cards tied at 26 each are said before the chant ("The cards
-are a tie.", Harper's Bazaar, 1883).
+speaks for it.
 
 **The chatter** (the third play-testing asked for the talk "VERY verbose",
 the conversation a part of the game, as it is in Cuarenta, played loud and
@@ -217,8 +220,8 @@ eight!"), a sweep, a Cassino or an ace felt by the other ("It's hard on
 those who get swept.", 1878; "Such luck!"). The dealer announces a new hand
 and each deal, "Last." is answered ("The boat's leaving!"), your opponent
 thinks aloud now and then before a move ("With this one, I'll fall on
-you.", Cuarenta), names Royal's values as the game begins, says the score
-after each hand and the end in sight, offers a rematch, and, kept waiting,
+you.", Cuarenta), names Royal's values as the game begins, offers a
+rematch, and, kept waiting,
 says so ("Take your time."). The talk follows each build's controller
 through the events (`talk.js` `followBuilds`, checked against the engine's
 table at every step), and the run of play (`followPlay`; the sixth
@@ -356,7 +359,9 @@ Material Design 3, from piquet's shell.
   at a time in Foster's order: each ace and Cassino turns up out of its
   taker's pile into a row (`layout.js` lays out a counted hand; the
   choreography's `count` stage times each card to its line), the HUD's
-  popups tell each line's points, and the winner of each line chants it.
+  popups tell each line's points (the winner of each line chanted it until
+  the sixth play-testing, which left the count to the popups), a line a
+  beat, a player's popup holding their next line back.
 - **Settings**: Classic or Royal, aces 1 or 14, sweeps, raising builds, the skill dial (1 to
   4 in halves), the match (one game, or a World Series: the best of seven,
   `series.js`), the aids, Large Text, watch mode, a new game, copy the game
@@ -423,7 +428,8 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   the build calls (singular, plural, a raise by its
   new total: the engine's `played` event now says which); "Last."; "Clear!";
   "Cash."; the clinches; your opponent pointing out what you left; the
-  residue; the count chanted line by line with the sheet; the game's end.
+  residue; the count chanted line by line with the sheet (until the sixth
+  play-testing left the count to the score's popups); the game's end.
   Boxes linger on the table's clock.
 - **T6. Settings and aids.** Everything in §8's settings; watch mode; hints
   and explanations; undo; saved sittings across a reload. **Done**: the top

@@ -3,8 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { chunk, countPace, followBuilds, heard, speech } from "../src/talk.js";
-import { GAP, TURN, createDialogue, saying } from "../src/dialogue.js";
+import { chunk, followBuilds, heard, speech } from "../src/talk.js";
 import { loadEngine } from "../src/engine.js";
 
 const WORDS = JSON.parse(readFileSync(new URL("../words.json", import.meta.url)));
@@ -41,7 +40,7 @@ test("nothing in the bank is unkind", () => {
 // group and none too long for a balloon. A line play-testing gave word for
 // word, said at most once a game, is said only its own way.
 const VERBATIM = new Set(["quite-normal"]);
-const FREQUENT = /^(build|builds|raise|left|count-sweeps)-\d+$|^count-|^take-|^(sweep|cash|clinch-cards|clinch-spades|residue|last|low-deals|my-deal|your-deal|left-more)$/;
+const FREQUENT = /^(build|builds|raise|left)-\d+$|^take-|^(sweep|cash|clinch-cards|clinch-spades|residue|last|low-deals|my-deal|your-deal|left-more)$/;
 
 test("everything is said in several ways, the frequent moments in many", () => {
   const few = [];
@@ -50,10 +49,6 @@ test("everything is said in several ways, the frequent moments in many", () => {
     assert.equal(new Set(texts).size, texts.length, `${group} says something twice`);
     if (!VERBATIM.has(group) && texts.length < (FREQUENT.test(group) ? 5 : 3)) few.push(`${group}: ${texts.length}`);
     for (const text of texts) assert.ok(text.length <= 44, `too long for a balloon: "${text}"`);
-    // The count is written a line a second (choreography's countLine), and
-    // its chant keeps up only if its lines are short: none longer than "The
-    // ace of diamonds.", the longest it had.
-    if (group.startsWith("count-")) for (const text of texts) assert.ok(text.length <= 20, `too long for the chant: "${text}"`);
   }
   assert.deepEqual(few, []);
 });
@@ -160,7 +155,10 @@ test("your opponent points out what you left: always a point card, otherwise now
   assert.deepEqual(only(speech(state([{ ...trail(0, [card("AH", 1)]), you: false }])), (p) => p.startsWith("left-")), []);
 });
 
-test("the count is chanted line by line by whoever wins each", () => {
+// The sixth play-testing: "Remove the dialog balloons during scoring, and
+// let the pop-ups do the work": the count is told by the score's popups and
+// the celebrations on the table, and the score after the hand by the HUD.
+test("nothing is said while a hand is scored: the score's popups tell it", () => {
   const scored = {
     kind: "scored",
     hand: 1,
@@ -171,11 +169,14 @@ test("the count is chanted line by line by whoever wins each", () => {
         { item: "ace", suit: "D", who: "you", points: 1 },
         { item: "sweeps", suit: null, who: "them", points: 2 },
       ],
+      tallies: { you: { cards: 26 }, them: { cards: 26 } },
     },
   };
-  const lines = speech(state([scored, { kind: "game_ends", hand: 1, you_won: false }]));
-  assert.deepEqual(said(lines), ["you:count-cards", "them:count-big-casino", "you:count-ace-D", "them:count-sweeps-2", "them:game-won", "you:good-game", "them:rematch", "you:rematch-reply", "them:quite-normal"]);
-  assert.deepEqual(lines.slice(0, 4).map((l) => l.line), [0, 1, 2, 3]);
+  const ends = { kind: "hand_ends", hand: 1, yours: 4, theirs: 4, totals: { you: 19, them: 12 } };
+  assert.deepEqual(said(speech(state([scored, ends]))), []);
+  // The game's end has its words still: the winner's claim, and the rest.
+  const over = speech(state([scored, { ...ends, totals: { you: 12, them: 21 } }, { kind: "game_ends", hand: 1, you_won: false }]));
+  assert.deepEqual(said(over), ["them:game-won", "you:good-game", "them:rematch", "you:rematch-reply", "them:quite-normal"]);
 });
 
 // The game lost (play-testing): your opponent, revealed a court card, "says
@@ -187,20 +188,6 @@ test("losing, your opponent's last word is that you are quite normal", () => {
   assert.deepEqual(heard(lines, "none"), []);
   assert.deepEqual(WORDS.groups["quite-normal"].map((k) => WORDS.texts[k]), ["You are quite normal."]);
   assert.ok(!said(speech(state([{ kind: "game_ends", hand: 1, you_won: true }]))).includes("them:quite-normal"), "not when you win");
-});
-
-// Twenty-six cards each: nobody scores the cards, and your opponent says
-// so before the chant ("The cards are a tie, Katy, so neither of us takes
-// that point", Harper's Bazaar, 1883).
-test("cards tied at the count are said before the chant", () => {
-  const scored = (you, them, lines) => ({ kind: "scored", hand: 1, count: { lines, tallies: { you: { cards: you }, them: { cards: them } } } });
-  const spades = { item: "spades", suit: null, who: "you", points: 1 };
-  const tied = speech(state([scored(26, 26, [spades])]));
-  assert.deepEqual(said(tied), ["them:count-cards-tie", "you:count-spades"]);
-  assert.equal(tied[0].line, undefined, "said at the count's moment, not as a line of it");
-  assert.equal(tied[1].line, 0);
-  const cards = { item: "cards", suit: null, who: "them", points: 3 };
-  assert.deepEqual(said(speech(state([scored(25, 27, [cards, spades])]))), ["them:count-cards", "you:count-spades"]);
 });
 
 test("only the events since the last state are said", () => {
@@ -226,7 +213,7 @@ test("over real games every phrase asked for is in the bank", { skip: !existsSyn
       s = engine.step().state;
     }
   }
-  for (const kind of ["build", "last", "take", "count"]) assert.ok([...asked].some((p) => p.startsWith(kind)), `nothing said for ${kind}`);
+  for (const kind of ["build", "last", "take"]) assert.ok([...asked].some((p) => p.startsWith(kind)), `nothing said for ${kind}`);
 });
 
 // Whose build a capture takes, or a raise changes, is a thing to talk
@@ -255,22 +242,6 @@ test("the builds followed through the events agree with the engine's table", { s
   assert.ok(raised > 0 && stolen > 0, `the games raised (${raised}) and took (${stolen}) another's build`);
 });
 
-test("the count's pace, from what is said: the words before the chant, and each line's length", () => {
-  const plan = createDialogue({ groups: {}, texts: {} }, () => 0).plan;
-  const lines = [
-    { who: "you", phrase: "residue", at: 4, words: "And the rest are mine." },
-    { who: "them", phrase: "count-cards-tie", at: 5, words: "The cards are a tie." },
-    { who: "you", phrase: "count-spades", at: 5, line: 0, words: "Spades." },
-    { who: "them", phrase: "count-ace-S", at: 5, line: 1, words: "The ace of spades." },
-    { who: "them", phrase: "count-big-casino", at: 5, line: 2, words: "Big Cassino." },
-  ];
-  const pace = countPace(lines, plan);
-  assert.equal(pace.lead, saying("The cards are a tie.") + TURN, "the tie said before the first line");
-  assert.deepEqual(pace.gaps, [saying("Spades.") + TURN, saying("The ace of spades.") + GAP, saying("Big Cassino.")]);
-  assert.equal(countPace(lines.slice(0, 1), plan), null, "no count, no pace");
-  assert.equal(countPace(lines.filter((l) => l.phrase !== "count-cards-tie"), plan).lead, 0);
-});
-
 test("lines one speaker says at one moment are said as one, so nobody waits through them one by one", () => {
   const lines = [
     { who: "them", phrase: "sweeps-ask", at: 0, delay: 0, words: "Do you count sweeps?" },
@@ -279,17 +250,15 @@ test("lines one speaker says at one moment are said as one, so nobody waits thro
     { who: "them", phrase: "low-deals", at: 0, delay: 0, words: "Low deals." },
     { who: "them", phrase: "my-deal", at: 1, delay: 0, words: "My deal." },
     { who: "them", phrase: "last", at: 2, delay: 900, words: "Last." },
-    { who: "you", phrase: "count-spades", at: 5, delay: 2000, line: 0, words: "Spades." },
-    { who: "you", phrase: "count-ace-S", at: 5, delay: 3000, line: 1, words: "Ace of spades." },
+    { who: "you", phrase: "last-reply", at: 2, delay: 900, words: "Already?" },
   ];
   const said = chunk(lines);
-  assert.deepEqual(said.map((l) => l.words), ["Do you count sweeps?", "No sweeps.", "Royal, then. Low deals. My deal.", "Last.", "Spades.", "Ace of spades."]);
+  assert.deepEqual(said.map((l) => l.words), ["Do you count sweeps?", "No sweeps.", "Royal, then. Low deals. My deal.", "Last.", "Already?"]);
   assert.equal(said[2].phrase, "royal", "a chunk keeps its first line's phrase and moment");
-  assert.equal(said[4].line, 0, "the count's lines keep their own moments");
 });
 
 test("the talk at three levels: none, the calls that carry the game, or everything", () => {
-  const lines = ["sweeps-ask", "build-8", "last", "sweep", "cash", "count-spades", "game-won"].map((phrase) => ({ who: "them", phrase }));
+  const lines = ["sweeps-ask", "build-8", "last", "sweep", "cash", "game-won"].map((phrase) => ({ who: "them", phrase }));
   const chatter = ["left-7", "take-many", "take-big-casino", "clinch-cards", "residue", "good-game", "trail"].map((phrase) => ({ who: "them", phrase, chatter: true }));
   assert.deepEqual(heard([...lines, ...chatter], "none"), []);
   assert.deepEqual(heard([...lines, ...chatter], "all"), [...lines, ...chatter]);
@@ -458,23 +427,6 @@ test("the dealer announces a new hand and more cards, and 'Last.' is answered", 
   );
   assert.deepEqual(said(lines), ["you:new-hand", "you:deal-more", "you:last", "them:last-reply"]);
   assert.deepEqual(only(speech(state([{ kind: "dealt", hand: 1, deal: 1, last: false, you_deal: false }])), ["new-hand"]), [], "the first hand's deal brings the house rules instead");
-});
-
-test("the score said aloud after each hand, and answered; the game's end in sight", () => {
-  const ends = (you, them) => ({ kind: "hand_ends", hand: 1, yours: 0, theirs: 0, totals: { you, them } });
-  const ahead = speech(state([ends(7, 4)]));
-  assert.deepEqual(said(ahead), ["them:score-yours", "you:score-reply-ahead"]);
-  assert.deepEqual(ahead[0].vars, { mine: "four", yours: "seven" });
-  assert.deepEqual(said(speech(state([ends(5, 9)]))), ["them:score-mine", "you:score-reply-behind"]);
-  const tied = speech(state([ends(6, 6)]));
-  assert.deepEqual(said(tied), ["them:score-tie", "you:score-reply-tie"]);
-  assert.equal(tied[0].vars.n, "six");
-  const close = speech(state([ends(12, 18)]));
-  assert.deepEqual(said(close), ["them:score-mine", "you:score-reply-behind", "them:need"]);
-  assert.equal(close[2].vars.need, "three");
-  assert.deepEqual(said(speech(state([ends(19, 12)]))).at(-1), "you:need");
-  // The game over, the winner claims it instead.
-  assert.deepEqual(said(speech(state([ends(22, 12), { kind: "game_ends", hand: 1, you_won: true }]))), ["you:game-won", "them:good-game", "you:rematch", "them:rematch-reply"]);
 });
 
 test("your opponent thinks aloud now and then, before a move, as yours is seen", () => {

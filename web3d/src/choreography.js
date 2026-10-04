@@ -60,7 +60,7 @@ export const TIMING = Object.freeze({
   dealCard: 300,
   dealPair: 170, // two at a time: one pair after another
   dealSecond: 50, // and the second card of a pair just behind the first
-  countLine: 1000, // the count, line by line: the HUD's popups and the chant keep up
+  countLine: 1000, // the count, line by line: the HUD's popups keep up
   countCard: 520, // a counted card turned up out of the pile into the count row
   collect: 480, // every card back to the stock for a new hand
   collectStagger: 12,
@@ -343,7 +343,7 @@ export function match(current, target) {
 class Plan {
   constructor(placement, view) {
     this.moments = {}; // moments within a stage, for what is said (beats)
-    this.pace = null; // the count's pace, from what is said
+    this.pace = null; // the count's pace, from the score's popups
     this.now = placement.map((m) => ({ ...m }));
     this.view = view;
     this.clock = 0;
@@ -680,13 +680,12 @@ class Plan {
   // top). `this.count` keeps each line's moment, for the score sheet.
   count({ state, event }) {
     const target = this.layout(state);
-    // Paced by what is said (`pace`, from the page): the words before the
-    // chant (a tie on the cards) and each line's own length, so the cards
-    // turn up, and the sheet is written, as each line is said.
-    // And a player's popup on the score (`popups`, whose each line brings;
-    // `busy`, how long one lasts) holds that player's next line back.
+    // A line a beat, the cards turned up and the sheet written as the
+    // score's popups tell it: a player's popup (`pace.popups`, whose each
+    // line brings; `busy`, how long one lasts) holds that player's next
+    // line back.
     const pace = this.pace ?? {};
-    let t = Math.max(this.clock, this.end) + Math.max(TIMING.beat, pace.lead ?? 0);
+    let t = Math.max(this.clock, this.end) + TIMING.beat;
     const lines = [];
     const free = {};
     for (const [i, line] of event.count.lines.entries()) {
@@ -705,7 +704,7 @@ class Plan {
         // Peeled off the top of its taker's pile, and tossed into the row.
         if (mesh) this.move(mesh.id, slot, peelOff(mesh.pose, (lifted) => toss(lifted, slot.pose), { toward: TOWARD[line.who] }), t, TIMING.countCard);
       }
-      t += Math.max(TIMING.countLine, pace.gaps?.[i] ?? 0);
+      t += TIMING.countLine;
     }
     this.counted = { at: event.at, lines, end: t };
     this.clock = t;

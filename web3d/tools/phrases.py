@@ -52,12 +52,9 @@ SOURCES = {
          "the luck of the deal\" [05-S74]",
     "L": "Jack London's players (1912): \"Do you count sweeps?\" \"Certainly not.\" \"Low deals.\" "
          "\"I'll make 'cards'\" [04-S28]",
-    "Ha": "Harper's Bazaar (1883), a father at the count: \"The cards are a tie, Katy, so neither "
-          "of us takes that point.\" [04-S135]",
     "Ar": "Ardmore's novel To Love Is to Listen (1967): at Big Cassino, a player \"screamed the "
           "word, 'Luck!'\"; \"You would have big cassino for the last. Such luck!\" [04-S82]",
-    "Fe": "Feydeau, in English translation: the count chanted, \"Cards... Spades... "
-          "Ten of diamonds...\", \"Deuce... Aces...\", and \"Clean sweep!\" [04-S159]",
+    "Fe": "Feydeau, in English translation: \"Clean sweep!\" [04-S159]",
     "N": "the New York Dispatch's answers column (1877-1881): a build \"calling 'seven'\" or "
          "\"calls it six\", \"sevens\", \"fives all\", \"I have three points, and am out\" "
          "[04-S155][04-S130]",
@@ -67,8 +64,6 @@ SOURCES = {
           "stora kasino\", \"och jag har lilla\" (now I have Big Cassino; and I have Little) [10-S13]",
     "Fi": "the Finnish game, in translation: the call \"rakennan ässälle\" (I'm building for the "
           "ace) [10-S1]; a big capture, a \"kahmaisu\" (a grab) [10-S8]",
-    "Hu": "Tandori's Hungarian count, in translation: \"Card majority! Spade majority! big c., "
-          "little c., the four aces!\" [10-S56]",
     "Ru": "the Russian rules, in translation: a sweep is \"to sweep clean\" [10-S57]",
     "Ge": "pagat's German edition: the dealer's warning, \"Letzte Runde\" (last round), in "
           "translation [02-S29]",
@@ -124,7 +119,6 @@ RANKS = {1: "ace", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "sev
          8: "eight", 9: "nine", 10: "ten", 11: "jack", 12: "queen", 13: "king"}
 # The card that takes a build of each value: an ace takes fourteen.
 TAKER = {**RANKS, 14: "ace"}
-SUITS = {"S": "spades", "H": "hearts", "D": "diamonds", "C": "clubs"}
 
 
 def phrase_groups():
@@ -214,29 +208,6 @@ def phrase_groups():
     add("residue", ("And the rest are mine.", "T"), ("The last cards come to me.", "T"), ("I'll take what's left.", "T"),
         ("The last trick is mine.", "F"), ("Last to take, so the rest are mine.", "T"), ("Those come to me.", "T"))
 
-    # The count, chanted line by line, each line by whoever wins it; a tie on
-    # the cards, which scores nobody, said first. The count is written a line
-    # a second, so its words are short, or the chant falls behind the sheet.
-    add("count-cards-tie", ("The cards are a tie.", "Ha"), ("Twenty-six each.", "T"), ("A tie on the cards.", "T"),
-        ("No points for cards.", "T"), ("Twenty-six all.", "T"))
-    add("count-cards", ("Cards.", "Fe"), ("Most cards.", "T"), ("The cards.", "T"), ("Card majority!", "Hu"),
-        ("Majority of cards.", "Lo"), ("Three for cards.", "T"))
-    add("count-spades", ("Spades.", "Fe"), ("Most spades.", "T"), ("The spades.", "T"), ("Spade majority!", "Hu"),
-        ("Majority of spades.", "Lo"), ("One for spades.", "T"))
-    add("count-big-casino", ("Big Cassino.", "T"), ("Ten of diamonds.", "Fe"), ("The big one.", "Sw"),
-        ("Great Cassino.", "Po"), ("The good ten.", "P"), ("Two for Big Cassino.", "T"))
-    add("count-little-casino", ("Little Cassino.", "T"), ("Deuce.", "Fe"), ("The little one.", "Sw"),
-        ("The deuce of spades.", "Lo"), ("The good two.", "P"), ("Little Cassino, one.", "T"))
-    for s, name in SUITS.items():
-        add(f"count-ace-{s}", (f"The ace of {name}.", "T"), (f"Ace of {name}.", "T"), ("An ace.", "Fe"),
-            ("And an ace.", "T"), (f"The {name[:-1]} ace.", "T"))
-    add("count-sweeps-1", ("A sweep.", "T"), ("One sweep.", "T"), ("And a sweep.", "T"),
-        ("One for the sweep.", "T"), ("Sweeps: one.", "T"))
-    for n in range(2, 9):
-        w = NUMBERS[n]
-        add(f"count-sweeps-{n}", (f"{w.capitalize()} sweeps.", "T"), (f"Sweeps: {w}.", "T"),
-            (f"And {w} sweeps.", "T"), (f"{w.capitalize()} for sweeps.", "T"), (f"That's {w} sweeps.", "T"))
-
     # The game: the winner claims it, the other is gracious.
     add("game-won", ("And I am out.", "N"), ("That's game.", "T"), ("Game. Twenty-one.", "T"),
         ("I claim the game.", "F"), ("I'm out.", "N"), ("Twenty-one, and thank you.", "T"), ("Out!", "Hk"),
@@ -253,8 +224,7 @@ def phrase_groups():
     # {slots} are filled by the talk: {card}, {cards}, {acard} a rank's name
     # ("nine", "nines", "a nine"); {value} a total; {taker}, {ataker} the
     # card that takes it; {values} a build's value in the plural ("eights");
-    # {old} a build's value before a raise; {mine}, {yours}, {n} the score;
-    # {need} the points still needed. Nothing said claims a card the speaker
+    # {old} a build's value before a raise. Nothing said claims a card the speaker
     # cannot be known to hold, nor what the speaker cannot know (that a
     # trail had nothing to take, except on a table swept clean).
     add("new-hand", ("New hand.", "T"), ("Fresh cards.", "T"), ("Here we go again.", "T"), ("Another hand, then.", "T"),
@@ -331,19 +301,6 @@ def phrase_groups():
         ("Cards in hand aren't yours till taken.", "Bg"), ("Tocca a me. My turn.", "It"), ("Hmm, what to do.", "T"))
     add("think-take", ("With this one, I'll fall on you.", "Ec"), ("Aha.", "T"), ("I think I see something.", "T"),
         ("Now, what have we here?", "T"), ("Oh, I like this.", "T"), ("Wait, wait. Yes.", "T"))
-    add("score-mine", ("I have {mine}; you have {yours}.", "T"), ("{Mine} to {yours}, my way.", "T"),
-        ("That's {mine} to {yours}.", "T"), ("{Mine}, {yours}. I lead.", "T"), ("I lead, {mine} to {yours}.", "T"))
-    add("score-yours", ("You lead, {yours} to {mine}.", "T"), ("{Yours} to {mine}. Your lead.", "T"),
-        ("You have {yours}; I have {mine}.", "T"), ("{Yours}, {mine}. You're ahead.", "T"), ("You're up, {yours} to {mine}.", "T"))
-    add("score-tie", ("{N} all.", "T"), ("All square at {n}.", "T"), ("{N} each.", "T"), ("Level, at {n}.", "T"),
-        ("Even: {n} apiece.", "T"))
-    add("score-reply-ahead", ("So far, so good.", "T"), ("I'll take it.", "T"), ("Long may it last.", "T"),
-        ("Early days yet.", "T"), ("The cards are kind tonight.", "T"))
-    add("score-reply-behind", ("I'll catch up.", "T"), ("Plenty of game left.", "T"), ("Not over yet.", "T"),
-        ("My turn next hand.", "T"), ("We'll see about that.", "T"))
-    add("score-reply-tie", ("Neck and neck.", "T"), ("Anyone's game.", "T"), ("As it should be.", "T"), ("Nothing in it.", "T"))
-    add("need", ("Just {need} more.", "T"), ("{Need} to go.", "T"), ("Only {need} more for me.", "T"),
-        ("{Need} more, and I'm out.", "N"), ("I'll make cards. That's all I need.", "L"))
     add("rematch", ("Another game?", "T"), ("Same again?", "T"), ("Shall we go again?", "T"), ("Best of seven?", "Ws"),
         ("One more?", "T"))
     add("rematch-reply", ("You're on.", "T"), ("Gladly.", "T"), ("Let me win one back.", "T"), ("Let me win once!", "Tn"),

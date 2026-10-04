@@ -120,15 +120,12 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
     stage.render();
   }
 
-  // `pace`: the count paced by what is said (talk.js countPace), in ms;
-  // not at the Instant speed, where nothing waits for the talk.
+  // `pace`: the count paced by the score's popups (choreography.js count),
+  // in ms; not at the Instant speed, where nothing waits for them.
   function animate(prev, next, waits = {}, pace = null) {
     timeline.skip(); // anything still moving lands first
     const scaled = Object.fromEntries(Object.entries(waits).map(([k, ms]) => [k, ms * timeline.speed]));
-    const paced =
-      pace && timeline.speed <= 10
-        ? { ...pace, lead: pace.lead * timeline.speed, gaps: pace.gaps.map((ms) => ms * timeline.speed), busy: (pace.busy ?? 0) * timeline.speed }
-        : null;
+    const paced = pace && timeline.speed <= 10 ? { ...pace, busy: (pace.busy ?? 0) * timeline.speed } : null;
     const result = choreograph(prev, next, placement, view(), { waits: scaled, pace: paced });
     placement = result.placement;
     state = next;

@@ -493,14 +493,21 @@ def check_cheers(browser, failures):
         play_by_clicking(page, failures, made)
         made += 1
         if last:
-            seen = page.evaluate("""() => new Promise((done) => {
-                const all = new Map(); const t0 = performance.now();
+            # And nothing said while the count is told (the sixth
+            # play-testing: "Remove the dialog balloons during scoring, and
+            # let the pop-ups do the work").
+            seen, spoken = page.evaluate("""() => new Promise((done) => {
+                const all = new Map(); const said = new Set(); const t0 = performance.now();
                 const look = () => {
-                    for (const c of window.cassino3d.cheers()) all.set(c.label, c.bursts);
-                    if (performance.now() - t0 < 4000) setTimeout(look, 30); else done([...all]);
+                    const cheers = window.cassino3d.cheers();
+                    for (const c of cheers) all.set(c.label, c.bursts);
+                    if (cheers.length) for (const l of window.cassino3d.said()) said.add(l.words);
+                    if (performance.now() - t0 < 4000) setTimeout(look, 30); else done([[...all], [...said]]);
                 };
                 look();
             })""")
+            if spoken:
+                failures.append(f"said while the count was told: {spoken}")
             labels = {label for label, _ in seen}
             if not labels or not labels <= {"Most cards", "Most spades", "Big Cassino", "Little Cassino", "Ace"}:
                 failures.append(f"the count was not celebrated on the table: {seen}")

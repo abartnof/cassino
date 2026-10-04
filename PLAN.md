@@ -181,7 +181,10 @@ legal move. RULES.md now says each held card answers for one build value.
   your opponent's hand drawing back over one when it comes, partly out of
   the window's top; your hand ending just above the controls' strip at any
   window height; the hints and explanations at the bottom right, and your
-  opponent's words beside their hand.
+  opponent's words beside their hand. Nothing said while a hand is scored
+  (the count's chant and the score said after the hand gone, what was
+  still being said taken down as the count begins): the score's popups
+  tell it.
 - **The South African game, researched**
   (`research/12-south-african-khasino.md`): KASA's rulebooks and its own
   online game as the canonical sources, twenty open-source engines, and
