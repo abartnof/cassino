@@ -302,9 +302,16 @@ Material Design 3, from piquet's shell.
 
 The tutorial pages follow the teaching ladder: pairing, summing, building,
 raising, multiple builds (`DESIGN.md` §12.5), each at its first occurrence
-in a real game; Royal adds "The court cards count"; the ace's 1-or-14 adds
-one more. Help pages, reachable at any time, cover the rules, the count and
-the table talk.
+in a real game; Royal adds its jacks, queens and kings with numbers; the
+ace's 1-or-14 adds one more. Help pages, reachable at any time, cover the
+rules, the count and the table talk.
+
+Each page is written for its moment, for a new player (the fourth
+play-testing): what is about to happen, and only what is needed to play it,
+in plain words. Every term is explained where it first appears ("hand" as
+six deals, a build that belongs to whoever built on it last), the
+interface named as it is (Take, Build, Trail), and no history that does not
+help play. A test keeps a list of jargon out of the pages.
 
 ## 10. Phases
 

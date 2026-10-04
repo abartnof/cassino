@@ -17,6 +17,21 @@ test("the pages parse, one for each key, each with words", () => {
   assert.ok(bold.length > 0, "bold survives the parse");
 });
 
+// Written for new players (the fourth play-testing: every term explained,
+// concise, readable): none of the game's jargon a new player would not
+// know, no history that does not help them play, and the interface as it
+// is (the move bar's Take, Build and Trail, not the old chips).
+const JARGON = ["fishing", "court card", "capture", "controller", "control", "guard", "single build", "chip", "old books", "1867", "colour"];
+
+test("the tutorial is plain: no jargon a new player would not know", () => {
+  const words = parseTutorial(TEXT).flatMap((p) => [p.title, ...p.blocks.flatMap((b) => (b.spans ? [b.spans] : b.items)).map((spans) => spans.map((x) => x.text).join(""))]);
+  const found = JARGON.filter((term) => words.some((w) => new RegExp(`\\b${term}`, "i").test(w)));
+  assert.deepEqual(found, []);
+  const intro = parseTutorial(TEXT)[0].blocks.flatMap((b) => b.spans ?? b.items.flat()).filter((x) => x.bold).map((x) => x.text);
+  for (const button of ["Take", "Build", "Trail"]) assert.ok(intro.some((t) => t.includes(button)), `the intro names the ${button} button`);
+  assert.ok(intro.includes("hand"), "the intro says what a hand is: six deals, scored at the end");
+});
+
 const item = (id, cards, build = null) => ({ id, cards: cards.map((c) => ({ card: c })), build });
 const classic = { game: "classic", aces14: false, sweeps: true };
 

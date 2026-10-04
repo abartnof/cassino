@@ -560,7 +560,7 @@ def check_tutorial(browser, failures):
         failures.append(f"tutorial: the first page is {title!r}")
     page.locator(".tutorial-close").click()
     page.wait_for_timeout(800)
-    ladder = {"Pairing", "Summing", "Building", "Raising a build", "Multiple builds"}
+    ladder = {"Taking a match", "Taking cards that add up", "Building", "Raising a build", "Multiple builds"}
     seen = set()
     for n in range(24):
         # A page opens once the cards are still after a move.
