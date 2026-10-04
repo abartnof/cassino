@@ -60,7 +60,8 @@ function recorder() {
     fillText: (text, x, y, maxWidth) => calls.push(["fillText", text, x, y, font, ctx.fillStyle, maxWidth]),
     save: () => calls.push(["save"]),
     restore: () => calls.push(["restore"]),
-    translate: () => {},
+    translate: (x, y) => calls.push(["translate", x, y]),
+    scale: (x, y) => calls.push(["scale", x, y]),
     rotate: (a) => calls.push(["rotate", a]),
   };
   return ctx;
@@ -74,16 +75,53 @@ test("a face is paper from edge to edge -- the table's ink line draws its edge",
   assert.ok(Math.abs(h - 700) < 1e-9, `${h} tall`);
 });
 
-test("each corner has the rank over the suit, the same at both ends, turned about the centre", () => {
+// The sixth play-testing: on an iPhone the table's cards were "still too
+// small to read". A card on the screen is never read upside down, so the
+// face has no turned corner; below the corner the hand needs, a big rank
+// and suit fill the card, for the table, where all of a card shows.
+const fills = (code, width = 700) => {
   const ctx = recorder();
-  drawJumbo(ctx, 700, "TH");
-  const texts = ctx.calls.filter((c) => c[0] === "fillText");
+  drawJumbo(ctx, width, code);
+  return { ctx, texts: ctx.calls.filter((c) => c[0] === "fillText"), u: width / JUMBO.w };
+};
+const sizeOf = (call) => Number(call[4].match(/([\d.]+)px/)[1]);
+
+test("one corner, the rank over the suit, at the top left; none turned upside down", () => {
+  const { ctx, texts } = fills("TH");
+  assert.ok(!ctx.calls.some((c) => c[0] === "rotate"), "nothing turned");
   assert.equal(texts.length, 4);
-  assert.deepEqual(texts.map((t) => t[1]), ["10", "♥︎", "10", "♥︎"]);
-  assert.ok(ctx.calls.some((c) => c[0] === "rotate" && Math.abs(c[1] - Math.PI) < 1e-9));
+  assert.deepEqual(texts.map((t) => t[1]), ["10", "♥︎", "10", "♥︎"], "the corner, then the big rank and suit");
   for (const t of texts) assert.equal(t[5], JUMBO.red);
-  // The rank above the suit.
-  assert.ok(texts[0][3] < texts[1][3]);
+  assert.ok(texts[0][3] < texts[1][3], "the corner's rank above its suit");
+});
+
+test("below the corner, a big rank and suit side by side, centred across the card and within it", () => {
+  for (const code of ["7S", "QC", "AD", "KH", "TD", "2S"]) {
+    const { texts, u } = fills(code);
+    const [rank, suit, bigRank, bigSuit] = texts;
+    assert.ok(sizeOf(bigRank) >= 1.5 * sizeOf(rank), `${code}: the big rank ${sizeOf(bigRank)} against the corner's ${sizeOf(rank)}`);
+    // The recorder's ink: a character 0.8 of its size wide, its capitals 0.7 tall.
+    const cornerBottom = suit[3];
+    const capTop = bigRank[3] - 0.7 * sizeOf(bigRank);
+    assert.ok(capTop >= cornerBottom, `${code}: the big rank starts at ${capTop}, under the corner's ${cornerBottom}`);
+    assert.ok(bigRank[3] <= (JUMBO.h - JUMBO.big.margin) * u + 1e-9, `${code}: the big rank runs off the card`);
+    const right = bigSuit[2] + 0.8 * sizeOf(bigSuit);
+    assert.ok(bigSuit[2] > bigRank[2], `${code}: the suit beside the rank`);
+    if (code[0] !== "T") {
+      const left = bigRank[2];
+      assert.ok(Math.abs((left + right) / 2 - (JUMBO.w / 2) * u) < 1e-6, `${code}: centred across the card`);
+      assert.ok(left >= JUMBO.big.margin * u - 1e-9 && right <= (JUMBO.w - JUMBO.big.margin) * u + 1e-9, `${code}: within the card`);
+    }
+  }
+});
+
+test("every big rank is set at one size, the ten narrowed to fit as the others do", () => {
+  const sizes = new Set(["7S", "TS", "QS", "AS", "KD"].map((code) => fills(code).texts[2][4]));
+  assert.equal(sizes.size, 1);
+  const { ctx } = fills("TS");
+  const scale = ctx.calls.find((c) => c[0] === "scale");
+  assert.ok(scale && scale[1] < 1 && scale[2] === 1, `the ten narrowed: ${scale}`);
+  assert.ok(!fills("7S").ctx.calls.some((c) => c[0] === "scale"), "a single character is not");
 });
 
 test("every rank is set at one size, the ten included, in the platform's bold UI font", () => {

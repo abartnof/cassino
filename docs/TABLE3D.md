@@ -491,10 +491,14 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   the aids' panel, above the controls and the bar of icons at the foot;
   sideways: between the HUD's column and the controls') and frames the table
   between them, laying the cards out afresh when the phone turns. The Large
-  Text faces (automatic on a phone, or chosen in the settings) are fitted
-  to the 2.9 units of each card cassino's hand of four shows, which the
-  faces test measures. The browser test plays by tapping on a phone held
-  either way.
+  Text faces (automatic on a phone or a tablet, or chosen in the settings)
+  have their index fitted to the 2.9 units of each card cassino's hand of
+  four shows, which the faces test measures, at the top left only (a card
+  on the screen is never read upside down); below it, for the table, where
+  all of a card shows, the rank and suit again side by side, as large as
+  the card holds, a 10 narrowed to a single character's width (the sixth
+  play-testing: on an iPhone the table's cards were "still too small to
+  read"). The browser test plays by tapping on a phone held either way.
 - **T9. Traditional objects.** The pegboard, the sweep tally, the stock as a
   clock, polished. **Done**: the scoring board (`pegboard.js`): a wooden
   board of 21 holes a player in fives, a start hole and two pegs each, at

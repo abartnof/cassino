@@ -1,10 +1,11 @@
 // From piquet web3d/src/faces.js @ 254cb3c; cassino's change is the strip
 // (below).
 // The Jumbo Index faces: for a phone, where a fanned hand shows each card
-// only by its corner, faces that are nothing but corner -- the rank large in
+// only by its corner, faces that are nothing but index -- the rank large in
 // the platform's bold UI font (San Francisco on an iPhone), the suit larger
-// beneath it, on one axis, at both ends. Drawn here with Canvas 2D, so no
-// font is bundled or fetched.
+// beneath it, on one axis, at the top left; and below it, for the table,
+// the rank and suit again, as large as the card holds. Drawn here with
+// Canvas 2D, so no font is bundled or fetched.
 //
 // From the user's own recipe (1 October 2026), kept as given in the commit
 // that brought it, d2507ac. What differs, for the table: the face is paper
@@ -47,6 +48,13 @@ export const JUMBO = Object.freeze({
   // index reaches the recipe's own sizes: legible on the table's cards too.
   strip: 2.9,
   margin: 0.25,
+  // The sixth play-testing: on an iPhone the table's cards were "still too
+  // small to read". A card on the screen is never read upside down, so the
+  // face has no turned corner (the user's choice); below the corner, a big
+  // rank and suit side by side fill the card, for the table, where all of
+  // it shows: `below` the corner, `margin` from the card's sides and foot,
+  // `gap` between them.
+  big: Object.freeze({ below: 0.35, margin: 0.3, gap: 0.3 }),
 });
 
 const RANK_FONT = "-apple-system, system-ui, sans-serif";
@@ -97,7 +105,31 @@ function fitted(ctx) {
   };
   const rank = Math.min(JUMBO.rankSize, (100 * room) / widest(`700 100px ${RANK_FONT}`, ["7", "8", "9", "J", "Q", "K", "A"]));
   const suit = Math.min(JUMBO.suitSize, (100 * room) / widest(`100px ${SUIT_FONT}`, Object.values(GLYPH)));
-  return { room, rank, suit, axis: JUMBO.margin + room / 2 };
+  // The corner's foot: the rank's capitals, the gap, the tallest suit's ink.
+  const tall = (font, texts) => {
+    ctx.font = font;
+    return Math.max(...texts.map((t) => {
+      const m = ctx.measureText(t);
+      return m.actualBoundingBoxAscent + (m.actualBoundingBoxDescent ?? 0);
+    }));
+  };
+  const cap = tall(`700 100px ${RANK_FONT}`, ["H"]) / 100;
+  const suitInk = tall(`100px ${SUIT_FONT}`, Object.values(GLYPH)) / 100;
+  const bottom = JUMBO.rankTop + cap * rank + JUMBO.gap * (rank / JUMBO.rankSize) + suitInk * suit;
+  // The big rank and suit, one size for every card: the suit's ink as tall
+  // as the rank's capitals, the widest one-character rank and the widest
+  // suit side by side across the card, below the corner (a 10 is narrowed
+  // to the widest one-character rank's width).
+  const { below, margin, gap } = JUMBO.big;
+  const singles = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "J", "Q", "K"];
+  const rankWide = widest(`700 100px ${RANK_FONT}`, singles) / 100;
+  const suitPer = cap / suitInk; // the suit's size for each unit of the rank's
+  const suitWide = (widest(`100px ${SUIT_FONT}`, Object.values(GLYPH)) / 100) * suitPer;
+  const top = bottom + below;
+  const height = JUMBO.h - margin - top;
+  const size = Math.min((JUMBO.w - 2 * margin - gap) / (rankWide + suitWide), height / cap);
+  const big = { rank: size, suit: size * suitPer, cap: cap * size, top, height, rankWide: rankWide * size };
+  return { room, rank, suit, axis: JUMBO.margin + room / 2, big };
 }
 
 // One corner: the rank's capitals from rankTop, centred in the strip; the
@@ -125,9 +157,42 @@ function corner(ctx, u, rank, suit, fit) {
   ctx.fillText(glyph, fit.axis * u - (inkLeft + inkRight) / 2, suitTop + m.actualBoundingBoxAscent);
 }
 
+// The big rank and suit below the corner, side by side and centred across
+// the card, the suit's ink centred on the rank's capitals; a 10 narrowed to
+// the room a one-character rank has.
+function large(ctx, u, rank, suit, fit) {
+  const { big } = fit;
+  ctx.fillStyle = COLOUR[suit];
+  ctx.textBaseline = "alphabetic";
+  ctx.textAlign = "left";
+  ctx.font = `700 ${big.rank * u}px ${RANK_FONT}`;
+  const r = ctx.measureText(rank);
+  const rankInk = r.actualBoundingBoxLeft + r.actualBoundingBoxRight;
+  const narrow = Math.min(1, (big.rankWide * u) / rankInk);
+  ctx.font = `${big.suit * u}px ${SUIT_FONT}`;
+  const glyph = GLYPH[suit];
+  const g = ctx.measureText(glyph);
+  const suitInk = g.actualBoundingBoxLeft + g.actualBoundingBoxRight;
+  const suitTall = g.actualBoundingBoxAscent + (g.actualBoundingBoxDescent ?? 0);
+  const width = rankInk * narrow + JUMBO.big.gap * u + suitInk;
+  const left = (JUMBO.w * u - width) / 2;
+  const capTop = (big.top + (big.height - big.cap) / 2) * u;
+  ctx.font = `700 ${big.rank * u}px ${RANK_FONT}`;
+  if (narrow < 1) {
+    ctx.save();
+    ctx.scale(narrow, 1);
+    ctx.fillText(rank, (left + r.actualBoundingBoxLeft * narrow) / narrow, capTop + big.cap * u);
+    ctx.restore();
+  } else ctx.fillText(rank, left + r.actualBoundingBoxLeft, capTop + big.cap * u);
+  ctx.font = `${big.suit * u}px ${SUIT_FONT}`;
+  const suitLeft = left + rankInk * narrow + JUMBO.big.gap * u;
+  const inkTop = capTop + (big.cap * u - suitTall) / 2;
+  ctx.fillText(glyph, suitLeft + g.actualBoundingBoxLeft, inkTop + g.actualBoundingBoxAscent);
+}
+
 // The face of the card `code` ("TH", "AS", ...) on a 2D context `width`
-// pixels wide and 1.4 times as tall. The bottom corner is the top one turned
-// half round the card's centre.
+// pixels wide and 1.4 times as tall: the corner at the top left, and the
+// big rank and suit below it.
 export function drawJumbo(ctx, width, code) {
   const [rank, suit] = rankAndSuit(code);
   const u = width / JUMBO.w;
@@ -136,12 +201,7 @@ export function drawJumbo(ctx, width, code) {
   ctx.fillRect(0, 0, width, height);
   const fit = fitted(ctx);
   corner(ctx, u, rank, suit, fit);
-  ctx.save();
-  ctx.translate(width / 2, height / 2);
-  ctx.rotate(Math.PI);
-  ctx.translate(-width / 2, -height / 2);
-  corner(ctx, u, rank, suit, fit);
-  ctx.restore();
+  large(ctx, u, rank, suit, fit);
 }
 
 // The 32 faces as textures, keyed by the table's codes, `width` pixels wide.
