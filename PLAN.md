@@ -170,7 +170,8 @@ legal move. RULES.md now says each held card answers for one build value.
   points tell it from one); Explanations to the left of Hints, under the
   cards and in the settings, the lesser aid first; and the move bar's
   places fixed, the running sum's among them, so nothing moves as a move
-  is chosen (two moves of a kind share a place, their words fitted to it).
+  is chosen (two moves of a kind share a place, their words fitted to it),
+  and each move's button faintly outlined.
 - **The South African game, researched**
   (`research/12-south-african-khasino.md`): KASA's rulebooks and its own
   online game as the canonical sources, twenty open-source engines, and

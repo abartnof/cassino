@@ -424,6 +424,15 @@ md-dialog {
   --md-filled-button-disabled-label-text-color: #6f747c;
   --md-filled-button-disabled-label-text-opacity: 1;
 }
+/* A faint line round each move's button, lit or dimmed (play-testing), so
+   the buttons read as buttons, the sum beside them as a reading. Drawn on
+   the button's edge, round its corners (inside it, the button's own
+   background would cover it). */
+.move-bar md-filled-button {
+  border-radius: calc(var(--move-h, 44px) / 2);
+  outline: 1px solid rgba(27, 31, 36, 0.3);
+  outline-offset: 0;
+}
 .move-bar .place:not([data-n="1"]) md-filled-button {
   --md-filled-button-leading-space: calc(var(--move-h, 44px) * var(--move-split, 0.12));
   --md-filled-button-trailing-space: calc(var(--move-h, 44px) * var(--move-split, 0.12));

@@ -257,7 +257,9 @@ Material Design 3, from piquet's shell.
   share its place, each word fitted to its half (`fitLabels`), or, where
   that would be too small to read, only the words that tell them apart
   (*4s*, *8*). They are large filled buttons, solid even when dimmed
-  (play-testing: they are there for the play, no need to hide them). On a
+  (play-testing: they are there for the play, no need to hide them), each
+  with a faint outline (the sixth play-testing), which the sum's place,
+  a reading and not a button, does not have. On a
   desktop the bar fills the space between the table's first row and your
   hand, clear of a card chosen from it, as tall as there is room for, 40
   to 84 px, and no wider than the window (`moveBarFit`), and stays put as

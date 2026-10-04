@@ -713,6 +713,17 @@ def check_move_bar_at(browser, failures, viewport):
     }).map((b) => b.textContent)""")
     if over:
         failures.append(f"{where}: labels wider than their buttons: {over}")
+    # A faint outline round each move's button (play-testing), lit or not;
+    # none round the sum, which is not one.
+    lines = page.evaluate("""() => [...document.querySelectorAll('.move-bar md-filled-button, .move-bar .sum')].map((b) => {
+      const s = getComputedStyle(b);
+      return [b.classList.contains('sum') ? 'sum' : b.dataset.kind, s.outlineStyle, parseFloat(s.outlineWidth), s.outlineColor];
+    })""")
+    for kind, style, width, colour in lines:
+        alpha = float(colour.rsplit(",", 1)[1].strip(" )")) if colour.startswith("rgba") else 1.0
+        outlined = style == "solid" and width >= 1 and 0 < alpha <= 0.4
+        if outlined != (kind != "sum"):
+            failures.append(f"{where}: the {kind} {'has no faint outline' if kind != 'sum' else 'is outlined'}: {style} {width} {colour}")
     shot(page, f"t2-move-bar-{where}")
     page.context.close()
 
