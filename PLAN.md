@@ -253,6 +253,13 @@ every part by others (`CREDITS.md`).
    opponent's hand; the second review, S4). Fairness is still checkable
    after the game, with the replay.
 
+2. **The trackers' fold** could not be made to fail here (Chromium and
+   WebKit, mouse and touch); the whole heading is now its button. Worth
+   trying on the device that found it.
+3. **The eye at 70 degrees**, of the 70 or 80 play-testing offered: at 80
+   the table is flat, and on a phone the hand would shrink further.
+   `units.js` `PITCH`; the zones and the phone camera's reach would follow.
+
 ## What could come next
 
 - Real devices: the phone and tablet layouts are tested in headless
