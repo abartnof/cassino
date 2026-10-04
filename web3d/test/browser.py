@@ -247,14 +247,20 @@ def check_replay(page, failures):
 
 
 def check_count(page, s, failures):
-    """At the end of a hand, once the HUD's popups have played: it shows the
-    game's totals, and its ledger has a counted hand for each hand played."""
-    page.wait_for_function("window.cassino3d.hud().idle", timeout=30_000)
+    """At the end of a hand, once the HUD's popups have played and the count
+    has been told to its end: it shows the game's totals, and its ledger has
+    a counted hand for each hand played. (The hand joins the ledger as its
+    count's last line ends, which can be after the last popup: aces after a
+    side's first are told in its one popup.)"""
+    counted = len([e for e in s["events"] if e["kind"] == "scored"])
+    try:
+        page.wait_for_function("(n) => window.cassino3d.hud().idle && window.cassino3d.hud().hands >= n", arg=counted, timeout=30_000)
+    except Exception:
+        pass  # reported below
     hud = page.evaluate("window.cassino3d.hud()")
     totals = {"you": s["scores"]["you"], "opp": s["scores"]["them"]}
     if hud["totals"] != totals or hud["shown"] != totals:
         failures.append(f"hand {s['hand_number']}: the HUD shows {hud['shown']} (totals {hud['totals']}), the game is {totals}")
-    counted = len([e for e in s["events"] if e["kind"] == "scored"])
     if hud["hands"] != counted:
         failures.append(f"hand {s['hand_number']}: the HUD's ledger has {hud['hands']} hands, {counted} were counted")
 
