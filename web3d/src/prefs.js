@@ -7,8 +7,8 @@
 const PREFS = "cassino.prefs";
 // What is kept is every setting, defaults too: the version says which
 // defaults it was kept under, so a default changed since (sweeps, version
-// 2) is not taken for the person's choice.
-const VERSION = 2;
+// 2; the trackers' panel folded, 3) is not taken for the person's choice.
+const VERSION = 3;
 const SITTING = "cassino.sitting";
 const SERIES = "cassino.series";
 
@@ -27,8 +27,9 @@ export const DEFAULTS = Object.freeze({
   aids: Object.freeze({ hints: false, explain: false, play_forced: false }),
   undo: false,
   trackers: true,
-  // The trackers' panel open, or folded to its heading.
-  trackersOpen: true,
+  // The trackers' panel open, or folded to its heading: folded at first
+  // (play-testing), since version 3 of the kept settings.
+  trackersOpen: false,
   // A badge with its value over each build, always in view; always on while
   // the tutorial is (badgesOn).
   buildValues: false,
@@ -104,7 +105,7 @@ export function loadPrefs(store) {
     aids: Object.fromEntries(Object.entries(DEFAULTS.aids).map(([k, v]) => [k, isBool(aids[k]) ? aids[k] : v])),
     undo: isBool(kept.undo) ? kept.undo : DEFAULTS.undo,
     trackers: isBool(kept.trackers) ? kept.trackers : DEFAULTS.trackers,
-    trackersOpen: isBool(kept.trackersOpen) ? kept.trackersOpen : DEFAULTS.trackersOpen,
+    trackersOpen: isBool(kept.trackersOpen) && kept.v >= 3 ? kept.trackersOpen : DEFAULTS.trackersOpen,
     buildValues: isBool(kept.buildValues) ? kept.buildValues : DEFAULTS.buildValues,
     unseen: isBool(kept.unseen) ? kept.unseen : DEFAULTS.unseen,
     sweepWarning: isBool(kept.sweepWarning) ? kept.sweepWarning : DEFAULTS.sweepWarning,

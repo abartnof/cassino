@@ -349,11 +349,18 @@ def check_score_fits(page, failures, where):
 
 
 def check_trackers(browser, failures):
-    """The trackers' panel: a header's tip shows when pointed at (nothing
-    lies over the panel), and the panel folds to its heading and stays
-    folded across a reload."""
+    """The trackers' panel: folded at first; a tap anywhere on its heading
+    opens it; a header's tip shows when pointed at (nothing lies over the
+    panel); it folds again by its chevron; and opened, it stays open across
+    a reload."""
     page = open_page(browser, "seed=7&speed=100", calm=True)
     settle(page)
+    if page.locator(".tracker-table").is_visible():
+        failures.append("the trackers' panel is not folded at first")
+    page.locator(".aids-title").click()
+    page.wait_for_timeout(200)
+    if not page.locator(".tracker-table").is_visible():
+        failures.append("a tap on the trackers' heading did not open the panel")
     try:
         page.locator(".tracker-table thead th.spades").hover(timeout=5000)
         page.wait_for_timeout(200)
@@ -366,11 +373,14 @@ def check_trackers(browser, failures):
     page.wait_for_timeout(200)
     if page.locator(".tracker-table").is_visible():
         failures.append("the trackers' panel did not fold")
+    # Opened again, a choice kept across a reload.
+    page.locator(".aids-head").click()
+    page.wait_for_timeout(200)
     page.reload()
     page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
     settle(page)
-    if page.locator(".tracker-table").is_visible() or not page.locator(".aids-title").is_visible():
-        failures.append("the trackers' panel did not stay folded across a reload")
+    if not page.locator(".tracker-table").is_visible():
+        failures.append("the trackers' panel did not stay open across a reload")
     page.context.close()
 
 

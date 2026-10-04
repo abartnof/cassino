@@ -66,10 +66,15 @@ test("build values: off by default, kept when chosen, and always on with the tut
   assert.equal(loadPrefs(store).buildValues, true);
 });
 
-test("the trackers' panel starts open, and stays as it was left", () => {
-  assert.equal(DEFAULTS.trackersOpen, true);
+// Play-testing: "the card tracker hud should be collapsed by default".
+test("the trackers' panel starts folded, and stays as it was left", () => {
+  assert.equal(DEFAULTS.trackersOpen, false);
   const store = memory();
-  savePrefs(store, { ...DEFAULTS, trackersOpen: false });
+  savePrefs(store, { ...DEFAULTS, trackersOpen: true });
+  assert.equal(loadPrefs(store).trackersOpen, true);
+  // Settings kept before it folded by default hold the old default, open,
+  // which is not taken for a choice.
+  store.setItem("cassino.prefs", JSON.stringify({ ...DEFAULTS, trackersOpen: true, v: 2 }));
   assert.equal(loadPrefs(store).trackersOpen, false);
 });
 

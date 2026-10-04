@@ -26,8 +26,8 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
     <div class="info"><div class="hud-slot"></div></div>
     <p class="focus-told" aria-live="polite"></p>
     <section class="aids-panel" hidden aria-label="Captures and the cards still out">
-      <div class="aids-head"><h2 class="aids-title">Captured this hand</h2></div>
-      <div class="aids-body">
+      <h2 class="aids-heading"><button type="button" class="aids-head" aria-controls="aids-body"><span class="aids-title">Captured this hand</span></button></h2>
+      <div class="aids-body" id="aids-body">
         <table class="tracker-table"><thead><tr></tr></thead><tbody></tbody></table>
         <p class="out" hidden></p>
       </div>
@@ -206,23 +206,25 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
   const title = panel.querySelector(".aids-title");
   const body = panel.querySelector(".aids-body");
   const outLine = $(".out");
-  let showing = { trackers: true, unseen: false, open: true };
-  // Folded to its heading, or open; the heading says what is in it.
-  const fold = el("md-icon-button", { class: "aids-fold", toggle: true }, chevron("less"), chevron("more"));
-  fold.lastChild.setAttribute("slot", "selected");
-  fold.addEventListener("change", () => {
-    showing.open = !fold.selected;
+  let showing = { trackers: true, unseen: false, open: false };
+  // Folded to its heading, or open; the heading says what is in it. The
+  // whole heading is the button, the chevron at its end saying which way
+  // it goes (play-testing: the chevron alone, a small target, "isn't
+  // working").
+  const head = panel.querySelector(".aids-head");
+  const fold = el("span", { class: "aids-fold", "aria-hidden": "true" }, chevron("less"), chevron("more"));
+  head.append(fold);
+  head.addEventListener("click", () => {
+    showing.open = !showing.open;
     fit();
     onFold(showing.open);
   });
-  panel.querySelector(".aids-head").append(fold);
   const fit = () => {
     table.hidden = !showing.trackers;
     body.hidden = !showing.open;
     panel.classList.toggle("folded", !showing.open);
-    fold.selected = !showing.open;
-    fold.setAttribute("aria-label", showing.open ? "Fold the panel" : "Open the panel");
-    fold.title = showing.open ? "Fold the panel" : "Open the panel";
+    head.setAttribute("aria-expanded", String(showing.open));
+    head.title = showing.open ? "Fold the panel" : "Open the panel";
     title.textContent = showing.trackers ? "Captured this hand" : "Still out";
     panel.hidden = !showing.trackers && outLine.hidden;
   };
@@ -440,7 +442,7 @@ function chevron(which) {
   const node = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   node.setAttribute("viewBox", "0 -960 960 960");
   node.setAttribute("aria-hidden", "true");
-  node.setAttribute("class", "icon symbol");
+  node.setAttribute("class", `icon symbol ${which}`);
   const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
   path.setAttribute("d", CHEVRONS[which]);
   node.append(path);
