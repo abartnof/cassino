@@ -133,26 +133,26 @@ export function speech(state, since = 0) {
     const who = e.you ? "you" : "them";
     switch (e.kind) {
       case "cut":
-        // The house rules, agreed before the first cut: your opponent asks,
-        // and your settings answer. Equal cards are cut again, and the rules
-        // are not asked twice. First, the game proposed and accepted, said
-        // whatever the room (nothing waits on the opening's talk).
-        if (!state.events.slice(0, at).some((p) => p.kind === "cut")) {
-          remark("them", "hello", null, { keep: true });
-          remark("you", "hello-back", null, { keep: true });
-          say("them", "sweeps-ask");
-          say("you", rules.sweeps === false ? "sweeps-no" : "sweeps-yes");
-          if (rules.game === "royal") say("them", "royal");
-          if (rules.aces14) say("them", "aces-14");
-          say("them", "low-deals");
-        }
+        // Equal cards are cut again.
         if (e.yours && e.theirs && e.yours.rank === e.theirs.rank) say("them", "cut-again");
         break;
       case "first_dealer":
+        // Whose deal it is, said as the cut cards are seen (play-testing:
+        // said later, it came after your opponent had played).
+        say("them", "low-deals");
         say("them", e.you ? "your-deal" : "my-deal");
         break;
       case "dealt": {
         const dealer = e.you_deal ? "you" : "them";
+        // The house rules, agreed as the first deal begins, once: your
+        // opponent asks (Jack London's players), and your settings answer;
+        // Royal's values and the aces, remarked where there is room.
+        if (e.hand === 1 && e.deal === 1) {
+          say("them", "sweeps-ask");
+          say("you", rules.sweeps === false ? "sweeps-no" : "sweeps-yes");
+          if (rules.game === "royal") remark("them", "royal");
+          if (rules.aces14) remark("them", "aces-14");
+        }
         if (e.deal === 1 && e.hand > 1) remark(dealer, "new-hand");
         else if (e.deal > 1 && !e.last) remark(dealer, "deal-more");
         if (e.last) {

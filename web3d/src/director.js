@@ -260,6 +260,13 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
       settle(start);
       return animate(start, s, waits);
     },
+    // The opening's moments on paper, in ms: what restart(s, { dealt: true })
+    // would give, without playing it (for the length of the opening's talk).
+    preview(s) {
+      const start = opening(s);
+      const { beats } = choreograph(start, s, initialPlacement(start, view()), view());
+      return Object.fromEntries(Object.entries(beats).map(([k, ms]) => [k, ms / timeline.speed]));
+    },
     // The same state laid out afresh, at once (the phone turned, the
     // zones changed), keeping what is timed to the moves.
     relayout() {

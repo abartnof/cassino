@@ -474,11 +474,21 @@ def check_talk(browser, failures):
     agreed, and what one speaker says at once said in one box; and quiet,
     nothing."""
     page = open_page(browser, "seed=7&manual&game=royal", calm=True)
-    hand = {c["card"] for c in page.evaluate("window.cassino3d.state().hand")}
+    start = page.evaluate("window.cassino3d.state()")
+    hand = {c["card"] for c in start["hand"]}
+    # Your opponent's first move, when the game opens with it, comes only
+    # once the opening's talk is said (play-testing: "Your deal." came after
+    # they had played).
+    first = next((e["card"]["card"] for e in start["events"] if e["kind"] == "played"), None)
+    answered_at = played_at = None
     theirs, dealt_at, after = set(), None, set()
     for k in range(120):
         page.evaluate("window.cassino3d.tick(100)")
         said = page.evaluate("window.cassino3d.said()")
+        if answered_at is None and any(l["who"] == "you" for l in said):
+            answered_at = k
+        if played_at is None and first and dealt_at is not None and first in page.evaluate("window.cassino3d.faces()"):
+            played_at = k
         boxes = {(l["who"], l["words"]) for l in said}
         if dealt_at is None and set(page.evaluate("window.cassino3d.faces()")) & hand:
             dealt_at, before = k, boxes
@@ -491,13 +501,13 @@ def check_talk(browser, failures):
             break
     if dealt_at is None or not after:
         failures.append("the deal waited for the house rules to be agreed")
-    # Royal: your opponent proposes the game; asks about sweeps; after your
-    # answer says the rest of the house rules at once (Royal, low deals);
-    # and, the cut seen, whose deal it is: four boxes, not one a line.
-    if len(theirs) != 4:
+    if first and (played_at is None or answered_at is None or played_at < answered_at):
+        failures.append(f"your opponent played (at {played_at}) before the opening's talk was said (answered at {answered_at})")
+    # Royal: the cut seen, your opponent says low deals and whose deal it is
+    # at once; as the deal begins, asks about sweeps; and after your answer
+    # says Royal's rule: three boxes, not one a line.
+    if len(theirs) != 3:
         failures.append(f"your opponent's lines at one moment were not said as one: {sorted(theirs)}")
-    if not theirs & wordings("hello"):
-        failures.append(f"the game was not proposed before the house rules: {sorted(theirs)}")
     page.evaluate("localStorage.setItem('cassino.prefs', JSON.stringify({ talk: 'none' }))")
     page.reload()
     page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)

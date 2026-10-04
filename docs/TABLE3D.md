@@ -149,10 +149,15 @@ The dialogue boxes say what Cassino players say (`DESIGN.md` §12.1): the
 build calls ("Building eight." / "Building eights."), the dealer's "Last.",
 "Clear!" and "Clean sweep!" for a sweep, "Cash." for an ace taking an ace,
 the clinches ("That's the cards." / "Seven spades."), sometimes "You left
-the five." (the *dejado* custom), and the count's chant. Before the game,
-the settings are staged as Jack London's players' negotiation ("Do you count
-sweeps?" … "Low deals."), answered by your settings either way, once: a
-tied cut is only cut again ("Equal. Cut again."). A capture that
+the five." (the *dejado* custom), and the count's chant. Whose deal it is
+is said as the cut cards are seen ("Low deals. Your deal."); then, as the
+first deal begins, the settings are staged as Jack London's players'
+negotiation ("Do you count sweeps?"), answered by your settings either way,
+once; a tied cut is only cut again ("Equal. Cut again."). The fourth
+play-testing found "Your deal." said after your opponent had played: your
+opponent's first move now waits for the opening's calls (`main.js`
+`openingWaits`, planned on the opening's moments, `director.preview`),
+which the deal does not. A capture that
 takes a casino card ("Now I have Big Casino.") or a haul of four table cards
 or more ("A good haul.") is remarked by its maker, unless a sweep or cash
 speaks for it. Cards tied at 26 each are said before the chant ("The cards
@@ -171,7 +176,7 @@ eight!"), a sweep, a Casino or an ace felt by the other ("It's hard on
 those who get swept.", 1878; "Such luck!"). The dealer announces a new hand
 and each deal, "Last." is answered ("The boat's leaving!"), your opponent
 thinks aloud now and then before a move ("With this one, I'll fall on
-you.", Cuarenta), proposes the game before the house rules, says the score
+you.", Cuarenta), names Royal's values as the game begins, says the score
 after each hand and the end in sight, offers a rematch, and, kept waiting,
 says so ("Take your time."). The talk follows each build's controller
 through the events (`talk.js` `followBuilds`, checked against the engine's

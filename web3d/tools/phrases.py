@@ -78,10 +78,8 @@ SOURCES = {
           "ponerse charlatán\": you have to turn into a chatterbox): \"Dos, señor juez\" (two, "
           "Mr. Judge), \"Con esta te caigo\" (with this one I'll fall on you), \"As que no me "
           "caerás\" (ace, you won't fall on me), in translation [05-S56][05-S57][05-S59]",
-    "Fs": "Finnish, in translation: an emigrant's letter (1932), \"Eiköhän pelata casinoa?\" "
-          "(shall we play casino?) [10-S10]; the story \"Iso casino\" (1938), \"this was a big "
-          "casino for me\" [10-S6]",
-    "Re": "Reynolds, Cheap Living (1797): \"I do long for a game of cassino\" [05-S5]",
+    "Fs": "Finnish, in translation: the story \"Iso casino\" (1938), \"this was a big casino for "
+          "me\" [10-S6]",
     "Gu": "a French novel (1986), on laying down the deuce of spades: \"Little Casino, a point "
           "for you, if you take it\", in translation [10-S62]",
     "Ti": "the German \"eine Karte für den Tisch bringen\" (bring a card for the table), in "
@@ -142,7 +140,7 @@ def phrase_groups():
     add("sweeps-yes", ("We count them.", "T"), ("Of course.", "T"), ("Every one.", "T"),
         ("Every single time.", "B"), ("Yes, a point each.", "T"), ("They should be scored.", "St"))
     add("sweeps-no", ("Certainly not.", "L"), ("No sweeps.", "T"), ("Not this time.", "T"),
-        ("Sweeps don't count.", "H"), ("No. They're the luck of the deal.", "B"), ("We'll leave them out.", "T"))
+        ("Sweeps don't count.", "H"), ("We'll leave them out.", "T"))
     add("royal", ("Royal, then: the court cards count.", "T"),
         ("Jack eleven, queen twelve, king thirteen.", "F"),
         ("Knave eleven, queen twelve, king thirteen.", "Dk"),
@@ -154,13 +152,13 @@ def phrase_groups():
         ("The ace is fourteen or one, at your option.", "F"),
         ("Aces one or fourteen, as the player elects.", "Us"))
     add("low-deals", ("Low deals.", "L"), ("Low card deals.", "T"), ("Cut. Low deals.", "T"),
-        ("Cut for the deal: low deals.", "T"), ("Ace is low. Low deals.", "T"), ("Shall we cut? Low deals.", "T"))
+        ("Lowest card deals.", "T"), ("Ace is low. Low deals.", "T"))
     add("cut-again", ("Equal. Cut again.", "T"), ("A tie. Cut again.", "T"), ("The same. Again.", "T"),
         ("Even. Once more.", "T"), ("Equal cards: cut again.", "T"))
     add("my-deal",("My deal.", "T"), ("I deal.", "T"), ("I'll deal.", "T"),
-        ("Low card. My deal.", "T"), ("The deal is mine.", "T"), ("Mine is lower. I deal.", "T"))
-    add("your-deal", ("Your deal.", "T"), ("You deal.", "T"), ("Over to you. Your deal.", "T"),
-        ("Low card. Your deal.", "T"), ("The deal is yours.", "T"), ("Yours is lower. Your deal.", "T"))
+        ("The deal is mine.", "T"), ("Mine is lower. I deal.", "T"))
+    add("your-deal", ("Your deal.", "T"), ("You deal.", "T"),
+        ("You're dealing.", "T"), ("The deal is yours.", "T"), ("Yours is lower. Your deal.", "T"))
 
     # The dealer's last cards: the announcement the rules require, and the
     # same call in the other games that have it.
@@ -253,10 +251,6 @@ def phrase_groups():
     # card that takes it; {old} a build's value before a raise; {mine},
     # {yours}, {n} the score; {need} the points still needed. Nothing said
     # claims a card the speaker cannot be known to hold.
-    add("hello", ("Shall we play casino?", "Fs"), ("I do long for a game.", "Re"), ("A game of cassino?", "T"),
-        ("Fancy a game?", "T"), ("Shall we?", "T"), ("Ready for a game?", "T"), ("Care for a hand or two?", "T"))
-    add("hello-back", ("Gladly.", "T"), ("Let's play.", "T"), ("Deal me in.", "T"), ("With pleasure.", "T"),
-        ("You're on.", "T"), ("I'd love to.", "T"))
     add("new-hand", ("New hand.", "T"), ("Fresh cards.", "T"), ("Here we go again.", "T"), ("Another hand, then.", "T"),
         ("Shuffled and ready.", "T"), ("A new hand. Good luck.", "T"), ("Cards again.", "T"))
     add("deal-more", ("Four more each.", "T"), ("More cards.", "T"), ("Four apiece.", "T"), ("Here's four more.", "T"),

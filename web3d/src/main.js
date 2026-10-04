@@ -15,7 +15,7 @@ import { Vector3 } from "three";
 import { loadTextures, vectorWidth } from "./art.js";
 import { createChrome } from "./chrome.js";
 import { createDeck } from "./deck.js";
-import { createDialogue } from "./dialogue.js";
+import { TURN, createDialogue } from "./dialogue.js";
 import { createDirector } from "./director.js";
 import { facesFor, jumboTextures, phoneHere } from "./faces.js";
 import { decodeBase64, loadEngine } from "./engine.js";
@@ -274,7 +274,7 @@ async function main() {
     // for the talk (play-testing).
     const dealt = !params.has("nodeal");
     const opening = dialogue.words(heard(speech(state, 0), prefs.talk));
-    const timing = director.restart(state, { dealt });
+    const timing = director.restart(state, { dealt, waits: dealt ? openingWaits(opening) : {} });
     // The welcome holds the clock before anything timed on it, the talk
     // included, can come (a line scheduled first would slip out behind it).
     if (welcome)
@@ -296,6 +296,19 @@ async function main() {
     refresh();
     tutorialSince = 0;
     introduce();
+  }
+
+  // Your opponent's first move, when the game opens with it, waits for the
+  // opening's calls (play-testing: "Your deal." came after they had
+  // played), planned on the opening's moments; chatter does not hold it.
+  // Not at the Instant speed, where nothing waits for the talk.
+  function openingWaits(lines) {
+    const first = state.events.findIndex((e) => e.kind === "played");
+    if (first < 0 || !lines.length || prefs.speed > 10) return {};
+    const beats = director.preview(state);
+    const timed = lines.filter((l) => l.at < first && !l.chatter).map((l) => ({ ...l, delay: beats[l.at] ?? 0 }));
+    const said = dialogue.plan(chunk(timed.sort((a, b) => a.delay - b.delay)));
+    return said.length ? { [first]: Math.max(...said.map((l) => l.end)) + TURN } : {};
   }
 
   // The welcome's choice over a game kept: carry on, or begin afresh.

@@ -56,20 +56,26 @@ test("everything is said in several ways, the frequent moments in many", () => {
   assert.deepEqual(few, []);
 });
 
-test("before the game, the house rules agreed aloud, then the cut", () => {
-  const events = [{ kind: "cut", hand: 1 }, { kind: "first_dealer", hand: 1, you: true }];
-  assert.deepEqual(calls(speech(state(events))), ["them:sweeps-ask", "you:sweeps-yes", "them:low-deals", "them:your-deal"]);
+// Whose deal it is, said as the cut cards are seen (play-testing: "Your
+// deal." came after your opponent had already played); the house rules
+// agreed as the deal begins.
+test("the cut decides the deal, said as it is seen; then the house rules, as the cards are dealt", () => {
+  const events = [{ kind: "cut", hand: 1 }, { kind: "first_dealer", hand: 1, you: true }, { kind: "dealt", hand: 1, deal: 1, last: false, you_deal: true }];
+  const lines = speech(state(events));
+  assert.deepEqual(said(lines), ["them:low-deals", "them:your-deal", "them:sweeps-ask", "you:sweeps-yes"]);
+  assert.deepEqual(lines.map((l) => l.at), [1, 1, 2, 2], "with the cut cards seen, and as the deal begins");
   const royal = speech(state(events, { game: "royal", aces14: true, sweeps: false }));
-  assert.deepEqual(calls(royal), ["them:sweeps-ask", "you:sweeps-no", "them:royal", "them:aces-14", "them:low-deals", "them:your-deal"]);
+  assert.deepEqual(said(royal), ["them:low-deals", "them:your-deal", "them:sweeps-ask", "you:sweeps-no", "them:royal", "them:aces-14"]);
 });
 
 // Equal ranks cut again (docs/RULES.md §2): the engine tells each cut, and
 // the house rules are agreed once, before the first.
 test("a tied cut is cut again, and the house rules are not asked twice", () => {
   const cut = (yours, theirs) => ({ kind: "cut", hand: 1, yours: card(yours, Number(yours[0])), theirs: card(theirs, Number(theirs[0])) });
-  const lines = heard(speech(state([cut("5H", "5C"), cut("3D", "9S"), { kind: "first_dealer", hand: 1, you: true }])), "calls");
-  assert.deepEqual(said(lines), ["them:sweeps-ask", "you:sweeps-yes", "them:low-deals", "them:cut-again", "them:your-deal"]);
-  assert.equal(lines[3].at, 0, "said as the equal cards are seen");
+  const deal = { kind: "dealt", hand: 1, deal: 1, last: false, you_deal: true };
+  const lines = speech(state([cut("5H", "5C"), cut("3D", "9S"), { kind: "first_dealer", hand: 1, you: true }, deal, { ...deal, deal: 2 }]));
+  assert.deepEqual(said(lines.filter((l) => l.phrase !== "deal-more")), ["them:cut-again", "them:low-deals", "them:your-deal", "them:sweeps-ask", "you:sweeps-yes"]);
+  assert.equal(lines[0].at, 0, "said as the equal cards are seen");
 });
 
 test("builds are called: single in the singular, multiple in the plural, a raise by its new total", () => {
@@ -295,13 +301,6 @@ test("the chatter of every move is said in many ways", () => {
   }
 });
 
-test("the game opens with an invitation, accepted, before the house rules", () => {
-  const lines = speech(state([{ kind: "cut", hand: 1 }, { kind: "first_dealer", hand: 1, you: true }]));
-  assert.deepEqual(said(lines).slice(0, 3), ["them:hello", "you:hello-back", "them:sweeps-ask"]);
-  assert.deepEqual(chat(lines), ["them:hello", "you:hello-back"]);
-  assert.ok(lines.slice(0, 2).every((l) => l.keep), "said whatever the room: it opens the game");
-});
-
 test("every move says something: a trail, a pair, a sum, each in its own words", () => {
   const lines = speech(
     state([
@@ -372,7 +371,7 @@ test("the dealer announces a new hand and more cards, and 'Last.' is answered", 
     ]),
   );
   assert.deepEqual(said(lines), ["you:new-hand", "you:deal-more", "you:last", "them:last-reply"]);
-  assert.deepEqual(said(speech(state([{ kind: "dealt", hand: 1, deal: 1, last: false, you_deal: false }]))), [], "the first hand's deal follows the house rules");
+  assert.deepEqual(only(speech(state([{ kind: "dealt", hand: 1, deal: 1, last: false, you_deal: false }])), ["new-hand"]), [], "the first hand's deal brings the house rules instead");
 });
 
 test("the score said aloud after each hand, and answered; the game's end in sight", () => {
@@ -406,12 +405,14 @@ test("the remarks are chatter; the calls that carry the game are not", () => {
   const lines = speech(
     state([
       { kind: "cut", hand: 1 },
+      { kind: "first_dealer", hand: 1, you: false },
+      { kind: "dealt", hand: 1, deal: 1, last: false, you_deal: false },
       play(true, "build", "3H", { value: 8, build_kind: "new", multiple: false, loose: [c("5C")] }),
       play(false, "take", "8D", { value: 8, taken: [c("3H"), c("5C")], groups: [[c("3H"), c("5C")]] }),
       { kind: "dealt", hand: 1, deal: 6, last: true, you_deal: false },
     ]),
   );
-  assert.deepEqual(calls(lines), ["them:sweeps-ask", "you:sweeps-yes", "them:low-deals", "you:build-8", "them:last"]);
+  assert.deepEqual(calls(lines), ["them:low-deals", "them:my-deal", "them:sweeps-ask", "you:sweeps-yes", "you:build-8", "them:last"]);
   assert.deepEqual(heard(lines, "calls"), lines.filter((l) => !l.chatter));
 });
 

@@ -93,7 +93,7 @@ The score at the top left keeps every hand: its arrow opens each hand's points.
 
 Cassino players talk as they play, and some of it matters to the game:
 
-- **"Low deals."** Before the game: the lower cut card deals. Your opponent first asks whether you count sweeps, as Jack London's players did.
+- **"Low deals."** Before the game: the lower cut card deals. Then your opponent asks whether you count sweeps, as Jack London's players did.
 - **"Building eight."** A build of 8. **"Building eights."** A multiple build. A raise is called by its new total: **"Nine."**
 - **"Last."** The dealer's warning: the last deal of the hand.
 - **"Clear!"** A sweep: every card on the table taken.

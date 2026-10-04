@@ -159,9 +159,6 @@ test("chatter fills the gaps, and never makes a later call late", () => {
   // A remark is part of what is said at its own moment: a greeting before
   // the house rules is said, and they after it.
   assert.deepEqual(said([remark, { ...call, at: 0 }]).map((l) => l.phrase), ["point-5", "good"]);
-  // A remark kept (the game proposed, which opens it) is said whatever the
-  // room.
-  assert.deepEqual(said([{ ...remark, keep: true }, call]).map((l) => l.phrase), ["point-5", "good"]);
 });
 
 test("a remark whose moment is long past is not said", () => {

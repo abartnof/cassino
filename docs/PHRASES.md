@@ -32,8 +32,7 @@ Sources:
 - **Ge**: pagat's German edition: the dealer's warning, "Letzte Runde" (last round), in translation [02-S29]
 - **Do**: the Dominican custom of pointing out the cards an opponent left behind (dejado) [02-S3]; the words are ours
 - **Ec**: Cuarenta, Ecuador's cousin of the game, played loud and full of sayings ("hay que ponerse charlatán": you have to turn into a chatterbox): "Dos, señor juez" (two, Mr. Judge), "Con esta te caigo" (with this one I'll fall on you), "As que no me caerás" (ace, you won't fall on me), in translation [05-S56][05-S57][05-S59]
-- **Fs**: Finnish, in translation: an emigrant's letter (1932), "Eiköhän pelata casinoa?" (shall we play casino?) [10-S10]; the story "Iso casino" (1938), "this was a big casino for me" [10-S6]
-- **Re**: Reynolds, Cheap Living (1797): "I do long for a game of cassino" [05-S5]
+- **Fs**: Finnish, in translation: the story "Iso casino" (1938), "this was a big casino for me" [10-S6]
 - **Gu**: a French novel (1986), on laying down the deuce of spades: "Little Casino, a point for you, if you take it", in translation [10-S62]
 - **Ti**: the German "eine Karte für den Tisch bringen" (bring a card for the table), in translation [05-S45]
 - **Bt**: the Swedish dealer's warning, "Båten går!" (the boat's leaving), in translation [05-S34][10-S24]
@@ -70,7 +69,6 @@ Sources:
 |  | No sweeps. | T |
 |  | Not this time. | T |
 |  | Sweeps don't count. | H |
-|  | No. They're the luck of the deal. | B |
 |  | We'll leave them out. | T |
 | `royal` | Royal, then: the court cards count. | T |
 |  | Jack eleven, queen twelve, king thirteen. | F |
@@ -85,9 +83,8 @@ Sources:
 | `low-deals` | Low deals. | L |
 |  | Low card deals. | T |
 |  | Cut. Low deals. | T |
-|  | Cut for the deal: low deals. | T |
+|  | Lowest card deals. | T |
 |  | Ace is low. Low deals. | T |
-|  | Shall we cut? Low deals. | T |
 | `cut-again` | Equal. Cut again. | T |
 |  | A tie. Cut again. | T |
 |  | The same. Again. | T |
@@ -96,13 +93,11 @@ Sources:
 | `my-deal` | My deal. | T |
 |  | I deal. | T |
 |  | I'll deal. | T |
-|  | Low card. My deal. | T |
 |  | The deal is mine. | T |
 |  | Mine is lower. I deal. | T |
 | `your-deal` | Your deal. | T |
 |  | You deal. | T |
-|  | Over to you. Your deal. | T |
-|  | Low card. Your deal. | T |
+|  | You're dealing. | T |
 |  | The deal is yours. | T |
 |  | Yours is lower. Your deal. | T |
 | `last` | Last. | P |
@@ -598,19 +593,6 @@ Sources:
 |  | Well done. | T |
 |  | Nicely played. | T |
 |  | A good game. Thank you. | T |
-| `hello` | Shall we play casino? | Fs |
-|  | I do long for a game. | Re |
-|  | A game of cassino? | T |
-|  | Fancy a game? | T |
-|  | Shall we? | T |
-|  | Ready for a game? | T |
-|  | Care for a hand or two? | T |
-| `hello-back` | Gladly. | T |
-|  | Let's play. | T |
-|  | Deal me in. | T |
-|  | With pleasure. | T |
-|  | You're on. | T |
-|  | I'd love to. | T |
 | `new-hand` | New hand. | T |
 |  | Fresh cards. | T |
 |  | Here we go again. | T |

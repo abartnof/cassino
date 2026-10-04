@@ -55,7 +55,7 @@ export const TIMING = Object.freeze({
   show: 650, // a sweep's card held up a moment ("Clear!")
   lay: 420, // and then laid crosswise in the pile
   cutOut: 420, // a cut card peeled off the pack and laid face up
-  cutShow: 900, // both cuts seen ("Low deals.")
+  cutShow: 1600, // both cuts seen ("Low deals. Your deal."), long enough to see
   cutBack: 360, // and back on the pack
   dealCard: 300,
   dealPair: 170, // two at a time: one pair after another
