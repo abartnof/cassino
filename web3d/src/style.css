@@ -511,12 +511,28 @@ html.upright .move-bar {
 }
 
 /* The hints and the explanations toggled at the foot of the controls, on a
-   desktop only (a phone has them in the settings). */
+   desktop only (a phone has them in the settings): at the window's bottom
+   right, so the strip under your hand is no more than its three lines of
+   words (the sixth play-testing: the cards made larger). */
 .aid-toggles {
   flex-basis: 100%;
   display: flex;
   justify-content: center;
   margin-top: 4px;
+}
+html:not(.upright):not(.sideways) .aid-toggles {
+  position: fixed;
+  right: 16px;
+  bottom: 12px;
+  margin: 0;
+}
+/* Across the table, the strip under your hand: the prompt, the note and the
+   aids' line, within framing.js DESKTOP_FOOT, your hand ending just above
+   it; clear of the toggles at the right and as clear at the left, so the
+   prompt stays centred under your hand. */
+html:not(.upright):not(.sideways) .controls {
+  padding: 6px 248px 10px;
+  row-gap: 2px;
 }
 .aid-toggles[hidden],
 html.upright .aid-toggles,

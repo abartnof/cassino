@@ -62,10 +62,12 @@ function yourHand(codes, chosen, Z) {
 
 // Your opponent's hand, backs to you, tipped toward you so the backs are
 // square to the eye (units.js); or, in the replay after the game with both
-// hands face up (`shown`: their cards), turned to face you, as square.
-function theirHand(count, Z, shown = null) {
+// hands face up (`shown`: their cards), turned to face you, as square. It
+// lies just beyond the middle's last row: `back` further off for each row
+// past the first (`rows`).
+function theirHand(count, Z, shown = null, rows = 1) {
   const zone = Z.theirHand;
-  const centre = new Vector3(...zone.centre);
+  const centre = new Vector3(...zone.centre).add(new Vector3(0, 0, -(zone.back ?? 0) * Math.max(0, rows - 1)));
   const open = Array.isArray(shown) && shown.length === count;
   return fan({
     count,
@@ -228,7 +230,7 @@ export function layout(state, { chosen = null, picked = [], sweeps = { you: [], 
   const counted = countedCards(state);
   return [
     ...yourHand(state.hand.map((c) => c.card), chosen, zones),
-    ...theirHand(state.opponent_holds, zones, theirs),
+    ...theirHand(state.opponent_holds, zones, theirs, Math.ceil((state.table?.length ?? 0) / zones.middle.columns)),
     ...middle(state.table, picked, zones),
     ...pileOf("you", state.piles.you.cards, sweeps.you ?? [], counted.you, zones),
     ...pileOf("them", state.piles.them.cards, sweeps.them ?? [], counted.them, zones),

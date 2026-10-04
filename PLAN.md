@@ -176,6 +176,12 @@ legal move. RULES.md now says each held card answers for one build value.
   the card just trailed, a build on it, a build taken back and answered,
   a build joined or made surer, a run of trails and the capture that ends
   it, a trail onto a table swept clean), in place of a plainer line.
+  And across the table the cards a third larger (the field 31 degrees,
+  from 40): the room kept empty for a second row of the middle given up,
+  your opponent's hand drawing back over one when it comes, partly out of
+  the window's top; your hand ending just above the controls' strip at any
+  window height; the hints and explanations at the bottom right, and your
+  opponent's words beside their hand.
 - **The South African game, researched**
   (`research/12-south-african-khasino.md`): KASA's rulebooks and its own
   online game as the canonical sources, twenty open-source engines, and

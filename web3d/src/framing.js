@@ -36,6 +36,11 @@ import { CAMERA, CAMERA_PORTRAIT, PORTRAIT_BELOW } from "./units.js";
 // choices and the tools.
 export const STRIPS = Object.freeze({ top: 142, foot: 194 });
 
+// Across the table, the controls' strip under your hand, in CSS pixels: the
+// prompt, the note and the aids' line (style.css), which your hand ends
+// above whatever the window's height.
+export const DESKTOP_FOOT = 88;
+
 // Upright, the share of the band's width the table may take: a smidge
 // either side (the user: "just a smidge of white space will do!").
 const UPRIGHT_MARGIN = 0.985;
@@ -48,10 +53,20 @@ const PHONE_HEIGHT = 844;
 export function framing(aspect, inset = 0, height = PHONE_HEIGHT, strips = STRIPS, sides = null) {
   const upright = aspect < PORTRAIT_BELOW || !!sides;
   if (!upright) {
+    // The field: the eye's own, widened for a squarer window to keep the
+    // table's width, and for a shorter one to keep its reach between the
+    // window's top and the controls' strip (whose share of the height
+    // grows as the window shortens).
     const area = aspect * (1 - inset);
-    const fov = Math.max(CAMERA.fov, (360 / Math.PI) * Math.atan(CAMERA.widthTan / area));
+    const band = 1 - DESKTOP_FOOT / height;
+    const { up, foot } = CAMERA.reach;
+    const tan = Math.max(Math.tan((CAMERA.fov * Math.PI) / 360), CAMERA.widthTan / area, (up + foot) / (2 * band));
+    const fov = (360 / Math.PI) * Math.atan(tan);
+    // The picture lifted so that your hand ends just above the strip (in
+    // device coordinates).
+    const lift = -1 + (2 * DESKTOP_FOOT) / height + foot / tan;
     // The play area's centre, in normalised device coordinates.
-    return { upright, position: CAMERA.position, target: CAMERA.target, fov, shift: inset, lift: 0, fill: 1 };
+    return { upright, position: CAMERA.position, target: CAMERA.target, fov, shift: inset, lift, fill: 1 };
   }
   // The band between the strips, in device coordinates; the field just tall
   // enough for the table's reach to fill it -- or, on a squat window, wide

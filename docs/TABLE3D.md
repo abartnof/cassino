@@ -37,9 +37,21 @@ over it: the eye looks down at 70 degrees to the table (play-testing found
 the cards "too hard to see, esp. in mobile mode" from the old eyes, at 42
 degrees across the table and 29 on a phone; at 70 a card lying on the table
 is foreshortened by 6 per cent, against 32 and 52). Your hand floats before
-you, fanned, turned square to the eye; your opponent's lies beyond the
-middle's second row, tipped toward you, its backs square to the eye
-(`units.js` `PITCH`, `facingEye`; `test/eye.test.js`). **The middle of the table is the game**: the loose cards on a
+you, fanned, turned square to the eye; your opponent's lies just beyond the
+middle's last row, tipped toward you, its backs square to the eye
+(`units.js` `PITCH`, `facingEye`; `test/eye.test.js`). Across the table the
+field is 31 degrees (the sixth play-testing: "too much white space on the
+screen (desktop mode) - try to make the hand and the cards on the table
+bigger"), a table card a seventh of the window's height, a third larger
+than before: the room once kept empty for a second row of the middle,
+needed at one move in eight, is given up, your opponent's hand drawing
+back 12 cm over a second row, partly out of the window's top (two fifths
+of it in view at least). The field widens only where it must, on a
+squarer window for the table's width and on a shorter one for its reach,
+and the picture is lifted so that your hand ends just above the controls'
+strip, the prompt, the note and the aids' line (`framing.js`
+`DESKTOP_FOOT`); the hints and explanations sit at the window's bottom
+right, and your opponent's words beside their hand. **The middle of the table is the game**: the loose cards on a
 loose grid, and the builds as small squared stacks, fanned so each card's
 index and a strip of its face read, each with a value badge (a setting). The capture piles lie face down at each
 player's right, sweeps crosswise and offset so they can be counted (the

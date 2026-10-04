@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import { Vector3 } from "three";
 import { cardCorners } from "../src/kinematics.js";
 import { layout } from "../src/layout.js";
-import { cameraFor } from "../src/framing.js";
+import { DESKTOP_FOOT, cameraFor } from "../src/framing.js";
 import { FOG } from "../src/reveal.js";
 import { CAMERA, CAMERA_PORTRAIT, CARD, PITCH, ZONES, ZONES_PORTRAIT } from "../src/units.js";
 
@@ -82,14 +82,105 @@ test("between the table and your hand there is room for the move bar, on a deskt
   assert.ok(room(PHONE).gap >= 50, `phone: ${room(PHONE).gap.toFixed(0)} px`);
 });
 
-test("your opponent's hand lies beyond the table's second row, so it hides none of it", () => {
+test("your opponent's hand lies beyond the table's last row, so it hides none of it", () => {
   for (const w of [DESKTOP, PHONE]) {
     const at = screen(w, camera(w));
-    const two = 2 * w.zones.middle.columns; // two full rows
-    const slots = layout(dealt(two), { zones: w.zones });
-    const far = Math.min(...slots.filter((x) => x.zone === "middle").flatMap((s) => cardCorners(s.pose).map(at).map((p) => p.y)));
-    const theirs = Math.max(...slots.filter((x) => x.zone === "their-hand").flatMap((s) => cardCorners(s.pose).map(at).map((p) => p.y)));
-    assert.ok(theirs < far, `${w.width}: their hand reaches ${theirs.toFixed(0)} px, the second row ${far.toFixed(0)} px`);
+    for (const items of [w.zones.middle.columns, 2 * w.zones.middle.columns]) {
+      const slots = layout(dealt(items), { zones: w.zones });
+      const far = Math.min(...slots.filter((x) => x.zone === "middle").flatMap((s) => cardCorners(s.pose).map(at).map((p) => p.y)));
+      const theirs = Math.max(...slots.filter((x) => x.zone === "their-hand").flatMap((s) => cardCorners(s.pose).map(at).map((p) => p.y)));
+      assert.ok(theirs < far, `${w.width}, ${items} items: their hand reaches ${theirs.toFixed(0)} px, the last row ${far.toFixed(0)} px`);
+    }
+  }
+});
+
+// The sixth play-testing: "too much white space on the screen (desktop
+// mode) - try to make the hand and the cards on the table bigger (zoom
+// in?)". Across the table the eye is closer, and the room it kept for a
+// second row of the table, needed at one move in eight, is taken back:
+// your opponent's hand lies just beyond the first row and draws back when
+// there is a second, partly out of the window's top. Your hand ends just
+// above the controls' strip, whatever the window's height. Windows as a
+// browser on a computer leaves them, and a tablet held sideways.
+const ACROSS = [
+  [1280, 800],
+  [1440, 900],
+  [1440, 790],
+  [1366, 650],
+  [1920, 960],
+  [1180, 820],
+  [1024, 768],
+].map(([width, height]) => ({ width, height, zones: ZONES, eye: CAMERA }));
+const extent = (w, items, zone, view = {}) => {
+  const at = screen(w, camera(w));
+  const points = layout(dealt(items), { zones: w.zones, ...view })
+    .filter((x) => !zone || x.zone === zone)
+    .flatMap((s) => cardCorners(s.pose).map(at));
+  const xs = points.map((p) => p.x);
+  const ys = points.map((p) => p.y);
+  return { left: Math.min(...xs), right: Math.max(...xs), top: Math.min(...ys), bottom: Math.max(...ys) };
+};
+
+test("across the table, the cards are larger: a table card a seventh of the window's height", () => {
+  for (const w of ACROSS.filter((x) => x.width / x.height >= 1.5)) {
+    const card = extent(w, 4, "middle");
+    assert.ok(card.bottom - card.top >= w.height / 7, `${w.width}x${w.height}: a table card ${(card.bottom - card.top).toFixed(0)} px tall`);
+  }
+});
+
+test("across the table, your hand ends above the controls' strip, and nothing runs off the sides", () => {
+  for (const w of ACROSS) {
+    const hand = extent(w, 4, "your-hand");
+    assert.ok(hand.bottom <= w.height - DESKTOP_FOOT, `${w.width}x${w.height}: your hand ends at ${hand.bottom.toFixed(0)} px`);
+    const all = extent({ ...w }, 2 * ZONES.middle.columns, null, { chosen: "7H" });
+    const dealt12 = layout(dealt(2 * ZONES.middle.columns), { zones: ZONES });
+    assert.ok(dealt12.some((s) => s.zone === "your-pile") && dealt12.some((s) => s.zone === "their-pile"));
+    assert.ok(all.left >= 0 && all.right <= w.width, `${w.width}x${w.height}: the table spans ${all.left.toFixed(0)} to ${all.right.toFixed(0)} px`);
+  }
+});
+
+test("across the table, your opponent's hand is in full view over one row, and two fifths of it over two", () => {
+  for (const w of ACROSS) {
+    const one = extent(w, ZONES.middle.columns, "their-hand");
+    assert.ok(one.top >= 0, `${w.width}x${w.height}, one row: their hand from ${one.top.toFixed(0)} px`);
+    const two = extent(w, 2 * ZONES.middle.columns, "their-hand");
+    assert.ok(two.bottom >= 0.4 * (two.bottom - two.top) - 0.5, `${w.width}x${w.height}, two rows: their hand ${two.top.toFixed(0)} to ${two.bottom.toFixed(0)} px`);
+  }
+});
+
+// The eye's reach, as tangents of its axis (units.js CAMERA.reach): what
+// the layout truly reaches, to within a little.
+test("the reach the framing keeps in view is what the table truly reaches", () => {
+  const eye = new Vector3(...CAMERA.position);
+  const forward = new Vector3(...CAMERA.target).sub(eye).normalize();
+  const right = new Vector3().crossVectors(forward, new Vector3(0, 1, 0)).normalize();
+  const up = new Vector3().crossVectors(right, forward);
+  const tangent = (c) => {
+    const d = c.clone().sub(eye);
+    return { x: d.dot(right) / d.dot(forward), y: d.dot(up) / d.dot(forward) };
+  };
+  const corners = (zone, items) => layout(dealt(items), { zones: ZONES }).filter((s) => !zone || s.zone === zone).flatMap((s) => cardCorners(s.pose).map(tangent));
+  const foot = Math.max(...corners("your-hand", 4).map((t) => -t.y));
+  // Never short of it, so nothing is cut off; and not loose.
+  assert.ok(CAMERA.reach.foot >= foot && CAMERA.reach.foot - foot < 0.005, `foot ${CAMERA.reach.foot} against ${foot.toFixed(3)}`);
+  const theirs = corners("their-hand", 2 * ZONES.middle.columns).map((t) => t.y);
+  const twoFifths = Math.min(...theirs) + 0.4 * (Math.max(...theirs) - Math.min(...theirs));
+  assert.ok(CAMERA.reach.up >= twoFifths && CAMERA.reach.up - twoFifths < 0.005, `up ${CAMERA.reach.up} against ${twoFifths.toFixed(3)}`);
+  const across = Math.max(...corners(null, 2 * ZONES.middle.columns).map((t) => Math.abs(t.x)));
+  assert.ok(CAMERA.widthTan >= across && CAMERA.widthTan - across < 0.02, `widthTan ${CAMERA.widthTan} against ${across.toFixed(3)}`);
+});
+
+test("your opponent's hand draws back from the middle by a row's depth when there is a second row", () => {
+  const z = (items) => layout(dealt(items), { zones: ZONES }).find((s) => s.zone === "their-hand").pose.position.z;
+  assert.equal(z(1), z(ZONES.middle.columns), "one row, however full");
+  assert.ok(z(ZONES.middle.columns + 1) < z(ZONES.middle.columns) - 8, `${z(ZONES.middle.columns + 1)} against ${z(ZONES.middle.columns)}`);
+});
+
+test("the move bar has room between the table and your hand, across the table: its full height on a full window", () => {
+  for (const w of ACROSS) {
+    const { gap } = room(w);
+    // moveBarFit: 40 to 84 px tall, with 7 px clear above and below.
+    assert.ok(gap >= (w.height >= 900 ? 84 : 40) + 14, `${w.width}x${w.height}: ${gap.toFixed(0)} px`);
   }
 });
 

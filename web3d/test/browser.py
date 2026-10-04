@@ -570,7 +570,9 @@ def check_talk(browser, failures):
     settle(page)
     page.wait_for_timeout(3000)
     heard = set(page.evaluate("[...window.heardAll]"))
-    if len(said_as(heard, "trail", "trail-ace", "take-pair", "take-sum", "build-reply", "think", "think-take", "take-own", "take-theirs")) < 3:
+    remarks = ("trail", "trail-ace", "trail-fresh", "trail-again", "take-pair", "take-sum", "take-trailed", "take-at-last", "build-reply",
+               "build-on-mine", "build-more-reply", "joined-mine", "think", "think-take", "take-own", "own-build-reply", "take-theirs")
+    if len(said_as(heard, *remarks)) < 3:
         failures.append(f"the moves were not remarked: {sorted(heard)}")
     if not heard & wordings("idle"):
         failures.append(f"your opponent, kept waiting, said nothing: {sorted(heard)}")
@@ -815,6 +817,60 @@ def check_phone(browser, failures):
     shot(page, "t8-phone-sideways")
     if page.errors:
         failures.append(f"phone sideways: console errors {page.errors[:5]}")
+
+
+def check_desktop_frame(browser, failures):
+    """Across the table (the sixth play-testing: "too much white space on
+    the screen (desktop mode) - try to make the hand and the cards on the
+    table bigger"): the table's cards a seventh of the window's height; your
+    hand clear of the controls' strip, the hints' line shown too; the hints
+    and explanations at the window's bottom right, clear of the prompt; and
+    your opponent's words beside their hand, not over the table."""
+    for vp in ({"width": 1440, "height": 900}, {"width": 1366, "height": 650}):
+        where = f"{vp['width']}x{vp['height']}"
+        page = open_page(browser, "seed=7&speed=6&skill=1", viewport=vp, calm=True)
+        settle(page)
+        middle = page.evaluate("window.cassino3d.zoneBounds('middle')")
+        if middle["bottom"] - middle["top"] < vp["height"] / 7 - 2:
+            failures.append(f"{where}: the table's cards {middle['bottom'] - middle['top']:.0f} px tall")
+        page.locator('.aid-toggles [data-aid="hints"]').click()
+        page.wait_for_timeout(300)
+        settle(page)
+        if not page.locator(".controls .aid-line").is_visible():
+            failures.append(f"{where}: no hint shown under the prompt with hints on")
+        hand = page.evaluate("window.cassino3d.zoneBounds('your-hand')")
+        lines = page.evaluate("""() => [...document.querySelectorAll('.controls .prompt, .controls .note, .controls .aid-line')]
+            .filter((e) => !e.hidden && e.textContent.trim()).map((e) => e.getBoundingClientRect().top)""")
+        if lines and hand["bottom"] > min(lines) + 1:
+            failures.append(f"{where}: your hand (to {hand['bottom']:.0f} px) runs under the controls' words (from {min(lines):.0f} px)")
+        toggles = page.locator(".aid-toggles").bounding_box()
+        if toggles["x"] + toggles["width"] < vp["width"] - 40 or toggles["y"] + toggles["height"] < vp["height"] - 40:
+            failures.append(f"{where}: the hints and explanations not at the bottom right: {toggles}")
+        prompt = page.locator(".controls .prompt").bounding_box()
+        if prompt and prompt["x"] + prompt["width"] > toggles["x"] and prompt["y"] + prompt["height"] > toggles["y"]:
+            failures.append(f"{where}: the prompt runs under the toggles: {prompt}, {toggles}")
+        # Every box your opponent says beside their hand, as it is said.
+        page.evaluate("""() => { window.theirBoxes = [];
+            setInterval(() => { for (const d of document.querySelectorAll('.dialogue.them')) {
+              const hand = window.cassino3d.zoneBounds('their-hand'); if (!hand) continue;
+              const r = d.getBoundingClientRect();
+              window.theirBoxes.push({ words: d.textContent, left: r.left, right: r.right, middle: (r.top + r.bottom) / 2, hand });
+            } }, 50); }""")
+        made = 0
+        while made < 4 and play_by_clicking(page, failures, made + 600):
+            made += 1
+        settle(page)
+        boxes = page.evaluate("window.theirBoxes")
+        if not boxes:
+            failures.append(f"{where}: your opponent said nothing to check")
+        for b in boxes:
+            h = b["hand"]
+            beside = b["left"] >= h["right"] - 2 or b["right"] <= h["left"] + 2
+            level = max(h["top"], 0) - 2 <= b["middle"] <= h["bottom"] + 2
+            if not (beside and level):
+                failures.append(f"{where}: your opponent's \"{b['words']}\" not beside their hand: {b}")
+                break
+        page.context.close()
 
 
 IPAD = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
@@ -1073,6 +1129,7 @@ def main() -> int:
         check_tutorial(browser, failures)
         check_phone(browser, failures)
         check_tablet_faces(browser, failures)
+        check_desktop_frame(browser, failures)
         page = open_page(browser, "seed=11&skill=4&manual", calm=True)
         # The game proposed and accepted, then the house rules: both speak
         # within the opening's first seconds.

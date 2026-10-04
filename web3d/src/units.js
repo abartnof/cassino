@@ -37,21 +37,33 @@ export const facingEye = (eye, centre) => Math.atan2(eye[1] - centre[1], eye[2] 
 
 // The human's eyes, high over the table and looking down at a point a
 // little beyond its middle, so that your hand, your opponent's beyond the
-// middle's second row, and the move bar between the table and your hand all
-// fit between the score and the prompt (test/eye.test.js).
-const TARGET = Object.freeze([0, 0, -12]);
+// middle's last row, and the move bar between the table and your hand all
+// fit between the window's top and the prompt (test/eye.test.js). The sixth
+// play-testing found "too much white space on the screen (desktop mode)":
+// the field is 31 degrees (from 40), the cards a third larger, and the
+// room kept for a second row of the table is no longer kept empty (your
+// opponent's hand draws back over it when it is needed, ZONES below).
+const TARGET = Object.freeze([0, 0, -14]);
 export const CAMERA = Object.freeze({
   position: over(TARGET, 102),
   target: TARGET,
-  fov: 40, // vertical, degrees
+  fov: 31, // vertical, degrees
   // Nothing comes nearer the eye than about 45 cm; a near plane at 20 keeps
   // the depth buffer fine enough to tell a card from the one it lies on.
   near: 20,
   far: 400,
   maxPixelRatio: 2,
   // The table's half-width the view must keep, as the tangent of half the
-  // horizontal field: what 40 degrees shows at 16:10 across the whole window.
-  widthTan: 0.44,
+  // horizontal field: the piles' outer edges, with a little to spare
+  // (test/eye.test.js), so a squarer window widens the field.
+  widthTan: 0.4,
+  // What must be in view, as tangents of the eye's axis: up, two fifths of
+  // your opponent's hand drawn back over a second row; down (`foot`), your
+  // hand's lowest corner. The field widens on a short window to keep them
+  // between its top and the controls' strip, and the picture is lifted so
+  // that your hand ends just above the strip (framing.js; test/eye.test.js
+  // measures both).
+  reach: Object.freeze({ up: 0.252, foot: 0.239 }),
 });
 
 // The eye for a phone held upright, over the stacked arrangement of
@@ -88,8 +100,12 @@ export const ZONES = Object.freeze({
   // toward you, your opponent's tipped toward you, its backs to the eye
   // (`lean`, from upright). Your opponent's lies beyond the middle's second
   // row, so it hides none of it.
-  yourHand: Object.freeze({ centre: Object.freeze([0, 17, 9]), radius: 16, spread: 5.6, lean: facingEye(CAMERA.position, [0, 17, 9]) }),
-  theirHand: Object.freeze({ centre: Object.freeze([0, 5, -45]), radius: 16, spread: 5.2, lean: facingEye(CAMERA.position, [0, 5, -45]) }),
+  // Your opponent's lies just beyond the middle's first row, and `back` cm
+  // further off for each row past it (layout.js), partly out of the
+  // window's top over a second row (the sixth play-testing: the empty room
+  // kept for a second row, needed at one move in eight, was white space).
+  yourHand: Object.freeze({ centre: Object.freeze([0, 17, 6.7]), radius: 16, spread: 5.6, lean: facingEye(CAMERA.position, [0, 17, 6.7]) }),
+  theirHand: Object.freeze({ centre: Object.freeze([0, 5, -30]), back: 12, radius: 16, spread: 5.2, lean: facingEye(CAMERA.position, [0, 5, -30]) }),
   // The middle: items on a grid in arrival order, at most `columns` to a
   // row, the first row nearest you and later rows away from you: a row
   // nearer than this would lie under your floating hand, as the eye sees
@@ -103,8 +119,9 @@ export const ZONES = Object.freeze({
   // diamonds in a build should be seen at a glance.
   stack: Object.freeze({ dx: 1.5, dz: 2 }),
   // Each player's captures, squared and face down at their right; sweep
-  // cards crosswise in the pile, each offset a little from the last.
-  yourPile: Object.freeze({ x: 34, z: 6, sweepStep: 1.4 }),
+  // cards crosswise in the pile, each offset a little from the last. Yours,
+  // and your stock, clear of the window's foot, where the aids are.
+  yourPile: Object.freeze({ x: 34, z: 0, sweepStep: 1.4 }),
   theirPile: Object.freeze({ x: -34, z: -20, sweepStep: 1.4 }),
   // The count row: a finished hand's counted aces and Cassinos, face up from
   // their taker's pile toward the middle, `first` from the pile and `step`
@@ -112,7 +129,7 @@ export const ZONES = Object.freeze({
   count: Object.freeze({ first: 10, step: 7.75 }),
   // The stock, at the dealer's left: yours on your left, theirs on their left
   // (your right).
-  stock: Object.freeze({ you: Object.freeze({ x: -34, z: 6 }), them: Object.freeze({ x: 34, z: -20 }) }),
+  stock: Object.freeze({ you: Object.freeze({ x: -34, z: 0 }), them: Object.freeze({ x: 34, z: -20 }) }),
 });
 
 // The table for a phone held upright, under CAMERA_PORTRAIT, seen from
