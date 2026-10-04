@@ -253,7 +253,7 @@ def phrase_groups():
     # card that takes it; {old} a build's value before a raise; {mine},
     # {yours}, {n} the score; {need} the points still needed. Nothing said
     # claims a card the speaker cannot be known to hold.
-    add("hello", ("Shall we play casino?", "Fs"), ("I do long for a game of cassino.", "Re"), ("A game of cassino?", "T"),
+    add("hello", ("Shall we play casino?", "Fs"), ("I do long for a game.", "Re"), ("A game of cassino?", "T"),
         ("Fancy a game?", "T"), ("Shall we?", "T"), ("Ready for a game?", "T"), ("Care for a hand or two?", "T"))
     add("hello-back", ("Gladly.", "T"), ("Let's play.", "T"), ("Deal me in.", "T"), ("With pleasure.", "T"),
         ("You're on.", "T"), ("I'd love to.", "T"))

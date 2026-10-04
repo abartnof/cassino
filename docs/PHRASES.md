@@ -599,7 +599,7 @@ Sources:
 |  | Nicely played. | T |
 |  | A good game. Thank you. | T |
 | `hello` | Shall we play casino? | Fs |
-|  | I do long for a game of cassino. | Re |
+|  | I do long for a game. | Re |
 |  | A game of cassino? | T |
 |  | Fancy a game? | T |
 |  | Shall we? | T |

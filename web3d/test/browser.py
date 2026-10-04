@@ -866,11 +866,17 @@ def main() -> int:
         check_tutorial(browser, failures)
         check_phone(browser, failures)
         page = open_page(browser, "seed=11&skill=4&manual", calm=True)
-        page.evaluate("window.cassino3d.tick(2500)")
+        # The game proposed and accepted, then the house rules: both speak
+        # within the opening's first seconds.
+        speakers = set()
+        for _ in range(40):
+            page.evaluate("window.cassino3d.tick(150)")
+            speakers |= {line["who"] for line in page.evaluate("window.cassino3d.said()")}
+            if speakers == {"you", "them"}:
+                break
         shot(page, "t5-talk")  # the house rules agreed before the deal
-        said = page.evaluate("window.cassino3d.said()")
-        if {line["who"] for line in said} != {"you", "them"}:
-            failures.append(f"the house rules were not talked over: {said}")
+        if speakers != {"you", "them"}:
+            failures.append(f"the house rules were not talked over: {speakers}")
         # A tap lands the cards and drops what is not yet said, but what is
         # said stays up its while (the table review's T4).
         page.mouse.click(640, 400)
