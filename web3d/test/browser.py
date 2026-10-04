@@ -996,7 +996,7 @@ def check_settings(browser, failures):
     # The move bar answers the card chosen. A card alone can only trail, and
     # not while a build of yours is on the table (the game here has no
     # seed, so sometimes there is one): then every button is dimmed.
-    bar = page.evaluate("[...document.querySelectorAll('.move-bar .chips > *')].map((c) => [c.textContent, !c.disabled])")
+    bar = page.evaluate("[...document.querySelectorAll('.move-bar md-filled-button')].map((c) => [c.dataset.label, !c.disabled])")
     yours = any(i["build"] and i["build"]["controller"] == "you" for i in page.evaluate("window.cassino3d.state().table"))
     if not bar or [label for label, lit in bar if lit] != ([] if yours else ["Trail"]):
         failures.append(f"keyboard: the move bar for the card chosen shows {bar} (a build of yours on the table: {yours})")
