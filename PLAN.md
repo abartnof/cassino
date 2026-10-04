@@ -170,7 +170,10 @@ legal move. RULES.md now says each held card answers for one build value.
   online game as the canonical sources, twenty open-source engines, and
   readings with confidence for what an engine needs. Enough to write a
   settled rules document for the two-player game, with a few points to
-  decide or ask KASA about.
+  decide or ask KASA about. **Not to be built** (the user, 2026-10-04):
+  KASA's own free online game, several apps and some twenty open-source
+  engines already serve its players, and KASA revises its rules almost
+  weekly. The note stays as the record.
 
 ## Settled decisions
 
@@ -269,11 +272,6 @@ every part by others (`CREDITS.md`).
   game shows what they truly share (`docs/DESIGN.md` §3).
 - A screen-reader narration of each move (the game log has the words; only
   the focused card is told now).
-- The South African game, Khasino, as a third game: first a settled rules
-  document with worked examples (as `docs/RULES.md`), checked against
-  KASA's online game; its turn (a hand card, free additions to your own
-  build, steals from the opponent's pile) is a larger change to the move
-  model than Royal was.
 
 ## Notes for a future session
 
