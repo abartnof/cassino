@@ -95,24 +95,46 @@ test("one corner, the rank over the suit, at the top left; none turned upside do
   assert.ok(texts[0][3] < texts[1][3], "the corner's rank above its suit");
 });
 
-test("below the corner, a big rank and suit side by side, centred across the card and within it", () => {
-  for (const code of ["7S", "QC", "AD", "KH", "TD", "2S"]) {
+// And then (the user: "Instead of the large card value, taking up the
+// whole card width, put it in that 3/4, so that it does not overlap on the
+// X axis with the top left card value"): the big rank and suit to the right
+// of the strip the corner is fitted to, the rank over the suit.
+test("right of the corner's strip, a big rank over a big suit, centred in the room there and within the card", () => {
+  for (const code of ["7S", "QC", "AD", "KH", "TD", "2S", "8H"]) {
     const { texts, u } = fills(code);
-    const [rank, suit, bigRank, bigSuit] = texts;
-    assert.ok(sizeOf(bigRank) >= 1.5 * sizeOf(rank), `${code}: the big rank ${sizeOf(bigRank)} against the corner's ${sizeOf(rank)}`);
-    // The recorder's ink: a character 0.8 of its size wide, its capitals 0.7 tall.
-    const cornerBottom = suit[3];
-    const capTop = bigRank[3] - 0.7 * sizeOf(bigRank);
-    assert.ok(capTop >= cornerBottom, `${code}: the big rank starts at ${capTop}, under the corner's ${cornerBottom}`);
-    assert.ok(bigRank[3] <= (JUMBO.h - JUMBO.big.margin) * u + 1e-9, `${code}: the big rank runs off the card`);
-    const right = bigSuit[2] + 0.8 * sizeOf(bigSuit);
-    assert.ok(bigSuit[2] > bigRank[2], `${code}: the suit beside the rank`);
+    const [rank, , bigRank, bigSuit] = texts;
+    assert.ok(sizeOf(bigRank) >= 2 * sizeOf(rank), `${code}: the big rank ${sizeOf(bigRank)} against the corner's ${sizeOf(rank)}`);
+    // The recorder's ink: a character 0.8 of its size wide, 0.7 tall.
+    const column = { left: JUMBO.strip * u, right: (JUMBO.w - JUMBO.big.margin) * u };
+    const centre = (column.left + column.right) / 2;
+    const suitLeft = bigSuit[2];
+    const suitRight = suitLeft + 0.8 * sizeOf(bigSuit);
+    assert.ok(suitLeft >= column.left - 1e-9 && suitRight <= column.right + 1e-9, `${code}: the suit within the room right of the strip`);
+    assert.ok(Math.abs((suitLeft + suitRight) / 2 - centre) < 1e-6, `${code}: the suit centred there`);
     if (code[0] !== "T") {
-      const left = bigRank[2];
-      assert.ok(Math.abs((left + right) / 2 - (JUMBO.w / 2) * u) < 1e-6, `${code}: centred across the card`);
-      assert.ok(left >= JUMBO.big.margin * u - 1e-9 && right <= (JUMBO.w - JUMBO.big.margin) * u + 1e-9, `${code}: within the card`);
+      const rankRight = bigRank[2] + 0.8 * sizeOf(bigRank);
+      assert.ok(bigRank[2] >= column.left - 1e-9 && rankRight <= column.right + 1e-9, `${code}: the rank within the room right of the strip`);
+      assert.ok(Math.abs((bigRank[2] + rankRight) / 2 - centre) < 1e-6, `${code}: the rank centred there`);
     }
+    const rankTop = bigRank[3] - 0.7 * sizeOf(bigRank);
+    const suitTop = bigSuit[3] - 0.7 * sizeOf(bigSuit);
+    assert.ok(bigRank[3] <= suitTop, `${code}: the rank over the suit`);
+    assert.ok(rankTop >= JUMBO.big.margin * u - 1e-9 && bigSuit[3] <= (JUMBO.h - JUMBO.big.margin) * u + 1e-9, `${code}: within the card's height`);
   }
+});
+
+// Some fonts' J dips below the line (DejaVu's, a Linux fallback): the suit
+// goes below what the rank truly inks.
+test("the big suit clears a rank that dips below the line", () => {
+  const ctx = recorder();
+  const measure = ctx.measureText;
+  ctx.measureText = (text) => ({ ...measure(text), actualBoundingBoxDescent: text === "J" ? 0.2 * Number(ctx.font.match(/([\d.]+)px/)[1]) : 0 });
+  drawJumbo(ctx, 700, "JH");
+  const [, , bigRank, bigSuit] = ctx.calls.filter((c) => c[0] === "fillText");
+  const jBottom = bigRank[3] + 0.2 * sizeOf(bigRank);
+  const suitTop = bigSuit[3] - 0.7 * sizeOf(bigSuit);
+  assert.ok(suitTop >= jBottom + JUMBO.big.gap * (700 / JUMBO.w) - 1e-9, `the suit from ${suitTop}, the J to ${jBottom}`);
+  assert.ok(bigSuit[3] <= (JUMBO.h - JUMBO.big.margin) * (700 / JUMBO.w) + 1e-9, "and still within the card");
 });
 
 test("every big rank is set at one size, the ten narrowed to fit as the others do", () => {

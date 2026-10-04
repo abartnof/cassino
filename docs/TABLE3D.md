@@ -498,11 +498,13 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   Text faces (automatic on a phone or a tablet, or chosen in the settings)
   have their index fitted to the 2.9 units of each card cassino's hand of
   four shows, which the faces test measures, at the top left only (a card
-  on the screen is never read upside down); below it, for the table, where
-  all of a card shows, the rank and suit again side by side, as large as
-  the card holds, a 10 narrowed to a single character's width (the sixth
+  on the screen is never read upside down); and in the room right of that
+  strip, clear of the index across the card, for the table, where all of a
+  card shows, the rank over the suit again, as large as the room holds,
+  about twice the index, a 10 narrowed to the room (the sixth
   play-testing: on an iPhone the table's cards were "still too small to
-  read"). The browser test plays by tapping on a phone held either way.
+  read"; and then "put it in that 3/4, so that it does not overlap on the
+  X axis with the top left card value"). The browser test plays by tapping on a phone held either way.
 - **T9. Traditional objects.** The pegboard, the sweep tally, the stock as a
   clock, polished. **Done**: the scoring board (`pegboard.js`): a wooden
   board of 21 holes a player in fives, a start hole and two pegs each, at

@@ -189,9 +189,10 @@ legal move. RULES.md now says each held card answers for one build value.
   them (beside the hand, below or above it), your words held upright
   below your hand, over the prompt. Then, on an iPhone, the table's cards
   "still too small to read" (34 by 45 px in Safari's window): the Large
-  Text faces lose their upside-down corner (the user's choice), and below
-  the corner a big rank and suit fill the card, about 1.7 times the
-  corner's rank; and on a phone held upright the table given more of the
+  Text faces lose their upside-down corner (the user's choice), and in the
+  room right of the corner's strip (4.1 of the face's 7 units, the strip
+  2.9) a big rank over a big suit, about twice the corner's rank, clear of
+  the corner across the card (the user's placing); and on a phone held upright the table given more of the
   screen (the strips from 184 and 151 px to 120 and 115): "Captured this
   hand" folded into the score, open with its hand-by-hand scores, the
   score a little shorter, the prompt one line. A table card in Safari's
