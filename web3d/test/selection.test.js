@@ -139,3 +139,14 @@ test("the move bar fills the space between the table and your hand, clear of a c
   assert.equal(moveBarFit({ near: 340, top: 600, lift: 26 }).h, 84, "never more than 84 px");
   assert.equal(moveBarFit({ near: 340, top: 380, lift: 26 }).h, 40, "never less than 40");
 });
+
+// On a phone the bar, its running sum shown, could be wider than the
+// screen: it is made only as tall as lets it fit across. Its width grows
+// with its height (`perH` px of width a px), past gaps that do not
+// (`fixed`).
+test("the move bar is never wider than the room across", () => {
+  const across = { room: 374, perH: 8, fixed: 24 };
+  assert.equal(moveBarFit({ near: 340, top: 460, lift: 26, across }).h, (374 - 24) / 8);
+  assert.equal(moveBarFit({ near: 340, top: 460, lift: 26, across: { room: 1200, perH: 8, fixed: 24 } }).h, 80, "room enough: as tall as before");
+  assert.equal(moveBarFit({ near: 340, top: 460, lift: 26, across: { room: 200, perH: 8, fixed: 24 } }).h, 32, "never less than 32 to fit");
+});

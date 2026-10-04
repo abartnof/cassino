@@ -3,6 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
+import { Vector3 } from "three";
 import { TIMING, choreograph, initialPlacement, opening, stagesBetween } from "../src/choreography.js";
 import { cardCorners } from "../src/kinematics.js";
 import { layout, sweepCards } from "../src/layout.js";
@@ -304,6 +305,10 @@ test("a sweep's card is held up, then laid crosswise on the pile once the heap i
   assert.equal(mine.length, 3, "laid on the heap, held up, laid crosswise");
   const held = mine[1].path(1);
   assert.ok(held.position.y > 8, "held up over the table");
+  // Square to the eye high over the table (play-testing), as your hand is.
+  const face = new Vector3(0, 0, 1).applyQuaternion(held.quaternion);
+  const toEye = new Vector3(...ZONES.eye).sub(held.position).normalize();
+  assert.ok(Math.acos(face.dot(toEye)) < (8 * Math.PI) / 180, "held up facing the eye");
   const heap = result.motions.filter((m) => m.id !== id && m.reveal?.atEnd);
   assert.equal(heap.length, 2);
   assert.ok(mine[2].delay + mine[2].duration > heap[0].delay + heap[0].duration, "laid crosswise after the heap is in");

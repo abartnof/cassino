@@ -581,26 +581,35 @@ def check_ending(browser, failures):
 
 def check_move_bar(browser, failures):
     """The move bar, always there on your turn: Take, Build and Trail dimmed
-    with nothing chosen, lit by a choice, and on a desktop between the
-    table and your hand."""
-    page = open_page(browser, "seed=2&skill=1&speed=6", calm=True)
+    with nothing chosen, lit by a choice, and between the table and your
+    hand, on a desktop and on a phone held upright."""
+    for viewport in ({"width": 1280, "height": 800}, {"width": 390, "height": 844}):
+        check_move_bar_at(browser, failures, viewport)
+
+
+def check_move_bar_at(browser, failures, viewport):
+    where = f"{viewport['width']}x{viewport['height']}"
+    page = open_page(browser, "seed=2&skill=1&speed=6", viewport=viewport, calm=True)
     settle(page)
     chips = page.locator(".move-bar [data-kind]")
     labels = [chips.nth(i).inner_text().strip() for i in range(chips.count())]
     if labels != ["Take", "Build", "Trail"] or page.evaluate("window.cassino3d.chips()"):
-        failures.append(f"the move bar with nothing chosen: {labels}, lit {page.evaluate('window.cassino3d.chips()')}")
+        failures.append(f"{where}: the move bar with nothing chosen: {labels}, lit {page.evaluate('window.cassino3d.chips()')}")
     s = page.evaluate("window.cassino3d.state()")
     trail = next(m for m in s["moves"] if m.startswith("trail"))
     card = trail.split()[1]
     click_card(page, card)
     settle(page)
     if "Trail" not in page.evaluate("window.cassino3d.chips()"):
-        failures.append("choosing a card did not light Trail")
+        failures.append(f"{where}: choosing a card did not light Trail")
     bar = page.locator(".move-bar").bounding_box()
     table_y = max(page.evaluate("(c) => window.cassino3d.screenPoint(c).y", c["card"]) for i in s["table"] for c in i["cards"])
     hand_y = min(page.evaluate("(c) => window.cassino3d.screenPoint(c).y", c["card"]) for c in s["hand"] if c["card"] != card)
     if not (table_y < bar["y"] and bar["y"] + bar["height"] < hand_y):
-        failures.append(f"the move bar is not between the table and your hand: {bar}, table at {table_y}, hand at {hand_y}")
+        failures.append(f"{where}: the move bar is not between the table and your hand: {bar}, table at {table_y}, hand at {hand_y}")
+    if bar["x"] < 0 or bar["x"] + bar["width"] > viewport["width"]:
+        failures.append(f"{where}: the move bar runs off the screen: {bar}")
+    shot(page, f"t2-move-bar-{where}")
     page.context.close()
 
 

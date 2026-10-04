@@ -60,8 +60,9 @@ function yourHand(codes, chosen, Z) {
   });
 }
 
-// Your opponent's hand, backs to you; or, in the replay after the game with
-// both hands face up (`shown`: their cards), turned to face you.
+// Your opponent's hand, backs to you, tipped toward you so the backs are
+// square to the eye (units.js); or, in the replay after the game with both
+// hands face up (`shown`: their cards), turned to face you, as square.
 function theirHand(count, Z, shown = null) {
   const zone = Z.theirHand;
   const centre = new Vector3(...zone.centre);
@@ -72,7 +73,7 @@ function theirHand(count, Z, shown = null) {
     facing: toward(centre, open ? 1 : -1),
     radius: zone.radius,
     spread: zone.spread * DEG,
-    tilt: zone.lean * DEG,
+    tilt: (open ? 1 : -1) * zone.lean * DEG,
   }).map((pose, i) =>
     open
       ? { key: shown[i], zone: "their-hand", index: i, code: shown[i], faceUp: true, item: null, pose }

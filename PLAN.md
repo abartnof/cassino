@@ -145,6 +145,16 @@ legal move. RULES.md now says each held card answers for one build value.
   (twelve courts from a Spanish-suited pack of about 1760, credited;
   `?ending` stages it and steps through all 24 endings; `docs/TABLE3D.md`
   §6).
+- **The fifth play-testing** (2026-10-04): your opponent's words at the
+  game's end in a balloon beside the court card, three quarters up it, its
+  tail pointing at the card (the figure made as each game begins, so it
+  stands before its first word); losing, the card's last word, "You are
+  quite normal."; the eye raised to look down at 70 degrees to the table
+  (from 42, and 29 on a phone), both hands turned square to it, the
+  phone's table laid out afresh for a view from above (the middle five
+  wide; table cards about 58 px tall on a phone, from 39, and about 90 on
+  a desktop, from 71); and on a phone held upright the move bar between
+  the table and your hand, as on a desktop.
 - **The South African game, researched**
   (`research/12-south-african-khasino.md`): KASA's rulebooks and its own
   online game as the canonical sources, twenty open-source engines, and

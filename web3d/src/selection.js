@@ -67,14 +67,19 @@ export function moveBar(chips) {
   });
 }
 
-// Where the move bar sits on a desktop, and how tall (play-testing: fill
-// the space between the hand and the table with larger buttons): centred
-// in the space between the table's near edge (`near`, px) and the top of
-// your hand less the rise of a card chosen from it (`top`, `lift`), as tall
-// as that less a margin each side, between 40 and 84 px.
-export function moveBarFit({ near, top, lift }) {
+// Where the move bar sits on a desktop or a phone held upright, and how
+// tall (play-testing: fill the space between the hand and the table with
+// larger buttons): centred in the space between the table's near edge
+// (`near`, px) and the top of your hand less the rise of a card chosen from
+// it (`top`, `lift`), as tall as that less a margin each side, between 40
+// and 84 px. And, on a phone, no taller than lets it fit `across`: `room`
+// px wide, its width `perH` px for each px of its height past `fixed` px of
+// gaps -- down to 32 px.
+export function moveBarFit({ near, top, lift, across = null }) {
   const room = top - lift - near;
-  return { y: near + room / 2, h: Math.max(40, Math.min(84, room - 14)) };
+  const h = Math.max(40, Math.min(84, room - 14));
+  const widest = across ? Math.max(32, (across.room - across.fixed) / across.perH) : Infinity;
+  return { y: near + room / 2, h: Math.min(h, widest) };
 }
 
 // The cards of the table item a card belongs to (a build's all of them).

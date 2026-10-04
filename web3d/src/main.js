@@ -636,9 +636,11 @@ async function main() {
     placeMoveBar();
   };
 
-  // On a desktop (not a phone, upright or sideways, where the controls hold
-  // it): your hand's cards as they rest, a card chosen not lifted.
+  // On a desktop, not a phone (upright or sideways); and a phone held
+  // upright.
   const desktop = () => !document.documentElement.classList.contains("upright") && !document.documentElement.classList.contains("sideways");
+  const upright = () => document.documentElement.classList.contains("upright");
+  // Your hand's cards as they rest, a card chosen not lifted.
   function yourHandOnScreen() {
     const all = director.placement().filter((m) => m.zone === "your-hand");
     const resting = all.filter((m) => m.code !== sel.chosen);
@@ -658,16 +660,23 @@ async function main() {
   // The move bar, filling the space between the table's first row (its
   // near edge, a build's fan included) and your hand, clear of a card
   // chosen from it: where a move is chosen from (selection.js moveBarFit).
-  // It stays put as the table fills, the rows growing away from you.
+  // It stays put as the table fills, the rows growing away from you. On a
+  // desktop, and on a phone held upright (play-testing: "above the cards,
+  // not below, to match the desktop version"); held sideways it is in the
+  // controls' column beside the table.
+  let barFit = null;
   function placeMoveBar() {
-    if (!desktop()) return;
-    const near = director.toScreen(new Vector3(ZONES.middle.x, 0, ZONES.middle.z + CARD.height / 2 + ZONES.stack.dz)).y;
+    if (!desktop() && !upright()) return (barFit = null);
+    const Z = stage.portrait ? ZONES_PORTRAIT : ZONES;
+    const near = director.toScreen(new Vector3(Z.middle.x, 0, Z.middle.z + CARD.height / 2 + Z.stack.dz)).y;
     const hand = yourHandOnScreen();
-    const fit = moveBarFit({ near, top: hand ? hand.top : director.handEdge("you").y, lift: hand ? hand.lift : 0 });
-    overlay.placeMoveBar(fit.y, fit.h);
+    const across = upright() ? overlay.barAcross() : null;
+    barFit = moveBarFit({ near, top: hand ? hand.top : director.handEdge("you").y, lift: hand ? hand.lift : 0, across });
+    overlay.placeMoveBar(barFit.y, barFit.h);
   }
   // Where a line is said from: by the speaker's hand; yours, on a desktop,
-  // beside it, the move bar being above it.
+  // beside it, the move bar being above it; on a phone held upright, where
+  // there is no room beside it, above the move bar.
   function speakerAt(who) {
     // At the game's end your opponent speaks from across the table, beside
     // the court card, three quarters up it.
@@ -675,6 +684,7 @@ async function main() {
       const [left, right] = figureSides().map(director.screenOf);
       return { x: right.x + 14, left: left.x - 14, y: right.y, side: true };
     }
+    if (who === "you" && upright() && barFit) return { x: director.handEdge("you").x, y: barFit.y - barFit.h / 2 };
     const hand = who === "you" && desktop() ? yourHandOnScreen() : null;
     if (!hand) return director.handEdge(who);
     return { x: hand.right + 18, y: hand.top + (hand.bottom - hand.top) * 0.35, side: true };

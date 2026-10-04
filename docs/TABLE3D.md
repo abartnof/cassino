@@ -32,9 +32,14 @@ third-party asset credited in `CREDITS.md` in the commit that brings it in.
 Classic or Royal Cassino against the computer (or watches two computer
 players), opened from disk with no network.
 
-**The scene.** The same bright, pale table as piquet's. Your hand floats
-before you, fanned, facing you; your opponent's floats across the table,
-backs to you. **The middle of the table is the game**: the loose cards on a
+**The scene.** The same bright, pale table as piquet's, seen from high
+over it: the eye looks down at 70 degrees to the table (play-testing found
+the cards "too hard to see, esp. in mobile mode" from the old eyes, at 42
+degrees across the table and 29 on a phone; at 70 a card lying on the table
+is foreshortened by 6 per cent, against 32 and 52). Your hand floats before
+you, fanned, turned square to the eye; your opponent's lies beyond the
+middle's second row, tipped toward you, its backs square to the eye
+(`units.js` `PITCH`, `facingEye`; `test/eye.test.js`). **The middle of the table is the game**: the loose cards on a
 loose grid, and the builds as small squared stacks, fanned so each card's
 index and a strip of its face read, each with a value badge (a setting). The capture piles lie face down at each
 player's right, sweeps crosswise and offset so they can be counted (the
@@ -75,8 +80,9 @@ naming its origin (`// From piquet web3d/src/kinematics.js @ 254cb3c.`).
 `layout(state) -> Map<card, Pose>` is a pure function of the protocol state,
 node-tested, as in piquet.
 
-- **Your hand**: `state.hand`, fanned and floating.
-- **Their hand**: `state.opponent_holds` anonymous cards, backs to you.
+- **Your hand**: `state.hand`, fanned and floating, square to the eye.
+- **Their hand**: `state.opponent_holds` anonymous cards, backs to you and
+  square to the eye; in the replay after the game, turned face up to it.
 - **The table**: `state.table` items in arrival order on a grid that grows
   from the centre. A loose card lies flat. A build is a stack: its cards in
   the order laid, each offset so its whole index and a strip of its face
@@ -249,10 +255,12 @@ Material Design 3, from piquet's shell.
   between the table's first row and your hand, clear of a card chosen from
   it, as tall as there is room for, 40 to 84 px (`moveBarFit`), and stays
   put as the table fills (the rows grow away from you; the middle was
-  moved six centimetres further off to make room, and a chosen card stands
-  1.6 cm out of the hand, not 2.2); your own words are then said beside
-  your hand, the tail pointing back at it. On a phone the bar is a row of
-  the controls.
+  moved further off to make room, and a chosen card stands 1.6 cm out of
+  the hand, not 2.2); your own words are then said beside your hand, the
+  tail pointing back at it. A phone held upright has the bar in the same
+  place (play-testing: "above the cards, not below, to match the desktop
+  version"), as tall as fits its width as well, and your words above it;
+  held sideways, the bar is a row of the controls' column.
 - **The score HUD**, from the designer's handoff (the spec and its approved
   reference implementation are commit c484091; the reference's numbers are
   the source of truth, and `hud.js` and `style.css` port them). A dark card
@@ -419,8 +427,10 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   and pages through the help.
 - **T8. Phones.** Piquet's phone framing and Large Text faces, fitted to a
   middle that grows. **Done**: cassino's own stacked arrangement
-  (`units.js` `ZONES_PORTRAIT`: the middle three wide, your hand held up
-  near the eye, the piles and stocks at the corners); the layout and
+  (`units.js` `ZONES_PORTRAIT`; since the eye was raised, the middle five
+  wide, so ten items lie in two rows, your opponent's hand beyond them with
+  its pile and stock beside it, your hand nearer the eye than the table with
+  yours beside it, and room for the move bar between); the layout and
   choreography take their zones from the view; a staging test measures the
   portrait camera's reach over whole games and holds `CAMERA_PORTRAIT.reach`
   to it; the page measures the overlay's strips (upright: under the HUD and

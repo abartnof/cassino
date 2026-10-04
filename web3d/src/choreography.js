@@ -39,7 +39,7 @@ import { carryBlock, fan, lying, peelOff, pickUp, pull, rise, slide, toss, trans
 import { jitter, layout, sweepCards } from "./layout.js";
 import { theirHand } from "./replay.js";
 import { lineCard } from "./scorebug.js";
-import { CARD } from "./units.js";
+import { CARD, ZONES, facingEye } from "./units.js";
 
 // Starting points, tuned by eye; the speed setting scales them all.
 export const TIMING = Object.freeze({
@@ -633,13 +633,15 @@ class Plan {
       if (who === "them") this.marks.push({ ids: groups.flat().map((m) => m.id), at: t, until: t + TIMING.look });
       t += who === "them" ? TIMING.look : TIMING.beat;
     }
-    // A sweep's card held up, facing you, over its taker's side of the table.
+    // A sweep's card held up over its taker's side of the table, square to
+    // the eye (units.js), as your hand is.
     let held = null;
     if (card && played.sweep) {
       heap.pop();
       const side = who === "you" ? 1 : -1;
       const centre = new Vector3(base.x, 13, base.z + side * 6);
-      held = fan({ count: 1, centre, facing: centre.clone().add(new Vector3(0, 0, 300)), tilt: (15 * Math.PI) / 180 })[0];
+      const lean = facingEye((this.view.zones ?? ZONES).eye, centre.toArray());
+      held = fan({ count: 1, centre, facing: centre.clone().add(new Vector3(0, 0, 300)), tilt: (lean * Math.PI) / 180 })[0];
       this.moments.held = t; // "Clear!" as the card is held up
       this.move(card.id, this.via(card.id, held), pickUp(this.now[card.id].pose, held, { toward: TOWARD[who] }), t, TIMING.show * 0.6);
       t += TIMING.show * 0.3;

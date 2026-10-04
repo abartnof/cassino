@@ -398,6 +398,9 @@ md-dialog {
   --md-filled-button-container-height: var(--move-h, 44px);
   --md-filled-button-container-shape: calc(var(--move-h, 44px) / 2);
   --md-filled-button-label-text-size: calc(var(--move-h, 44px) * 0.38);
+  /* The label's line grows with it: at its default 20 px a large label's
+     foot was cut off. */
+  --md-filled-button-label-text-line-height: calc(var(--move-h, 44px) * 0.5);
   --md-filled-button-label-text-weight: 600;
   --md-filled-button-leading-space: calc(var(--move-h, 44px) * 0.62);
   --md-filled-button-trailing-space: calc(var(--move-h, 44px) * 0.62);
@@ -417,20 +420,24 @@ md-dialog {
   border-radius: calc(var(--move-h, 44px) / 2);
   font-size: calc(var(--move-h, 44px) * 0.36);
   font-weight: 600;
+  white-space: nowrap;
   background: #e1e3e8;
   color: #1b1f24;
 }
-/* On a phone the bar is a row of the controls: compact buttons that wrap
-   in a narrow column (a phone held sideways). */
+/* On a phone, compact buttons. Held sideways the bar is a row of the
+   controls' column, wrapping in it; held upright it sits between the table
+   and your hand, as on a desktop (play-testing), in one row. */
 html.upright .move-bar,
 html.sideways .move-bar {
   --move-h: 40px;
-  flex-wrap: wrap;
   gap: 8px;
+}
+html.sideways .move-bar,
+html.sideways .move-bar .chips {
+  flex-wrap: wrap;
 }
 html.upright .move-bar .chips,
 html.sideways .move-bar .chips {
-  flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
 }
@@ -438,7 +445,7 @@ html.upright .move-bar md-filled-button,
 html.sideways .move-bar md-filled-button {
   min-width: 0;
 }
-html:not(.upright):not(.sideways) .move-bar {
+html:not(.sideways) .move-bar {
   position: fixed;
   left: 50%;
   top: var(--move-bar-y, 55%);
@@ -1257,7 +1264,7 @@ html.upright .brand {
    go without the table being framed again under a finger. */
 html.upright .controls {
   bottom: 60px;
-  min-height: 128px;
+  min-height: 72px;
   box-sizing: border-box;
   align-content: flex-end;
   padding: 6px 10px 8px;

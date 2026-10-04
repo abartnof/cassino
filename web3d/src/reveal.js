@@ -51,9 +51,10 @@ export const REVEAL_FAR = 1200;
 
 // How long the camera takes to pull back.
 export const REVEAL_MS = 2600;
-// In play the table fades into the air; at the reveal the air clears, so
-// the figure and the table's far edge are seen.
-export const FOG = Object.freeze({ play: Object.freeze([110, 260]), reveal: Object.freeze([520, 1200]) });
+// In play the table fades into the air, beyond everything on it (the eye
+// high over the table is some 115 cm from your opponent's hand); at the
+// reveal the air clears, so the figure and the table's far edge are seen.
+export const FOG = Object.freeze({ play: Object.freeze([140, 300]), reveal: Object.freeze([520, 1200]) });
 
 // The camera at the end: back past the near edge and up, looking down the
 // table to the figure. On a window narrower than PORTRAIT_BELOW (a phone

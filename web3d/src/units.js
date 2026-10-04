@@ -19,11 +19,30 @@ export const TABLE = Object.freeze({
   depth: 100,
 });
 
-// The human's eyes, looking down the table at a point a little in front of
-// its centre.
+// The eye looks down at the table at PITCH degrees to it (90 would be
+// straight down). Play-testing found the cards "too hard to see, esp. in
+// mobile mode" from the old eyes, at 42 degrees across the table and 29 on a
+// phone, and asked for the camera higher, at 70 or 80: at 70 a card on the
+// table is foreshortened by only 6 per cent, against 32 and 52, and the
+// table still has some depth. Both hands are turned square to the eye
+// (`facingEye`, below), as the play-testing asked.
+export const PITCH = 70;
+const DEG = Math.PI / 180;
+// The eye `distance` from `target`, back toward you and up, at PITCH.
+const over = (target, distance) =>
+  Object.freeze([target[0], target[1] + distance * Math.sin(PITCH * DEG), target[2] + distance * Math.cos(PITCH * DEG)]);
+// The tilt, in degrees, that turns a hand held at `centre` square to the
+// eye: how far it leans back from upright (layout.js, kinematics.js fan).
+export const facingEye = (eye, centre) => Math.atan2(eye[1] - centre[1], eye[2] - centre[2]) / DEG;
+
+// The human's eyes, high over the table and looking down at a point a
+// little beyond its middle, so that your hand, your opponent's beyond the
+// middle's second row, and the move bar between the table and your hand all
+// fit between the score and the prompt (test/eye.test.js).
+const TARGET = Object.freeze([0, 0, -12]);
 export const CAMERA = Object.freeze({
-  position: Object.freeze([0, 55, 60]),
-  target: Object.freeze([0, 0, 0]),
+  position: over(TARGET, 102),
+  target: TARGET,
   fov: 40, // vertical, degrees
   // Nothing comes nearer the eye than about 45 cm; a near plane at 20 keeps
   // the depth buffer fine enough to tell a card from the one it lies on.
@@ -40,10 +59,11 @@ export const CAMERA = Object.freeze({
 // overlay leaves, from `reach` -- how far the table's cards reach from the
 // eye's axis, up, down and to the side, as tangents, over whole parties
 // (the staging test measures it, and holds it to the table).
+const TARGET_PORTRAIT = Object.freeze([0, 0, -16]);
 export const CAMERA_PORTRAIT = Object.freeze({
-  position: Object.freeze([0, 40, 72]),
-  target: Object.freeze([0, 0, 0]),
-  reach: Object.freeze({ up: 0.24, down: -0.253, across: 0.248 }),
+  position: over(TARGET_PORTRAIT, 90),
+  target: TARGET_PORTRAIT,
+  reach: Object.freeze({ up: 0.295, down: -0.448, across: 0.289 }),
   // Your hand's own reach across -- with its cards raised, and as it is held
   // in play -- and how much more it reaches for each unit its fan is
   // lengthened (layout.js `fill`): framing.js lengthens it to take whatever
@@ -62,18 +82,22 @@ export const PORTRAIT_BELOW = 0.85;
 // the rest lies flat. Replaces piquet's zones: the middle of the table is the
 // game here, not the tricks.
 export const ZONES = Object.freeze({
-  // Both hands held as piquet's are: at 75 degrees to the table, leaning back
-  // 15 from upright toward their holder.
-  yourHand: Object.freeze({ centre: Object.freeze([0, 16, 26]), radius: 16, spread: 5.6, lean: 15 }),
-  theirHand: Object.freeze({ centre: Object.freeze([0, 12, -22]), radius: 16, spread: 5.2, lean: 15 }),
+  // Where the eye is that sees this arrangement.
+  eye: CAMERA.position,
+  // Both hands turned square to the eye (play-testing): yours leaning back
+  // toward you, your opponent's tipped toward you, its backs to the eye
+  // (`lean`, from upright). Your opponent's lies beyond the middle's second
+  // row, so it hides none of it.
+  yourHand: Object.freeze({ centre: Object.freeze([0, 17, 9]), radius: 16, spread: 5.6, lean: facingEye(CAMERA.position, [0, 17, 9]) }),
+  theirHand: Object.freeze({ centre: Object.freeze([0, 5, -45]), radius: 16, spread: 5.2, lean: facingEye(CAMERA.position, [0, 5, -45]) }),
   // The middle: items on a grid in arrival order, at most `columns` to a
   // row, the first row nearest you and later rows away from you: a row
   // nearer than this would lie under your floating hand, as the eye sees
   // it, and could not be tapped.
-  // Cassino's change after play-testing: six centimetres further from you
-  // (from -7), for the move bar's large buttons between the table and your
-  // hand, clear of a card chosen and standing up out of the hand.
-  middle: Object.freeze({ x: 0, z: -13, columns: 6, gapX: 1.8, gapZ: 2.2 }),
+  // Cassino's change after play-testing: further from you (from -7), for
+  // the move bar's large buttons between the table and your hand, clear of
+  // a card chosen and standing up out of the hand.
+  middle: Object.freeze({ x: 0, z: -17, columns: 6, gapX: 1.8, gapZ: 2.2 }),
   // A build's cards, each laid down and to the right of the last, enough
   // that every card's index and a strip of its face show: a ten of
   // diamonds in a build should be seen at a glance.
@@ -91,19 +115,24 @@ export const ZONES = Object.freeze({
   stock: Object.freeze({ you: Object.freeze({ x: -34, z: 6 }), them: Object.freeze({ x: 34, z: -20 }) }),
 });
 
-// The table for a phone held upright, under CAMERA_PORTRAIT: the same
-// places, drawn in, with the middle four items wide. Your hand is held up at
-// 40 degrees rather than 75, near the eye, so its faces read large; the
-// piles and the stocks sit at the corners of the middle, the count rows
+// The table for a phone held upright, under CAMERA_PORTRAIT, seen from
+// above: the middle five items wide, so ten lie in two rows (99.6 per cent
+// of tables in play); your opponent's hand beyond them, its pile and stock
+// beside it; your hand nearer the eye than the table, so its faces read
+// large, with your pile and stock beside it; and between the middle and
+// your hand, room for the move bar (test/eye.test.js). The count rows
 // overlap so all six cards fit across. The camera's reach (above) is
 // measured over whole games by the staging test (test/staging.test.js).
+const YOURS_PORTRAIT = Object.freeze([0, 26, 13]);
+const THEIRS_PORTRAIT = Object.freeze([0, 5, -37.5]);
 export const ZONES_PORTRAIT = Object.freeze({
-  yourHand: Object.freeze({ centre: Object.freeze([0, 12, 34]), radius: 22, spread: 7, lean: 40 }),
-  theirHand: Object.freeze({ centre: Object.freeze([0, 6, -32]), radius: 14, spread: 4.5, lean: 15 }),
-  middle: Object.freeze({ x: 0, z: -6.5, columns: 3, gapX: 0.8, gapZ: 1.4 }),
+  eye: CAMERA_PORTRAIT.position,
+  yourHand: Object.freeze({ centre: YOURS_PORTRAIT, radius: 24, spread: 9, lean: facingEye(CAMERA_PORTRAIT.position, YOURS_PORTRAIT) }),
+  theirHand: Object.freeze({ centre: THEIRS_PORTRAIT, radius: 12, spread: 4.5, lean: facingEye(CAMERA_PORTRAIT.position, THEIRS_PORTRAIT) }),
+  middle: Object.freeze({ x: 0, z: -12, columns: 5, gapX: 0.8, gapZ: 1.4 }),
   stack: Object.freeze({ dx: 1.2, dz: 1.8 }),
-  yourPile: Object.freeze({ x: 14, z: 7, sweepStep: 1 }),
-  theirPile: Object.freeze({ x: -12, z: -42, sweepStep: 1 }),
+  yourPile: Object.freeze({ x: 18.5, z: 13, sweepStep: 1 }),
+  theirPile: Object.freeze({ x: -16, z: -37.5, sweepStep: 1 }),
   count: Object.freeze({ first: 7, step: 3.9 }),
-  stock: Object.freeze({ you: Object.freeze({ x: -14, z: 7 }), them: Object.freeze({ x: 12, z: -42 }) }),
+  stock: Object.freeze({ you: Object.freeze({ x: -18.5, z: 13 }), them: Object.freeze({ x: 16, z: -37.5 }) }),
 });

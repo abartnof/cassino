@@ -76,6 +76,7 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
   // `replay`: { k, n, playing } while the game is replayed.
   // `after`: a line for the end of the game (the series, if one is played).
   const bar = $(".move-bar");
+  const widths = new Map(); // what the move bar holds -> how its width goes with its height
   function show({ state, chips, sum: total, message, busy = false, aid = null, replay = null, after = null }) {
     prompt.textContent = replay ? "The game replayed, both hands face up." : busy ? "" : promptText(state, chips);
     if (!replay && !busy && after && state.prompt === "over") prompt.textContent += ` ${after}`;
@@ -405,11 +406,26 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
     hudSlot: $(".hud-slot"),
     said: () => [...afloat.querySelectorAll(".dialogue")].map((d) => ({ who: d.classList.contains("you") ? "you" : "them", words: d.textContent })),
     chips: () => [...chipSet.children].filter((c) => !c.disabled).map((c) => c.textContent),
-    // Where the move bar is to sit on a desktop, between the table and your
-    // hand (the page measures it as the cards are drawn).
+    // Where the move bar is to sit on a desktop or a phone held upright,
+    // between the table and your hand (the page measures it as the cards
+    // are drawn).
     placeMoveBar(y, h) {
       bar.style.setProperty("--move-bar-y", `${Math.round(y)}px`);
       bar.style.setProperty("--move-h", `${Math.round(h)}px`);
+    },
+    // How the bar's width goes with its height, for what it holds now
+    // (selection.js moveBarFit `across`): measured at its present height,
+    // once for each thing it can hold.
+    barAcross() {
+      if (bar.hidden) return null;
+      const key = bar.textContent;
+      if (!widths.has(key)) {
+        const h = parseFloat(bar.style.getPropertyValue("--move-h")) || 44;
+        const parts = [...bar.children].filter((c) => !c.hidden && c !== chipSet).length + chipSet.children.length;
+        const fixed = Math.max(0, parts - 1) * 8; // the gaps (style.css), the same at any height
+        widths.set(key, { perH: (bar.offsetWidth - fixed) / h, fixed });
+      }
+      return { room: window.innerWidth - 16, ...widths.get(key) };
     },
   };
 }
