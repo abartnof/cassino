@@ -6,7 +6,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createDialogue } from "../src/dialogue.js";
+import { LATE, TURN, createDialogue, saying } from "../src/dialogue.js";
 
 const BANK = {
   groups: { "point-5": ["point-5.0"], good: ["good.0", "good.1"], "what-make": ["what-make.0"], "value-48": ["n-48.0"] },
@@ -144,4 +144,52 @@ test("skip: the lines still to come are forgotten, and the next is said at once"
   const next = [];
   dialogue.say([{ who: "them", phrase: "good", delay: 0 }], (line, words, ms) => next.push(ms));
   assert.equal(next[0], 0, "said at once");
+});
+
+// Cassino's chatter (play-testing: the table talk "VERY verbose", the
+// conversation a part of the game): a remark is said in a gap, and yields
+// to the calls -- it is not said if it would make a call of a later moment
+// late, or if its moment is long past.
+test("chatter fills the gaps, and never makes a later call late", () => {
+  const remark = { who: "you", phrase: "point-5", at: 0, delay: 0, chatter: true };
+  const call = { who: "them", phrase: "good", at: 1, delay: 500 };
+  assert.deepEqual(said([remark, call]).map((l) => l.phrase), ["good"], "no room for the remark before the call");
+  assert.ok(said([remark, call])[0].ms <= 500 + 5, "the call at its moment");
+  assert.deepEqual(said([remark, { ...call, delay: 3000 }]).map((l) => l.phrase), ["point-5", "good"], "room for both");
+  // A remark is part of what is said at its own moment: a greeting before
+  // the house rules is said, and they after it.
+  assert.deepEqual(said([remark, { ...call, at: 0 }]).map((l) => l.phrase), ["point-5", "good"]);
+  // A remark kept (the game proposed, which opens it) is said whatever the
+  // room.
+  assert.deepEqual(said([{ ...remark, keep: true }, call]).map((l) => l.phrase), ["point-5", "good"]);
+});
+
+test("a remark whose moment is long past is not said", () => {
+  const long = { who: "you", phrase: "long", at: 0, delay: 0 };
+  const bank = { groups: { ...BANK.groups, long: ["long.0"] }, texts: { ...BANK.texts, "long.0": "Building eights, and a nine for luck." } };
+  const out = said([long, { who: "them", phrase: "good", at: 0, delay: 0, chatter: true }], createDialogue(bank));
+  assert.ok(saying("Building eights, and a nine for luck.") + TURN > LATE, "the call outlasts a remark's patience");
+  assert.deepEqual(out.map((l) => l.phrase), ["long"]);
+  const quick = said([{ who: "you", phrase: "good", at: 0, delay: 0 }, { who: "them", phrase: "good", at: 0, delay: 0, chatter: true }]);
+  assert.equal(quick.length, 2, "said soon enough after its moment");
+});
+
+test("what is planned is what is said, chatter dropped and all", () => {
+  const dialogue = createDialogue(BANK);
+  const lines = dialogue.words([
+    { who: "you", phrase: "point-5", at: 0, delay: 0, chatter: true },
+    { who: "them", phrase: "good", at: 1, delay: 500 },
+    { who: "you", phrase: "good", at: 1, delay: 500, chatter: true },
+  ]);
+  const plan = dialogue.plan(lines);
+  const out = said(lines, dialogue);
+  assert.deepEqual(out.map((l) => l.words), plan.map((l) => l.words));
+  out.forEach((l, i) => assert.ok(Math.abs(l.ms - plan[i].ms) < 5));
+});
+
+// The score said aloud: a line's words can carry its numbers.
+test("a line's words filled in with what it carries", () => {
+  const bank = { groups: { score: ["score.0"] }, texts: { "score.0": "{Lead} to {trail}, then." } };
+  const out = said([{ who: "them", phrase: "score", delay: 0, vars: { lead: "seven", trail: "four" } }], createDialogue(bank));
+  assert.equal(out[0].words, "Seven to four, then.");
 });

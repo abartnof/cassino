@@ -13,8 +13,12 @@
 //   bank:   { groups: { id: [key] }, texts: { key: words } }
 //   clock:  ms now -- the table's clock, which stops while the table is held
 //           still, so time held is not counted as time passed
-//   lines:  [{ who: "you"|"them", phrase, delay }] from speech(): phrase is a
-//           group id; delay the ms from now until its moment (0 if absent).
+//   lines:  [{ who: "you"|"them", phrase, delay, at, chatter, vars }] from
+//           speech(): phrase is a group id; delay the ms from now until its
+//           moment (0 if absent); at, the event it belongs to; chatter, a
+//           remark that yields to the calls (below), unless keep (said
+//           whatever the room: the game proposed); vars, the words its
+//           text's {slots} are filled with ("{Lead}" capitalised).
 //           Or { pause: true, delay }: the moment between the declarations'
 //           rounds (breaks.js), which comes once the line before it has been
 //           said, and before which nothing after it comes.
@@ -27,28 +31,54 @@ export const GAP = 90; // ms between one speaker's lines
 export const TURN = 280; // ms when the other speaks
 // How long a line takes to say: about as long as a person takes.
 export const saying = (words) => 250 + 65 * (words || "").length;
+// Cassino's chatter (play-testing: the talk "VERY verbose"): a remark is said
+// in a gap, and is not said at all if it would make a call of a later moment
+// (a build called, "Clear!", the count) more than SLACK late, or if it would
+// come more than LATE after its own moment, when it would seem to be about
+// something else.
+export const SLACK = 250;
+export const LATE = 2000;
+
+// A text with its {slots} filled from `vars`; a capitalised slot is filled
+// capitalised.
+function fill(text, vars) {
+  if (!vars) return text;
+  return text.replace(/\{(\w+)\}/g, (slot, key) => {
+    const value = String(vars[key.toLowerCase()] ?? slot);
+    return key[0] === key[0].toUpperCase() ? value[0].toUpperCase() + value.slice(1) : value;
+  });
+}
 
 export function createDialogue(bank, clock = () => performance.now()) {
   const pick = createBags();
   let next = 0; // when the last line said will have ended, on the clock
   let last = null; // who said it
-  const chosen = (line) => (line.pause ? null : line.words ?? bank.texts?.[pick(line.phrase, bank.groups?.[line.phrase])] ?? "");
+  const chosen = (line) => (line.pause ? null : line.words ?? fill(bank.texts?.[pick(line.phrase, bank.groups?.[line.phrase])] ?? "", line.vars));
   // The words a line is most often said in, for a line not yet given its own.
-  const usual = (line) => (line.pause ? null : line.words ?? bank.texts?.[bank.groups?.[line.phrase]?.[0]] ?? "");
+  const usual = (line) => (line.pause ? null : line.words ?? fill(bank.texts?.[bank.groups?.[line.phrase]?.[0]] ?? "", line.vars));
 
   // Each line's moment and its end, in ms from now: after the line before it
-  // has been said, and not before its own moment. Says nothing.
+  // has been said, and not before its own moment; chatter with no room
+  // left out. Says nothing.
   function schedule(lines, words) {
     const now = clock();
     let t = next;
     let who = last;
-    const out = lines.map((line) => {
+    const out = [];
+    lines.forEach((line, i) => {
       const said = words(line);
       const gap = who === null ? 0 : line.pause || line.who !== who ? TURN : GAP;
       const start = Math.max(now + (line.delay ?? 0), t + gap, now);
-      t = line.pause ? start : start + saying(said);
+      const end = line.pause ? start : start + saying(said);
+      if (line.chatter && !line.keep) {
+        const call = lines.slice(i + 1).find((l) => !l.chatter && !l.pause && l.at !== line.at);
+        const late = start - (now + (line.delay ?? 0)) > LATE;
+        const blocks = call && end + (call.who === line.who ? GAP : TURN) > now + (call.delay ?? 0) + SLACK;
+        if (late || blocks) return;
+      }
+      t = end;
       who = line.pause ? null : line.who;
-      return { ...line, words: said, ms: start - now, end: t - now };
+      out.push({ ...line, words: said, ms: start - now, end: t - now });
     });
     return { out, t, who };
   }
