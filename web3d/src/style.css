@@ -611,7 +611,7 @@ html.sideways .aid-toggles {
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-columns: 1fr 2.2em;
+  grid-template-columns: 1fr auto;
   align-items: center;
   gap: 10px;
   transition: transform 460ms var(--sp-fast) 120ms, opacity 140ms var(--sp-fx) 120ms;
@@ -621,7 +621,10 @@ html.sideways .aid-toggles {
   font-weight: 600;
   color: #9aa3ad;
 }
+/* Two digits wide in its own font, whichever font the device has (a score
+   past 9 was cut off where the column was measured in the row's font). */
 .hud-num {
+  min-width: 2ch;
   font-size: 30px;
   line-height: 40px;
   font-weight: 700;

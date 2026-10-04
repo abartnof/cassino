@@ -305,6 +305,28 @@ def check_badges(browser, failures):
     page.context.close()
 
 
+def check_score_fits(page, failures, where):
+    """The HUD's scores whole at two digits (play-testing: a score past 9 was
+    cut off at its right), within the HUD's row. Measured in DejaVu Sans,
+    whose digits are wider than most (headless Chromium's own font is narrow
+    enough to hide the fault)."""
+    cut = page.evaluate("""() => [...document.querySelectorAll('.hud-num')].filter((n) => {
+        const was = n.textContent;
+        n.textContent = '28';
+        n.style.fontFamily = '"DejaVu Sans"';
+        const row = n.closest('.hud-block').getBoundingClientRect();
+        const range = document.createRange();
+        range.selectNodeContents(n);
+        const r = range.getBoundingClientRect();
+        const out = r.right > row.right + 0.5 || r.left < row.left - 0.5 || n.scrollWidth > n.clientWidth + 1;
+        n.textContent = was;
+        n.style.fontFamily = '';
+        return out;
+    }).length""")
+    if cut:
+        failures.append(f"{where}: a two-digit score is cut off in the HUD")
+
+
 def check_trackers(browser, failures):
     """The trackers' panel: a header's tip shows when pointed at (nothing
     lies over the panel), and the panel folds to its heading and stays
@@ -542,6 +564,7 @@ def check_phone(browser, failures):
     settle(page)
     if page.evaluate("window.cassino3d.facesShown()") != "jumbo":
         failures.append("phone: the Large Text faces are not shown")
+    check_score_fits(page, failures, "phone")
     made = 0
     while made < 10 and play_by_clicking(page, failures, made + 200):
         made += 1
@@ -568,6 +591,7 @@ def check_phone(browser, failures):
         shot(page, f"t8-upright-{vp['width']}")
     page = open_page(browser, "seed=7&speed=8&skill=2", viewport={"width": 844, "height": 390})
     settle(page)
+    check_score_fits(page, failures, "phone sideways")
     made = 0
     while made < 4 and play_by_clicking(page, failures, made + 300):
         made += 1
@@ -757,6 +781,7 @@ def main() -> int:
         page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
         settle(page)
         check_drawn(page, failures, "at the start")
+        check_score_fits(page, failures, "desktop")
         shot(page, "t1-table")
         meshes = page.evaluate("window.cassino3d.meshes()")
         if meshes != 52:
