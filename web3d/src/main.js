@@ -642,6 +642,16 @@ async function main() {
   // upright.
   const desktop = () => !document.documentElement.classList.contains("upright") && !document.documentElement.classList.contains("sideways");
   const upright = () => document.documentElement.classList.contains("upright");
+  // Each card of a zone, its extent on the screen as it rests.
+  function cardRectsOf(zone) {
+    return director
+      .placement()
+      .filter((m) => m.zone === zone)
+      .map((m) => {
+        const ps = cardCorners(m.pose).map((c) => director.toScreen(c));
+        return { left: Math.min(...ps.map((p) => p.x)), right: Math.max(...ps.map((p) => p.x)), top: Math.min(...ps.map((p) => p.y)), bottom: Math.max(...ps.map((p) => p.y)) };
+      });
+  }
   // Where a zone's cards lie on the screen, as they rest: their extent, or
   // null with none there.
   function zoneOnScreen(zone) {
@@ -693,17 +703,40 @@ async function main() {
   // Where a line is said from: by the speaker's hand; yours, on a desktop,
   // beside it, the move bar being above it; on a phone held upright, where
   // there is no room beside it, above the move bar.
-  // Where your opponent's hand lies, as a full hand of four would: the
-  // words beside it stay clear of it as it is dealt and played out.
-  function theirFullHand() {
+  // Where a hand lies, as a full hand of four would: the words beside it
+  // stay clear of it as it is dealt and played out.
+  const FULL = ["AS", "AH", "AD", "AC"];
+  function fullHand(who) {
     if (!state) return null;
     const zones = stage.portrait ? ZONES_PORTRAIT : ZONES;
-    const points = layout({ ...state, opponent_holds: 4 }, { zones })
-      .filter((m) => m.zone === "their-hand")
+    const full = who === "you" ? { ...state, hand: FULL.map((card) => ({ card })) } : { ...state, opponent_holds: 4 };
+    const points = layout(full, { zones })
+      .filter((m) => m.zone === (who === "you" ? "your-hand" : "their-hand"))
       .flatMap((m) => cardCorners(m.pose).map((c) => director.toScreen(c)));
     const xs = points.map((p) => p.x);
     const ys = points.map((p) => p.y);
     return { left: Math.min(...xs), right: Math.max(...xs), top: Math.min(...ys), bottom: Math.max(...ys) };
+  }
+  // On a phone, where a speaker's words may go, the first clear of the
+  // cards and the move bar taken (overlay.js say; the sixth play-testing:
+  // "in mobile mode, the dialog balloons can completely obscure the cards,
+  // so you can't play until they go away"): beside the hand, within the
+  // table's band; your opponent's below or above theirs; yours, held
+  // upright, below your hand, over the prompt (there is no room beside it,
+  // and the table and the move bar are above it), held sideways above it,
+  // between it and the table.
+  function phonePlaces(who) {
+    const hand = fullHand(who);
+    const strips = stage.strips();
+    const band = strips.left === undefined ? { left: 8, right: window.innerWidth - 8 } : { left: strips.left + 8, right: window.innerWidth - strips.right - 8 };
+    const mid = { x: (hand.left + hand.right) / 2, y: (Math.max(hand.top, 8) + hand.bottom) / 2 };
+    const right = { kind: "right", x: hand.right + 14, y: mid.y, limit: band.right };
+    const left = { kind: "left", x: hand.left - 14, y: mid.y, limit: band.left };
+    const below = { kind: "below", x: mid.x, y: hand.bottom };
+    const above = { kind: "above", x: mid.x, y: hand.top };
+    const places = who === "them" ? [right, left, below, above] : upright() ? [below, right, left, above] : [above, right, left, below];
+    const cards = [...overlay.cardsAvoided(), ...["middle", "your-hand"].flatMap((zone) => cardRectsOf(zone))];
+    return { places, avoid: cards };
   }
   function speakerAt(who) {
     // At the game's end your opponent speaks from across the table, beside
@@ -712,11 +745,11 @@ async function main() {
       const [left, right] = figureSides().map(director.screenOf);
       return { x: right.x + 14, left: left.x - 14, y: right.y, side: true };
     }
-    if (who === "you" && upright() && barFit) return { x: director.handEdge("you").x, y: barFit.y - barFit.h / 2 };
+    if (!desktop() && state) return phonePlaces(who);
     // Across the table, your opponent's words beside their hand, level with
     // what of it is in view: below it they would cover the table, which
     // starts just beyond it (the sixth play-testing).
-    const theirs = who === "them" && desktop() ? theirFullHand() : null;
+    const theirs = who === "them" ? fullHand("them") : null;
     if (theirs) {
       const top = Math.max(theirs.top, 8);
       return { x: theirs.right + 14, left: theirs.left - 14, y: (top + theirs.bottom) / 2, side: true };
@@ -1071,6 +1104,8 @@ async function main() {
     pageDue: () => pageDue(state, prefs.seen, tutorialSince),
     screenPoint: (code) => director.screenPoint(code),
     zoneBounds: (zone) => zoneOnScreen(zone),
+    // Each card of a zone, its extent on the screen as it rests.
+    cardRects: (zone) => cardRectsOf(zone),
     pickAt: (x, y) => {
       const m = director.pick(x, y);
       return m ? { zone: m.zone, code: m.code } : null;

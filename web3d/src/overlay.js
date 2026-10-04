@@ -12,7 +12,7 @@
 import "@material/web/button/filled-button.js";
 import "@material/web/button/filled-button.js";
 import "@material/web/iconbutton/icon-button.js";
-import { besideAt } from "./dialogue.js";
+import { besideAt, boxRect, covers } from "./dialogue.js";
 import { trackerTable } from "./scorebug.js";
 import { BAR, barAcross, fitLabels, moveBar } from "./selection.js";
 
@@ -396,6 +396,26 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
   function say(who, words, anchor) {
     takeDown(who, true);
     if (!anchor || !words) return;
+    // On a phone, the first of the speaker's places that covers none of
+    // what must stay in view (`anchor.avoid`: the cards, the move bar),
+    // else the one that covers least (dialogue.js boxRect, covers).
+    if (anchor.places) {
+      const node = el("div", { class: `dialogue ${who}`, role: "status" }, words);
+      afloat.append(node);
+      const view = { width: window.innerWidth, height: window.innerHeight };
+      const keep = [...anchor.avoid, ...[".info", ".bar", ".aids-panel"].map((q) => root.ownerDocument.querySelector(q)).filter((e) => e && !e.hidden).map((e) => e.getBoundingClientRect())];
+      let best = null;
+      for (const place of anchor.places) {
+        placeBox(node, place, view);
+        const cost = covers(boxRect(place, node.offsetWidth, node.offsetHeight, view), keep, view);
+        if (!best || cost < best.cost) best = { place, cost };
+        if (cost === 0) break;
+      }
+      placeBox(node, best.place, view);
+      boxes[who] = node;
+      later(LINGER, () => boxes[who] === node && takeDown(who));
+      return;
+    }
     // Beside its speaker, its tail pointing back at them (`anchor.side`):
     // your words on a desktop, where the move bar sits above your hand, and
     // your opponent's at the game's end, beside the court card (dialogue.js).
@@ -430,6 +450,28 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
     }
     boxes[who] = node;
     later(LINGER, () => boxes[who] === node && takeDown(who));
+  }
+  // A box at one of its places: beside its point (`right`, `left`, as wide
+  // as the room to `limit` allows), or above or below it, centred and kept
+  // on the screen (style.css).
+  function placeBox(node, place, view) {
+    node.classList.remove("side", "left", "above", "below");
+    node.style.left = node.style.right = node.style.maxWidth = "";
+    node.style.boxSizing = "border-box"; // its room is the whole box's, padding and all
+    node.style.top = `${place.y}px`;
+    if (place.kind === "right" || place.kind === "left") {
+      node.classList.add("side");
+      const room = place.kind === "right" ? (place.limit ?? view.width - 8) - place.x : place.x - (place.limit ?? 8);
+      node.style.maxWidth = `${Math.max(60, Math.min(room, 340))}px`;
+      if (place.kind === "left") {
+        node.classList.add("left");
+        node.style.right = `${view.width - place.x}px`;
+      } else node.style.left = `${place.x}px`;
+      return;
+    }
+    node.classList.add(place.kind);
+    const half = node.offsetWidth / 2 + 8;
+    node.style.left = `${Math.min(Math.max(place.x, half), view.width - half)}px`;
   }
   function hush() {
     takeDown("you", true);
@@ -474,6 +516,9 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
       return barAcross(window.innerWidth - 16, parseFloat(getComputedStyle(chipSet).columnGap) || 0);
     },
     fitBar,
+    // What a box on a phone must not cover besides the cards: the move
+    // bar's places, while it is up.
+    cardsAvoided: () => (bar.hidden ? [] : [...chipSet.children].map((c) => c.getBoundingClientRect())),
   };
 }
 

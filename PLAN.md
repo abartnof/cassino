@@ -184,7 +184,10 @@ legal move. RULES.md now says each held card answers for one build value.
   opponent's words beside their hand. Nothing said while a hand is scored
   (the count's chant and the score said after the hand gone, what was
   still being said taken down as the count begins): the score's popups
-  tell it.
+  tell it. And on a phone, what is said never covers the cards or the
+  move bar: each box goes to the first of its speaker's places clear of
+  them (beside the hand, below or above it), your words held upright
+  below your hand, over the prompt.
 - **The South African game, researched**
   (`research/12-south-african-khasino.md`): KASA's rulebooks and its own
   online game as the canonical sources, twenty open-source engines, and

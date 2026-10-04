@@ -65,6 +65,29 @@ export function besideAt(anchor, width, viewWidth, margin = 8) {
   return { side: "right", at: viewWidth - margin - width, room: null };
 }
 
+// Where a box `w` by `h` px lies, placed at a point (`place`): `right` or
+// `left` of it, level with it, its tail pointing back (a box beside its
+// speaker); or `above` or `below` it, TAIL px off, centred on it and kept
+// on the screen (`view`) -- as style.css draws them.
+export const TAIL = 18;
+export function boxRect(place, w, h, view, margin = 8) {
+  const { kind, x, y } = place;
+  if (kind === "right") return { left: x, right: x + w, top: y - h / 2, bottom: y + h / 2 };
+  if (kind === "left") return { left: x - w, right: x, top: y - h / 2, bottom: y + h / 2 };
+  const cx = Math.min(Math.max(x, w / 2 + margin), view.width - w / 2 - margin);
+  const top = kind === "above" ? y - TAIL - h : y + TAIL;
+  return { left: cx - w / 2, right: cx + w / 2, top, bottom: top + h };
+}
+
+// How much a box covers of what it must not (`rects`: the cards, the move
+// bar), in square px; what of it is off the screen counts ten times over.
+const area = (a, b) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+export function covers(rect, rects, view) {
+  const whole = (rect.right - rect.left) * (rect.bottom - rect.top);
+  const off = whole - area(rect, { left: 0, right: view.width, top: 0, bottom: view.height });
+  return rects.reduce((sum, r) => sum + area(rect, r), 0) + 10 * off;
+}
+
 export function createDialogue(bank, clock = () => performance.now()) {
   const pick = createBags();
   let next = 0; // when the last line said will have ended, on the clock

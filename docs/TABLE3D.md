@@ -251,17 +251,30 @@ lands; a deal as the dealer begins it ("Last." while dealing the last
 cards); the last cards as they are gathered; "Clear!" as the sweep's card
 is held up and "Cash." as the ace lands on the ace, within the capture
 (the choreography's `moments`), not once the heap is in. Lines are said in
-the order of their moments. The count is paced by what is said: the page
-chooses the words first (`talk.js` `countPace`), and each counted card
-turns up, and the score's popup comes, as its line is said; a player's
-next popup waits for the last (`hud.js` `popupsOf`), so a line that
-brings one waits too. At the Instant speed nothing waits for the talk.
+the order of their moments. The count is told by the score's popups, a
+line a beat, each counted card turning up as its popup comes; a player's
+next popup waits for the last (`hud.js` `popupsOf`), and nothing is said
+meanwhile (it was paced by a chant until the sixth play-testing). At the
+Instant speed nothing waits for the popups.
 What one speaker says at one moment is said in one box (`talk.js`
 `chunk`: "Low deals. My deal."), so nobody waits through a run of lines
 one by one. A setting, "Table talk", chooses everything, the chatter
 included; only the calls that carry the game (the house rules, the build
-calls, "Last.", a sweep, cash, the count, the game won); or nothing
-(`talk.js` `heard`).
+calls, "Last.", a sweep, cash, the game won); or nothing (`talk.js`
+`heard`).
+
+**Where a line is said.** By its speaker's hand: on a desktop beside it,
+yours to the right of your hand (the move bar is above it), your
+opponent's to the right of theirs (just beyond it the table begins). On a
+phone a box never covers the cards or the move bar (the sixth
+play-testing: "in mobile mode, the dialog balloons can completely obscure
+the cards, so you can't play until they go away"): each speaker has
+places to try, beside the hand within the table's band, below or above
+it, and a box goes to the first that covers none of them, or else to the
+one that covers least (`dialogue.js` `boxRect`, `covers`). Held upright,
+there is no room beside your hand, and the table and the move bar are
+above it: your words go below it, over the prompt, for the moment they
+are said.
 
 ## 8. The overlay
 
@@ -295,7 +308,7 @@ Material Design 3, from piquet's shell.
   pointing back at it. A phone held upright has the bar in the same place
   (play-testing: "above the cards, not below, to match the desktop
   version"), its four places sharing the screen's width, and your words
-  above it; held sideways, the bar is a two-by-two grid in the controls'
+  below your hand; held sideways, the bar is a two-by-two grid in the controls'
   column.
 - **The score HUD**, from the designer's handoff (the spec and its approved
   reference implementation are commit c484091; the reference's numbers are

@@ -6,7 +6,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { LATE, TURN, besideAt, createDialogue, saying } from "../src/dialogue.js";
+import { LATE, TURN, besideAt, boxRect, covers, createDialogue, saying } from "../src/dialogue.js";
 
 const BANK = {
   groups: { "point-5": ["point-5.0"], good: ["good.0", "good.1"], "what-make": ["what-make.0"], "value-48": ["n-48.0"] },
@@ -206,4 +206,26 @@ test("with no room to its speaker's right, a box goes to the left, its tail poin
 test("with no room either side, a box is kept on the screen at the right", () => {
   assert.deepEqual(besideAt({ x: 330, y: 300 }, 220, 390), { side: "right", at: 390 - 8 - 220, room: null });
   assert.deepEqual(besideAt({ x: 330, left: 60, y: 300 }, 220, 390), { side: "right", at: 390 - 8 - 220, room: null });
+});
+
+// On a phone a box must not hide the cards (the sixth play-testing: "in
+// mobile mode, the dialog balloons can completely obscure the cards, so
+// you can't play until they go away"): each speaker has places to try,
+// and a box goes to the first that covers nothing it must not, or else to
+// the one that covers least.
+test("where a box lies for each way it can be placed", () => {
+  const view = { width: 390, height: 844 };
+  assert.deepEqual(boxRect({ kind: "right", x: 240, y: 230 }, 120, 60, view), { left: 240, right: 360, top: 200, bottom: 260 });
+  assert.deepEqual(boxRect({ kind: "left", x: 150, y: 230 }, 120, 60, view), { left: 30, right: 150, top: 200, bottom: 260 });
+  // Above or below its point, its tail between, centred and kept on the screen.
+  assert.deepEqual(boxRect({ kind: "below", x: 195, y: 680 }, 200, 40, view), { left: 95, right: 295, top: 698, bottom: 738 });
+  assert.deepEqual(boxRect({ kind: "above", x: 30, y: 300 }, 200, 40, view), { left: 8, right: 208, top: 242, bottom: 282 });
+});
+
+test("a box covers what it overlaps, and whatever of it is off the screen counts the most", () => {
+  const view = { width: 390, height: 844 };
+  const cards = [{ left: 60, right: 120, top: 380, bottom: 460 }];
+  assert.equal(covers({ left: 100, right: 200, top: 300, bottom: 370 }, cards, view), 0, "clear of the card");
+  assert.equal(covers({ left: 100, right: 200, top: 440, bottom: 480 }, cards, view), 20 * 20);
+  assert.ok(covers({ left: 300, right: 420, top: 100, bottom: 140 }, [], view) > covers({ left: 100, right: 200, top: 440, bottom: 480 }, cards, view), "off the screen is worse");
 });

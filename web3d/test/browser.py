@@ -880,6 +880,39 @@ def check_desktop_frame(browser, failures):
         page.context.close()
 
 
+def check_phone_talk(browser, failures):
+    """On a phone, held either way, what is said never covers the cards (the
+    sixth play-testing: "in mobile mode, the dialog balloons can completely
+    obscure the cards, so you can't play until they go away"): no box over a
+    table card, a card in your hand, or the move bar, as each is said."""
+    for vp in ({"width": 390, "height": 844}, {"width": 844, "height": 390}):
+        where = f"{vp['width']}x{vp['height']}"
+        page = open_page(browser, "seed=7&speed=6&skill=1", viewport=vp, calm=True)
+        page.evaluate("""() => { window.covered = []; window.boxesSeen = 0;
+            setInterval(() => {
+              const cards = [...window.cassino3d.cardRects('middle'), ...window.cassino3d.cardRects('your-hand')];
+              const bar = document.querySelector('.move-bar');
+              const keep = bar && !bar.hidden ? [...bar.querySelectorAll('md-filled-button, .sum')].map((b) => b.getBoundingClientRect()) : [];
+              for (const d of document.querySelectorAll('.dialogue:not(.leaving)')) {
+                window.boxesSeen++;
+                const r = d.getBoundingClientRect();
+                const over = (c) => r.left < c.right - 1 && r.right > c.left + 1 && r.top < c.bottom - 1 && r.bottom > c.top + 1;
+                if (cards.some(over) || keep.some(over)) window.covered.push(d.textContent);
+              }
+            }, 50); }""")
+        made = 0
+        while made < 6 and play_by_clicking(page, failures, made + 700):
+            made += 1
+        settle(page)
+        page.wait_for_timeout(1500)
+        if not page.evaluate("window.boxesSeen"):
+            failures.append(f"{where}: nothing said to check")
+        covered = page.evaluate("[...new Set(window.covered)]")
+        if covered:
+            failures.append(f"{where}: said over the cards or the move bar: {covered[:4]}")
+        page.context.close()
+
+
 IPAD = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
 
 
@@ -1137,6 +1170,7 @@ def main() -> int:
         check_phone(browser, failures)
         check_tablet_faces(browser, failures)
         check_desktop_frame(browser, failures)
+        check_phone_talk(browser, failures)
         page = open_page(browser, "seed=11&skill=4&manual", calm=True)
         # The game proposed and accepted, then the house rules: both speak
         # within the opening's first seconds.

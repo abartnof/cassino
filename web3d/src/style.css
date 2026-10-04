@@ -189,6 +189,9 @@ html, body {
   position: fixed;
   inset: 0;
   pointer-events: none;
+  /* Over the controls: on a phone held upright your words go below your
+     hand, over the prompt, the one place clear of the cards. */
+  z-index: 1;
 }
 .dialogue {
   position: fixed;
@@ -255,6 +258,24 @@ html, body {
 .dialogue.side.left::after {
   left: auto;
   right: -6px;
+}
+/* On a phone, a box placed clear of the cards (overlay.js placeBox): above
+   or below its speaker's point, whoever speaks. */
+.dialogue.above {
+  translate: -50% calc(-100% - 18px);
+  transform-origin: 50% 100%;
+}
+.dialogue.above::after {
+  top: auto;
+  bottom: -6px;
+}
+.dialogue.below {
+  translate: -50% 18px;
+  transform-origin: 50% 0;
+}
+.dialogue.below::after {
+  top: -6px;
+  bottom: auto;
 }
 .dialogue.leaving {
   animation: box-out 260ms var(--ease-out) forwards;
