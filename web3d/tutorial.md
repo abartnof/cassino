@@ -68,9 +68,9 @@ The sum shows beside the **Take** button as you tap cards.
 - Builds can go up to 13, taken with a king.
 - The scoring is the same as in Classic.
 
-# Aces: one or fourteen
+## Aces: 1 or 14
 
-**With this setting, an ace from your hand takes as 1 or as 14,** your choice. As 14 it takes a king and an ace, or a 9 and a 5.
+**With the setting "Aces count 1 or 14", an ace from your hand takes as 1 or as 14,** your choice. As 14 it takes a king and an ace, or a 9 and a 5.
 
 - On the table, and in any build, an ace counts 1.
 - When both work, the buttons read **Take as 1** and **Take as 14**.

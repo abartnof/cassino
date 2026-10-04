@@ -155,7 +155,8 @@ legal move. RULES.md now says each held card answers for one build value.
   wide; table cards about 58 px tall on a phone, from 39, and about 90 on
   a desktop, from 71); and on a phone held upright the move bar between
   the table and your hand, as on a desktop. The trackers' panel folded at
-  first, its whole heading the button that opens and folds it.
+  first, its whole heading the button that opens and folds it. The
+  tutorial's page on the ace's 1 or 14 folded into Royal's.
 - **The South African game, researched**
   (`research/12-south-african-khasino.md`): KASA's rulebooks and its own
   online game as the canonical sources, twenty open-source engines, and

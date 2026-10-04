@@ -55,11 +55,11 @@ test("a page is due at its first moment, once, and never while watching", () => 
   assert.equal(pageDue(s, ["intro"]), "pairing");
   assert.equal(pageDue(s, ["intro", "pairing"]), null);
   assert.equal(pageDue({ ...s, watching: true }, []), null);
-  // Royal's pages come first: they change what every card is worth.
+  // Royal's page comes first: it changes what every card is worth, the
+  // ace's 1 or 14 with it (play-testing: one page, not two).
   const royal = { ...s, rules: { game: "royal", aces14: true, sweeps: true } };
   assert.equal(pageDue(royal, ["intro"]), "royal");
-  assert.equal(pageDue(royal, ["intro", "royal"]), "aces14");
-  assert.equal(pageDue(royal, ["intro", "royal", "aces14"]), "pairing");
+  assert.equal(pageDue(royal, ["intro", "royal"]), "pairing");
   // Your opponent's build teaches building, if you have not met it yet.
   const built = { ...s, moves: ["trail 2C"], events: [{ kind: "played", you: false, type: "build", build_kind: "new", multiple: false }] };
   assert.equal(pageDue(built, ["intro"], 0), "building");
@@ -81,9 +81,18 @@ test("over real games every page of the ladder comes, Royal's only in Royal", { 
       since = s.events.length;
       s = engine.send(s.prompt === "play" ? s.moves[(n * 3) % s.moves.length] : "next").state;
     }
-    if (game === "classic") assert.ok(!seen.includes("royal") && !seen.includes("aces14"));
-    if (game === "royal" && !aces14) assert.ok(!seen.includes("aces14"));
+    if (game === "classic") assert.ok(!seen.includes("royal"));
     seen.forEach((k) => met.add(k));
   }
-  for (const key of ["intro", "pairing", "summing", "building", "raising", "multiple", "royal", "aces14", "count"]) assert.ok(met.has(key), `${key} never came`);
+  for (const key of ["intro", "pairing", "summing", "building", "raising", "multiple", "royal", "count"]) assert.ok(met.has(key), `${key} never came`);
+});
+
+// Play-testing: "fold aces into the royals section, and kill the distinct
+// aces section".
+test("the ace's 1 or 14 is told on Royal's page, and has no page of its own", () => {
+  assert.ok(!PAGE_KEYS.includes("aces14"));
+  const royal = parseTutorial(TEXT).find((p) => p.key === "royal");
+  const words = royal.blocks.flatMap((b) => (b.spans ? [b.spans] : b.items)).map((spans) => spans.map((x) => x.text).join("")).join(" ");
+  assert.match(words, /1 or 14/);
+  assert.match(words, /Take as 14/);
 });

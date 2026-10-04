@@ -338,9 +338,10 @@ Material Design 3, from piquet's shell.
 
 The tutorial pages follow the teaching ladder: pairing, summing, building,
 raising, multiple builds (`DESIGN.md` §12.5), each at its first occurrence
-in a real game; Royal adds its jacks, queens and kings with numbers; the
-ace's 1-or-14 adds one more. Help pages, reachable at any time, cover the
-rules, the count and the table talk.
+in a real game; Royal adds its jacks, queens and kings with numbers, and
+on the same page the ace's 1 or 14 (the fifth play-testing folded its own
+page into Royal's). Help pages, reachable at any time, cover the rules, the
+count and the table talk.
 
 Each page is written for its moment, for a new player (the fourth
 play-testing): what is about to happen, and only what is needed to play it,
@@ -414,10 +415,10 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   under your hand (an MD3 segmented button set, both may be on); turning
   the explanations on opens the game log, where they are told. A phone
   keeps them in the settings.
-- **T7. Teaching.** Tutorial and help pages. **Done**: ten pages in
+- **T7. Teaching.** Tutorial and help pages. **Done**: nine pages in
   `web3d/tutorial.md` (the introduction; pairing, summing, building,
-  raising, multiple builds; the court cards count; the ace's 1 or 14; the
-  count; what is said at the table), each opening by itself at its first
+  raising, multiple builds; the court cards count, with the ace's 1 or 14;
+  the count; what is said at the table), each opening by itself at its first
   moment in a real game with the table held still (`tutorial.js`:
   `pageDue`, from the moves on offer and what your opponent has just done;
   node-tested against real games, every page reached), and all of them at

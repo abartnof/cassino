@@ -1,7 +1,7 @@
 // The tutorial: its pages, written in web3d/tutorial.md so they can be
 // reworded without touching code, and the moment each one opens by itself
 // (docs/TABLE3D.md section 9): the introduction as the game begins; Royal's
-// court cards and the ace's 1 or 14 when those rules are on; then the
+// court cards, and the ace's 1 or 14 on the same page, in Royal; then the
 // teaching ladder, pairing, summing, building, raising, multiple builds
 // (DESIGN.md §12.5), each the first time it comes up in the game, as a move
 // you could make or one your opponent has just made; and the count at the
@@ -10,9 +10,9 @@
 // The parser is piquet's tutorial.js @ 254cb3c (its small Markdown); the
 // pages and their moments are cassino's.
 
-export const PAGE_KEYS = ["intro", "pairing", "summing", "building", "raising", "multiple", "royal", "aces14", "count", "talk"];
+export const PAGE_KEYS = ["intro", "pairing", "summing", "building", "raising", "multiple", "royal", "count", "talk"];
 // The order in which pages fall due, when more than one could.
-const DUE = ["intro", "royal", "aces14", "pairing", "summing", "building", "raising", "multiple", "count"];
+const DUE = ["intro", "royal", "pairing", "summing", "building", "raising", "multiple", "count"];
 
 // The small piece of Markdown the pages use: `# page`, `## heading`,
 // paragraphs, `- ` and `1. ` lists, **bold** and *italic*. A page is
@@ -132,7 +132,7 @@ function shownKinds(events, since) {
   return kinds;
 }
 
-const TRIGGER = { pairing: "pair", summing: "sum", building: "build", raising: "raise", multiple: "multiple", aces14: "ace14" };
+const TRIGGER = { pairing: "pair", summing: "sum", building: "build", raising: "raise", multiple: "multiple" };
 
 // The page due now, if any: the first in order whose moment has come and
 // that has not been seen. Never while two computer players are watched.
@@ -146,9 +146,8 @@ export function pageDue(state, seen, since = 0) {
     if (seen.includes(key)) continue;
     if (key === "intro") return key;
     if (key === "royal" && rules.game === "royal" && playing) return key;
-    if (key === "aces14" && rules.aces14 && playing) return key;
     if (key === "count" && state.prompt !== "play" && (state.events ?? []).some((e) => e.kind === "scored")) return key;
-    if (TRIGGER[key] && key !== "aces14" && kinds.has(TRIGGER[key])) return key;
+    if (TRIGGER[key] && kinds.has(TRIGGER[key])) return key;
   }
   return null;
 }
