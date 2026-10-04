@@ -6,7 +6,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { LATE, TURN, createDialogue, saying } from "../src/dialogue.js";
+import { LATE, TURN, besideAt, createDialogue, saying } from "../src/dialogue.js";
 
 const BANK = {
   groups: { "point-5": ["point-5.0"], good: ["good.0", "good.1"], "what-make": ["what-make.0"], "value-48": ["n-48.0"] },
@@ -189,4 +189,21 @@ test("a line's words filled in with what it carries", () => {
   const bank = { groups: { score: ["score.0"] }, texts: { "score.0": "{Lead} to {trail}, then." } };
   const out = said([{ who: "them", phrase: "score", delay: 0, vars: { lead: "seven", trail: "four" } }], createDialogue(bank));
   assert.equal(out[0].words, "Seven to four, then.");
+});
+
+// A box beside its speaker (play-testing, the game's end: "to the side of the
+// opponent, with the dialogue box tail pointing at the card").
+test("a box beside its speaker goes to its right, wrapping to the room there", () => {
+  assert.deepEqual(besideAt({ x: 700, y: 300 }, 220, 1280), { side: "right", at: 700, room: 1280 - 8 - 700 });
+  // Less room than its words want, but enough to wrap them: it wraps.
+  assert.deepEqual(besideAt({ x: 230, y: 300 }, 220, 390), { side: "right", at: 230, room: 390 - 8 - 230 });
+});
+
+test("with no room to its speaker's right, a box goes to the left, its tail pointing right", () => {
+  assert.deepEqual(besideAt({ x: 330, left: 160, y: 300 }, 220, 390), { side: "left", at: 160, room: 160 - 8 });
+});
+
+test("with no room either side, a box is kept on the screen at the right", () => {
+  assert.deepEqual(besideAt({ x: 330, y: 300 }, 220, 390), { side: "right", at: 390 - 8 - 220, room: null });
+  assert.deepEqual(besideAt({ x: 330, left: 60, y: 300 }, 220, 390), { side: "right", at: 390 - 8 - 220, room: null });
 });

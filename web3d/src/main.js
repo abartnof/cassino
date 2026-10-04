@@ -26,7 +26,7 @@ import { createOverlay } from "./overlay.js";
 import { badgeFontPx, badgeText, badgeTitle, badgesShown } from "./badges.js";
 import { badgesOn, choosePlay, dailySeed, loadPrefs, welcomeWanted, loadSeries, loadSitting, savePrefs, saveSeries, saveSitting, withUrl } from "./prefs.js";
 import { recordGame, seriesLine } from "./series.js";
-import { COURTS as COURTS_ORDER, FIGURE, REVEAL_MS, courtFor, courtName, figureHead } from "./reveal.js";
+import { COURTS as COURTS_ORDER, FIGURE, REVEAL_MS, courtFor, courtName, figureSides } from "./reveal.js";
 import { createScene } from "./scene.js";
 import { celebrationOf, trackers } from "./scorebug.js";
 import { EMPTY, choose, chipsOf, itemState, moveBarFit, pick, selectionOf, selectionText, sweepWarning, valuesSaid, whyNot } from "./selection.js";
@@ -271,6 +271,7 @@ async function main() {
     state = watch
       ? engine.watch({ ...prefs.rules, skills: [prefs.skill, prefs.skill], seed })
       : engine.start({ ...prefs.rules, skill: prefs.skill, seed });
+    figureFor(courtFor(state.seed));
     if (!watch) for (const [aid, on] of Object.entries(prefs.aids)) if (on) state = engine.send(`set ${aid} on`).state;
     sel = EMPTY;
     offer = null;
@@ -669,11 +670,10 @@ async function main() {
   // beside it, the move bar being above it.
   function speakerAt(who) {
     // At the game's end your opponent speaks from across the table, beside
-    // the figure's head.
+    // the court card, three quarters up it.
     if (who === "them" && standing && stage.revealed() !== null) {
-      const [x, y, z] = figureHead();
-      const at = director.screenOf([x + (FIGURE.height * FIGURE.aspect) / 2, y, z]);
-      return { x: at.x + 14, y: at.y, side: true };
+      const [left, right] = figureSides().map(director.screenOf);
+      return { x: right.x + 14, left: left.x - 14, y: right.y, side: true };
     }
     const hand = who === "you" && desktop() ? yourHandOnScreen() : null;
     if (!hand) return director.handEdge(who);
@@ -686,7 +686,14 @@ async function main() {
   // court card standing across the table (reveal.js), cel-shaded and inked
   // like the cards; it says the game's last words from there. Gone again
   // with a new game, the replay, or the last move seen again.
-  const figures = new Map(); // court -> its mesh, made the first time it stands
+  // Each game's figure is made as the game begins, so that it stands, and
+  // its words are placed beside it, the moment the game ends.
+  const figures = new Map(); // court -> its mesh, once made
+  const making = new Map(); // court -> its mesh on the way
+  function figureFor(court) {
+    if (!making.has(court)) making.set(court, courtMesh(court).then((mesh) => (figures.set(court, mesh), mesh)));
+    return making.get(court);
+  }
   let standing = null; // the court standing, while revealed
   const calm = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches || prefs.speed > 10;
   async function courtMesh(court) {
@@ -705,18 +712,20 @@ async function main() {
     stage.scene.add(mesh);
     return mesh;
   }
-  // This court standing across the table, and no other.
-  async function stand(court) {
-    if (!figures.has(court)) figures.set(court, await courtMesh(court));
+  // This court standing across the table, and no other (its figure made).
+  function stand(court) {
     for (const [c, mesh] of figures) mesh.visible = c === court;
     standing = court;
     stage.render();
   }
-  async function revealOpponent() {
-    await stand(courtFor(state.seed));
-    if (state.prompt !== "over" || replay) return hideOpponent(); // moved on while the art was decoding
-    await stage.reveal({ instant: calm() });
-    if (STAGING && standing) showEndings();
+  // At once, if the figure is made, so the last words, due at the same
+  // moment with reduced motion, are said from beside it; else once it is,
+  // if the game has not moved on meanwhile.
+  function revealOpponent() {
+    const court = courtFor(state.seed);
+    if (!figures.has(court)) return figureFor(court).then(() => state.prompt === "over" && !replay && revealOpponent());
+    stand(court);
+    return stage.reveal({ instant: calm() }).then(() => STAGING && standing && showEndings());
   }
   function hideOpponent() {
     for (const mesh of figures.values()) mesh.visible = false;
@@ -772,7 +781,8 @@ async function main() {
   async function showEnding(k) {
     ending = k;
     const e = ENDINGS[k];
-    await stand(e.court);
+    await figureFor(e.court);
+    stand(e.court);
     endingWords.textContent = endingLabel(e);
     director.drop("talk");
     dialogue.skip();
@@ -987,6 +997,7 @@ async function main() {
   } else {
     newGame({ watch: params.has("watch"), welcome: welcomeWanted(params) });
   }
+  figureFor(courtFor(state.seed));
   document.getElementById("loading").remove();
 
   // For the browser test: where a card is on the screen, the chips, the

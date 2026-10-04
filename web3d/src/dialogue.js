@@ -48,6 +48,23 @@ function fill(text, vars) {
   });
 }
 
+// Where a box beside its speaker goes (`anchor.side`): your words beside
+// your hand on a desktop, and your opponent's beside the court card at the
+// game's end (play-testing: "to the side of the opponent, with the dialogue
+// box tail pointing at the card"). To the speaker's right, at `anchor.x`,
+// wrapping to the room there; failing that, to its left, ending at
+// `anchor.left`, its tail pointing right; failing both, kept on the screen
+// at the right. A box is never squeezed narrower than BESIDE_MIN pixels, or
+// its words' own width if less.
+export const BESIDE_MIN = 140;
+export function besideAt(anchor, width, viewWidth, margin = 8) {
+  const fits = (room) => room >= Math.min(width, BESIDE_MIN);
+  const right = viewWidth - margin - anchor.x;
+  if (fits(right)) return { side: "right", at: anchor.x, room: right };
+  if (anchor.left !== undefined && fits(anchor.left - margin)) return { side: "left", at: anchor.left, room: anchor.left - margin };
+  return { side: "right", at: viewWidth - margin - width, room: null };
+}
+
 export function createDialogue(bank, clock = () => performance.now()) {
   const pick = createBags();
   let next = 0; // when the last line said will have ended, on the clock

@@ -12,6 +12,7 @@
 import "@material/web/button/filled-button.js";
 import "@material/web/button/filled-button.js";
 import "@material/web/iconbutton/icon-button.js";
+import { besideAt } from "./dialogue.js";
 import { trackerTable } from "./scorebug.js";
 import { moveBar } from "./selection.js";
 
@@ -342,12 +343,18 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
   function say(who, words, anchor) {
     takeDown(who, true);
     if (!anchor || !words) return;
-    // Beside the hand, its tail pointing back at it (`anchor.side`): your
-    // words on a desktop, where the move bar sits above your hand.
+    // Beside its speaker, its tail pointing back at them (`anchor.side`):
+    // your words on a desktop, where the move bar sits above your hand, and
+    // your opponent's at the game's end, beside the court card (dialogue.js).
     if (anchor.side) {
       const node = el("div", { class: `dialogue ${who} side`, role: "status" }, words);
       afloat.append(node);
-      node.style.left = `${Math.min(anchor.x, window.innerWidth - node.offsetWidth - 8)}px`;
+      const place = besideAt(anchor, node.offsetWidth, window.innerWidth);
+      if (place.room !== null) node.style.maxWidth = `min(${place.room}px, 78vw, 340px)`;
+      if (place.side === "left") {
+        node.classList.add("left");
+        node.style.right = `${window.innerWidth - place.at}px`;
+      } else node.style.left = `${place.at}px`;
       node.style.top = `${anchor.y}px`;
       boxes[who] = node;
       later(LINGER, () => boxes[who] === node && takeDown(who));

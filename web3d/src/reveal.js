@@ -35,8 +35,15 @@ export const TABLE_EDGES = Object.freeze({ near: 70, far: -200, half: 150, thick
 // standing on the table's far side and facing you, in the scan's Spanish
 // proportions (219 x 342). Shown only at the reveal.
 export const FIGURE = Object.freeze({ height: 100, aspect: 219 / 342, z: -150, bottom: 0 });
-// Where its balloon is anchored: the head, high on the card.
-export const figureHead = () => [0, FIGURE.bottom + FIGURE.height * 0.84, FIGURE.z];
+// Where its words are said from: the face, three quarters up the card
+// (play-testing); and the card's edges at that height, its balloon beside
+// one of them, the tail pointing back at the card.
+export const figureHead = () => [0, FIGURE.bottom + FIGURE.height * 0.75, FIGURE.z];
+export const figureSides = () => {
+  const [, y, z] = figureHead();
+  const half = (FIGURE.height * FIGURE.aspect) / 2;
+  return [[-half, y, z], [half, y, z]];
+};
 
 // The far clipping plane at the reveal: the play's (units.js CAMERA.far,
 // 400 cm) would cut the figure off.
@@ -51,9 +58,11 @@ export const FOG = Object.freeze({ play: Object.freeze([110, 260]), reveal: Obje
 // The camera at the end: back past the near edge and up, looking down the
 // table to the figure. On a window narrower than PORTRAIT_BELOW (a phone
 // held upright, units.js), further back and aimed higher, so the figure
-// sits whole in the short band between the score and the controls.
+// sits whole in the short band between the score and the controls; and
+// aimed to its right, so it stands left of the middle with room beside it
+// for its words.
 export function revealPose(aspect = 1.6) {
-  if (aspect < PORTRAIT_BELOW) return { position: [0, 130, 270], target: [0, 50, -90], fov: 46 };
+  if (aspect < PORTRAIT_BELOW) return { position: [27, 130, 270], target: [27, 50, -90], fov: 46 };
   return { position: [0, 105, 215], target: [0, 28, -80], fov: 46 };
 }
 

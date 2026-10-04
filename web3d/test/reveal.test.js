@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { Frustum, Matrix4, PerspectiveCamera, Vector3 } from "three";
-import { COURTS, FIGURE, FOG, REVEAL_FAR, TABLE_EDGES, courtFor, figureHead, poseAt, revealPose } from "../src/reveal.js";
+import { COURTS, FIGURE, FOG, REVEAL_FAR, TABLE_EDGES, courtFor, figureHead, figureSides, poseAt, revealPose } from "../src/reveal.js";
 import { cameraFor } from "../src/framing.js";
 import { PORTRAIT_BELOW, ZONES_PORTRAIT } from "../src/units.js";
 
@@ -69,6 +69,28 @@ test("pulled back, the near edge comes into view and your opponent stands whole 
     if (aspect >= PORTRAIT_BELOW) assert.ok(sees(camera, nearEdge).length >= 1, `aspect ${aspect}: the near edge`);
     assert.ok(sees(camera, [figureHead()]).length === 1, "the head, where the balloon is anchored");
     for (const p of figure) assert.ok(camera.position.distanceTo(new Vector3(...p)) < FOG.reveal[0], "clear of the air");
+  }
+});
+
+// Its words beside it (play-testing: "near the face on the card -- 3/4 of the
+// way up the card would be good, and the dialogue box should be to the side
+// of the opponent, with the dialogue box tail pointing at the card").
+test("your opponent's words are said from three quarters up the card, beside it", () => {
+  assert.equal(figureHead()[1], FIGURE.bottom + 0.75 * FIGURE.height);
+  const [left, right] = figureSides();
+  assert.deepEqual(left, [-half, figureHead()[1], FIGURE.z]);
+  assert.deepEqual(right, [half, figureHead()[1], FIGURE.z]);
+});
+
+// Where a point falls across the window, from 0 at its left to 1 at its right.
+const across = (camera, p) => (new Vector3(...p).project(camera).x + 1) / 2;
+
+test("upright, your opponent stands left of the middle, with room for its words to its right", () => {
+  for (const aspect of [0.46, 0.75]) {
+    const camera = posed(revealPose(aspect), aspect);
+    const [left, right] = figureSides().map((p) => across(camera, p));
+    assert.ok(left > 0.04, `aspect ${aspect}: the figure whole, at ${left.toFixed(2)}`);
+    assert.ok(1 - right > 0.4, `aspect ${aspect}: ${(1 - right).toFixed(2)} of the width beside it`);
   }
 });
 

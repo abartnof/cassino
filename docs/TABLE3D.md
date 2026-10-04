@@ -148,12 +148,16 @@ the game ends, the camera pulls back over 2.6 s, past the table's near edge
 just behind your seat, and the air clears: your opponent was a court card
 all along, standing on the far side of the table, cel-shaded and inked like
 the cards, and it says the game's last words from there ("That's game.",
-"Well played.", a rematch offered). The table has edges (`reveal.js`
+"Well played.", a rematch offered), each line in a balloon beside the
+card, three quarters up it, by the face, its tail pointing at the card (to
+its left where there is no room on its right). The figure is made as each
+game begins, so it stands the moment the game ends. The table has edges (`reveal.js`
 `TABLE_EDGES`), which in play are out of the frame or lost in the fog; a
 test holds that to the framing at every window shape. Which court is chosen
 by the game's seed, from twelve cut from a Spanish-suited pack of about 1760
 (`tools/courts.py`, `CREDITS.md`). A phone held upright has its own pose,
-so the figure stands in the band between the score and the controls. With
+so the figure stands in the band between the score and the controls, left
+of the middle, with room beside it for its words. With
 reduced motion, or at the Instant speed, the camera cuts instead of
 gliding. A new game, the replay, or the last move seen again brings the
 play's eye back. `?ending` stages it, as piquet's does: a game played by a
