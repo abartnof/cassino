@@ -558,6 +558,12 @@ def check_ending(browser, failures):
         page.context.close()
         return
     shot(page, "t11-ending")
+    # Losing, the court card's last word (play-testing).
+    if not page.evaluate("window.cassino3d.state().events.findLast((e) => e.kind === 'game_ends').you_won"):
+        try:
+            page.wait_for_function("window.cassino3d.said().some((l) => l.who === 'them' && l.words === 'You are quite normal.')", timeout=20_000)
+        except Exception:
+            failures.append(f"ending: lost, and your opponent did not say you are quite normal: {page.evaluate('window.cassino3d.said()')}")
     before = page.evaluate("window.cassino3d.opponent()")
     page.locator(".endings-step").nth(1).click()
     page.wait_for_timeout(1500)

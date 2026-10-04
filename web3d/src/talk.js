@@ -211,6 +211,9 @@ export function speech(state, since = 0) {
         remark(other(winner), "good-game");
         remark(winner, "rematch");
         remark(other(winner), "rematch-reply");
+        // Your opponent, revealed a court card all along, has the last
+        // word when it wins (play-testing).
+        if (winner === "them") say("them", "quite-normal");
         break;
       }
       default:

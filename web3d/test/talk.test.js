@@ -38,7 +38,9 @@ test("nothing in the bank is unkind", () => {
 // can choose from at any event"): everything is said at least three ways,
 // and what comes up again and again (the build calls, the captures and
 // clears, the count, the deal, "Last.") at least five, none twice in one
-// group and none too long for a balloon.
+// group and none too long for a balloon. A line play-testing gave word for
+// word, said at most once a game, is said only its own way.
+const VERBATIM = new Set(["quite-normal"]);
 const FREQUENT = /^(build|builds|raise|left|count-sweeps)-\d+$|^count-|^take-|^(sweep|cash|clinch-cards|clinch-spades|residue|last|low-deals|my-deal|your-deal|left-more)$/;
 
 test("everything is said in several ways, the frequent moments in many", () => {
@@ -46,7 +48,7 @@ test("everything is said in several ways, the frequent moments in many", () => {
   for (const [group, keys] of Object.entries(WORDS.groups)) {
     const texts = keys.map((k) => WORDS.texts[k]);
     assert.equal(new Set(texts).size, texts.length, `${group} says something twice`);
-    if (texts.length < (FREQUENT.test(group) ? 5 : 3)) few.push(`${group}: ${texts.length}`);
+    if (!VERBATIM.has(group) && texts.length < (FREQUENT.test(group) ? 5 : 3)) few.push(`${group}: ${texts.length}`);
     for (const text of texts) assert.ok(text.length <= 44, `too long for a balloon: "${text}"`);
     // The count is written a line a second (choreography's countLine), and
     // its chant keeps up only if its lines are short: none longer than "The
@@ -172,8 +174,19 @@ test("the count is chanted line by line by whoever wins each", () => {
     },
   };
   const lines = speech(state([scored, { kind: "game_ends", hand: 1, you_won: false }]));
-  assert.deepEqual(said(lines), ["you:count-cards", "them:count-big-casino", "you:count-ace-D", "them:count-sweeps-2", "them:game-won", "you:good-game", "them:rematch", "you:rematch-reply"]);
+  assert.deepEqual(said(lines), ["you:count-cards", "them:count-big-casino", "you:count-ace-D", "them:count-sweeps-2", "them:game-won", "you:good-game", "them:rematch", "you:rematch-reply", "them:quite-normal"]);
   assert.deepEqual(lines.slice(0, 4).map((l) => l.line), [0, 1, 2, 3]);
+});
+
+// The game lost (play-testing): your opponent, revealed a court card, "says
+// 'You are quite normal.'" -- its last word, heard whenever the calls are.
+test("losing, your opponent's last word is that you are quite normal", () => {
+  const lines = speech(state([{ kind: "game_ends", hand: 1, you_won: false }]));
+  assert.equal(said(lines).at(-1), "them:quite-normal");
+  assert.deepEqual(said(heard(lines, "calls")), ["them:game-won", "them:quite-normal"]);
+  assert.deepEqual(heard(lines, "none"), []);
+  assert.deepEqual(WORDS.groups["quite-normal"].map((k) => WORDS.texts[k]), ["You are quite normal."]);
+  assert.ok(!said(speech(state([{ kind: "game_ends", hand: 1, you_won: true }]))).includes("them:quite-normal"), "not when you win");
 });
 
 // Twenty-six cards each: nobody scores the cards, and your opponent says

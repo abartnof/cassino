@@ -148,7 +148,8 @@ the game ends, the camera pulls back over 2.6 s, past the table's near edge
 just behind your seat, and the air clears: your opponent was a court card
 all along, standing on the far side of the table, cel-shaded and inked like
 the cards, and it says the game's last words from there ("That's game.",
-"Well played.", a rematch offered), each line in a balloon beside the
+"Well played.", a rematch offered; and when you have lost, its last word,
+"You are quite normal."), each line in a balloon beside the
 card, three quarters up it, by the face, its tail pointing at the card (to
 its left where there is no room on its right). The figure is made as each
 game begins, so it stands the moment the game ends. The table has edges (`reveal.js`

@@ -51,6 +51,7 @@ Sources:
 - **Ws**: a family's "World Series" of cassino, the best of seven [05-S74]
 - **Tn**: the Tunisian game's loser's plea, "Khallini narba7 marra!" (let me win once!), in translation [05-S67]
 - **T**: the table's own
+- **Pt**: play-testing: a line asked for word for word
 
 | Group | Said | Source |
 |---|---|---|
@@ -593,6 +594,7 @@ Sources:
 |  | Well done. | T |
 |  | Nicely played. | T |
 |  | A good game. Thank you. | T |
+| `quite-normal` | You are quite normal. | Pt |
 | `new-hand` | New hand. | T |
 |  | Fresh cards. | T |
 |  | Here we go again. | T |

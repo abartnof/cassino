@@ -786,7 +786,8 @@ async function main() {
     endingWords.textContent = endingLabel(e);
     director.drop("talk");
     dialogue.skip();
-    dialogue.say([{ who: "them", phrase: e.theyWon ? "game-won" : "good-game", delay: 0 }], (line, words, ms) =>
+    const last = e.theyWon ? ["game-won", "quite-normal"] : ["good-game"];
+    dialogue.say(last.map((phrase) => ({ who: "them", phrase, delay: 0 })), (line, words, ms) =>
       director.at(ms, () => overlay.say(line.who, words, speakerAt(line.who)), "talk"),
     );
   }

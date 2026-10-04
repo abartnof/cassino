@@ -105,6 +105,7 @@ SOURCES = {
     "Tn": "the Tunisian game's loser's plea, \"Khallini narba7 marra!\" (let me win once!), in "
           "translation [05-S67]",
     "T": "the table's own",
+    "Pt": "play-testing: a line asked for word for word",
 }
 
 NUMBERS = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
@@ -242,6 +243,9 @@ def phrase_groups():
         ("The game is up.", "Gz"))
     add("good-game", ("Good game.", "T"), ("Well played.", "T"), ("Thank you for the game.", "T"),
         ("Well done.", "T"), ("Nicely played.", "T"), ("A good game. Thank you.", "T"))
+    # The court card's last word, when you lose: the game's end shows that
+    # your opponent was a playing card all along.
+    add("quite-normal", ("You are quite normal.", "Pt"))
 
     # The chatter (play-testing: the talk "VERY verbose", the conversation a
     # part of the game, as where Cuarenta is played loud and full of sayings).
@@ -372,7 +376,8 @@ WORDS = ROOT / "web3d" / "words.json"
 
 def main():
     for gid, ways in phrase_groups():
-        assert len(ways) >= 2, f"{gid} is said only one way"
+        # A line play-testing gave word for word ("Pt") is said its own way.
+        assert len(ways) >= 2 or all(source == "Pt" for _, source in ways), f"{gid} is said only one way"
         assert all(source in SOURCES for _, source in ways), gid
     if "--check" in sys.argv:
         stale = [p for p, text in ((DOC, document()), (WORDS, words_json())) if not p.exists() or p.read_text() != text]
