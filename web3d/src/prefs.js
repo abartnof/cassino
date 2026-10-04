@@ -20,7 +20,8 @@ export const DEFAULTS = Object.freeze({
   skill: 3,
   speed: 1,
   surface: "random",
-  // The card faces: "auto" (Large Text on a phone), "classic" or "jumbo".
+  // The card faces: "auto" (Large Text on a phone or a tablet), "classic"
+  // or "jumbo".
   faces: "auto",
   // The match: one game to 21, or a World Series, the best of seven.
   match: "single",

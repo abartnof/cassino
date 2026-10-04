@@ -206,7 +206,7 @@ export function createChrome(root, on) {
   const speed = select("speed", "Animation", SPEEDS.map((s) => [s.value, s.words]));
   const surface = select("surface", "The table", [["random", "A new one each time the page opens"], ...PATTERNS.map((p) => [p.id, p.name])]);
   const faces = select("faces", "Card faces", [
-    ["auto", "Automatic: Large Text on a phone"],
+    ["auto", "Automatic: Large Text on a phone or a tablet"],
     ["classic", "Classic"],
     ["jumbo", "Large Text (Optimized for smaller screens)"],
   ]);

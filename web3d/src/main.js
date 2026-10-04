@@ -18,7 +18,7 @@ import { createChrome } from "./chrome.js";
 import { createDeck } from "./deck.js";
 import { TURN, createDialogue } from "./dialogue.js";
 import { createDirector } from "./director.js";
-import { facesFor, jumboTextures, phoneHere } from "./faces.js";
+import { facesFor, jumboTextures, largeTextHere } from "./faces.js";
 import { decodeBase64, loadEngine } from "./engine.js";
 import { POPUP_BUSY, createHud, hudEvents, ledgerOf, popupsOf } from "./hud.js";
 import { RAMPS, cardMaterials, cardTexture } from "./materials.js";
@@ -84,14 +84,14 @@ async function main() {
   const textures = await loadTextures(ART, { anisotropy, pixelRatio: stage.renderer.getPixelRatio() });
   const deck = createDeck(stage, textures);
 
-  // The card faces: Large Text on a phone and the classic faces elsewhere,
-  // or whichever is chosen in the settings, changed where the cards lie
-  // (faces.js, after piquet's main.js).
-  const phone = phoneHere();
+  // The card faces: Large Text on a phone or a tablet and the classic faces
+  // elsewhere, or whichever is chosen in the settings, changed where the
+  // cards lie (faces.js, after piquet's main.js).
+  const touch = largeTextHere();
   const faceSets = { classic: textures.faces };
   let facesShown = "classic";
   function showFaces(choice) {
-    const want = facesFor(choice, phone);
+    const want = facesFor(choice, touch);
     if (want === facesShown) return;
     faceSets[want] ??= jumboTextures(Object.keys(textures.faces), { width: textures.width ?? vectorWidth(stage.renderer.getPixelRatio()), anisotropy });
     deck.setFaces(faceSets[want]);

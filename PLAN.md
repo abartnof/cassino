@@ -165,6 +165,9 @@ legal move. RULES.md now says each held card answers for one build value.
   have it): off, no build is raised, in the engine, the table, the
   terminal (`--no-raise`) and the saved record (`raise=0`), and the
   tutorial's page on raising says so.
+- **The sixth play-testing** (2026-10-04): Large Text faces by default on
+  a tablet as on a phone (an iPad's Safari says it is a Mac; its touch
+  points tell it from one).
 - **The South African game, researched**
   (`research/12-south-african-khasino.md`): KASA's rulebooks and its own
   online game as the canonical sources, twenty open-source engines, and

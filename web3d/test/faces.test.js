@@ -5,25 +5,27 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Vector3 } from "three";
-import { drawJumbo, facesFor, isPhone, JUMBO, rankAndSuit } from "../src/faces.js";
+import { drawJumbo, facesFor, JUMBO, largeTextByDefault, rankAndSuit } from "../src/faces.js";
 import { layout } from "../src/layout.js";
 import { CARD, ZONES_PORTRAIT } from "../src/units.js";
 
-test("a phone, held either way, is a touch screen with a short side under 600 px", () => {
-  assert.ok(isPhone({ coarse: true, shortSide: 390 }), "an iPhone");
-  assert.ok(isPhone({ coarse: true, shortSide: 412 }), "an Android");
-  assert.ok(!isPhone({ coarse: true, shortSide: 744 }), "an iPad mini is not");
-  assert.ok(!isPhone({ coarse: true, shortSide: 820 }), "an iPad is not");
-  assert.ok(!isPhone({ coarse: false, shortSide: 390 }), "a narrow window on a computer is not");
+test("Large Text by default on a phone or a tablet, a touch screen its main pointer, and not on a computer", () => {
+  assert.ok(largeTextByDefault({ coarse: true }), "an iPhone or an Android phone");
+  assert.ok(largeTextByDefault({ coarse: true, mac: false, touchPoints: 5 }), "an iPad, or an Android tablet");
+  // iPadOS's Safari says it is a Mac; only its touch points tell.
+  assert.ok(largeTextByDefault({ coarse: false, mac: true, touchPoints: 5 }), "an iPad whose Safari asks for the desktop site");
+  assert.ok(!largeTextByDefault({ coarse: false, mac: true, touchPoints: 0 }), "a Mac is not");
+  assert.ok(!largeTextByDefault({ coarse: false, mac: false, touchPoints: 10 }), "a computer with a touch screen and a mouse is not");
+  assert.ok(!largeTextByDefault({ coarse: false }), "a narrow window on a computer is not");
 });
 
-test("automatic faces are Jumbo Index on a phone and classic elsewhere; a choice is kept", () => {
+test("automatic faces are Jumbo Index on a phone or a tablet and classic elsewhere; a choice is kept", () => {
   assert.equal(facesFor("auto", true), "jumbo");
   assert.equal(facesFor("auto", false), "classic");
   assert.equal(facesFor(undefined, true), "jumbo");
-  for (const phone of [true, false]) {
-    assert.equal(facesFor("classic", phone), "classic");
-    assert.equal(facesFor("jumbo", phone), "jumbo");
+  for (const touch of [true, false]) {
+    assert.equal(facesFor("classic", touch), "classic");
+    assert.equal(facesFor("jumbo", touch), "jumbo");
   }
 });
 

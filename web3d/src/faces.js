@@ -17,8 +17,9 @@
 // with a smidge of space on either side (a handful of pixels)".
 //
 // Settings calls them "Large Text (Optimized for smaller screens)" (the
-// user's words). The classic faces stay the default on iPads and computers; Settings can
-// choose either anywhere, and the change is live.
+// user's words). They are the default on phones and tablets, the classic
+// faces on computers; Settings can choose either anywhere, and the change is
+// live.
 
 import { CanvasTexture } from "three";
 import { cardTexture } from "./materials.js";
@@ -55,22 +56,26 @@ const SUIT_FONT = '"Apple Symbols", "Segoe UI Symbol", "Noto Sans Symbols 2", sy
 const GLYPH = { S: "♠︎", H: "♥︎", D: "♦︎", C: "♣︎" };
 const COLOUR = { S: JUMBO.ink, C: JUMBO.ink, H: JUMBO.red, D: JUMBO.red };
 
-// A phone, held either way: a touch screen whose short side is a phone's.
-// An iPad mini's is 744 CSS pixels, the largest phone's about 440.
-export function isPhone({ coarse, shortSide }) {
-  return !!coarse && shortSide < 600;
+// Where Large Text is the automatic choice: a phone or a tablet, whose main
+// pointer is a touch screen (play-testing: "on an ipad, default to
+// large-view cards"). iPadOS's Safari says it is a Mac, and may say its
+// pointer is fine; its touch points tell it from one. A computer with a
+// touch screen and a mouse keeps the classic faces.
+export function largeTextByDefault({ coarse, mac = false, touchPoints = 0 }) {
+  return !!coarse || (mac && touchPoints > 1);
 }
 
-export function phoneHere() {
+export function largeTextHere() {
   const coarse = !!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
-  return isPhone({ coarse, shortSide: Math.min(window.screen.width, window.screen.height) });
+  const mac = /Mac/.test(navigator.platform ?? "") || /Macintosh/.test(navigator.userAgent ?? "");
+  return largeTextByDefault({ coarse, mac, touchPoints: navigator.maxTouchPoints ?? 0 });
 }
 
-// The faces to show for the setting: automatic is Jumbo Index on a phone,
-// classic elsewhere.
-export function facesFor(choice, phone) {
+// The faces to show for the setting: automatic is Jumbo Index on a phone or
+// a tablet, classic elsewhere.
+export function facesFor(choice, touch) {
   if (choice === "classic" || choice === "jumbo") return choice;
-  return phone ? "jumbo" : "classic";
+  return touch ? "jumbo" : "classic";
 }
 
 export const rankAndSuit = (code) => [code[0] === "T" ? "10" : code[0], code[1]];

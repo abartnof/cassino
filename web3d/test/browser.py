@@ -52,13 +52,14 @@ def shot(page, name):
         page.screenshot(path=str(SHOTS / f"{name}.png"))
 
 
-def open_page(browser, query="seed=7", viewport=None, calm=False):
+def open_page(browser, query="seed=7", viewport=None, calm=False, device=None):
     """A fresh context, offline, recording every request the page makes.
     `calm`: with reduced motion, so the dialogue boxes appear without their
     pop-in -- which headless Chromium on SwiftShader, with the table's WebGL
     busy, never starts (a bare page animates; the shipped page in a real
-    browser does too, as piquet's has)."""
-    context = browser.new_context(viewport=viewport or {"width": 1280, "height": 800}, reduced_motion="reduce" if calm else "no-preference")
+    browser does too, as piquet's has). `device`: more of the context's
+    options (a touch screen, a user agent)."""
+    context = browser.new_context(viewport=viewport or {"width": 1280, "height": 800}, reduced_motion="reduce" if calm else "no-preference", **(device or {}))
     context.set_offline(True)
     page = context.new_page()
     page.requests = []
@@ -736,6 +737,25 @@ def check_phone(browser, failures):
         failures.append(f"phone sideways: console errors {page.errors[:5]}")
 
 
+IPAD = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
+
+
+def check_tablet_faces(browser, failures):
+    """Large Text by default on a tablet (play-testing: "on an ipad, default
+    to large-view cards"), an iPad's Safari saying it is a Mac with touch;
+    the classic faces on a computer."""
+    for name, device, want in (
+        ("an iPad", {"user_agent": IPAD, "has_touch": True}, "jumbo"),
+        ("an Android tablet", {"has_touch": True, "is_mobile": True}, "jumbo"),
+        ("a computer", None, "classic"),
+    ):
+        page = open_page(browser, "seed=7&speed=8", viewport={"width": 1180, "height": 820}, device=device)
+        settle(page)
+        if page.evaluate("window.cassino3d.facesShown()") != want:
+            failures.append(f"{name}: faces {page.evaluate('window.cassino3d.facesShown()')} by default, not {want}")
+        page.context.close()
+
+
 def check_settings(browser, failures):
     """The settings: hints and undo turned on in the dialog; a hint shown,
     lit and chosen; a move taken back; the sitting kept across a reload;
@@ -972,6 +992,7 @@ def main() -> int:
         check_ending(browser, failures)
         check_tutorial(browser, failures)
         check_phone(browser, failures)
+        check_tablet_faces(browser, failures)
         page = open_page(browser, "seed=11&skill=4&manual", calm=True)
         # The game proposed and accepted, then the house rules: both speak
         # within the opening's first seconds.
