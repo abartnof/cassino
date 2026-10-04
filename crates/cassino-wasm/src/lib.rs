@@ -37,7 +37,7 @@ pub const PROTOCOL: u32 = 1;
 
 /// The rules from the numbers a page can pass: game 0 Classic, 1 Royal;
 /// the settings as 0 or 1.
-pub fn rules_of(game: u32, aces_fourteen: u32, sweeps: u32) -> Rules {
+pub fn rules_of(game: u32, aces_fourteen: u32, sweeps: u32, raising: u32) -> Rules {
     Rules {
         game: if game == 1 {
             Game::Royal
@@ -46,6 +46,7 @@ pub fn rules_of(game: u32, aces_fourteen: u32, sweeps: u32) -> Rules {
         },
         aces_fourteen: game == 1 && aces_fourteen == 1,
         sweeps: sweeps != 0,
+        raising: raising != 0,
     }
 }
 
@@ -59,13 +60,14 @@ pub fn sit_down(
     game: u32,
     aces_fourteen: u32,
     sweeps: u32,
+    raising: u32,
     skill_milli: u32,
     seed: u32,
 ) -> Session {
     Session::new(
         u64::from(seed),
         Settings {
-            rules: rules_of(game, aces_fourteen, sweeps),
+            rules: rules_of(game, aces_fourteen, sweeps, raising),
             skill: skill_of(skill_milli),
         },
     )
@@ -76,13 +78,14 @@ pub fn watch(
     game: u32,
     aces_fourteen: u32,
     sweeps: u32,
+    raising: u32,
     south_milli: u32,
     north_milli: u32,
     seed: u32,
 ) -> Session {
     Session::watch(
         u64::from(seed),
-        rules_of(game, aces_fourteen, sweeps),
+        rules_of(game, aces_fourteen, sweeps, raising),
         [skill_of(south_milli), skill_of(north_milli)],
     )
 }
@@ -401,6 +404,7 @@ pub fn state(session: &Session) -> String {
                 ),
                 ("aces14", boolean(rules.aces_fourteen)),
                 ("sweeps", boolean(rules.sweeps)),
+                ("raising", boolean(rules.raising)),
             ]),
         ),
         ("skill", session.settings().skill.to_string()),
@@ -658,7 +662,7 @@ pub fn fnv(bytes: &[u8]) -> u64 {
 /// (`tests/smoke.mjs`) plays the same script through the module and must
 /// get the same hash.
 pub fn scripted(game: u32, aces_fourteen: u32, sweeps: u32, skill_milli: u32, seed: u32) -> u64 {
-    let mut session = sit_down(game, aces_fourteen, sweeps, skill_milli, seed);
+    let mut session = sit_down(game, aces_fourteen, sweeps, 1, skill_milli, seed);
     let mut n = 0;
     loop {
         match session.prompt() {
@@ -703,17 +707,26 @@ pub mod ffi {
     }
 
     /// Sits down at a new table, discarding any old one: game 0 Classic or
-    /// 1 Royal; aces at 14 and sweeps as 0 or 1; skill in thousandths.
+    /// 1 Royal; aces at 14, sweeps and raising as 0 or 1; skill in
+    /// thousandths.
     #[no_mangle]
     pub extern "C" fn cassino_new(
         game: u32,
         aces_fourteen: u32,
         sweeps: u32,
+        raising: u32,
         skill_milli: u32,
         seed: u32,
     ) {
         SESSION.with(|s| {
-            *s.borrow_mut() = Some(sit_down(game, aces_fourteen, sweeps, skill_milli, seed))
+            *s.borrow_mut() = Some(sit_down(
+                game,
+                aces_fourteen,
+                sweeps,
+                raising,
+                skill_milli,
+                seed,
+            ))
         });
         render();
     }
@@ -724,6 +737,7 @@ pub mod ffi {
         game: u32,
         aces_fourteen: u32,
         sweeps: u32,
+        raising: u32,
         south_milli: u32,
         north_milli: u32,
         seed: u32,
@@ -733,6 +747,7 @@ pub mod ffi {
                 game,
                 aces_fourteen,
                 sweeps,
+                raising,
                 south_milli,
                 north_milli,
                 seed,
@@ -864,7 +879,7 @@ mod tests {
 
     #[test]
     fn the_state_is_json_with_the_documented_fields() {
-        let s = sit_down(0, 0, 1, 3000, 7);
+        let s = sit_down(0, 0, 1, 1, 3000, 7);
         let v = parse(&state(&s));
         assert_eq!(v["protocol"], PROTOCOL);
         assert_eq!(v["seed"], 7);
@@ -913,7 +928,7 @@ mod tests {
 
     #[test]
     fn a_game_plays_out_through_the_protocol() {
-        let mut s = sit_down(1, 1, 1, 2500, 3);
+        let mut s = sit_down(1, 1, 1, 1, 2500, 3);
         for _ in 0..2_000 {
             let v = parse(&state(&s));
             match v["prompt"].as_str().unwrap() {
@@ -953,7 +968,7 @@ mod tests {
 
     #[test]
     fn a_refused_command_reports_its_error() {
-        let mut s = sit_down(0, 0, 1, 3000, 7);
+        let mut s = sit_down(0, 0, 1, 1, 3000, 7);
         assert!(!s.send("trail ZZ"));
         let v = parse(&state(&s));
         assert!(v["error"].as_str().unwrap().contains("not a card"));
@@ -962,7 +977,7 @@ mod tests {
     #[test]
     fn the_state_never_names_a_card_in_the_opponents_hand() {
         for seed in 0..20u32 {
-            let mut s = sit_down(seed % 2, 1, 1, 3000, seed);
+            let mut s = sit_down(seed % 2, 1, 1, 1, 3000, seed);
             for _ in 0..200 {
                 let json = state(&s);
                 let v = parse(&json);
@@ -1013,7 +1028,7 @@ mod tests {
         // the stock, at the first decision: the person's state must match.
         // (The record differs from seed to seed, so compare views instead.)
         for seed in 0..30u32 {
-            let s = sit_down(0, 0, 1, 1000, seed);
+            let s = sit_down(0, 0, 1, 1, 1000, seed);
             let view = s.view();
             let mut rng = cassino_core::rng::Rng::seeded(u64::from(seed) + 99);
             let (hidden, undealt) = cassino_core::observation::sample_hidden(&view, &mut rng);
@@ -1032,7 +1047,7 @@ mod tests {
 
     #[test]
     fn table_items_carry_their_builds() {
-        let mut s = sit_down(0, 0, 1, 1000, 12);
+        let mut s = sit_down(0, 0, 1, 1, 1000, 12);
         for _ in 0..400 {
             let v = parse(&state(&s));
             for item in v["table"].as_array().unwrap() {
@@ -1063,7 +1078,7 @@ mod tests {
 
     #[test]
     fn an_offer_answers_a_selection() {
-        let s = sit_down(0, 0, 1, 3000, 7);
+        let s = sit_down(0, 0, 1, 1, 3000, 7);
         let card = s.view().hand.first().unwrap();
         let v = parse(&offer(&s, &card.to_string()));
         let moves: Vec<&str> = v["moves"]
@@ -1095,7 +1110,7 @@ mod tests {
         // they can, which keeps the table small enough to be swept.
         let mut warned = 0;
         for seed in [11, 12, 13] {
-            let mut s = sit_down(1, 0, 1, 1000, seed);
+            let mut s = sit_down(1, 0, 1, 1, 1000, seed);
             while s.prompt() != Prompt::Over {
                 if s.prompt() == Prompt::NextHand {
                     assert!(s.send("next"));
@@ -1126,7 +1141,7 @@ mod tests {
 
     #[test]
     fn the_deals_are_revealed_only_once_the_game_is_over() {
-        let mut s = sit_down(0, 0, 1, 2000, 9);
+        let mut s = sit_down(0, 0, 1, 1, 2000, 9);
         assert_eq!(reveal(&s), "null", "never while the game is played");
         while s.prompt() != Prompt::Over {
             let command = if s.prompt() == Prompt::NextHand {
@@ -1181,7 +1196,7 @@ mod tests {
 
     #[test]
     fn a_hint_only_when_hints_are_on() {
-        let mut s = sit_down(0, 0, 1, 3000, 7);
+        let mut s = sit_down(0, 0, 1, 1, 3000, 7);
         assert_eq!(hint(&s), "null");
         assert!(s.send("set hints on"));
         let v = parse(&hint(&s));
@@ -1193,7 +1208,7 @@ mod tests {
 
     #[test]
     fn a_watched_game_steps_through_the_protocol() {
-        let mut s = watch(1, 0, 1, 2000, 4000, 5);
+        let mut s = watch(1, 0, 1, 1, 2000, 4000, 5);
         let v = parse(&state(&s));
         assert_eq!(v["watching"], true);
         let mut steps = 0;
@@ -1272,7 +1287,7 @@ mod tests {
 
     #[test]
     fn a_sitting_is_saved_as_text_and_restored() {
-        let mut s = sit_down(1, 1, 1, 3000, 21);
+        let mut s = sit_down(1, 1, 1, 1, 3000, 21);
         assert!(s.send("set explain on"));
         for _ in 0..10 {
             if s.prompt() != Prompt::Play {
@@ -1288,7 +1303,7 @@ mod tests {
         assert_eq!(state(&again), state(&s), "restored exactly");
         assert!(restore("cassino record v999\nseed 1").is_err());
         let refused = {
-            let mut t = sit_down(0, 0, 1, 3000, 7);
+            let mut t = sit_down(0, 0, 1, 1, 3000, 7);
             t.send("frobnicate");
             parse(&state(&t))
         };
@@ -1297,7 +1312,7 @@ mod tests {
 
     #[test]
     fn the_exports_round_trip_a_command() {
-        ffi::cassino_new(0, 0, 1, 2000, 9);
+        ffi::cassino_new(0, 0, 1, 1, 2000, 9);
         let read = || {
             let ptr = ffi::cassino_out();
             let len = ffi::cassino_out_len();

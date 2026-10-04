@@ -206,7 +206,10 @@ pub fn is_legal(rules: &Rules, table: &Table, hand: CardSet, me: Seat, mv: &Move
                         return false;
                     };
                     let b = table.builds.as_slice()[i];
-                    if !b.multiple && u32::from(b.value) + u32::from(x) == v32 && splits(&lv, value)
+                    if rules.raising
+                        && !b.multiple
+                        && u32::from(b.value) + u32::from(x) == v32
+                        && splits(&lv, value)
                     {
                         (Some(i), !loose.is_empty())
                     } else if b.value == value && card_plus_part_makes_value(loose) {

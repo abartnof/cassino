@@ -384,6 +384,30 @@ def check_trackers(browser, failures):
     page.context.close()
 
 
+def check_raising(browser, failures):
+    """"Raise builds" in the settings (play-testing asked for the choice):
+    on by default; turned off, the next game is dealt without raising, and
+    the switch says so."""
+    page = open_page(browser, "seed=7&speed=100", calm=True)
+    settle(page)
+    page.locator("md-icon-button.settings-open").click()
+    page.wait_for_timeout(1200)
+    switch = page.locator('md-switch[data-rule="raising"]')
+    if not switch.count() or not page.evaluate("document.querySelector('md-switch[data-rule=\"raising\"]').selected"):
+        failures.append("raising: no Raise builds switch, or not on by default")
+        page.context.close()
+        return
+    switch.click()
+    page.locator(".settings-dialog md-filled-tonal-button", has_text="Done").click()
+    page.wait_for_timeout(800)
+    page.locator("md-icon-button.new-game").click()
+    page.wait_for_timeout(800)
+    settle(page)
+    if page.evaluate("window.cassino3d.state().rules.raising") is not False:
+        failures.append(f"raising: the next game raises: {page.evaluate('window.cassino3d.state().rules')}")
+    page.context.close()
+
+
 def check_welcome(browser, failures):
     """The welcome on opening: the table held at the pack until a choice;
     the tutorial chosen turns the tutorial on, from its first page; with a
@@ -939,6 +963,7 @@ def main() -> int:
         check_settings(browser, failures)
         check_badges(browser, failures)
         check_trackers(browser, failures)
+        check_raising(browser, failures)
         check_welcome(browser, failures)
         check_aid_toggles(browser, failures)
         check_cheers(browser, failures)

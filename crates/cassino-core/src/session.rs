@@ -189,14 +189,17 @@ impl Saved {
             format!("cassino record v{}", self.version),
             format!("seed {}", self.seed),
             format!(
-                "rules {} aces14={} sweeps={}",
+                "rules {} aces14={} sweeps={}{}",
                 if r.game == crate::rules::Game::Royal {
                     "royal"
                 } else {
                     "classic"
                 },
                 bit(r.aces_fourteen),
-                bit(r.sweeps)
+                bit(r.sweeps),
+                // Said only when off: on, the record is as it was before
+                // the setting, and old records restore as they were.
+                if r.raising { "" } else { " raise=0" }
             ),
             format!("skill {}", self.settings.skill),
             format!(
@@ -242,6 +245,10 @@ impl Saved {
             game,
             aces_fourteen: flag(words.get(1), "aces14=")?,
             sweeps: flag(words.get(2), "sweeps=")?,
+            raising: match words.get(3) {
+                None => true,
+                w => flag(w, "raise=")?,
+            },
         };
         let skill: f64 = header("skill ")?.parse().map_err(|_| "not a skill")?;
         let aids_line = header("aids ")?;
@@ -1142,6 +1149,35 @@ mod tests {
             ..saved.clone()
         };
         assert!(Session::restore(&old).err().unwrap().contains("version"));
+    }
+
+    // "Raise builds" off (play-testing) is kept with the sitting; on, the
+    // default, the record is as it always was, so records kept before the
+    // setting restore as they were.
+    #[test]
+    fn raising_off_is_kept_in_the_record_and_on_is_the_old_record() {
+        let on = Session::new(13, settings()).saved().to_text();
+        assert!(!on.contains("raise"), "{on}");
+        let rules_line = on.lines().nth(2).unwrap();
+        assert!(
+            rules_line.starts_with("rules ") && rules_line.ends_with(" sweeps=1"),
+            "{rules_line}"
+        );
+        let off = Settings {
+            rules: Rules {
+                raising: false,
+                ..settings().rules
+            },
+            ..settings()
+        };
+        let saved = Session::new(13, off).saved();
+        let text = saved.to_text();
+        assert!(text.lines().nth(2).unwrap().ends_with(" raise=0"), "{text}");
+        assert_eq!(Saved::parse(&text), Ok(saved.clone()));
+        assert!(
+            Saved::parse(&on).unwrap().settings.rules.raising,
+            "an old record raises"
+        );
     }
 
     #[test]

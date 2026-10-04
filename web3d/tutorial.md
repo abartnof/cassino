@@ -51,6 +51,7 @@ The sum shows beside the **Take** button as you tap cards.
 - You can raise your own build or your opponent's, if you hold a card of the new total.
 - Only the card from your hand raises it: table cards can't be added to the total.
 - A multiple build (more than one set of its total) can't be raised.
+- Some players don't raise builds at all: to play that way, turn off **Raise builds** in the settings.
 
 # Multiple builds
 

@@ -221,6 +221,7 @@ pub(crate) mod tests {
             game: Game::Royal,
             aces_fourteen: true,
             sweeps: true,
+            raising: true,
         };
         for rules in [Rules::CLASSIC, Rules::ROYAL, royal14] {
             for seed in 0..60 {

@@ -234,6 +234,7 @@ mod tests {
             game: Game::Classic,
             aces_fourteen: false,
             sweeps: false,
+            raising: true,
         };
         let off = Breakdown::new(&off_rules, piles, [2, 1]);
         assert_eq!(off.total(), 11);

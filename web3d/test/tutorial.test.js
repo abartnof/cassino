@@ -96,3 +96,12 @@ test("the ace's 1 or 14 is told on Royal's page, and has no page of its own", ()
   assert.match(words, /1 or 14/);
   assert.match(words, /Take as 14/);
 });
+
+// Play-testing: raising "could it be turned off in the config, and noted as
+// such in the tutorial?"
+test("the page on raising says it can be turned off in the settings", () => {
+  const raising = parseTutorial(TEXT).find((p) => p.key === "raising");
+  const words = raising.blocks.flatMap((b) => (b.spans ? [b.spans] : b.items)).map((spans) => spans.map((x) => x.text).join("")).join(" ");
+  assert.match(words, /Raise builds/);
+  assert.match(words, /settings/);
+});

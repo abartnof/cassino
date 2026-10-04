@@ -13,10 +13,10 @@ const broken = { getItem: () => { throw new Error("blocked"); }, setItem: () => 
 test("with nothing kept, the defaults; what is kept comes back", () => {
   const store = memory();
   assert.deepEqual(loadPrefs(store), DEFAULTS);
-  savePrefs(store, { ...DEFAULTS, skill: 2.5, rules: { game: "royal", aces14: true, sweeps: false } });
+  savePrefs(store, { ...DEFAULTS, skill: 2.5, rules: { game: "royal", aces14: true, sweeps: false, raising: true } });
   const back = loadPrefs(store);
   assert.equal(back.skill, 2.5);
-  assert.deepEqual(back.rules, { game: "royal", aces14: true, sweeps: false });
+  assert.deepEqual(back.rules, { game: "royal", aces14: true, sweeps: false, raising: true });
   assert.deepEqual(back.aids, DEFAULTS.aids);
 });
 
@@ -43,12 +43,24 @@ test("the scoring board is gone: a setting kept for it is forgotten", () => {
   assert.equal("pegboard" in DEFAULTS, false);
 });
 
+// Play-testing: could raising "be turned off in the config"? On by default,
+// as the rules have it; kept settings from before the setting raise.
+test("builds are raised unless the setting is off, and the choice is kept", () => {
+  assert.equal(DEFAULTS.rules.raising, true);
+  const store = memory();
+  savePrefs(store, { ...DEFAULTS, rules: { ...DEFAULTS.rules, raising: false } });
+  assert.equal(loadPrefs(store).rules.raising, false);
+  store.setItem("cassino.prefs", JSON.stringify({ rules: { game: "classic", aces14: false, sweeps: true }, v: 2 }));
+  assert.equal(loadPrefs(store).rules.raising, true);
+  assert.equal(withUrl(DEFAULTS, new URLSearchParams("noraise")).rules.raising, false);
+});
+
 test("sweeps are off by default; the old default kept before then is not a choice", () => {
   assert.equal(DEFAULTS.rules.sweeps, false);
   const store = memory();
   // Kept before the default changed: every setting was saved, defaults too.
   store.setItem("cassino.prefs", JSON.stringify({ rules: { game: "royal", aces14: false, sweeps: true }, skill: 2 }));
-  assert.deepEqual(loadPrefs(store).rules, { game: "royal", aces14: false, sweeps: false });
+  assert.deepEqual(loadPrefs(store).rules, { game: "royal", aces14: false, sweeps: false, raising: true });
   assert.equal(loadPrefs(store).skill, 2, "the rest kept as it was");
   // Chosen since: kept.
   savePrefs(store, { ...loadPrefs(store), rules: { game: "classic", aces14: false, sweeps: true } });
@@ -111,7 +123,7 @@ test("the URL overrides what is kept, for tests and shared links", () => {
   const p = withUrl(DEFAULTS, url);
   assert.equal(withUrl(DEFAULTS, new URLSearchParams("tutorial=0")).tutorial, false);
   assert.equal(withUrl(DEFAULTS, new URLSearchParams("values")).buildValues, true);
-  assert.deepEqual(p.rules, { game: "royal", aces14: true, sweeps: false });
+  assert.deepEqual(p.rules, { game: "royal", aces14: true, sweeps: false, raising: true });
   assert.equal(p.skill, 1.5);
   assert.equal(p.speed, 6);
   assert.deepEqual(withUrl(DEFAULTS, new URLSearchParams("")), DEFAULTS);

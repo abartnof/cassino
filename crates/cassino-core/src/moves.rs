@@ -191,6 +191,8 @@ pub enum Illegal {
     MultipleIsFixed,
     /// Loose cards can never change a single build's value (rule 5b).
     LooseCannotRaise,
+    /// "Raise builds" is off: no build is raised (rule 5b).
+    RaisingOff,
     /// A new build needs at least one card from the table (rule 5a).
     BuildNeedsTableCards,
     /// The cards do not make this value in any way rule 5 allows.
@@ -219,6 +221,7 @@ impl Illegal {
             Illegal::NoSuchBuild => "no_such_build",
             Illegal::MultipleIsFixed => "multiple_is_fixed",
             Illegal::LooseCannotRaise => "loose_cannot_raise",
+            Illegal::RaisingOff => "raising_off",
             Illegal::BuildNeedsTableCards => "build_needs_table_cards",
             Illegal::DoesNotMake(_) => "does_not_make",
             Illegal::LeavesBuildUnguarded(_) => "leaves_build_unguarded",
@@ -293,6 +296,7 @@ impl fmt::Display for Illegal {
                 f,
                 "Loose cards can't change a single build's value; only the card you play can."
             ),
+            Illegal::RaisingOff => write!(f, "Raising builds is off in the settings."),
             Illegal::BuildNeedsTableCards => write!(f, "A build needs a card from the table."),
             Illegal::DoesNotMake(v) => write!(f, "Those cards don't make a build of {v}."),
             Illegal::LeavesBuildUnguarded(v) => write!(
@@ -426,8 +430,9 @@ fn generate(
                         }
                     }
                 }
-                // Raises of single builds to this value.
-                for b in table.builds.iter() {
+                // Raises of single builds to this value, unless raising is
+                // off.
+                for b in table.builds.iter().filter(|_| rules.raising) {
                     if !b.multiple && b.value + x == value {
                         for &u in &groups {
                             mine.push(Move::Build {
@@ -539,6 +544,8 @@ fn resulting_multiple(
             if u32::from(b.value) + u32::from(x) == v {
                 if b.multiple {
                     Err(Illegal::MultipleIsFixed)
+                } else if !rules.raising {
+                    Err(Illegal::RaisingOff)
                 } else if partitions_into(rules, loose, value) {
                     Ok(!loose.is_empty())
                 } else {
@@ -826,6 +833,16 @@ mod tests {
         game: Game::Royal,
         aces_fourteen: true,
         sweeps: true,
+        raising: true,
+    };
+    // "Raise builds" off (play-testing), in each game.
+    const CLASSIC_NO_RAISE: Rules = Rules {
+        raising: false,
+        ..Rules::CLASSIC
+    };
+    const ROYAL_14_NO_RAISE: Rules = Rules {
+        raising: false,
+        ..ROYAL_14
     };
 
     fn c(s: &str) -> Card {
@@ -1316,6 +1333,31 @@ mod tests {
     }
 
     #[test]
+    fn with_raising_off_no_build_is_raised() {
+        // A raise of your opponent's build, and of your own.
+        let p = pos(
+            CLASSIC_NO_RAISE,
+            "[6 @N: 4S 2H] [5 @S: 3D 2D]",
+            "3C 9C 8H 5C",
+        );
+        p.assert_illegal("build 9 3C on 2H", Illegal::RaisingOff);
+        p.assert_illegal("build 8 3C on 3D", Illegal::RaisingOff);
+        assert!(p.legal().iter().all(|m| !matches!(
+            build_kind(&p.rules, &p.table, m),
+            Some((BuildKind::Raise { .. }, _))
+        )));
+        // Adding to a build at its value still makes it multiple; new builds
+        // and captures are as they were.
+        let q = pos(CLASSIC_NO_RAISE, "[8 @N: 5S 3H] 6D 2D", "8C 8D");
+        q.assert_legal("build 8 8C on 3H");
+        q.assert_legal("build 8 8C on 5S 6D 2D");
+        q.assert_legal("take 8D 5S 3H");
+        // A multiple build is still fixed, for its own reason.
+        let r = pos(CLASSIC_NO_RAISE, "[8* @N: 5S 3H 8S]", "AC 9C");
+        r.assert_illegal("build 9 AC on 5S", Illegal::MultipleIsFixed);
+    }
+
+    #[test]
     fn adding_a_card_of_the_value_makes_a_build_multiple() {
         let mut p = pos(Rules::CLASSIC, "[8 @N: 5S 3H]", "8C 8D");
         p.play("build 8 8C on 3H");
@@ -1346,7 +1388,13 @@ mod tests {
 
     #[test]
     fn matches_the_reference_on_random_positions() {
-        for rules in [Rules::CLASSIC, Rules::ROYAL, ROYAL_14] {
+        for rules in [
+            Rules::CLASSIC,
+            Rules::ROYAL,
+            ROYAL_14,
+            CLASSIC_NO_RAISE,
+            ROYAL_14_NO_RAISE,
+        ] {
             for seed in 0..400 {
                 let (table, hand) = reference::random_position(&rules, seed);
                 let mut fast = legal_moves(&rules, &table, hand, Seat::South);
@@ -1368,7 +1416,13 @@ mod tests {
     #[test]
     fn check_agrees_with_the_reference_on_candidate_moves() {
         // Including the illegal ones the generator never offers.
-        for rules in [Rules::CLASSIC, Rules::ROYAL, ROYAL_14] {
+        for rules in [
+            Rules::CLASSIC,
+            Rules::ROYAL,
+            ROYAL_14,
+            CLASSIC_NO_RAISE,
+            ROYAL_14_NO_RAISE,
+        ] {
             for seed in 1000..1100 {
                 let (table, hand) = reference::random_position(&rules, seed);
                 for m in reference::candidates(&rules, &table, hand) {
@@ -1391,7 +1445,7 @@ mod tests {
     #[test]
     fn candidates_are_the_legal_moves_on_ordinary_tables() {
         let mut compared = 0;
-        for rules in [Rules::CLASSIC, Rules::ROYAL, ROYAL_14] {
+        for rules in [Rules::CLASSIC, Rules::ROYAL, ROYAL_14, CLASSIC_NO_RAISE] {
             for seed in 0..400 {
                 let (table, hand) = reference::random_position(&rules, seed);
                 if !ordinary(&rules, &table) {

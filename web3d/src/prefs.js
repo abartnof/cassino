@@ -14,8 +14,9 @@ const SERIES = "cassino.series";
 
 export const DEFAULTS = Object.freeze({
   // Sweeps scored only if chosen: pagat's Casino has them as a variant, and
-  // play-testing preferred the game without them (docs/RULES.md).
-  rules: Object.freeze({ game: "classic", aces14: false, sweeps: false }),
+  // play-testing preferred the game without them (docs/RULES.md). Builds
+  // raised unless chosen otherwise (play-testing asked for the choice).
+  rules: Object.freeze({ game: "classic", aces14: false, sweeps: false, raising: true }),
   skill: 3,
   speed: 1,
   surface: "random",
@@ -96,6 +97,7 @@ export function loadPrefs(store) {
       game,
       aces14: game === "royal" && r.aces14 === true,
       sweeps: isBool(r.sweeps) && kept.v >= 2 ? r.sweeps : DEFAULTS.rules.sweeps,
+      raising: isBool(r.raising) ? r.raising : DEFAULTS.rules.raising,
     },
     skill: SKILLS.some((s) => s.value === kept.skill) ? kept.skill : DEFAULTS.skill,
     speed: Number.isFinite(kept.speed) && kept.speed > 0 ? kept.speed : DEFAULTS.speed,
@@ -131,6 +133,7 @@ export function withUrl(prefs, params) {
   if (params.has("aces14")) out.rules.aces14 = out.rules.game === "royal";
   if (params.has("sweeps")) out.rules.sweeps = true;
   if (params.has("nosweeps")) out.rules.sweeps = false;
+  if (params.has("noraise")) out.rules.raising = false;
   const skill = Number(params.get("skill"));
   if (params.has("skill") && skill >= 1 && skill <= 4) out.skill = skill;
   const speed = Number(params.get("speed"));

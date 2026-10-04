@@ -445,6 +445,7 @@ mod tests {
         game: Game::Royal,
         aces_fourteen: true,
         sweeps: true,
+        raising: true,
     };
 
     fn set(s: &str) -> CardSet {

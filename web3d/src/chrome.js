@@ -158,6 +158,10 @@ export function createChrome(root, on) {
     rules = { ...rules, sweeps: v };
     on.rules(rules);
   });
+  const raising = sw({ "data-rule": "raising" }, (v) => {
+    rules = { ...rules, raising: v };
+    on.rules(rules);
+  });
   const skill = el(
     "md-outlined-select",
     { class: "skill", label: "Your opponent" },
@@ -222,6 +226,7 @@ export function createChrome(root, on) {
       gameSet,
       row("Aces count 1 or 14", "Royal: an ace in your hand takes as one or as fourteen", aces),
       row("Score sweeps", "A point for each capture that clears the table", sweeps),
+      row("Raise builds", "A card from your hand may raise a build to a higher total, yours or your opponent's", raising),
       el("div", { class: "selects" }, skill, match),
       el("div", { class: "starts" }, startNew, daily, watch),
       el("h3", {}, "Help at the table"),
@@ -355,6 +360,7 @@ export function createChrome(root, on) {
     aces.selected = rules.aces14;
     aces.disabled = rules.game !== "royal";
     sweeps.selected = rules.sweeps;
+    raising.selected = rules.raising !== false;
     skill.value = String(prefs.skill);
     match.value = prefs.match;
     // The aids as the person set them (a watched game has none of its own:

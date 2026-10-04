@@ -77,6 +77,9 @@ impl<R: BufRead, W: Write> Table<R, W> {
         if !rules.sweeps {
             kind += "; sweeps not scored";
         }
+        if !rules.raising {
+            kind += "; no raising builds";
+        }
         writeln!(
             self.out,
             "Cassino ({kind}). Game to 21. Seed {}.",

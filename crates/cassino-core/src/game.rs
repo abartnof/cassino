@@ -301,6 +301,7 @@ mod tests {
             game: Kind::Classic,
             aces_fourteen: false,
             sweeps: true,
+            raising: true,
         };
         assert_eq!(*g.rules(), rules);
     }

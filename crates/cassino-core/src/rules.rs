@@ -25,6 +25,10 @@ pub struct Rules {
     pub aces_fourteen: bool,
     /// "Score sweeps": one point each.
     pub sweeps: bool,
+    /// "Raise builds": a single build may be raised (rule 5b). Off (the
+    /// play-testing asked for the choice), no build is raised, yours or your
+    /// opponent's; adding to a build at its value (5c) still is allowed.
+    pub raising: bool,
 }
 
 impl Rules {
@@ -32,11 +36,13 @@ impl Rules {
         game: Game::Classic,
         aces_fourteen: false,
         sweeps: true,
+        raising: true,
     };
     pub const ROYAL: Rules = Rules {
         game: Game::Royal,
         aces_fourteen: false,
         sweeps: true,
+        raising: true,
     };
 
     /// The card's value in sums and builds: `None` for a Classic court card.
@@ -145,12 +151,19 @@ mod tests {
         game: Game::Royal,
         aces_fourteen: true,
         sweeps: true,
+        raising: true,
     };
     const CLASSIC_14: Rules = Rules {
         game: Game::Classic,
         aces_fourteen: true,
         sweeps: true,
+        raising: true,
     };
+
+    #[test]
+    fn both_games_raise_builds_unless_asked_not_to() {
+        const { assert!(Rules::CLASSIC.raising && Rules::ROYAL.raising) };
+    }
 
     #[test]
     fn classic_values_numerals_and_leaves_courts_without_value() {

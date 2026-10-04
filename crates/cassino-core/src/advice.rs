@@ -273,6 +273,10 @@ pub fn advisor_seed(view: &View) -> u64 {
     eat(rules.game as u64);
     eat(u64::from(rules.aces_fourteen));
     eat(u64::from(rules.sweeps));
+    // Only when off, so that the seeds of the default rules are as they were.
+    if !rules.raising {
+        eat(3);
+    }
     eat(view.me as u64);
     eat(view.dealer as u64);
     eat(u64::from(view.deal));
@@ -398,6 +402,7 @@ mod tests {
         game: Game::Royal,
         aces_fourteen: true,
         sweeps: true,
+        raising: true,
     };
 
     fn t(rules: &Rules, s: &str) -> Table {

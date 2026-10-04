@@ -161,6 +161,10 @@ legal move. RULES.md now says each held card answers for one build value.
   (Big and Little Cassino in the sentences, the score, the tips, the talk,
   the tutorial and the terminal); quotations, the titles of pagat's pages,
   the research notes and code identifiers such as `big_casino` keep theirs.
+  And "Raise builds", a setting of both games (on by default, as the rules
+  have it): off, no build is raised, in the engine, the table, the
+  terminal (`--no-raise`) and the saved record (`raise=0`), and the
+  tutorial's page on raising says so.
 - **The South African game, researched**
   (`research/12-south-african-khasino.md`): KASA's rulebooks and its own
   online game as the canonical sources, twenty open-source engines, and
@@ -173,7 +177,7 @@ legal move. RULES.md now says each held card answers for one build value.
 | Decision | Choice | Reasoning |
 |---|---|---|
 | The games | Two-player **Classic** and **Royal** Cassino, chosen at the start | the user; `RULES.md` |
-| Settings | "Aces count 1 or 14" (Royal only, off) and "Score sweeps" (off since the first play-testing) | `RULES.md`, "Authority" |
+| Settings | "Aces count 1 or 14" (Royal only, off), "Score sweeps" (off since the first play-testing) and "Raise builds" (on; a choice since the fifth) | `RULES.md`, "Authority" |
 | Rule authority | pagat.com, Casino and Royal Casino | `RULES.md` |
 | Language | **Rust from the first line**; no Python oracle | `DESIGN.md` §4 |
 | What replaces the oracle | A brute-force reference move generator, the worked examples, invariants | `DESIGN.md` §4, §13 |

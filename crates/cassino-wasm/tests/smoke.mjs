@@ -41,7 +41,7 @@ const golden = readFileSync(new URL("./golden.txt", import.meta.url), "utf8")
 let failures = 0;
 for (const line of golden) {
   const [game, aces, sweeps, skill, seed, want] = line.trim().split(/\s+/);
-  w.cassino_new(+game, +aces, +sweeps, +skill, +seed);
+  w.cassino_new(+game, +aces, +sweeps, 1, +skill, +seed);
   let state = out();
   for (let n = 0; state.prompt !== "over"; n++) {
     const command = state.prompt === "play" ? state.moves[n % state.moves.length] : "next";
@@ -61,7 +61,7 @@ const games = Number(process.argv[2] ?? 3);
 const skill = Number(process.argv[3] ?? 4);
 let slowest = 0;
 for (let seed = 1; seed <= games; seed++) {
-  w.cassino_new(seed % 2, 1, 1, Math.round(skill * 1000), seed);
+  w.cassino_new(seed % 2, 1, 1, 1, Math.round(skill * 1000), seed);
   let state = out();
   let sends = 0;
   const started = performance.now();

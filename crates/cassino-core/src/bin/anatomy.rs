@@ -70,7 +70,7 @@ fn main() {
                     Some("royal14") => Rules {
                         game: Game::Royal,
                         aces_fourteen: true,
-                        sweeps: true,
+                        ..Rules::ROYAL
                     },
                     _ => Rules::CLASSIC,
                 };

@@ -60,6 +60,7 @@ fn main() {
                         game: Game::Royal,
                         aces_fourteen: true,
                         sweeps: true,
+                        raising: true,
                     },
                     _ => panic!("{usage}"),
                 };

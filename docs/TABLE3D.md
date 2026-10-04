@@ -324,7 +324,7 @@ Material Design 3, from piquet's shell.
   taker's pile into a row (`layout.js` lays out a counted hand; the
   choreography's `count` stage times each card to its line), the HUD's
   popups tell each line's points, and the winner of each line chants it.
-- **Settings**: Classic or Royal, aces 1 or 14, sweeps, the skill dial (1 to
+- **Settings**: Classic or Royal, aces 1 or 14, sweeps, raising builds, the skill dial (1 to
   4 in halves), the match (one game, or a World Series: the best of seven,
   `series.js`), the aids, Large Text, watch mode, a new game, copy the game
   record (`state.saved`), the daily deal (seeded from the date).

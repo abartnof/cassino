@@ -27,13 +27,14 @@ Pagat was the authority for piquet too. It is current (updated May 2026). It
 is explicit about building, where the old books are loose. And its worked
 examples make good test fixtures (see "Worked examples").
 
-**Two games, three settings.** The game is chosen at the start, and so are
+**Two games, four settings.** The game is chosen at the start, and so are
 its settings:
 
 | Setting | Values | Default | Notes |
 |---|---|---|---|
 | Game | Classic, Royal | Classic | Royal changes only the card values (rule 1) |
 | Aces count 1 or 14 | off, on | off | Royal only. Parlett's variation [01-S1], standard in pagat's North American Royal [02-S3] |
+| Raise builds | on, off | on | Both games. Off, rule 5b does not apply: no build is raised, yours or your opponent's; adding to a build at its value (5c) still is. Asked for in play-testing. The literature's own variant is narrower: no raising of your own build (Dick 1866, USPCC 1898; "Decisions on contested points") |
 | Score sweeps | on, off | off | Both games. A variant on pagat's Casino page, standard in Foster [02-S1][02-S31]; Royal "is often played without a score for sweeps" [02-S3]. Off by default since the first play-testing |
 
 Everything else is one rule, implemented once.
@@ -155,7 +156,8 @@ There are three kinds.
   is not allowed [02-S1].
 
 **5b. Raising a single build.** Card c goes on a single build of value B,
-making a single build of value V = B + value(c).
+making a single build of value V = B + value(c). Not with "Raise builds"
+off (the settings, above).
 - Any single build can be raised, whoever controls it, including your own
   [02-S1].
 - **Loose cards can never change a single build's value** [02-S1].

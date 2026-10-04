@@ -1,7 +1,7 @@
 //! `cassino`: play Cassino in the terminal, or watch two computer players.
 //!
 //! ```text
-//! cassino [--royal [--aces-14]] [--sweeps] [--seed N] [--skill 1-TOP]
+//! cassino [--royal [--aces-14]] [--sweeps] [--no-raise] [--seed N] [--skill 1-TOP]
 //!         [--watch [--skills A,B] [--reveal] [--fast]] [--explain] [--no-colour]
 //! ```
 
@@ -76,6 +76,7 @@ fn rule_flag(rules: &mut Rules, arg: &str) -> bool {
         "--aces-14" => rules.aces_fourteen = true,
         "--sweeps" => rules.sweeps = true,
         "--no-sweeps" => rules.sweeps = false,
+        "--no-raise" => rules.raising = false,
         _ => return false,
     }
     true
@@ -83,13 +84,14 @@ fn rule_flag(rules: &mut Rules, arg: &str) -> bool {
 
 fn help() {
     println!(
-        "cassino [--royal [--aces-14]] [--sweeps] [--seed N] [--skill 1-{}]",
+        "cassino [--royal [--aces-14]] [--sweeps] [--no-raise] [--seed N] [--skill 1-{}]",
         agents::TOP
     );
     println!("        [--watch [--skills A,B] [--reveal] [--fast]] [--no-colour]");
     println!("  --royal      Royal Cassino: jacks 11, queens 12, kings 13");
     println!("  --aces-14    (Royal) an ace from the hand may capture as 14");
     println!("  --sweeps     a point for each sweep (not scored by default)");
+    println!("  --no-raise   no build is raised, yours or your opponent's");
     println!(
         "  --skill      how well your opponent plays, from 1 to {} (default {}):",
         agents::TOP,
@@ -149,5 +151,12 @@ mod tests {
         assert!(rules(&["--sweeps"]).sweeps);
         assert_eq!(rules(&["--royal", "--aces-14"]).game, Game::Royal);
         assert!(!rule_flag(&mut rules(&[]), "--seed"));
+    }
+
+    #[test]
+    fn builds_are_raised_unless_asked_not_to() {
+        assert!(rules(&[]).raising);
+        assert!(!rules(&["--no-raise"]).raising);
+        assert!(!rules(&["--royal", "--no-raise"]).raising);
     }
 }
