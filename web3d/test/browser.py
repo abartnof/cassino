@@ -453,6 +453,12 @@ def check_aid_toggles(browser, failures):
         failures.append("no hint and explanation toggles under the cards")
         page.context.close()
         return
+    # The lesser aid first (play-testing: explanations tell less than hints,
+    # so they sit to the left), and so in the settings.
+    order = page.evaluate("[...document.querySelectorAll('.aid-toggles [data-aid]')].map((b) => b.dataset.aid)")
+    listed = page.evaluate("[...document.querySelectorAll('md-switch[data-aid]')].map((b) => b.dataset.aid)")
+    if order != ["explain", "hints"] or listed[:2] != ["explain", "hints"]:
+        failures.append(f"explanations not before hints: under the cards {order}, in the settings {listed}")
     bar.locator('[data-aid="hints"]').click()
     page.wait_for_timeout(300)
     settle(page)

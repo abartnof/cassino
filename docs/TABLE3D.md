@@ -411,10 +411,11 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   With no game kept, the table is held at the pack behind it, as a
   tutorial page holds it, so nothing is dealt or said until the choice. A
   link that names a game (`?seed`, `?watch`) goes straight to it. On a
-  desktop, Hints and Explanations are toggled at the foot of the controls,
-  under your hand (an MD3 segmented button set, both may be on); turning
-  the explanations on opens the game log, where they are told. A phone
-  keeps them in the settings.
+  desktop, Explanations and Hints are toggled at the foot of the controls,
+  under your hand (an MD3 segmented button set, both may be on; the lesser
+  aid on the left, since the sixth play-testing); turning the explanations
+  on opens the game log, where they are told. A phone keeps them in the
+  settings.
 - **T7. Teaching.** Tutorial and help pages. **Done**: nine pages in
   `web3d/tutorial.md` (the introduction; pairing, summing, building,
   raising, multiple builds; the court cards count, with the ace's 1 or 14;

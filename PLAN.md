@@ -167,7 +167,8 @@ legal move. RULES.md now says each held card answers for one build value.
   tutorial's page on raising says so.
 - **The sixth play-testing** (2026-10-04): Large Text faces by default on
   a tablet as on a phone (an iPad's Safari says it is a Mac; its touch
-  points tell it from one).
+  points tell it from one); Explanations to the left of Hints, under the
+  cards and in the settings, the lesser aid first.
 - **The South African game, researched**
   (`research/12-south-african-khasino.md`): KASA's rulebooks and its own
   online game as the canonical sources, twenty open-source engines, and

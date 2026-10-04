@@ -76,9 +76,10 @@ export function el(tag, attrs = {}, ...children) {
 }
 
 // The aids, each a switch: the engine's (sent to it) and the page's own.
+// The lesser first: an explanation tells less than a hint (play-testing).
 const AIDS = [
-  ["hints", "Hints", "Suggest the strongest move, and light up its cards"],
   ["explain", "Explanations", "Say what each move does in the game log, and when a better one was there"],
+  ["hints", "Hints", "Suggest the strongest move, and light up its cards"],
   ["play_forced", "Play forced moves", "Make my move for me when it is the only one"],
 ];
 const PAGE_AIDS = [
@@ -111,14 +112,15 @@ export function createChrome(root, on) {
 
   // On a desktop, the two aids most often wanted are toggled at the foot of
   // the controls, under your hand (a phone keeps them in the settings, where
-  // they are too). The explanations are told in the game log, so turning
-  // them on opens it.
+  // they are too), the lesser on the left (play-testing: an explanation
+  // tells less than a hint). The explanations are told in the game log, so
+  // turning them on opens it.
   const aidToggle = (name, label) => el("md-outlined-segmented-button", { "data-aid": name, label });
   const aidSet = el(
     "md-outlined-segmented-button-set",
     { multiselect: true, "aria-label": "Help at the table" },
-    aidToggle("hints", "Hints"),
     aidToggle("explain", "Explanations"),
+    aidToggle("hints", "Hints"),
   );
   aidSet.addEventListener("segmented-button-set-selection", (e) => {
     const { button, selected } = e.detail;
