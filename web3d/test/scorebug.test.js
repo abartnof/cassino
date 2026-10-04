@@ -63,11 +63,16 @@ test("the trackers as a table: a column for each point, a row for each player, a
   assert.equal(cell("you", "spades").text, "3");
   assert.equal(cell("you", "big_casino").text, "✓");
   assert.equal(cell("them", "big_casino").text, "–");
+  // Nothing taken is a dash, not a 0, so an empty cell reads as empty.
+  assert.equal(cell("them", "spades").text, "–");
+  assert.equal(cell("them", "aces").text, "–");
+  assert.equal(cell("them", "little_casino").text, "–");
+  // Every cell the same colour (play-testing: the empty ones were dimmed,
+  // which said nothing the dash does not), but a point theirs for certain.
   assert.equal(cell("you", "cards").look, "won");
-  assert.equal(cell("them", "cards").look, "lost");
-  assert.equal(cell("them", "big_casino").look, "lost", "the other player has it");
-  assert.equal(cell("them", "little_casino").look, "none", "still out");
-  assert.equal(cell("them", "spades").look, "none");
+  assert.equal(cell("you", "big_casino").look, "won");
+  const looks = table.rows.flatMap((r) => r.cells.filter((c) => c.look !== "won").map((c) => c.look));
+  assert.deepEqual([...new Set(looks)], [""], "no cell dimmed: not the other player's point, not one still out");
   assert.match(cell("you", "cards").tip, /most cards is yours/i);
   assert.match(cell("them", "cards").tip, /10 cards/);
   assert.match(cell("you", "spades").tip, /4 more/, "how far from certain");

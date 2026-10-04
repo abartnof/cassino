@@ -1074,7 +1074,8 @@ html.sideways .aid-toggles {
 }
 
 /* The trackers: a column for each point, a row for each player, the value
-   alone in each cell. */
+   alone in each cell (a dash for nothing), every cell alike but a point
+   that is certain. */
 .tracker-table {
   width: 100%;
   border-collapse: separate;
@@ -1114,10 +1115,6 @@ html.sideways .aid-toggles {
 .tracker-table td.won {
   background: #e8ebef;
   color: #121417;
-}
-.tracker-table td.lost,
-.tracker-table td.none {
-  opacity: 0.4;
 }
 .tracker-table th:focus-visible {
   outline: 2px solid #c8cdd3;

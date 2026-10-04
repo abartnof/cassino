@@ -88,9 +88,9 @@ export function trackers(state) {
 
 // The trackers as a table (the aids' panel): a column for each point, with
 // its header and a tip saying what it counts and what it scores; a row for
-// each player; in each cell only the value, its look ("won": the point is
-// theirs for certain; "lost": it is the other player's; "none": nothing
-// yet), and a tip in words. `watching`: the seats are South and North.
+// each player; in each cell only the value (a dash for nothing taken), its
+// look ("won": the point is theirs for certain; otherwise "", every cell
+// alike), and a tip in words. `watching`: the seats are South and North.
 const COLUMNS = {
   cards: { head: "Cards", tip: "Cards taken this hand. Most cards scores 3 points; 27 of the 52 makes it certain." },
   spades: { head: "Spades", tip: "Spades taken this hand. Most spades scores 1 point; 7 of the 13 makes it certain." },
@@ -116,9 +116,8 @@ export function trackerTable(t, { watching = false } = {}) {
         const theirs = t[other].find((y) => y.key === x.key).have;
         const name = x.key === "big_casino" ? "Big Casino" : "Little Casino";
         const tip = x.have ? `${me.who} took ${name}.` : theirs ? `${seats[other].who} took ${name}.` : `${name} is not taken yet.`;
-        return { key: x.key, text: x.have ? "✓" : "–", look: x.have ? "won" : theirs ? "lost" : "none", tip };
+        return { key: x.key, text: x.have ? "✓" : "–", look: x.have ? "won" : "", tip };
       }
-      const look = x.done ? "won" : x.lost ? "lost" : x.n ? "" : "none";
       let tip;
       const goal = GOAL[x.key];
       if (goal) {
@@ -130,7 +129,7 @@ export function trackerTable(t, { watching = false } = {}) {
             : `${taken}; ${goal.of - x.n} more ${goal.of - x.n === 1 ? "makes" : "make"} ${goal.point} certain.`;
       } else if (x.key === "aces") tip = `${me.who} ${me.has} taken ${plural(x.n, "ace")}: ${plural(x.n, "point")}.`;
       else tip = `${me.who} ${me.has} made ${plural(x.n, "sweep")}: ${plural(x.n, "point")}.`;
-      return { key: x.key, text: String(x.n), look, tip };
+      return { key: x.key, text: x.n ? String(x.n) : "–", look: x.done ? "won" : "", tip };
     });
     return { who, name: me.name, tip: watching ? `${me.own} captures this hand` : who === "you" ? "Your captures this hand" : "Your opponent's captures this hand", cells };
   });
