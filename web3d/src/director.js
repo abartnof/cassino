@@ -233,6 +233,8 @@ export function createDirector({ stage, deck, view, decorate, rested, manual = f
 
   return {
     handEdge,
+    // Where a point of the scene is on the screen, in CSS pixels.
+    screenOf: (point) => toScreen(new Vector3(...point)),
     state: () => state,
     placement: () => placement,
     meshOf: (code) => {

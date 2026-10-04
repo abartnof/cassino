@@ -427,6 +427,10 @@ function creditItems() {
       "Licensed CC BY-SA 3.0 (creativecommons.org/licenses/by-sa/3.0). Changed: rasterised and re-framed from its Spanish proportions to the faces' 5:7. The back shown here is therefore also CC BY-SA 3.0.",
     ),
     item(
+      "Your opponent, at the game's end",
+      "A court card from an anonymous Spanish-suited pack of about 1760, woodcut and coloured by stencil (Cary Collection of Playing Cards, Beinecke Library, Yale University, BEL 33). The artwork is in the public domain; the scan is from The World of Playing Cards (wopc.co.uk), images by Alberto Pérez González.",
+    ),
+    item(
       "Material Design 3",
       "The controls follow Google's Material Design 3 (m3.material.io), through Material Web 2.5.0 (Apache License 2.0, © Google LLC) and Lit 3.3.3 (BSD 3-Clause, © Google LLC), with tslib 2.8.1 (0BSD, © Microsoft). The plus, question-mark, arrow, close and fold icons are Material Symbols (Apache License 2.0, © Google LLC).",
     ),

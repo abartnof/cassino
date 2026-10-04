@@ -538,6 +538,41 @@ def check_talk(browser, failures):
     page.context.close()
 
 
+def check_ending(browser, failures):
+    """The game's end (?ending: a game taken to your last card): you play
+    it, the camera pulls back and your opponent stands across the table as a
+    court card, saying the last words; the arrows step through the endings;
+    a new game brings the play's eye back."""
+    page = open_page(browser, "ending&speed=2", calm=True)
+    settle(page)
+    if page.evaluate("window.cassino3d.state().prompt") != "play":
+        failures.append("ending: not staged at your last decision")
+        page.context.close()
+        return
+    play_by_clicking(page, failures, 0)
+    try:
+        page.wait_for_function("window.cassino3d.state().prompt === 'over' && window.cassino3d.opponent().revealed === 1", timeout=60_000)
+        page.wait_for_function("window.cassino3d.said().some((l) => l.who === 'them')", timeout=15_000)
+    except Exception:
+        failures.append(f"ending: no reveal, or your opponent said nothing: {page.evaluate('window.cassino3d.opponent()')}")
+        page.context.close()
+        return
+    shot(page, "t11-ending")
+    before = page.evaluate("window.cassino3d.opponent()")
+    page.locator(".endings-step").nth(1).click()
+    page.wait_for_timeout(1500)
+    after = page.evaluate("window.cassino3d.opponent()")
+    if not before["court"] or not after["ending"] or after["ending"] == before["ending"]:
+        failures.append(f"ending: the arrows did not step to another ending: {before} then {after}")
+    page.locator("md-filled-button.again").click()
+    settle(page)
+    if page.evaluate("window.cassino3d.opponent()")["revealed"] is not None:
+        failures.append("ending: a new game kept the camera pulled back")
+    if page.errors:
+        failures.append(f"ending: console errors {page.errors[:5]}")
+    page.context.close()
+
+
 def check_move_bar(browser, failures):
     """The move bar, always there on your turn: Take, Build and Trail dimmed
     with nothing chosen, lit by a choice, and on a desktop between the
@@ -884,6 +919,7 @@ def main() -> int:
         check_cheers(browser, failures)
         check_talk(browser, failures)
         check_move_bar(browser, failures)
+        check_ending(browser, failures)
         check_tutorial(browser, failures)
         check_phone(browser, failures)
         page = open_page(browser, "seed=11&skill=4&manual", calm=True)

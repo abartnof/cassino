@@ -14,7 +14,7 @@ and its JSON protocol; a module that plays a whole game in Node at 10–16 ms
 a command, byte for byte as the native build does. The table: all nine
 phases of `docs/TABLE3D.md`, the designer's score HUD, the fairness features
 and the match, on a desktop, a tablet or a phone held either way. 236 Rust
-tests and 208 Node tests of the table, all passing (`bin/gate`), and an
+tests and 213 Node tests of the table, all passing (`bin/gate`), and an
 offline browser test that plays whole games by clicking.
 
 **Reviewed.** A full code review by a separate agent
@@ -139,7 +139,12 @@ legal move. RULES.md now says each held card answers for one build value.
   Then, played on the published page: whose deal said with the cut (held
   up longer to be seen) and your opponent's first move waiting for the
   opening's calls, no longer said after it; and the trackers' header tips
-  saying first what each point is worth.
+  saying first what each point is worth. And the game's end: the camera
+  pulls back past the table's near edge, and your opponent was a court card
+  all along, standing across the table, cel-shaded, saying the last words
+  (twelve courts from a Spanish-suited pack of about 1760, credited;
+  `?ending` stages it and steps through all 24 endings; `docs/TABLE3D.md`
+  §6).
 - **The South African game, researched**
   (`research/12-south-african-khasino.md`): KASA's rulebooks and its own
   online game as the canonical sources, twenty open-source engines, and

@@ -7,6 +7,7 @@
 // (surfaces.js) whose far reaches fade into the air, so there is no edge.
 
 import {
+  BoxGeometry,
   CanvasTexture,
   Color,
   DirectionalLight,
@@ -14,6 +15,7 @@ import {
   HemisphereLight,
   Mesh,
   MeshBasicMaterial,
+  MeshToonMaterial,
   PCFShadowMap,
   PerspectiveCamera,
   PlaneGeometry,
@@ -26,6 +28,7 @@ import {
 } from "three";
 import { M3, M3_MS } from "./easing.js";
 import { aim, framing, STRIPS } from "./framing.js";
+import { FOG, REVEAL_FAR, REVEAL_MS, TABLE_EDGES, poseAt, revealPose } from "./reveal.js";
 import { BASE, PATTERNS, drawSurface } from "./surfaces.js";
 import { CAMERA } from "./units.js";
 
@@ -41,7 +44,7 @@ export function createScene(
   const scene = new Scene();
   scene.background = new Color(BASE);
   // The table's far reaches fade into the air: no edge, no horizon.
-  scene.fog = new Fog(BASE, 110, 260);
+  scene.fog = new Fog(BASE, ...FOG.play);
 
   const camera = new PerspectiveCamera(CAMERA.fov, 1, CAMERA.near, CAMERA.far);
   let portrait = null;
@@ -60,7 +63,9 @@ export function createScene(
   // fov (from the page's query, for tuning) win.
   function frame(aspect) {
     const sides = strips.left === undefined ? null : { left: strips.left, right: strips.right };
-    const { upright } = aim(camera, aspect, inset, canvas.clientHeight || undefined, strips, sides);
+    const play = aim(camera, aspect, inset, canvas.clientHeight || undefined, strips, sides);
+    const { upright } = play;
+    if (revealed) placeRevealed(aspect, play);
     if (eye || at || fov) {
       if (eye) camera.position.set(...eye);
       if (at) camera.lookAt(...at);
@@ -122,17 +127,26 @@ export function createScene(
   surface.wrapT = RepeatWrapping;
   surface.colorSpace = SRGBColorSpace;
   surface.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  const TABLE_CM = 600;
+  // The table has edges (reveal.js), which in play are out of view or lost
+  // in the air; the game's end pulls back to show them. Under its top, a
+  // band of wood a few centimetres deep, so the edge reads as a table's.
   const TILE_CM = 48; // one 1024-pixel tile: a dot grid's 46 px is 2.2 cm
-  surface.repeat.set(TABLE_CM / TILE_CM, TABLE_CM / TILE_CM);
-  const table = new Mesh(new PlaneGeometry(TABLE_CM, TABLE_CM), new MeshBasicMaterial({ map: surface }));
+  const WIDE = 2 * TABLE_EDGES.half;
+  const DEEP = TABLE_EDGES.near - TABLE_EDGES.far;
+  const MIDDLE = (TABLE_EDGES.near + TABLE_EDGES.far) / 2;
+  surface.repeat.set(WIDE / TILE_CM, DEEP / TILE_CM);
+  const table = new Mesh(new PlaneGeometry(WIDE, DEEP), new MeshBasicMaterial({ map: surface }));
   table.rotation.x = -Math.PI / 2;
+  table.position.z = MIDDLE;
   scene.add(table);
-  const shade = new Mesh(new PlaneGeometry(TABLE_CM, TABLE_CM), new ShadowMaterial({ color: "#14161a", opacity: 0.3 }));
+  const shade = new Mesh(new PlaneGeometry(WIDE, DEEP), new ShadowMaterial({ color: "#14161a", opacity: 0.3 }));
   shade.rotation.x = -Math.PI / 2;
-  shade.position.y = 0.005; // above the table, below the lowest card
+  shade.position.set(0, 0.005, MIDDLE); // above the table, below the lowest card
   shade.receiveShadow = true;
   scene.add(shade);
+  const wood = new Mesh(new BoxGeometry(WIDE, TABLE_EDGES.thickness, DEEP), new MeshToonMaterial({ color: "#9a6b43" }));
+  wood.position.set(0, -TABLE_EDGES.thickness / 2 - 0.02, MIDDLE);
+  scene.add(wood);
   function setSurface(id) {
     const chosen = PATTERNS.find((p) => p.id === id) ?? PATTERNS[0];
     drawSurface(surface.image, chosen);
@@ -161,6 +175,62 @@ export function createScene(
     renderer.setSize(width, height, false);
     frame(width / height);
     for (const ink of inks) fitInk(ink);
+  }
+
+  // The game's end (reveal.js): the camera eased back from the play's eye
+  // to the reveal's, the air clearing as it goes; while revealed, a change
+  // of window keeps the reveal's eye. `u` runs from 0 (in play) to 1.
+  let revealed = null;
+  function placeRevealed(aspect, play) {
+    const u = revealed.u;
+    const pose = poseAt(play, revealPose(aspect), u);
+    camera.position.set(...pose.position);
+    camera.lookAt(...pose.target);
+    camera.fov = pose.fov;
+    camera.aspect = aspect;
+    camera.far = CAMERA.far + (REVEAL_FAR - CAMERA.far) * u;
+    // The play's offsets (framing.js) stay: they set the picture in the
+    // band the overlay leaves, beside the information or between the strips.
+    camera.filmOffset = -play.shift * camera.getFilmWidth() * Math.tan((pose.fov * Math.PI) / 360) * aspect;
+    const lift = play.lift ?? 0;
+    if (lift) camera.setViewOffset(aspect, 1, 0, lift / 2, aspect, 1);
+    else camera.clearViewOffset();
+    camera.updateProjectionMatrix();
+    camera.updateMatrixWorld();
+    scene.fog.near = FOG.play[0] + (FOG.reveal[0] - FOG.play[0]) * u;
+    scene.fog.far = FOG.play[1] + (FOG.reveal[1] - FOG.play[1]) * u;
+  }
+  const aspectNow = () => (canvas.clientWidth || 1) / (canvas.clientHeight || 1);
+  // Pull back, over REVEAL_MS (`instant`: at once, with reduced motion or at
+  // the Instant speed); resolves once there.
+  function reveal({ instant = false } = {}) {
+    revealed = { u: instant ? 1 : 0 };
+    frame(aspectNow());
+    render();
+    if (instant) return Promise.resolve();
+    const start = performance.now();
+    return new Promise((done) => {
+      const step = (now) => {
+        if (!revealed) return done();
+        const t = Math.min(1, (now - start) / REVEAL_MS);
+        revealed.u = M3.standard(t);
+        frame(aspectNow());
+        render();
+        if (t < 1) requestAnimationFrame(step);
+        else done();
+      };
+      requestAnimationFrame(step);
+    });
+  }
+  // Back to the play's eye: a new game, the replay.
+  function unreveal() {
+    if (!revealed) return;
+    revealed = null;
+    camera.far = CAMERA.far;
+    scene.fog.near = FOG.play[0];
+    scene.fog.far = FOG.play[1];
+    frame(aspectNow());
+    render();
   }
 
   let frames = 0;
@@ -227,10 +297,13 @@ export function createScene(
   }
 
   return Object.assign(stage, {
-    scene, camera, renderer, key, render, registerInk, setInset, setStrips, setSurface,
+    scene, camera, renderer, key, render, registerInk, setInset, setStrips, setSurface, reveal, unreveal,
     strips: () => ({ ...target }),
-    // Whether the framing is still easing to new strips.
-    reframing: () => easing !== null,
+    // How far the camera has pulled back for the game's end, or null in play.
+    revealed: () => revealed?.u ?? null,
+    // Whether the framing is still easing: to new strips, or back to the
+    // game's end.
+    reframing: () => easing !== null || (revealed !== null && revealed.u < 1),
     // How far your hand's fan is drawn out to fill the width, for the
     // framing the table is on its way to (framing.js).
     fill: () => {

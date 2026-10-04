@@ -11,8 +11,9 @@
 // reload (chrome.js, prefs.js); and the tutorial's pages, each at its first
 // moment, and at any time from the question mark (tutorial.js).
 
-import { Vector3 } from "three";
+import { Mesh, Texture, Vector3 } from "three";
 import { loadTextures, vectorWidth } from "./art.js";
+import { cardGeometry } from "./cards.js";
 import { createChrome } from "./chrome.js";
 import { createDeck } from "./deck.js";
 import { TURN, createDialogue } from "./dialogue.js";
@@ -20,10 +21,12 @@ import { createDirector } from "./director.js";
 import { facesFor, jumboTextures, phoneHere } from "./faces.js";
 import { decodeBase64, loadEngine } from "./engine.js";
 import { POPUP_BUSY, createHud, hudEvents, ledgerOf, popupsOf } from "./hud.js";
+import { RAMPS, cardMaterials, cardTexture } from "./materials.js";
 import { createOverlay } from "./overlay.js";
 import { badgeFontPx, badgeText, badgeTitle, badgesShown } from "./badges.js";
 import { badgesOn, choosePlay, dailySeed, loadPrefs, welcomeWanted, loadSeries, loadSitting, savePrefs, saveSeries, saveSitting, withUrl } from "./prefs.js";
 import { recordGame, seriesLine } from "./series.js";
+import { COURTS as COURTS_ORDER, FIGURE, REVEAL_MS, courtFor, courtName, figureHead } from "./reveal.js";
 import { createScene } from "./scene.js";
 import { celebrationOf, trackers } from "./scorebug.js";
 import { EMPTY, choose, chipsOf, itemState, moveBarFit, pick, selectionOf, selectionText, sweepWarning, valuesSaid, whyNot } from "./selection.js";
@@ -35,7 +38,7 @@ import TUTORIAL_TEXT from "../tutorial.md";
 import { CARD, PORTRAIT_BELOW, ZONES, ZONES_PORTRAIT } from "./units.js";
 import { cardCorners } from "./kinematics.js";
 
-/* global WASM_BASE64, ART, WORDS */
+/* global WASM_BASE64, ART, COURTS, WORDS */
 
 const params = new URL(window.location.href).searchParams;
 const WATCH_PAUSE = 650; // ms between the moves of a watched game
@@ -239,6 +242,7 @@ async function main() {
     // the cards from where they were, the score and the talk as they are.
     again: () => {
       if (!lastMove || replay || director.busy()) return;
+      hideOpponent();
       badgeFrom = lastMove.before;
       director.again(lastMove.before, lastMove.after);
       show();
@@ -256,6 +260,7 @@ async function main() {
   // house rules are agreed aloud as the cards are dealt. `welcome`:
   // the table held at the pack while the welcome asks how to begin.
   function newGame({ seed = randomSeed(), watch = false, welcome = false } = {}) {
+    hideOpponent();
     replay = null;
     badgeFrom = null;
     lastMove = null;
@@ -360,7 +365,16 @@ async function main() {
     const pace = talkPace && scored ? { ...talkPace, popups: popupsOf(scored.count.lines), busy: POPUP_BUSY } : null;
     const timing = director.advance(state, { pace });
     playScore(before.events.length, timing);
-    talk(state, before.events.length, timing, said);
+    // At the game's end the camera pulls back first, and the last words are
+    // said from across the table once it is there.
+    const end = state.events.findIndex((e, k) => k >= before.events.length && e.kind === "game_ends");
+    let heardAt = timing;
+    if (end >= 0) {
+      const at = timing.beats[end] ?? 0;
+      director.at(at, () => revealOpponent(), "hard");
+      if (!calm()) heardAt = { ...timing, beats: { ...timing.beats, [end]: at + REVEAL_MS } };
+    } else if (state.prompt !== "over") hideOpponent();
+    talk(state, before.events.length, heardAt, said);
     if (state.prompt === "over") countGame();
     persist();
     refresh();
@@ -378,7 +392,7 @@ async function main() {
   // A game finished counts in the series, once.
   function countGame() {
     const ends = state.events.findLast((e) => e.kind === "game_ends");
-    if (!ends || state.watching || replay || prefs.match !== "best-of-7") return;
+    if (!ends || state.watching || replay || STAGING || prefs.match !== "best-of-7") return;
     // Each game counted once, by its record (a seed can deal more than one
     // game: a seeded link, today's deal twice; the second review, S8); a
     // game from a seeded link is not kept in the saved series.
@@ -389,7 +403,7 @@ async function main() {
   function persist() {
     // A game from a seeded link is not kept over the sitting saved (T16),
     // nor a step of the replay.
-    if (state.watching || fixedSeed || replay) return;
+    if (state.watching || fixedSeed || replay || STAGING) return;
     saveSitting(store, state.prompt === "over" ? null : state.saved);
   }
 
@@ -415,6 +429,7 @@ async function main() {
   let replay = null; // { record, revealed, at, k, playing }
   let replayStepping = false;
   function settleOn(next) {
+    hideOpponent();
     badgeFrom = null;
     director.cancelTimed();
     replayStepping = false; // a step pending went with the rest (as review T2)
@@ -653,9 +668,117 @@ async function main() {
   // Where a line is said from: by the speaker's hand; yours, on a desktop,
   // beside it, the move bar being above it.
   function speakerAt(who) {
+    // At the game's end your opponent speaks from across the table, beside
+    // the figure's head.
+    if (who === "them" && standing && stage.revealed() !== null) {
+      const [x, y, z] = figureHead();
+      const at = director.screenOf([x + (FIGURE.height * FIGURE.aspect) / 2, y, z]);
+      return { x: at.x + 14, y: at.y, side: true };
+    }
     const hand = who === "you" && desktop() ? yourHandOnScreen() : null;
     if (!hand) return director.handEdge(who);
     return { x: hand.right + 18, y: hand.top + (hand.bottom - hand.top) * 0.35, side: true };
+  }
+
+  // ---- the game's end: who you were playing --------------------------------
+
+  // The camera pulls back past the table's near edge, and your opponent is a
+  // court card standing across the table (reveal.js), cel-shaded and inked
+  // like the cards; it says the game's last words from there. Gone again
+  // with a new game, the replay, or the last move seen again.
+  const figures = new Map(); // court -> its mesh, made the first time it stands
+  let standing = null; // the court standing, while revealed
+  const calm = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches || prefs.speed > 10;
+  async function courtMesh(court) {
+    const image = new Image();
+    image.src = COURTS[court];
+    await image.decode();
+    const face = cardTexture(new Texture(image), stage.renderer.capabilities.getMaxAnisotropy());
+    const width = FIGURE.height * FIGURE.aspect;
+    const geometry = cardGeometry({ width, height: FIGURE.height, radius: width * 0.05, thickness: 0.6 });
+    const mesh = new Mesh(geometry, cardMaterials({ face, back: textures.back, ramp: RAMPS.card() }));
+    mesh.add(new Mesh(geometry, deck.ink));
+    mesh.position.set(0, FIGURE.bottom + FIGURE.height / 2, FIGURE.z);
+    mesh.castShadow = true;
+    mesh.name = courtName(court);
+    mesh.visible = false;
+    stage.scene.add(mesh);
+    return mesh;
+  }
+  // This court standing across the table, and no other.
+  async function stand(court) {
+    if (!figures.has(court)) figures.set(court, await courtMesh(court));
+    for (const [c, mesh] of figures) mesh.visible = c === court;
+    standing = court;
+    stage.render();
+  }
+  async function revealOpponent() {
+    await stand(courtFor(state.seed));
+    if (state.prompt !== "over" || replay) return hideOpponent(); // moved on while the art was decoding
+    await stage.reveal({ instant: calm() });
+    if (STAGING && standing) showEndings();
+  }
+  function hideOpponent() {
+    for (const mesh of figures.values()) mesh.visible = false;
+    standing = null;
+    endingsBar.hidden = true;
+    stage.unreveal();
+  }
+
+  // ?ending -- the game's end staged (play-testing, as piquet's): a game
+  // played by a dull script to its end, then taken back to your last
+  // decision, so you play the last card and the ending comes; then arrows
+  // step through every ending, each court winning and losing, each saying
+  // its line. Nothing of it is kept.
+  const STAGING = params.has("ending");
+  function stageEnding() {
+    let s = engine.start({ ...prefs.rules, skill: prefs.skill, seed: fixedSeed ?? 31 });
+    for (let n = 0; n < 2000 && s.prompt !== "over"; n++) s = engine.send(s.prompt === "play" ? s.moves[0] : "next").state;
+    // The record without its last decision of yours (a "*" line is a move
+    // the table made for you, so it goes too).
+    const lines = s.saved.trimEnd().split("\n");
+    const last = lines.findLastIndex((l) => /^(take|build|trail) /.test(l));
+    const taken = engine.restore(lines.slice(0, last).join("\n") + "\n");
+    state = taken.ok ? taken.state : engine.start({ ...prefs.rules, skill: prefs.skill, seed: fixedSeed ?? 31 });
+    director.restart(state);
+    badgeFrom = state;
+    scoreShown();
+    refresh();
+  }
+  const ENDINGS = COURTS_ORDER.flatMap((court) => [true, false].map((theyWon) => ({ court, theyWon })));
+  let ending = 0;
+  const endingsBar = document.createElement("div");
+  endingsBar.className = "endings";
+  endingsBar.hidden = true;
+  const endingWords = document.createElement("span");
+  const stepper = (label, by) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "endings-step";
+    button.setAttribute("aria-label", label);
+    button.textContent = by < 0 ? "\u2039" : "\u203a";
+    button.addEventListener("click", () => showEnding((ending + by + ENDINGS.length) % ENDINGS.length));
+    return button;
+  };
+  endingsBar.append(stepper("The ending before", -1), endingWords, stepper("The next ending", 1));
+  document.getElementById("overlay").append(endingsBar);
+  function showEndings() {
+    const theyWon = !state.events.findLast((e) => e.kind === "game_ends")?.you_won;
+    ending = ENDINGS.findIndex((e) => e.court === standing && e.theyWon === theyWon);
+    endingsBar.hidden = false;
+    endingWords.textContent = endingLabel(ENDINGS[ending]);
+  }
+  const endingLabel = (e) => `${courtName(e.court).replace(/^the/, "The")}, ${e.theyWon ? "winning" : "losing"} (${ending + 1} of ${ENDINGS.length})`;
+  async function showEnding(k) {
+    ending = k;
+    const e = ENDINGS[k];
+    await stand(e.court);
+    endingWords.textContent = endingLabel(e);
+    director.drop("talk");
+    dialogue.skip();
+    dialogue.say([{ who: "them", phrase: e.theyWon ? "game-won" : "good-game", delay: 0 }], (line, words, ms) =>
+      director.at(ms, () => overlay.say(line.who, words, speakerAt(line.who)), "talk"),
+    );
   }
 
   // ---- phones ------------------------------------------------------------
@@ -847,7 +970,7 @@ async function main() {
 
   // The sitting under way when the page was last open, if there is one and
   // no game was asked for; else a new one.
-  const kept = fixedSeed || params.has("watch") ? null : loadSitting(store);
+  const kept = fixedSeed || params.has("watch") || STAGING ? null : loadSitting(store);
   const restored = kept ? engine.restore(kept) : null;
   if (restored?.ok && restored.state.prompt !== "over") {
     state = restored.state;
@@ -859,6 +982,8 @@ async function main() {
     scoreShown();
     refresh();
     if (welcomeWanted(params)) chrome.showWelcome({ canContinue: true }, begin);
+  } else if (STAGING) {
+    stageEnding();
   } else {
     newGame({ watch: params.has("watch"), welcome: welcomeWanted(params) });
   }
@@ -877,6 +1002,9 @@ async function main() {
     cheers: () => overlay.cheers(),
     hud: () => ({ shown: hud.shown(), totals: hud.totals(), hands: hud.hands(), idle: hud.idle() }),
     hint: () => hint,
+    // The game's end: who your opponent turned out to be, whether the figure
+    // stands, and how far the camera has pulled back (null in play).
+    opponent: () => ({ court: standing, revealed: stage.revealed(), ending: endingsBar.hidden ? null : endingWords.textContent }),
     selection: () => sel,
     tutorialOpen: () => chrome.tutorialOpen(),
     replay: () => (replay ? { k: replay.k, n: replay.at.length - 1 } : null),

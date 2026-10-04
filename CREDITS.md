@@ -44,6 +44,22 @@ BY-SA 3.0**, and the game credits it on screen, not only here.
 The pinned originals, with checksums and measurements, are in
 `web3d/art/source/`.
 
+### Your opponent, at the game's end
+
+**An anonymous Spanish-suited pack, about 1760**: numerals to ten, and a
+sota, caballo and rey in each suit, woodcut and coloured by stencil,
+attributed to the designs of the Sarton family of Brussels (active 1745–67).
+The original is in the **Cary Collection of Playing Cards**, Beinecke Rare
+Book and Manuscript Library, Yale University (BEL 33). The scan is from
+**The World of Playing Cards**
+(<https://www.wopc.co.uk/spain/anonymous-1760>), whose page credits
+**Alberto Pérez González** for the images.
+
+Licence: the artwork is in the **public domain** (about 1760). The scan is a
+faithful photograph of it; the site states no terms of use, and it is
+credited here and on screen. The twelve courts are cut from it unchanged
+(`web3d/tools/courts.py`); the pinned scan is in `web3d/art/source/`.
+
 ## Design system
 
 **Material Design 3**, by **Google**: <https://m3.material.io/>. The table's

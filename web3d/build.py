@@ -36,6 +36,7 @@ OUT = HERE / "cassino3d.html"
 WASM = ROOT / "target" / "wasm32-unknown-unknown" / "release" / "cassino_wasm.wasm"
 ESBUILD = HERE / "node_modules" / ".bin" / "esbuild"
 CARDS = HERE / "art" / "cards"
+COURTS = HERE / "art" / "courts"
 GUIDELINE = 5 * 1024 * 1024
 
 # Where each bundled source file is reported, by path prefix; first match wins.
@@ -103,6 +104,18 @@ def art(way: str) -> str:
     }, separators=(",", ":"))
 
 
+def courts() -> str:
+    """The twelve courts your opponent can turn out to be, at the game's end
+    (web3d/tools/courts.py), as a JSON object of data URIs keyed "oros-rey"."""
+    images = sorted(COURTS.glob("*.webp"))
+    if len(images) != 12:
+        sys.exit(f"expected 12 court images in {COURTS}, found {len(images)}: run web3d/tools/courts.py")
+    return json.dumps({
+        p.stem: "data:image/webp;base64," + base64.b64encode(p.read_bytes()).decode("ascii")
+        for p in images
+    }, separators=(",", ":"))
+
+
 def phrases() -> str:
     """The phrase bank's words, for the dialogue boxes (web3d/words.json,
     which web3d/tools/phrases.py writes; empty until the bank exists)."""
@@ -138,12 +151,14 @@ def main() -> int:
     style = (SRC / "style.css").read_text()
     engine = base64.b64encode(wasm).decode("ascii")
     cards = art(args.art)
+    figures = courts()
     words = phrases()
     page = fill((SRC / "index.html").read_text(), {
         "/*STYLE*/": style,
         "/*APP*/": code,
         "__WASM_BASE64__": engine,
         "/*ART*/": cards,
+        "/*COURTS*/": figures,
         "/*WORDS*/": words,
     })
     if args.check:
@@ -156,6 +171,7 @@ def main() -> int:
     size = len(page.encode())
     art_name = "the card art (WebP, base64)" if args.art == "webp" else "the card art (SVG)"
     rows = [("the engine (wasm, base64)", len(engine)), (art_name, len(cards.encode())),
+            ("the courts at the game's end (WebP, base64)", len(figures.encode())),
             ("the dialogue's words", len(words.encode())),
             *owned.items(),
             ("stylesheet", len(style.encode()))]

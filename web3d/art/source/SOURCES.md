@@ -10,8 +10,12 @@ players are in `/CREDITS.md`.
 |---|---|---|---|---|
 | `public-domain-complete-playing-card-deck.svg` | All 54 cards (A–K in four suits, two jokers) | AustinGabriel64 | CC0 1.0 | `a9616db42c1caa16e80f1727e966268e271d458c3d58dfeee6bd7362cbc60517` |
 | `reverso-baraja-espanola.svg` | The card back: a blue lace pattern | Germarquezm | CC BY-SA 3.0 | `0d657965a171ed4b6ae1cdbe186ead5c2f9de72a30eb960835b36ede2d641419` |
+| `sarton-spanish-suited-c1760.jpg` | An anonymous Spanish-suited pack, about 1760 (Cary Collection, BEL 33): the twelve courts your opponent can turn out to be at the game's end (`web3d/tools/courts.py`) | scan: The World of Playing Cards, images by Alberto Pérez González | artwork public domain; scan credited | `673ead0f32737754b06dedc5dd3ac7f3d312fea4a75f04915637b4415efcc834` |
 
 Retrieved from:
+
+- https://www.wopc.co.uk/images/countries/belgium/sarton-1.jpg, shown on
+  https://www.wopc.co.uk/spain/anonymous-1760 (4 October 2026; 1200 × 1451)
 
 - https://commons.wikimedia.org/wiki/File:Public_domain_complete_playing_card_deck.svg
   (uploaded 27 July 2026; 2,278,001 bytes)
