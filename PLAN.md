@@ -14,7 +14,7 @@ and its JSON protocol; a module that plays a whole game in Node at 10–16 ms
 a command, byte for byte as the native build does. The table: all nine
 phases of `docs/TABLE3D.md`, the designer's score HUD, the fairness features
 and the match, on a desktop, a tablet or a phone held either way. 236 Rust
-tests and 191 Node tests of the table, all passing (`bin/gate`), and an
+tests and 209 Node tests of the table, all passing (`bin/gate`), and an
 offline browser test that plays whole games by clicking.
 
 **Reviewed.** A full code review by a separate agent
@@ -120,6 +120,22 @@ legal move. RULES.md now says each held card answers for one build value.
   filling the space between the table and your hand (the table six
   centimetres further off; compact and wrapping on a phone); and the score
   HUD a row a player, name, line and score, your opponent's first.
+- **The fourth play-testing** (2026-10-04): the HUD's scores whole at two
+  digits (the column sized in the number's own font; a device with wider
+  digits than headless Chromium's cut a score past 9 off); the trackers'
+  cells all alike, a dash where nothing is taken; and the table talk very
+  verbose, the conversation a part of the game as in Cuarenta ("you have
+  to turn into a chatterbox"): every move remarked, builds answered with
+  what they tell of the builder's hand, a stolen or raised build felt, the
+  score said after each hand, the game proposed and a rematch offered, your
+  opponent thinking aloud and, kept waiting, saying so. Sourced from the
+  research where it can be (`docs/PHRASES.md`), kind throughout. The talk
+  follows each build's controller through the events, checked against the
+  engine's table; every remark is chatter, heard only at "Everything" and
+  left out where it would make a call late (`docs/TABLE3D.md` §7). And the
+  tutorial rewritten for new players: each page what its moment needs, in
+  plain words, every term explained where it first appears, the interface
+  as it is, no history that does not help play (`docs/TABLE3D.md` §9).
 - **The South African game, researched**
   (`research/12-south-african-khasino.md`): KASA's rulebooks and its own
   online game as the canonical sources, twenty open-source engines, and
@@ -192,14 +208,18 @@ legal move. RULES.md now says each held card answers for one build value.
   (`docs/DESIGN.md` §11.4). The user: "if you have a clear signal coming
   through, your sample size can be rather small".
 
+## Published
+
+**2026-10-04: public**, at the user's request: the repository
+(<https://github.com/abartnof/cassino>) and the game, served by GitHub
+Pages from `main` at <https://abartnof.github.io/cassino/> (the root
+`index.html` goes on to `web3d/cassino3d.html`, as piquet's does). Every
+push to `main` republishes the page. MIT (`LICENSE`), checked first against
+every part by others (`CREDITS.md`).
+
 ## Open for the user
 
-1. **A `LICENSE` file.** `Cargo.toml` says MIT, as piquet and bezique do; the
-   file itself, with its copyright line, is the user's to add.
-2. **Publishing.** Piquet is served from GitHub Pages; the same would serve
-   `web3d/cassino3d.html`. Making the repository or the page public is the
-   user's decision.
-3. **One design call made provisionally**: the game's seed is shown only once
+1. **One design call made provisionally**: the game's seed is shown only once
    the game is over (shown during it, a second window could read your
    opponent's hand; the second review, S4). Fairness is still checkable
    after the game, with the replay.
