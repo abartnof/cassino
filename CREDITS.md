@@ -1,9 +1,10 @@
 # Credits
 
 The project's own work (the rules engine, the table, the documents) is
-released under the **MIT License** (`Cargo.toml`). Everything listed below is
+released under the **MIT License** (`LICENSE`). Everything listed below is
 someone else's and keeps its own licence. Notably the card back is CC BY-SA
-3.0.
+3.0. Quotations in the research and the literature review remain their
+authors', credited where they appear.
 
 Credit is given where it is due, including where no licence demands it.
 **Every third-party asset is recorded here, in the commit that brings it
@@ -87,6 +88,13 @@ own.
 | esbuild | 0.28.2 | MIT | Bundling the page's JavaScript |
 | librsvg (`rsvg-convert`) | Debian 12 | LGPL-2.1+ | Rasterising the card art |
 | Pillow | current | MIT-CMU (HPND) | Cropping and encoding the card images |
+
+## Test-only libraries (used, not shipped)
+
+The engine and the page use no third-party Rust. The wasm module's tests
+read JSON with **serde_json** 1.0.151 (MIT OR Apache-2.0, by David Tolnay
+and the Serde authors), which brings in serde_core, itoa (MIT OR
+Apache-2.0), memchr (Unlicense OR MIT) and zmij (MIT).
 
 ## Rules, history and method
 
