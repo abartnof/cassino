@@ -39,6 +39,9 @@ import { cardCorners } from "./kinematics.js";
 
 const params = new URL(window.location.href).searchParams;
 const WATCH_PAUSE = 650; // ms between the moves of a watched game
+// How long your opponent waits on your move before remarking on it ("Take
+// your time."), once a turn, when everything is said; ?idle=ms for tests.
+const IDLE_MS = Number(params.get("idle")) || 25_000;
 const PAGES = parseTutorial(TUTORIAL_TEXT);
 
 // The browser's storage, if there is any to have.
@@ -130,6 +133,7 @@ async function main() {
       if (state.watching) watchOn();
       else if (replay) replayOn();
       else introduce();
+      waitOnYou();
     },
     manual: params.has("manual"),
     speed: prefs.speed,
@@ -502,6 +506,23 @@ async function main() {
         .sort((a, b) => a.delay - b.delay),
     );
     dialogue.say(lines, (line, words, ms) => director.at(ms, () => overlay.say(line.who, words, speakerAt(line.who)), "talk"));
+  }
+
+  // Your opponent, waiting on your move a while, says so: once a turn, on
+  // the wall's clock (a line queued on the table's would keep it drawing
+  // while you think), and not while the table is held or the page hidden.
+  let idleTimer = null;
+  function waitOnYou() {
+    clearTimeout(idleTimer);
+    if (state.prompt !== "play" || state.watching || replay || prefs.talk !== "all") return;
+    const position = state.saved;
+    idleTimer = setTimeout(() => {
+      if (state.saved !== position || state.prompt !== "play" || replay || prefs.talk !== "all") return;
+      if (document.hidden || director.held() || director.gatePending() || chrome.tutorialOpen() || director.busy()) return;
+      dialogue.say([{ who: "them", phrase: "idle", delay: 0, chatter: true }], (line, words, ms) =>
+        director.at(ms, () => overlay.say(line.who, words, speakerAt(line.who)), "talk"),
+      );
+    }, IDLE_MS);
   }
 
   // ---- the score ------------------------------------------------------------

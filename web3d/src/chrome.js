@@ -228,7 +228,7 @@ export function createChrome(root, on) {
       aidSwitches,
       pageSwitches,
       el("h3", {}, "The table"),
-      el("div", { class: "setting talk-row" }, el("span", { class: "setting-text" }, el("span", { class: "setting-title" }, "Table talk"), el("span", { class: "setting-words" }, "What the players say aloud: everything, only the calls that carry the game (the house rules, builds, \u201cLast.\u201d, sweeps, the count), or nothing")), talkSet),
+      el("div", { class: "setting talk-row" }, el("span", { class: "setting-text" }, el("span", { class: "setting-title" }, "Table talk"), el("span", { class: "setting-words" }, "What the players say aloud: everything, the chat of a lively table included (every move remarked, builds answered, the score said); only the calls that carry the game (the house rules, builds, \u201cLast.\u201d, sweeps, the count); or nothing")), talkSet),
       el("div", { class: "selects" }, speed, surface, faces),
     ),
     el("div", { slot: "actions" }, copy, creditsOpen, el("md-filled-tonal-button", { onclick: () => settings.close() }, "Done")),

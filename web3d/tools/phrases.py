@@ -55,7 +55,7 @@ SOURCES = {
     "Ha": "Harper's Bazaar (1883), a father at the count: \"The cards are a tie, Katy, so neither "
           "of us takes that point.\" [04-S135]",
     "Ar": "Ardmore's novel To Love Is to Listen (1967): at Big Casino, a player \"screamed the "
-          "word, 'Luck!'\" [04-S82]",
+          "word, 'Luck!'\"; \"You would have big cassino for the last. Such luck!\" [04-S82]",
     "Fe": "Feydeau, in English translation: the count chanted, \"Cards... Spades... "
           "Ten of diamonds...\", \"Deuce... Aces...\", and \"Clean sweep!\" [04-S159]",
     "N": "the New York Dispatch's answers column (1877-1881): a build \"calling 'seven'\" or "
@@ -74,6 +74,38 @@ SOURCES = {
           "translation [02-S29]",
     "Do": "the Dominican custom of pointing out the cards an opponent left behind "
           "(dejado) [02-S3]; the words are ours",
+    "Ec": "Cuarenta, Ecuador's cousin of the game, played loud and full of sayings (\"hay que "
+          "ponerse charlatán\": you have to turn into a chatterbox): \"Dos, señor juez\" (two, "
+          "Mr. Judge), \"Con esta te caigo\" (with this one I'll fall on you), \"As que no me "
+          "caerás\" (ace, you won't fall on me), in translation [05-S56][05-S57][05-S59]",
+    "Fs": "Finnish, in translation: an emigrant's letter (1932), \"Eiköhän pelata casinoa?\" "
+          "(shall we play casino?) [10-S10]; the story \"Iso casino\" (1938), \"this was a big "
+          "casino for me\" [10-S6]",
+    "Re": "Reynolds, Cheap Living (1797): \"I do long for a game of cassino\" [05-S5]",
+    "Gu": "a French novel (1986), on laying down the deuce of spades: \"Little Casino, a point "
+          "for you, if you take it\", in translation [10-S62]",
+    "Ti": "the German \"eine Karte für den Tisch bringen\" (bring a card for the table), in "
+          "translation [05-S45]",
+    "Bt": "the Swedish dealer's warning, \"Båten går!\" (the boat's leaving), in translation "
+          "[05-S34][10-S24]",
+    "Ka": "KASA, the South African game: \"8 out\", said on taking your own build of eight [12-S6]",
+    "Sc": "the Italian game's shout at a sweep, \"Scopa!\" [05-S49]",
+    "Hk": "the Hungarian game's \"Ausz!\" (out!) [05-S12][01-S20]",
+    "Gz": "the Literary Gazette (1818): \"The game is up.\" [04-S49]",
+    "MP": "the Mineral Point Tribune (1878): \"It's hard on those who get swept.\" [04-S102]",
+    "SM": "the Sporting Magazine (1793): \"Ne'er leave one card upon the board alone\" [08-S2]",
+    "Rd": "the Richmond Dispatch (1894), asked which card one would be: \"I'd be the big "
+          "cassino, because it counts so much every one would be after me.\" [04-S140]",
+    "Mo": "Morehead: \"In Casino 'all' you have to do is keep track of the cards.\" [08-S14]",
+    "Bg": "a board-game review: \"The cards in your hand are not yours until you have captured "
+          "them\" [02-S57]",
+    "Da": "a strategy blog reasoning aloud from what an opponent did: \"he must not have a Ten\" "
+          "[08-S37]",
+    "Ol": "a letter of 1804: cassino played \"very much at our leisure\" [04-S45]",
+    "It": "the Italian table's \"Tocca a te\" (your turn) [05-S50]",
+    "Ws": "a family's \"World Series\" of cassino, the best of seven [05-S74]",
+    "Tn": "the Tunisian game's loser's plea, \"Khallini narba7 marra!\" (let me win once!), in "
+          "translation [05-S67]",
     "T": "the table's own",
 }
 
@@ -154,19 +186,20 @@ def phrase_groups():
 
     # Captures.
     add("sweep", ("Clear!", "P"), ("Clean sweep!", "Fe"), ("Sweep!", "T"), ("That clears it.", "T"),
-        ("That clears the board.", "Lo"), ("Swept clean!", "Ru"), ("The table's clear.", "T"))
+        ("That clears the board.", "Lo"), ("Swept clean!", "Ru"), ("The table's clear.", "T"), ("Scopa!", "Sc"))
     add("cash", ("Cash.", "P"), ("Cash!", "T"), ("An ace for an ace.", "T"), ("Ace takes ace.", "T"),
         ("That's cash.", "T"), ("Ace on ace: cash.", "T"))
     # A capture that takes a casino card, or a haul of several cards, when no
     # sweep or cash speaks for it.
     add("take-big-casino", ("Now I have Big Casino.", "Sw"), ("Luck! Big Casino.", "Ar"),
         ("The big one's mine.", "Sw"), ("I'll have the good ten.", "P"), ("That's two points.", "T"),
-        ("Big Casino comes to me.", "T"))
+        ("Big Casino comes to me.", "T"), ("Two, Mr. Judge!", "Ec"))
     add("take-little-casino", ("I have Little Casino.", "Sw"), ("The little one's mine.", "Sw"),
         ("I'll have the good two.", "P"), ("Little Casino, and a point.", "T"), ("That's a point.", "T"),
-        ("Casino's younger brother!", "Po"))
+        ("Casino's younger brother!", "Po"), ("One, Mr. Judge!", "Ec"))
     add("take-many", ("A good haul.", "T"), ("That's a grab!", "Fi"), ("Taken in, every one.", "F"),
-        ("As many as I can, with one card.", "Lo"), ("In they all come.", "T"), ("Quite a pile.", "T"))
+        ("As many as I can, with one card.", "Lo"), ("In they all come.", "T"), ("Quite a pile.", "T"),
+        ("That was a big casino for me.", "Fs"))
     add("clinch-cards", ("That's the cards.", "P"), ("Twenty-seven. The cards are mine.", "T"),
         ("That's twenty-seven.", "T"), ("I've made cards.", "L"), ("Twenty-seven cards. Three points.", "T"),
         ("The cards are made.", "T"))
@@ -176,7 +209,7 @@ def phrase_groups():
     for r, name in RANKS.items():
         add(f"left-{r}", (f"You left the {name}.", "Do"), (f"The {name} was left behind.", "Do"),
             (f"The {name} was there for you.", "T"), (f"The {name} could have come too.", "T"),
-            (f"You might have had the {name}.", "T"))
+            (f"You might have had the {name}.", "T"), (f"Dejado! The {name}.", "Do"))
     add("left-more", ("You left a few there.", "Do"), ("More could have come with it.", "T"),
         ("There was more for you there.", "T"), ("A few were left behind.", "Do"), ("There were more to take.", "T"))
     add("residue", ("And the rest are mine.", "T"), ("The last cards come to me.", "T"), ("I'll take what's left.", "T"),
@@ -207,9 +240,93 @@ def phrase_groups():
 
     # The game: the winner claims it, the other is gracious.
     add("game-won", ("And I am out.", "N"), ("That's game.", "T"), ("Game. Twenty-one.", "T"),
-        ("I claim the game.", "F"), ("I'm out.", "N"), ("Twenty-one, and thank you.", "T"))
+        ("I claim the game.", "F"), ("I'm out.", "N"), ("Twenty-one, and thank you.", "T"), ("Out!", "Hk"),
+        ("The game is up.", "Gz"))
     add("good-game", ("Good game.", "T"), ("Well played.", "T"), ("Thank you for the game.", "T"),
         ("Well done.", "T"), ("Nicely played.", "T"), ("A good game. Thank you.", "T"))
+
+    # The chatter (play-testing: the talk "VERY verbose", the conversation a
+    # part of the game, as where Cuarenta is played loud and full of sayings).
+    # Heard only when everything is, and said only where it has room. Its
+    # {slots} are filled by the talk: {card}, {cards}, {acard} a rank's name
+    # ("nine", "nines", "a nine"); {value} a total; {taker}, {ataker} the
+    # card that takes it; {old} a build's value before a raise; {mine},
+    # {yours}, {n} the score; {need} the points still needed. Nothing said
+    # claims a card the speaker cannot be known to hold.
+    add("hello", ("Shall we play casino?", "Fs"), ("I do long for a game of cassino.", "Re"), ("A game of cassino?", "T"),
+        ("Fancy a game?", "T"), ("Shall we?", "T"), ("Ready for a game?", "T"), ("Care for a hand or two?", "T"))
+    add("hello-back", ("Gladly.", "T"), ("Let's play.", "T"), ("Deal me in.", "T"), ("With pleasure.", "T"),
+        ("You're on.", "T"), ("I'd love to.", "T"))
+    add("new-hand", ("New hand.", "T"), ("Fresh cards.", "T"), ("Here we go again.", "T"), ("Another hand, then.", "T"),
+        ("Shuffled and ready.", "T"), ("A new hand. Good luck.", "T"), ("Cards again.", "T"))
+    add("deal-more", ("Four more each.", "T"), ("More cards.", "T"), ("Four apiece.", "T"), ("Here's four more.", "T"),
+        ("And four each.", "T"), ("Fresh cards for us both.", "T"), ("Four more, and on we go.", "T"),
+        ("Another four.", "T"), ("Cards coming.", "T"))
+    add("last-reply", ("Make them count.", "T"), ("Already?", "T"), ("The last ones, then.", "T"),
+        ("The boat's leaving!", "Bt"), ("Down to the wire.", "T"), ("Last cards. Choose well.", "T"))
+    add("trail", ("{Acard} for the table.", "Ti"), ("I'll lay down {acard}.", "T"), ("Just {acard}.", "T"),
+        ("The {card} goes down.", "T"), ("Nothing to take. {Acard}.", "T"), ("Just following along: {acard}.", "F"),
+        ("Here's {acard} for you.", "T"), ("{Acard}, and we'll see.", "T"), ("Let's see. {Acard}.", "T"),
+        ("I'll let the {card} go.", "T"))
+    add("trail-ace", ("Ace, you won't fall on me.", "Ec"), ("An ace, and I'll risk it.", "T"), ("I'll let an ace go.", "T"),
+        ("An ace for the table.", "Ti"), ("An ace. Careful, now.", "T"))
+    add("trail-little-casino", ("Little Casino: a point, if you take it.", "Gu"), ("The deuce of spades. Yours, if you can.", "T"),
+        ("A point on the table. Who'll have it?", "T"), ("Little Casino goes down.", "T"))
+    add("trail-big-casino", ("Big Casino goes down.", "T"), ("Two points on the table.", "T"),
+        ("The good ten. Yours, if you can.", "P"), ("Big Casino, for whoever can take it.", "T"))
+    add("take-pair", ("{Cards}.", "T"), ("A pair of {cards}.", "T"), ("{Card} takes {card}.", "T"), ("{Acard} for {acard}.", "T"),
+        ("{Card} on {card}.", "T"), ("I'll pair the {card}.", "T"), ("The {cards} go together.", "T"),
+        ("{Cards}, thank you.", "T"), ("That {card} is mine.", "T"))
+    add("take-sum", ("That makes {value}.", "T"), ("{Value} on the nose.", "T"), ("Adds up to {value}.", "T"),
+        ("{Value}, all told.", "T"), ("And that's {value}.", "T"), ("{Value} exactly.", "T"), ("Those make {value}.", "T"),
+        ("Together, {value}.", "T"), ("I'll take those: {value}.", "T"))
+    add("take-own", ("{Value} out.", "Ka"), ("And there's my {value}.", "T"), ("My {value}, as promised.", "T"),
+        ("The {value} comes home.", "T"), ("Told you: {value}.", "T"), ("Safe and sound: my {value}.", "T"))
+    add("take-theirs", ("I'll have your {value}.", "T"), ("Your {value}? Thank you kindly.", "T"), ("I had {ataker} too.", "T"),
+        ("Thanks for building it.", "T"), ("Your {value} comes to me.", "T"), ("I'll take your build, thanks.", "T"))
+    add("lost-build", ("My build!", "T"), ("Oh, I was building that!", "T"), ("There goes my {value}.", "T"),
+        ("You had one too!", "T"), ("Hey, that was mine!", "T"), ("Oh, you rascal!", "T"), ("Well spotted.", "T"))
+    add("raised-mine", ("Hey, that was my {old}!", "T"), ("{Value} now? Clever.", "T"), ("You've raised my build!", "T"),
+        ("Up to {value}, is it?", "T"), ("My {old}, made {value}.", "T"), ("It's yours now, then.", "T"))
+    add("build-reply", ("{Value}, is it?", "T"), ("So you have {ataker}.", "Da"), ("I'll remember that {value}.", "T"),
+        ("{Value}? We'll see.", "T"), ("You must have {ataker}, then.", "Da"), ("I'll keep an eye on that.", "T"),
+        ("Noted.", "T"), ("Building, are we?", "T"), ("{Value}. Interesting.", "T"))
+    add("sweep-reply", ("Well played.", "T"), ("Clean as a whistle.", "T"), ("Not a card left!", "T"),
+        ("It's hard on those who get swept.", "MP"), ("Never leave one card alone, they say.", "SM"),
+        ("Oh, nicely done.", "T"))
+    add("big-casino-gone", ("Such luck!", "Ar"), ("There goes Big Casino.", "T"), ("I had my eye on that one.", "T"),
+        ("Ah, the good ten.", "P"), ("Two points, just like that.", "T"), ("Everyone was after that one.", "Rd"))
+    add("little-casino-gone", ("There goes the little one.", "T"), ("Ah, the deuce of spades.", "T"), ("A point for you.", "T"),
+        ("Little Casino, gone.", "T"), ("The good two. Nicely done.", "P"))
+    add("ace-gone", ("There goes an ace.", "T"), ("An ace for you.", "T"), ("Ah, that ace.", "T"), ("One ace gone.", "T"),
+        ("A point, that ace.", "T"))
+    add("haul-reply", ("Leave some for me!", "T"), ("That's a handful.", "T"), ("Quite a haul.", "T"),
+        ("Save a few for me.", "T"), ("That was a big casino for you.", "Fs"))
+    add("think", ("Hmm.", "T"), ("Let me see.", "T"), ("Now then.", "T"), ("Decisions, decisions.", "T"),
+        ("Let me think.", "T"), ("What have we here?", "T"), ("Keep track of the cards, they say.", "Mo"),
+        ("Cards in hand aren't yours till taken.", "Bg"), ("Tocca a me. My turn.", "It"), ("Hmm, what to do.", "T"))
+    add("think-take", ("With this one, I'll fall on you.", "Ec"), ("Aha.", "T"), ("I think I see something.", "T"),
+        ("Now, what have we here?", "T"), ("Oh, I like this.", "T"), ("Wait, wait. Yes.", "T"))
+    add("score-mine", ("I have {mine}; you have {yours}.", "T"), ("{Mine} to {yours}, my way.", "T"),
+        ("That's {mine} to {yours}.", "T"), ("{Mine}, {yours}. I lead.", "T"), ("I lead, {mine} to {yours}.", "T"))
+    add("score-yours", ("You lead, {yours} to {mine}.", "T"), ("{Yours} to {mine}. Your lead.", "T"),
+        ("You have {yours}; I have {mine}.", "T"), ("{Yours}, {mine}. You're ahead.", "T"), ("You're up, {yours} to {mine}.", "T"))
+    add("score-tie", ("{N} all.", "T"), ("All square at {n}.", "T"), ("{N} each.", "T"), ("Level, at {n}.", "T"),
+        ("Even: {n} apiece.", "T"))
+    add("score-reply-ahead", ("So far, so good.", "T"), ("I'll take it.", "T"), ("Long may it last.", "T"),
+        ("Early days yet.", "T"), ("The cards are kind tonight.", "T"))
+    add("score-reply-behind", ("I'll catch up.", "T"), ("Plenty of game left.", "T"), ("Not over yet.", "T"),
+        ("My turn next hand.", "T"), ("We'll see about that.", "T"))
+    add("score-reply-tie", ("Neck and neck.", "T"), ("Anyone's game.", "T"), ("As it should be.", "T"), ("Nothing in it.", "T"))
+    add("need", ("Just {need} more.", "T"), ("{Need} to go.", "T"), ("Only {need} more for me.", "T"),
+        ("{Need} more, and I'm out.", "N"), ("I'll make cards. That's all I need.", "L"))
+    add("rematch", ("Another game?", "T"), ("Same again?", "T"), ("Shall we go again?", "T"), ("Best of seven?", "Ws"),
+        ("One more?", "T"))
+    add("rematch-reply", ("You're on.", "T"), ("Gladly.", "T"), ("Let me win one back.", "T"), ("Let me win once!", "Tn"),
+        ("Deal them up.", "T"))
+    add("idle", ("Take your time.", "T"), ("No hurry.", "T"), ("At your leisure.", "Ol"), ("Tocca a te. Your turn.", "It"),
+        ("If I were a card, I'd be Big Casino.", "Rd"), ("Thinking it over?", "T"), ("Whenever you're ready.", "T"),
+        ("A tough one?", "T"))
     return out
 
 

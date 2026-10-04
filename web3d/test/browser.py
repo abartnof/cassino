@@ -19,6 +19,8 @@ read back by eye (docs/TABLE3D.md section 10, T3).
 """
 
 import io
+import json
+import re
 import sys
 from pathlib import Path
 
@@ -29,6 +31,19 @@ ROOT = Path(__file__).resolve().parents[2]
 PAGE = ROOT / "web3d" / "cassino3d.html"
 SHOTS = next((Path(a) for a in sys.argv[1:] if not a.startswith("--")), None)
 LOCAL = ("file:", "data:", "blob:")
+WORDS = json.loads((ROOT / "web3d" / "words.json").read_text())
+
+
+def wordings(*groups):
+    """Every way the phrase bank says these groups."""
+    return {WORDS["texts"][k] for g in groups for k in WORDS["groups"][g]}
+
+
+def said_as(heard, *groups):
+    """The lines heard that are these groups' wordings, their {slots}
+    filled with anything."""
+    patterns = [re.compile("^" + re.sub(r"\\\{\w+\\\}", ".+", re.escape(w)) + "$", re.I) for w in wordings(*groups)]
+    return {h for h in heard if any(p.match(h) for p in patterns)}
 
 
 def shot(page, name):
@@ -470,11 +485,13 @@ def check_talk(browser, failures):
             break
     if dealt_at is None or not after:
         failures.append("the deal waited for the house rules to be agreed")
-    # Royal: your opponent asks about sweeps; after your answer says the rest
-    # of the house rules at once (Royal, low deals); and, the cut seen, whose
-    # deal it is: three boxes, not one a line.
-    if len(theirs) != 3:
+    # Royal: your opponent proposes the game; asks about sweeps; after your
+    # answer says the rest of the house rules at once (Royal, low deals);
+    # and, the cut seen, whose deal it is: four boxes, not one a line.
+    if len(theirs) != 4:
         failures.append(f"your opponent's lines at one moment were not said as one: {sorted(theirs)}")
+    if not theirs & wordings("hello"):
+        failures.append(f"the game was not proposed before the house rules: {sorted(theirs)}")
     page.evaluate("localStorage.setItem('cassino.prefs', JSON.stringify({ talk: 'none' }))")
     page.reload()
     page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
@@ -484,6 +501,24 @@ def check_talk(browser, failures):
         heard += page.evaluate("window.cassino3d.said()")
     if heard:
         failures.append(f"talk set to quiet, but said: {heard[:2]}")
+    page.context.close()
+    # Everything said (play-testing: "VERY verbose"): the moves remarked as
+    # they are made, and your opponent, kept waiting, says so.
+    page = open_page(browser, "seed=7&speed=2&idle=1500", calm=True)
+    page.evaluate("""() => { window.heardAll = new Set();
+        setInterval(() => { for (const l of window.cassino3d.said()) window.heardAll.add(l.words); }, 40); }""")
+    made = 0
+    while made < 4 and play_by_clicking(page, failures, made + 500):
+        made += 1
+    settle(page)
+    page.wait_for_timeout(3000)
+    heard = set(page.evaluate("[...window.heardAll]"))
+    if len(said_as(heard, "trail", "trail-ace", "take-pair", "take-sum", "build-reply", "think", "think-take", "take-own", "take-theirs")) < 3:
+        failures.append(f"the moves were not remarked: {sorted(heard)}")
+    if not heard & wordings("idle"):
+        failures.append(f"your opponent, kept waiting, said nothing: {sorted(heard)}")
+    if page.errors:
+        failures.append(f"console errors with everything said: {page.errors[:5]}")
     page.context.close()
 
 

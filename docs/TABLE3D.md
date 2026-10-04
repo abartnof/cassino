@@ -152,12 +152,34 @@ the clinches ("That's the cards." / "Seven spades."), sometimes "You left
 the five." (the *dejado* custom), and the count's chant. Before the game,
 the settings are staged as Jack London's players' negotiation ("Do you count
 sweeps?" … "Low deals."), answered by your settings either way, once: a
-tied cut is only cut again ("Equal. Cut again."). A plain
-capture says nothing, so the table does not chatter on every move; one that
+tied cut is only cut again ("Equal. Cut again."). A capture that
 takes a casino card ("Now I have Big Casino.") or a haul of four table cards
 or more ("A good haul.") is remarked by its maker, unless a sweep or cash
 speaks for it. Cards tied at 26 each are said before the chant ("The cards
-are a tie.", Harper's Bazaar, 1883). `tools/phrases.py` holds the bank, each
+are a tie.", Harper's Bazaar, 1883).
+
+**The chatter** (the third play-testing asked for the talk "VERY verbose",
+the conversation a part of the game, as it is in Cuarenta, played loud and
+full of sayings: "you have to turn into a chatterbox", research/05). With
+everything said, every move is remarked: a trail named ("A seven for the
+table."; Little Casino laid down as "a point, if you take it"), a pair or a
+sum claimed ("Nine takes nine.", "That makes eight."), your own build taken
+in ("Eight out.", KASA's call) or your opponent's ("I'll have your eight.",
+"My build!"), a build answered with what it tells of the builder's hand
+("So you have an eight."), a raise felt by the builder ("Hey, that was my
+eight!"), a sweep, a Casino or an ace felt by the other ("It's hard on
+those who get swept.", 1878; "Such luck!"). The dealer announces a new hand
+and each deal, "Last." is answered ("The boat's leaving!"), your opponent
+thinks aloud now and then before a move ("With this one, I'll fall on
+you.", Cuarenta), proposes the game before the house rules, says the score
+after each hand and the end in sight, offers a rematch, and, kept waiting,
+says so ("Take your time."). The talk follows each build's controller
+through the events (`talk.js` `followBuilds`, checked against the engine's
+table at every step). Chatter fills the gaps and yields to the calls: the
+dialogue leaves a remark out if it would make a call of a later moment
+late, or come long after its own (`dialogue.js` `SLACK`, `LATE`), so a
+chatty table plays at the same pace as a quiet one. Nothing said claims a
+card the speaker cannot be known to hold. `tools/phrases.py` holds the bank, each
 phrase in five or more wordings for the frequent moments, each with a source
 letter; `docs/PHRASES.md` is generated from it. The talk is kind
 (play-testing asked for it kid-friendly): nothing said belittles anyone, and
@@ -176,9 +198,10 @@ next popup waits for the last (`hud.js` `popupsOf`), so a line that
 brings one waits too. At the Instant speed nothing waits for the talk.
 What one speaker says at one moment is said in one box (`talk.js`
 `chunk`: "Low deals. My deal."), so nobody waits through a run of lines
-one by one. A setting, "Table talk", chooses everything, only the calls
-that carry the game (the house rules, the build calls, "Last.", a sweep,
-cash, the count, the game won), or nothing (`talk.js` `heard`).
+one by one. A setting, "Table talk", chooses everything, the chatter
+included; only the calls that carry the game (the house rules, the build
+calls, "Last.", a sweep, cash, the count, the game won); or nothing
+(`talk.js` `heard`).
 
 ## 8. The overlay
 

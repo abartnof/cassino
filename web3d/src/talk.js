@@ -55,19 +55,91 @@ function call(e) {
   return e.multiple ? `builds-${e.value}` : `build-${e.value}`;
 }
 
+// The builds on the table, followed through a game's events: each its cards,
+// its controller and its value, so the talk knows whose build a capture
+// takes or a raise changes. `see(e)` returns what the event did: `took`,
+// the builds a capture took; `raised`, the build a raise or an addition
+// changed, as it was before.
+export function followBuilds() {
+  let builds = [];
+  return {
+    builds: () => builds,
+    see(e) {
+      if (e.kind === "dealt" && e.deal === 1) builds = [];
+      if (e.kind !== "played") return {};
+      const who = e.you ? "you" : "them";
+      if (e.type === "build") {
+        const cards = [e.card, ...(e.loose ?? [])].filter(Boolean).map((c) => c.card);
+        const onto = e.onto && builds.find((b) => b.cards.has(e.onto.card));
+        if (!onto) {
+          builds.push({ cards: new Set(cards), who, value: e.value });
+          return {};
+        }
+        const raised = { who: onto.who, value: onto.value };
+        for (const c of cards) onto.cards.add(c);
+        onto.who = who;
+        onto.value = e.value;
+        return { raised };
+      }
+      if (e.type === "take") {
+        const taken = new Set((e.taken ?? []).map((c) => c.card));
+        const took = builds.filter((b) => [...b.cards].some((c) => taken.has(c)));
+        builds = builds.filter((b) => !took.includes(b));
+        return { took };
+      }
+      return {};
+    },
+  };
+}
+
+// Numbers and cards in words, for the slots of the chatter's lines.
+const NUMBER = ["nothing", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve",
+  "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"];
+const TENS = { 2: "twenty", 3: "thirty", 4: "forty", 5: "fifty" };
+export function number(n) {
+  if (n <= 20) return NUMBER[n];
+  const tens = TENS[Math.floor(n / 10)];
+  return n % 10 ? `${tens}-${NUMBER[n % 10]}` : tens;
+}
+const RANK = ["", "ace", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "jack", "queen", "king"];
+const named = (rank) => ({
+  card: RANK[rank],
+  cards: rank === 6 ? "sixes" : `${RANK[rank]}s`,
+  acard: `${rank === 1 || rank === 8 ? "an" : "a"} ${RANK[rank]}`,
+});
+// The card that takes a build of a value (an ace takes fourteen): its name,
+// and with its article.
+const taker = (value) => RANK[value === 14 ? 1 : value];
+const takers = (value) => ({ taker: taker(value), ataker: named(value === 14 ? 1 : value).acard });
+
+// Who sits across: the other player.
+const other = (who) => (who === "you" ? "them" : "you");
+// A score this close to 21 is worth remarking, the points still needed:
+// no more than the cards' three, so that "I'll make cards. That's all I
+// need." is true when said.
+const NEAR = 3;
+
 export function speech(state, since = 0) {
   const out = [];
   const rules = state.rules ?? {};
+  const follow = followBuilds();
   state.events.forEach((e, at) => {
+    const did = follow.see(e);
     if (at < since) return;
     const say = (who, phrase, extra = {}) => out.push({ who, phrase, at, kind: e.kind, ...extra });
+    // A remark: chatter, heard only when everything is, and said only where
+    // it has room (dialogue.js).
+    const remark = (who, phrase, vars, extra = {}) => say(who, phrase, { chatter: true, ...(vars ? { vars } : {}), ...extra });
     const who = e.you ? "you" : "them";
     switch (e.kind) {
       case "cut":
         // The house rules, agreed before the first cut: your opponent asks,
         // and your settings answer. Equal cards are cut again, and the rules
-        // are not asked twice.
+        // are not asked twice. First, the game proposed and accepted, said
+        // whatever the room (nothing waits on the opening's talk).
         if (!state.events.slice(0, at).some((p) => p.kind === "cut")) {
+          remark("them", "hello", null, { keep: true });
+          remark("you", "hello-back", null, { keep: true });
           say("them", "sweeps-ask");
           say("you", rules.sweeps === false ? "sweeps-no" : "sweeps-yes");
           if (rules.game === "royal") say("them", "royal");
@@ -79,33 +151,31 @@ export function speech(state, since = 0) {
       case "first_dealer":
         say("them", e.you ? "your-deal" : "my-deal");
         break;
-      case "dealt":
-        if (e.last) say(e.you_deal ? "you" : "them", "last");
+      case "dealt": {
+        const dealer = e.you_deal ? "you" : "them";
+        if (e.deal === 1 && e.hand > 1) remark(dealer, "new-hand");
+        else if (e.deal > 1 && !e.last) remark(dealer, "deal-more");
+        if (e.last) {
+          say(dealer, "last");
+          remark(other(dealer), "last-reply");
+        }
         break;
+      }
       case "played":
-        if (e.type === "build") say(who, call(e));
-        if (e.type === "take") {
-          const remark = taking(e, following(state.events, at));
-          if (remark) say(who, remark);
-        }
-        // What you left, pointed out (the Dominican dejado): always when it
-        // holds a point card or more than one card, otherwise now and then.
-        if (e.you && e.left?.length) {
-          const worth = e.left.length > 1 || e.left.some((c) => POINT_CARDS.has(c.card));
-          if (worth || at % 2 === 0) say("them", e.left.length > 1 ? "left-more" : `left-${e.left[0].rank}`);
-        }
+        played(e, at, who, did, state.events, since, remark, say);
         break;
       case "swept":
         say(who, "sweep");
+        remark(other(who), "sweep-reply");
         break;
       case "cash":
         say(who, "cash");
         break;
       case "clinched":
-        say(who, e.what === "cards" ? "clinch-cards" : "clinch-spades");
+        remark(who, e.what === "cards" ? "clinch-cards" : "clinch-spades");
         break;
       case "residue":
-        if (e.you !== null) say(who, "residue");
+        if (e.you !== null) remark(who, "residue");
         break;
       case "scored": {
         // A tie on the cards scores nobody, and is said first, where the
@@ -115,15 +185,95 @@ export function speech(state, since = 0) {
         e.count.lines.forEach((line, i) => say(line.who, chant(line), { line: i }));
         break;
       }
-      case "game_ends":
-        say(e.you_won ? "you" : "them", "game-won");
-        say(e.you_won ? "them" : "you", "good-game");
+      case "hand_ends": {
+        // The score said aloud by your opponent, who keeps it, and
+        // answered; the end in sight remarked. Not when the game is over:
+        // the winner claims it instead.
+        if (state.events.slice(at + 1).some((n) => n.kind === "game_ends" && n.hand === e.hand)) break;
+        const { you, them } = e.totals;
+        const vars = { mine: number(them), yours: number(you) };
+        if (you === them) {
+          remark("them", "score-tie", { n: number(you) });
+          remark("you", "score-reply-tie");
+        } else {
+          remark("them", them > you ? "score-mine" : "score-yours", vars);
+          remark("you", you > them ? "score-reply-ahead" : "score-reply-behind");
+        }
+        const target = state.target ?? 21;
+        const near = you >= them ? "you" : "them";
+        const need = target - e.totals[near];
+        if (need <= NEAR && need > 0) remark(near, "need", { need: number(need) });
         break;
+      }
+      case "game_ends": {
+        const winner = e.you_won ? "you" : "them";
+        say(winner, "game-won");
+        remark(other(winner), "good-game");
+        remark(winner, "rematch");
+        remark(other(winner), "rematch-reply");
+        break;
+      }
       default:
         break;
     }
   });
   return out;
+}
+
+// What a move says: the build's call and its answer; a capture's claim, in
+// its own words, and what the other player feels of it; a trail named; what
+// you left pointed out; and now and then your opponent thinking aloud first.
+function played(e, at, who, did, events, since, remark, say) {
+  const them = other(who);
+  const card = e.card ?? {};
+  // Your opponent thinks aloud as your move is seen, before theirs: now and
+  // then, and only about a move in this batch.
+  if (!e.you && at % 3 === 0 && at - 1 >= since) {
+    remark("them", e.type === "take" ? "think-take" : "think", null, { at: at - 1 });
+  }
+  if (e.type === "build") {
+    say(who, call(e));
+    const value = number(e.value);
+    if (did.raised && did.raised.who !== who) remark(them, "raised-mine", { old: number(did.raised.value), value });
+    else remark(them, "build-reply", { value, ...takers(e.value) });
+  }
+  if (e.type === "trail") {
+    if (card.card === "2S") remark(who, "trail-little-casino");
+    else if (card.card === "TD") remark(who, "trail-big-casino");
+    else if (card.rank === 1) remark(who, "trail-ace");
+    else if (card.rank) remark(who, "trail", named(card.rank));
+  }
+  if (e.type === "take") {
+    const then = following(events, at);
+    const stolen = (did.took ?? []).find((b) => b.who !== who);
+    const own = (did.took ?? []).find((b) => b.who === who);
+    // Every card the capture brings in, the card played among them.
+    const taken = [card, ...(e.taken ?? [])].map((c) => c.card).filter(Boolean);
+    const loud = then.has("swept") || then.has("cash");
+    if (!loud) {
+      if (stolen) remark(who, "take-theirs", { value: number(stolen.value), ...takers(stolen.value) });
+      else if (own) remark(who, "take-own", { value: number(own.value) });
+      else {
+        const big = taking(e, then);
+        if (big) remark(who, big);
+        else if ((e.groups ?? []).every((g) => g.length === 1 && g[0].rank === card.rank)) remark(who, "take-pair", named(card.rank));
+        else remark(who, "take-sum", { value: number(e.value ?? card.rank) });
+      }
+    }
+    // What the other player feels: a build lost, a Casino or an ace gone,
+    // a haul (a sweep is felt as it is claimed).
+    if (stolen) remark(them, "lost-build", { value: number(stolen.value) });
+    else if (!loud && taken.includes("TD")) remark(them, "big-casino-gone");
+    else if (!loud && taken.includes("2S")) remark(them, "little-casino-gone");
+    else if (!loud && taken.some((c) => c[0] === "A")) remark(them, "ace-gone");
+    else if (!loud && (e.taken?.length ?? 0) >= HAUL) remark(them, "haul-reply");
+  }
+  // What you left, pointed out (the Dominican dejado): always when it
+  // holds a point card or more than one card, otherwise now and then.
+  if (e.you && e.left?.length) {
+    const worth = e.left.length > 1 || e.left.some((c) => POINT_CARDS.has(c.card));
+    if (worth || at % 2 === 0) remark("them", e.left.length > 1 ? "left-more" : `left-${e.left[0].rank}`);
+  }
 }
 
 // The count's pace, from what is to be said (lines with their words, as the
@@ -153,7 +303,7 @@ export function chunk(lines) {
   for (const l of lines) {
     const last = out.at(-1);
     if (last && last.who === l.who && last.delay === l.delay && last.line === undefined && l.line === undefined) {
-      out[out.length - 1] = { ...last, words: `${last.words} ${l.words}` };
+      out[out.length - 1] = { ...last, words: `${last.words} ${l.words}`, chatter: !!(last.chatter && l.chatter) };
     } else out.push(l);
   }
   return out;
@@ -161,11 +311,10 @@ export function chunk(lines) {
 
 // The table talk at a level (a setting): "none"; "calls", what carries the
 // game -- the house rules, the build calls, "Last.", a sweep, cash, the
-// count, the game won; or "all", the remarks too: what was left, a haul or
-// a Casino taken, the clinches, the last cards taken, "Good game.".
-const REMARKS = /^(left-|take-|clinch-|residue$|good-game$)/;
+// count, the game won; or "all", the chatter too: every move remarked, the
+// builds answered, the score said aloud, the game proposed and the rematch.
 export function heard(lines, level) {
   if (level === "none") return [];
-  if (level === "calls") return lines.filter((l) => !REMARKS.test(l.phrase));
+  if (level === "calls") return lines.filter((l) => !l.chatter);
   return lines;
 }
