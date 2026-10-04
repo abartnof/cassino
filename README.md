@@ -8,9 +8,10 @@ Foster wrote in 1897), and is still played in the Dominican Republic, the
 Nordic countries and many family kitchens. This is a version you can play
 against the computer, in Classic or Royal Cassino, and learn as you play.
 
-To play, open **`web3d/cassino3d.html`** in a browser. It is one
-self-contained page, about 3 MB, and needs no installation, no server and no
-network.
+**Play it at [abartnof.github.io/cassino](https://abartnof.github.io/cassino/)**,
+or open `web3d/cassino3d.html` in a browser: it is one self-contained page,
+about 3 MB, and needs no installation, no server and no network, so a copy
+saved to your own machine plays offline.
 
 ## Learning the game
 
