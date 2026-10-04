@@ -358,8 +358,8 @@ def check_trackers(browser, failures):
         page.locator(".tracker-table thead th.spades").hover(timeout=5000)
         page.wait_for_timeout(200)
         tip = page.locator(".tip")
-        if not tip.is_visible() or "Spades" not in tip.inner_text():
-            failures.append("no tip on the trackers' Spades header")
+        if not tip.is_visible() or "most spades is worth 1 point" not in tip.inner_text():
+            failures.append(f"no tip on the trackers' Spades header saying what it is worth: {tip.inner_text()!r}")
     except Exception as e:  # something lies over the panel
         failures.append(f"the trackers' panel could not be pointed at: {str(e).splitlines()[0]}")
     page.locator(".aids-fold").click()

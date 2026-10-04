@@ -56,6 +56,16 @@ test("the trackers as a table: a column for each point, a row for each player, a
   assert.deepEqual(table.columns.map((c) => c.head), ["Cards", "Spades", "Aces", "10♦", "2♠"], "no sweeps column when sweeps are not scored");
   assert.ok(table.columns.every((c) => c.tip.length > 20), "every column says what it counts and what it scores");
   assert.match(table.columns[0].tip, /27/);
+  // Each header's tip says first what its point is worth (play-testing:
+  // "Getting X (aka Big Casino) is worth n points").
+  const tip = (key) => table.columns.find((c) => c.key === key).tip;
+  assert.match(tip("cards"), /^Taking the most cards is worth 3 points/);
+  assert.match(tip("spades"), /^Taking the most spades is worth 1 point/);
+  assert.equal(tip("aces"), "Each ace you take is worth 1 point.");
+  assert.equal(tip("big_casino"), "Taking the ten of diamonds (Big Casino) is worth 2 points.");
+  assert.equal(tip("little_casino"), "Taking the two of spades (Little Casino) is worth 1 point.");
+  const sweeps = trackerTable(trackers({ ...state, rules: { sweeps: true } })).columns.find((c) => c.key === "sweeps").tip;
+  assert.equal(sweeps, "Each sweep, taking every card on the table, is worth 1 point.");
   assert.deepEqual(table.rows.map((r) => r.name), ["Opp", "You"], "your opponent's row above yours, as they sit across the table");
   const cell = (who, key) => table.rows.find((r) => r.who === who).cells.find((c) => c.key === key);
   // Values only in the cells; the meaning is in the headers and the tips.

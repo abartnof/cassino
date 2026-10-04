@@ -91,13 +91,15 @@ export function trackers(state) {
 // each player; in each cell only the value (a dash for nothing taken), its
 // look ("won": the point is theirs for certain; otherwise "", every cell
 // alike), and a tip in words. `watching`: the seats are South and North.
+// Each header's tip says first what its point is worth (play-testing:
+// "Getting X (aka Big Casino) is worth n points"), then how it is won.
 const COLUMNS = {
-  cards: { head: "Cards", tip: "Cards taken this hand. Most cards scores 3 points; 27 of the 52 makes it certain." },
-  spades: { head: "Spades", tip: "Spades taken this hand. Most spades scores 1 point; 7 of the 13 makes it certain." },
-  aces: { head: "Aces", tip: "Aces taken this hand: a point each." },
-  big_casino: { head: "10♦", tip: "Big Casino, the ten of diamonds: 2 points to whoever takes it." },
-  little_casino: { head: "2♠", tip: "Little Casino, the two of spades: 1 point to whoever takes it." },
-  sweeps: { head: "Sweeps", tip: "Sweeps made this hand, each clearing the table: a point each." },
+  cards: { head: "Cards", tip: "Taking the most cards is worth 3 points. 27 of the 52 makes it certain." },
+  spades: { head: "Spades", tip: "Taking the most spades is worth 1 point. 7 of the 13 makes it certain." },
+  aces: { head: "Aces", tip: "Each ace you take is worth 1 point." },
+  big_casino: { head: "10♦", tip: "Taking the ten of diamonds (Big Casino) is worth 2 points." },
+  little_casino: { head: "2♠", tip: "Taking the two of spades (Little Casino) is worth 1 point." },
+  sweeps: { head: "Sweeps", tip: "Each sweep, taking every card on the table, is worth 1 point." },
 };
 const GOAL = { cards: { of: 27, word: "cards", point: "most cards" }, spades: { of: 7, word: "spades", point: "most spades" } };
 
