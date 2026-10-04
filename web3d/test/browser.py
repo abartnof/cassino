@@ -703,8 +703,13 @@ def check_settings(browser, failures):
     chosen = page.evaluate("window.cassino3d.selection().chosen")
     if not chosen or "in your hand" not in told:
         failures.append(f"keyboard: Enter did not choose the focused card ({chosen!r}, told {told!r})")
-    if not page.evaluate("window.cassino3d.chips()"):
-        failures.append("keyboard: no chips for the card chosen")
+    # The move bar answers the card chosen. A card alone can only trail, and
+    # not while a build of yours is on the table (the game here has no
+    # seed, so sometimes there is one): then every button is dimmed.
+    bar = page.evaluate("[...document.querySelectorAll('.move-bar .chips > *')].map((c) => [c.textContent, !c.disabled])")
+    yours = any(i["build"] and i["build"]["controller"] == "you" for i in page.evaluate("window.cassino3d.state().table"))
+    if not bar or [label for label, lit in bar if lit] != ([] if yours else ["Trail"]):
+        failures.append(f"keyboard: the move bar for the card chosen shows {bar} (a build of yours on the table: {yours})")
     page.keyboard.press("ArrowUp")
     if "on the table" not in page.locator(".focus-told").inner_text():
         failures.append("keyboard: ArrowUp did not reach the table")
