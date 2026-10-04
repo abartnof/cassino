@@ -58,7 +58,7 @@ The sum shows beside the **Take** button as you tap cards.
 
 - You can add a set to any build, yours or your opponent's: a card from your hand, alone or with table cards, that makes its total.
 - A multiple build can't be raised: its total stays until someone takes it.
-- Its badge reads **8s**, and its call is plural: "Building eights."
+- Its badge reads **8s**, and you'll hear "Building eights."
 
 # Royal: jacks, queens and kings count
 
@@ -91,14 +91,14 @@ The score at the top left keeps every hand: its arrow opens each hand's points.
 
 # Table talk
 
-Cassino players talk as they play, and some of it carries the game:
+Cassino players talk as they play, and some of it matters to the game:
 
 - **"Low deals."** Before the game: the lower cut card deals. Your opponent first asks whether you count sweeps, as Jack London's players did.
 - **"Building eight."** A build of 8. **"Building eights."** A multiple build. A raise is called by its new total: **"Nine."**
 - **"Last."** The dealer's warning: the last deal of the hand.
 - **"Clear!"** A sweep: every card on the table taken.
 - **"Cash."** An ace taking an ace.
-- **"That's the cards."**, **"Seven spades."** A point made sure before the end: 27 cards, or 7 spades.
+- **"That's the cards."**, **"Seven spades."** A point already won before the hand ends: 27 cards, or 7 spades.
 - **"You left the five."** A card you could have taken, pointed out, as players do in the Dominican Republic.
 
-With **Table talk** set to Everything, the players also chat: every move remarked, builds answered, the score said after each hand. **The calls** keeps only the lines above, and **Quiet** keeps nothing. Every phrase comes from the old rule books, modern rules or players around the world.
+With **Table talk** set to Everything, the players also chat: every move remarked, builds answered, the score said after each hand. **The calls** keeps only the lines above, and **Quiet** keeps nothing.
