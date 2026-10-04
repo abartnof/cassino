@@ -621,12 +621,34 @@ Sources:
 |  | I'll lay down {acard}. | T |
 |  | Just {acard}. | T |
 |  | The {card} goes down. | T |
-|  | Nothing to take. {Acard}. | T |
 |  | Just following along: {acard}. | F |
 |  | Here's {acard} for you. | T |
 |  | {Acard}, and we'll see. | T |
 |  | Let's see. {Acard}. | T |
 |  | I'll let the {card} go. | T |
+| `trail-fresh` | Nothing to take. {Acard}. | T |
+|  | A fresh start: {acard}. | T |
+|  | Back to it: {acard}. | T |
+|  | Starting again with {acard}. | T |
+|  | Something to begin with: {acard}. | T |
+| `trail-again` | Still nothing for me. | T |
+|  | Another for the table. | T |
+|  | Nothing again: {acard}. | T |
+|  | Biding my time: {acard}. | T |
+|  | Patience. {Acard}. | T |
+|  | The table grows: {acard}. | T |
+| `take-at-last` | At last! | T |
+|  | Finally, something. | T |
+|  | That's more like it. | T |
+|  | Worth the wait. | T |
+|  | About time I took one. | T |
+|  | There we are, at last. | T |
+| `take-trailed` | Thanks for the {card}. | T |
+|  | Just the {card} I wanted. | T |
+|  | I was hoping for that {card}. | T |
+|  | That {card} didn't stay long. | T |
+|  | Your {card} comes in handy. | T |
+|  | The {card}? I'll have it. | T |
 | `trail-ace` | Ace, you won't fall on me. | Ec |
 |  | An ace, and I'll risk it. | T |
 |  | I'll let an ace go. | T |
@@ -688,10 +710,31 @@ Sources:
 |  | I'll remember that {value}. | T |
 |  | {Value}? We'll see. | T |
 |  | You must have {ataker}, then. | Da |
-|  | I'll keep an eye on that. | T |
-|  | Noted. | T |
-|  | Building, are we? | T |
-|  | {Value}. Interesting. | T |
+|  | {Ataker} in your hand, then. | Da |
+|  | Holding {ataker}, are you? | T |
+|  | That means {ataker}. | Da |
+|  | One {taker} accounted for. | T |
+| `build-on-mine` | Building on my {card}? | T |
+|  | So that's what my {card} was for. | T |
+|  | My {card}, put to work. | T |
+|  | You found a use for my {card}. | T |
+|  | My {card}, made {value}. | T |
+| `build-more-reply` | Making sure of it. | T |
+|  | More {values}, then. | T |
+|  | Piling on the {values}. | T |
+|  | Locked up tight. | T |
+|  | {Values}, and more of them. | T |
+| `joined-mine` | So you have {ataker} too. | Da |
+|  | Taking over my {value}? | T |
+|  | My build's yours now. | T |
+|  | {Values} all round, then. | T |
+|  | We're both building {values}? | T |
+| `own-build-reply` | As I thought. | T |
+|  | I thought you had it. | T |
+|  | There it goes. | T |
+|  | Just as you said. | T |
+|  | No surprise there. | T |
+|  | Fair enough. | T |
 | `sweep-reply` | Well played. | T |
 |  | Clean as a whistle. | T |
 |  | Not a card left! | T |

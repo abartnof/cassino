@@ -209,7 +209,18 @@ you.", Cuarenta), names Royal's values as the game begins, says the score
 after each hand and the end in sight, offers a rematch, and, kept waiting,
 says so ("Take your time."). The talk follows each build's controller
 through the events (`talk.js` `followBuilds`, checked against the engine's
-table at every step). Chatter fills the gaps and yields to the calls: the
+table at every step), and the run of play (`followPlay`; the sixth
+play-testing found the talk "staccato", each line about its own move
+alone): a capture of the card just trailed ("Thanks for the king."), a
+build on it ("So that's what my two was for."), a build taken back by its
+builder answered now and then ("As I thought."), one added to, by its
+builder or by the other ("Making sure of it.", "Taking over my eight?"),
+the third trail running and the capture that ends it ("Still nothing for
+me.", "At last!"), and a trail onto a table swept clean, the one trail
+that can truly say "Nothing to take." Each of these takes the place of a
+plainer remark, so the table says no more than before; and a build is
+always answered with what it tells, never an empty "Noted.". Chatter fills
+the gaps and yields to the calls: the
 dialogue leaves a remark out if it would make a call of a later moment
 late, or come long after its own (`dialogue.js` `SLACK`, `LATE`), so a
 chatty table plays at the same pace as a quiet one. Nothing said claims a

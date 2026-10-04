@@ -171,7 +171,11 @@ legal move. RULES.md now says each held card answers for one build value.
   cards and in the settings, the lesser aid first; and the move bar's
   places fixed, the running sum's among them, so nothing moves as a move
   is chosen (two moves of a kind share a place, their words fitted to it),
-  and each move's button faintly outlined.
+  and each move's button faintly outlined. The verbose talk made a
+  conversation: each remark follows from the moves before it (a capture of
+  the card just trailed, a build on it, a build taken back and answered,
+  a build joined or made surer, a run of trails and the capture that ends
+  it, a trail onto a table swept clean), in place of a plainer line.
 - **The South African game, researched**
   (`research/12-south-african-khasino.md`): KASA's rulebooks and its own
   online game as the canonical sources, twenty open-source engines, and

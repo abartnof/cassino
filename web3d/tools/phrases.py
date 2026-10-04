@@ -252,9 +252,11 @@ def phrase_groups():
     # Heard only when everything is, and said only where it has room. Its
     # {slots} are filled by the talk: {card}, {cards}, {acard} a rank's name
     # ("nine", "nines", "a nine"); {value} a total; {taker}, {ataker} the
-    # card that takes it; {old} a build's value before a raise; {mine},
-    # {yours}, {n} the score; {need} the points still needed. Nothing said
-    # claims a card the speaker cannot be known to hold.
+    # card that takes it; {values} a build's value in the plural ("eights");
+    # {old} a build's value before a raise; {mine}, {yours}, {n} the score;
+    # {need} the points still needed. Nothing said claims a card the speaker
+    # cannot be known to hold, nor what the speaker cannot know (that a
+    # trail had nothing to take, except on a table swept clean).
     add("new-hand", ("New hand.", "T"), ("Fresh cards.", "T"), ("Here we go again.", "T"), ("Another hand, then.", "T"),
         ("Shuffled and ready.", "T"), ("A new hand. Good luck.", "T"), ("Cards again.", "T"))
     add("deal-more", ("Four more each.", "T"), ("More cards.", "T"), ("Four apiece.", "T"), ("Here's four more.", "T"),
@@ -263,9 +265,21 @@ def phrase_groups():
     add("last-reply", ("Make them count.", "T"), ("Already?", "T"), ("The last ones, then.", "T"),
         ("The boat's leaving!", "Bt"), ("Down to the wire.", "T"), ("Last cards. Choose well.", "T"))
     add("trail", ("{Acard} for the table.", "Ti"), ("I'll lay down {acard}.", "T"), ("Just {acard}.", "T"),
-        ("The {card} goes down.", "T"), ("Nothing to take. {Acard}.", "T"), ("Just following along: {acard}.", "F"),
+        ("The {card} goes down.", "T"), ("Just following along: {acard}.", "F"),
         ("Here's {acard} for you.", "T"), ("{Acard}, and we'll see.", "T"), ("Let's see. {Acard}.", "T"),
         ("I'll let the {card} go.", "T"))
+    # The run of play (the sixth play-testing: the talk "staccato", each line
+    # about its own move): a trail onto a table swept clean, and the third
+    # trail running; a capture that ends such a run, and one of the card
+    # just trailed.
+    add("trail-fresh", ("Nothing to take. {Acard}.", "T"), ("A fresh start: {acard}.", "T"), ("Back to it: {acard}.", "T"),
+        ("Starting again with {acard}.", "T"), ("Something to begin with: {acard}.", "T"))
+    add("trail-again", ("Still nothing for me.", "T"), ("Another for the table.", "T"), ("Nothing again: {acard}.", "T"),
+        ("Biding my time: {acard}.", "T"), ("Patience. {Acard}.", "T"), ("The table grows: {acard}.", "T"))
+    add("take-at-last", ("At last!", "T"), ("Finally, something.", "T"), ("That's more like it.", "T"),
+        ("Worth the wait.", "T"), ("About time I took one.", "T"), ("There we are, at last.", "T"))
+    add("take-trailed", ("Thanks for the {card}.", "T"), ("Just the {card} I wanted.", "T"), ("I was hoping for that {card}.", "T"),
+        ("That {card} didn't stay long.", "T"), ("Your {card} comes in handy.", "T"), ("The {card}? I'll have it.", "T"))
     add("trail-ace", ("Ace, you won't fall on me.", "Ec"), ("An ace, and I'll risk it.", "T"), ("I'll let an ace go.", "T"),
         ("An ace for the table.", "Ti"), ("An ace. Careful, now.", "T"))
     add("trail-little-casino", ("Little Cassino: a point, if you take it.", "Gu"), ("The deuce of spades. Yours, if you can.", "T"),
@@ -286,9 +300,21 @@ def phrase_groups():
         ("You had one too!", "T"), ("Hey, that was mine!", "T"), ("Oh, you rascal!", "T"), ("Well spotted.", "T"))
     add("raised-mine", ("Hey, that was my {old}!", "T"), ("{Value} now? Clever.", "T"), ("You've raised my build!", "T"),
         ("Up to {value}, is it?", "T"), ("My {old}, made {value}.", "T"), ("It's yours now, then.", "T"))
+    # A build answered with what it tells of the builder's hand (never an
+    # empty "Noted."); or, where it says more, for the card the other just
+    # trailed, a build made surer by its builder, or another's build joined.
+    # And a build taken back by its builder, as its call said, answered.
     add("build-reply", ("{Value}, is it?", "T"), ("So you have {ataker}.", "Da"), ("I'll remember that {value}.", "T"),
-        ("{Value}? We'll see.", "T"), ("You must have {ataker}, then.", "Da"), ("I'll keep an eye on that.", "T"),
-        ("Noted.", "T"), ("Building, are we?", "T"), ("{Value}. Interesting.", "T"))
+        ("{Value}? We'll see.", "T"), ("You must have {ataker}, then.", "Da"), ("{Ataker} in your hand, then.", "Da"),
+        ("Holding {ataker}, are you?", "T"), ("That means {ataker}.", "Da"), ("One {taker} accounted for.", "T"))
+    add("build-on-mine", ("Building on my {card}?", "T"), ("So that's what my {card} was for.", "T"), ("My {card}, put to work.", "T"),
+        ("You found a use for my {card}.", "T"), ("My {card}, made {value}.", "T"))
+    add("build-more-reply", ("Making sure of it.", "T"), ("More {values}, then.", "T"), ("Piling on the {values}.", "T"),
+        ("Locked up tight.", "T"), ("{Values}, and more of them.", "T"))
+    add("joined-mine", ("So you have {ataker} too.", "Da"), ("Taking over my {value}?", "T"), ("My build's yours now.", "T"),
+        ("{Values} all round, then.", "T"), ("We're both building {values}?", "T"))
+    add("own-build-reply", ("As I thought.", "T"), ("I thought you had it.", "T"), ("There it goes.", "T"),
+        ("Just as you said.", "T"), ("No surprise there.", "T"), ("Fair enough.", "T"))
     add("sweep-reply", ("Well played.", "T"), ("Clean as a whistle.", "T"), ("Not a card left!", "T"),
         ("It's hard on those who get swept.", "MP"), ("Never leave one card alone, they say.", "SM"),
         ("Oh, nicely done.", "T"))

@@ -349,12 +349,85 @@ test("a build taken by the other player, or raised from under its builder, is fe
   assert.equal(stolen[0].vars.value, "eight");
   const own = speech(state([built, play(false, "take", "8D", { value: 8, taken: [c("3H"), c("5C")], groups: [[c("3H"), c("5C")]] })]), 1);
   assert.deepEqual(said(own), ["them:take-own"]);
+  // Taken back by its builder, as the call said: answered now and then
+  // (not every time: it is the usual end of a build).
+  const answered = speech(state([built, play(true, "trail", "4D"), play(false, "take", "8D", { value: 8, taken: [c("3H"), c("5C")], groups: [[c("3H"), c("5C")]] })]), 2);
+  assert.deepEqual(said(answered), ["them:take-own", "you:own-build-reply"]);
   const raised = speech(state([built, play(true, "build", "2C", { value: 10, build_kind: "raise", raised_from: 8, multiple: false, onto: c("3H") })]), 1);
   assert.deepEqual(said(raised), ["you:raise-10", "them:raised-mine"]);
   assert.deepEqual(raised[1].vars, { old: "eight", value: "ten" });
   // Your own build raised by you is nobody's loss.
   const mine = play(true, "build", "3H", { value: 8, build_kind: "new", multiple: false, loose: [c("5C")] });
   assert.deepEqual(said(speech(state([mine, play(true, "build", "2C", { value: 10, build_kind: "raise", raised_from: 8, multiple: false, onto: c("3H") })]), 1)), ["you:raise-10", "them:build-reply"]);
+});
+
+// The run of play (the sixth play-testing: the talk felt "staccato", each
+// line about its own move; "IF the player took their build, then say X - IF
+// opponent snagged the build then say Y"): what a move says follows from
+// the moves before it.
+test("a capture of the card just trailed says so, a sum with it too; any other is named as before", () => {
+  const trailed = play(false, "trail", "7H");
+  const pair = speech(state([trailed, play(true, "take", "7C", { value: 7, taken: [c("7H")], groups: [[c("7H")]] })]), 1);
+  assert.deepEqual(chat(pair), ["you:take-trailed"]);
+  assert.equal(pair[0].vars.card, "seven");
+  const sum = speech(state([trailed, play(true, "take", "9C", { value: 9, taken: [c("7H"), c("2D")], groups: [[c("7H"), c("2D")]] })]), 1);
+  assert.deepEqual(chat(sum), ["you:take-trailed"]);
+  // The card trailed two moves before, not the last: named as before.
+  const older = speech(state([trailed, play(true, "trail", "4D"), play(false, "take", "7S", { value: 7, taken: [c("7H")], groups: [[c("7H")]] })]), 2);
+  assert.deepEqual(chat(older), ["them:take-pair"]);
+});
+
+test("a build on the card the other just trailed is answered for it", () => {
+  const lines = speech(state([play(false, "trail", "2H"), play(true, "build", "5S", { value: 7, build_kind: "new", multiple: false, loose: [c("2H")] })]), 1);
+  assert.deepEqual(said(lines), ["you:build-7", "them:build-on-mine"]);
+  assert.deepEqual(lines[1].vars, { card: "two", value: "seven" });
+});
+
+test("a build added to is answered for what it is: its builder's own made surer, or another's joined", () => {
+  const mine = play(true, "build", "3H", { value: 8, build_kind: "new", multiple: false, loose: [c("5C")] });
+  const more = speech(state([mine, play(true, "build", "8D", { value: 8, build_kind: "add", multiple: true, onto: c("3H") })]), 1);
+  assert.deepEqual(said(more), ["you:builds-8", "them:build-more-reply"]);
+  assert.equal(more[1].vars.values, "eights");
+  const theirs = play(false, "build", "3H", { value: 6, build_kind: "new", multiple: false, loose: [c("3C")] });
+  const joined = speech(state([theirs, play(true, "build", "6D", { value: 6, build_kind: "add", multiple: true, onto: c("3H") })]), 1);
+  assert.deepEqual(said(joined), ["you:builds-6", "them:joined-mine"], "not a raise: the value is the same");
+  assert.deepEqual(joined[1].vars, { value: "six", values: "sixes", taker: "six", ataker: "a six" });
+});
+
+test("a run of trails is remarked at the third, and the capture that ends it", () => {
+  const events = [
+    play(true, "trail", "2H"),
+    play(false, "trail", "3D"),
+    play(true, "trail", "4H"),
+    play(false, "trail", "5D"),
+    play(true, "trail", "6H"),
+    play(false, "trail", "9C"),
+    play(true, "take", "9D", { value: 9, taken: [c("9C")], groups: [[c("9C")]] }),
+  ];
+  const lines = speech(state(events));
+  const yours = lines.filter((l) => l.who === "you" && l.chatter).map((l) => l.phrase);
+  assert.deepEqual(yours, ["trail", "trail", "trail-again", "take-at-last"]);
+  // Said at the third only, not at every trail after it.
+  const longer = [...events.slice(0, 6), play(true, "trail", "7H"), play(false, "trail", "8C"), play(true, "trail", "KH")];
+  assert.deepEqual(speech(state(longer)).filter((l) => l.who === "you" && l.chatter).map((l) => l.phrase), ["trail", "trail", "trail-again", "trail", "trail"]);
+  assert.equal(lines.find((l) => l.phrase === "trail-again").vars.acard, "a six");
+  // A new hand starts the count afresh.
+  const next = speech(state([...events.slice(0, 4), { kind: "dealt", hand: 2, deal: 1, last: false, you_deal: true }, play(true, "trail", "6H")]), 5);
+  assert.deepEqual(chat(next), ["you:trail"]);
+});
+
+test("a trail onto a table swept clean says there was nothing to take; no other trail claims it", () => {
+  const lines = speech(state([play(false, "take", "TC", { value: 10, taken: [c("4H"), c("6H")], groups: [[c("4H"), c("6H")]] }), { kind: "swept", hand: 1, you: false }, play(true, "trail", "5S")]), 2);
+  assert.deepEqual(chat(lines), ["you:trail-fresh"]);
+  assert.equal(lines[0].vars.acard, "a five");
+  assert.ok(WORDS.groups["trail-fresh"].some((k) => /^Nothing to take/.test(WORDS.texts[k])));
+  for (const group of ["trail", "trail-again", "trail-ace"]) {
+    for (const k of WORDS.groups[group]) assert.doesNotMatch(WORDS.texts[k], /nothing to take/i, `${group}: a trail may have been chosen over a capture`);
+  }
+});
+
+test("every answer to a build says what the build tells", () => {
+  for (const k of WORDS.groups["build-reply"]) assert.match(WORDS.texts[k], /\{(value|Value|ataker|Ataker|taker)\}/, WORDS.texts[k]);
 });
 
 test("a sweep, a Cassino or an ace taken is felt by the other player", () => {

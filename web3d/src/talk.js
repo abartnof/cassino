@@ -92,6 +92,34 @@ export function followBuilds() {
   };
 }
 
+// The run of play, followed through a game's events, for what a move says
+// in its context (the sixth play-testing: the talk felt "staccato", each
+// line about its own move alone). `see(e)` returns, for a move: `prev`, the
+// move before it; `run`, how many times running its maker has only
+// trailed; and `empty`, whether a sweep has left the table bare.
+export function followPlay() {
+  let prev = null;
+  let empty = false;
+  const trails = { you: 0, them: 0 };
+  return {
+    see(e) {
+      if (e.kind === "dealt" && e.deal === 1) {
+        prev = null;
+        empty = false;
+        trails.you = trails.them = 0;
+      }
+      if (e.kind === "swept") empty = true;
+      if (e.kind !== "played") return {};
+      const who = e.you ? "you" : "them";
+      const seen = { prev, run: trails[who], empty };
+      trails[who] = e.type === "trail" ? trails[who] + 1 : 0;
+      prev = e;
+      empty = false;
+      return seen;
+    },
+  };
+}
+
 // Numbers and cards in words, for the slots of the chatter's lines.
 const NUMBER = ["nothing", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve",
   "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"];
@@ -101,6 +129,8 @@ export function number(n) {
   const tens = TENS[Math.floor(n / 10)];
   return n % 10 ? `${tens}-${NUMBER[n % 10]}` : tens;
 }
+// A build's value in the plural, as a multiple build is called.
+const plural = (n) => (n === 6 ? "sixes" : `${number(n)}s`);
 const RANK = ["", "ace", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "jack", "queen", "king"];
 const named = (rank) => ({
   card: RANK[rank],
@@ -123,8 +153,9 @@ export function speech(state, since = 0) {
   const out = [];
   const rules = state.rules ?? {};
   const follow = followBuilds();
+  const run = followPlay();
   state.events.forEach((e, at) => {
-    const did = follow.see(e);
+    const did = { ...follow.see(e), ...run.see(e) };
     if (at < since) return;
     const say = (who, phrase, extra = {}) => out.push({ who, phrase, at, kind: e.kind, ...extra });
     // A remark: chatter, heard only when everything is, and said only where
@@ -226,9 +257,17 @@ export function speech(state, since = 0) {
 // What a move says: the build's call and its answer; a capture's claim, in
 // its own words, and what the other player feels of it; a trail named; what
 // you left pointed out; and now and then your opponent thinking aloud first.
+// Each in the context of the moves before it (`did`, followBuilds and
+// followPlay): a capture of the card just trailed, or a build on it; a
+// build taken back by its builder, or taken by the other; a build added to;
+// the third trail running, and the capture that ends such a run; a trail
+// onto a table swept clean. Each says what a plainer line would have, not
+// more.
 function played(e, at, who, did, events, since, remark, say) {
   const them = other(who);
   const card = e.card ?? {};
+  // The card the other player trailed just before this move, if any.
+  const trailed = did.prev && did.prev.you !== e.you && did.prev.type === "trail" ? did.prev.card : null;
   // Your opponent thinks aloud as your move is seen, before theirs: now and
   // then, and only about a move in this batch.
   if (!e.you && at % 3 === 0 && at - 1 >= since) {
@@ -237,12 +276,20 @@ function played(e, at, who, did, events, since, remark, say) {
   if (e.type === "build") {
     say(who, call(e));
     const value = number(e.value);
-    if (did.raised && did.raised.who !== who) remark(them, "raised-mine", { old: number(did.raised.value), value });
+    const onTrailed = trailed && (e.loose ?? []).some((c) => c.card === trailed.card);
+    if (did.raised && did.raised.who !== who) {
+      // Another's build: joined at its value, or raised from under it.
+      if (e.build_kind === "add") remark(them, "joined-mine", { value, values: plural(e.value), ...takers(e.value) });
+      else remark(them, "raised-mine", { old: number(did.raised.value), value });
+    } else if (e.build_kind === "add") remark(them, "build-more-reply", { values: plural(e.value) });
+    else if (onTrailed) remark(them, "build-on-mine", { card: named(trailed.rank).card, value });
     else remark(them, "build-reply", { value, ...takers(e.value) });
   }
   if (e.type === "trail") {
     if (card.card === "2S") remark(who, "trail-little-casino");
     else if (card.card === "TD") remark(who, "trail-big-casino");
+    else if (did.empty && card.rank) remark(who, "trail-fresh", named(card.rank));
+    else if (did.run === 2 && card.rank) remark(who, "trail-again", named(card.rank));
     else if (card.rank === 1) remark(who, "trail-ace");
     else if (card.rank) remark(who, "trail", named(card.rank));
   }
@@ -259,15 +306,19 @@ function played(e, at, who, did, events, since, remark, say) {
       else {
         const big = taking(e, then);
         if (big) remark(who, big);
+        else if (did.run >= 3) remark(who, "take-at-last");
+        else if (trailed && taken.includes(trailed.card)) remark(who, "take-trailed", { card: named(trailed.rank).card });
         else if ((e.groups ?? []).every((g) => g.length === 1 && g[0].rank === card.rank)) remark(who, "take-pair", named(card.rank));
         else remark(who, "take-sum", { value: number(e.value ?? card.rank) });
       }
     }
     // What the other player feels: a build lost, a Cassino or an ace gone,
-    // a haul (a sweep is felt as it is claimed).
+    // a build taken back as called (now and then: it is the usual end of a
+    // build), a haul (a sweep is felt as it is claimed).
     if (stolen) remark(them, "lost-build", { value: number(stolen.value) });
     else if (!loud && taken.includes("TD")) remark(them, "big-casino-gone");
     else if (!loud && taken.includes("2S")) remark(them, "little-casino-gone");
+    else if (!loud && own && at % 2 === 0) remark(them, "own-build-reply");
     else if (!loud && taken.some((c) => c[0] === "A")) remark(them, "ace-gone");
     else if (!loud && (e.taken?.length ?? 0) >= HAUL) remark(them, "haul-reply");
   }
