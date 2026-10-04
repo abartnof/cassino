@@ -14,7 +14,7 @@ import "@material/web/button/filled-button.js";
 import "@material/web/iconbutton/icon-button.js";
 import { besideAt } from "./dialogue.js";
 import { trackerTable } from "./scorebug.js";
-import { moveBar } from "./selection.js";
+import { BAR, barAcross, fitLabels, moveBar } from "./selection.js";
 
 // `later(ms, fn)` runs `fn` after `ms` on the table's clock (director.at),
 // so a box lingers as long as the table runs, and holds when it is held.
@@ -38,7 +38,7 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
       <p class="prompt" aria-live="polite"></p>
       <p class="note" aria-live="polite"></p>
       <p class="aid-line" hidden></p>
-      <div class="move-bar" hidden><div class="sum" hidden></div><div class="chips" role="group" aria-label="Your move"></div></div>
+      <div class="move-bar" hidden><div class="chips" role="group" aria-label="Your move"><div class="sum idle">Sum</div></div></div>
       <md-filled-button class="next" hidden>Next hand</md-filled-button>
       <md-filled-button class="again" hidden>New game</md-filled-button>
       <md-outlined-button class="replay" hidden>Replay with both hands</md-outlined-button>
@@ -76,7 +76,12 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
   // `replay`: { k, n, playing } while the game is replayed.
   // `after`: a line for the end of the game (the series, if one is played).
   const bar = $(".move-bar");
-  const widths = new Map(); // what the move bar holds -> how its width goes with its height
+  // The places' widths, in the bar's heights (selection.js BAR), for the
+  // style sheet.
+  bar.style.setProperty("--move-sum", String(BAR.sum));
+  bar.style.setProperty("--move-place", String(BAR.place));
+  bar.style.setProperty("--move-pad", String(BAR.pad));
+  bar.style.setProperty("--move-split", String(BAR.split));
   function show({ state, chips, sum: total, message, busy = false, aid = null, replay = null, after = null }) {
     prompt.textContent = replay ? "The game replayed, both hands face up." : busy ? "" : promptText(state, chips);
     if (!replay && !busy && after && state.prompt === "over") prompt.textContent += ` ${after}`;
@@ -90,39 +95,84 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
     aidLine.hidden = busy || !aid;
     aidLine.textContent = aid ?? "";
     note.textContent = message ?? "";
-    sum.hidden = total == null;
-    sum.textContent = total == null ? "" : `Sum ${total}`;
+    // The running sum, in its place even when there is none, so nothing
+    // moves when there is (play-testing).
+    sum.classList.toggle("idle", total == null);
+    sum.textContent = total == null ? "Sum" : `Sum ${total}`;
     // The move bar, always there on your turn (play-testing): Take, Build
-    // and Trail, lit when the choice makes one and dimmed when not
-    // (selection.js moveBar). The chips are made again only when what they
-    // offer changes, so one that has the keyboard's focus keeps it (the
-    // table review's T15).
+    // and Trail each in its place, lit when the choice makes one and dimmed
+    // when not (selection.js moveBar). The chips are made again only when
+    // what they offer changes, so one that has the keyboard's focus keeps it
+    // (the table review's T15).
+    const hidden = bar.hidden;
     bar.hidden = Boolean(replay) || state.watching || state.prompt !== "play";
-    const offered = moveBar(chips);
-    const moves = offered.map((c) => `${c.kind}|${c.label}|${c.move ?? ""}`).join("\n");
+    if (hidden && !bar.hidden) requestAnimationFrame(fitBar);
+    const places = moveBar(chips);
+    const moves = places.flatMap((p) => p.buttons.map((c) => `${c.kind}|${c.label}|${c.move ?? ""}`)).join("\n");
     if (chipSet.dataset.moves !== moves) {
       chipSet.dataset.moves = moves;
       // Filled buttons, large and opaque (play-testing: they are there for
       // the play, no need to hide them), dimmed but still solid when not.
       chipSet.replaceChildren(
-        ...offered.map((c) => {
-          const button = document.createElement("md-filled-button");
-          button.textContent = c.label;
-          button.dataset.kind = c.kind;
-          if (!c.enabled) {
-            button.disabled = true;
-            return button;
-          }
-          button.dataset.move = c.move;
-          if (c.call) button.title = c.call;
-          button.addEventListener("click", () => onChip(c));
-          return button;
-        }),
+        sum,
+        ...places.map((p) =>
+          el(
+            "div",
+            { class: "place", "data-kind": p.kind, "data-n": String(p.buttons.length) },
+            ...p.buttons.map((c) => {
+              const button = document.createElement("md-filled-button");
+              button.textContent = c.label;
+              button.dataset.kind = c.kind;
+              button.dataset.label = c.label;
+              button.dataset.short = c.short;
+              if (!c.enabled) {
+                button.disabled = true;
+                return button;
+              }
+              button.dataset.move = c.move;
+              button.setAttribute("aria-label", c.label);
+              if (c.call) button.title = c.call;
+              button.addEventListener("click", () => onChip(c));
+              return button;
+            }),
+          ),
+        ),
       );
+      fitBar();
     }
     next.hidden = busy || replay || state.prompt !== "next_hand";
     again.hidden = busy || replay || state.prompt !== "over";
     replayButton.hidden = busy || replay || state.prompt !== "over" || state.watching;
+  }
+
+  // Each place's words fitted to its width, as laid out, at the bar's height
+  // (selection.js fitLabels): measured in the page's own font.
+  const ruler = document.createElement("canvas").getContext("2d");
+  const font = () => getComputedStyle(document.documentElement).getPropertyValue("--font") || "system-ui, sans-serif";
+  function fitBar() {
+    if (bar.hidden || !ruler) return;
+    const h = parseFloat(getComputedStyle(bar).getPropertyValue("--move-h")) || 44;
+    const family = font();
+    const measure = (text, px) => {
+      ruler.font = `600 ${px}px ${family}`;
+      return ruler.measureText(text).width;
+    };
+    // The sum at the size its widest reading fits, so it never changes.
+    const inside = sum.clientWidth - 24; // its padding (style.css .sum)
+    if (inside > 0) sum.style.fontSize = `${Math.min(h * 0.36, (inside * h * 0.36) / measure("Sum 14", h * 0.36)).toFixed(1)}px`;
+    for (const place of chipSet.querySelectorAll(".place")) {
+      const buttons = [...place.children];
+      const gap = parseFloat(getComputedStyle(place).columnGap) || 0;
+      const fitted = fitLabels(
+        buttons.map((b) => ({ label: b.dataset.label, short: b.dataset.short })),
+        { width: place.clientWidth, h, gap, measure },
+      );
+      buttons.forEach((b, i) => {
+        if (b.textContent !== fitted[i].text) b.textContent = fitted[i].text;
+        b.style.setProperty("--md-filled-button-label-text-size", `${fitted[i].px.toFixed(1)}px`);
+        b.style.setProperty("--md-filled-button-label-text-line-height", `${(fitted[i].px * 1.32).toFixed(1)}px`);
+      });
+    }
   }
 
   // A badge over each build: its value ("8", "8s" for a multiple build) at
@@ -407,28 +457,23 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
     log,
     hudSlot: $(".hud-slot"),
     said: () => [...afloat.querySelectorAll(".dialogue")].map((d) => ({ who: d.classList.contains("you") ? "you" : "them", words: d.textContent })),
-    chips: () => [...chipSet.children].filter((c) => !c.disabled).map((c) => c.textContent),
+    chips: () => [...chipSet.querySelectorAll("md-filled-button")].filter((c) => !c.disabled).map((c) => c.dataset.label),
     // Where the move bar is to sit on a desktop or a phone held upright,
     // between the table and your hand (the page measures it as the cards
     // are drawn).
     placeMoveBar(y, h) {
+      const was = bar.style.getPropertyValue("--move-h");
       bar.style.setProperty("--move-bar-y", `${Math.round(y)}px`);
       bar.style.setProperty("--move-h", `${Math.round(h)}px`);
+      if (was !== bar.style.getPropertyValue("--move-h")) fitBar();
     },
-    // How the bar's width goes with its height, for what it holds now
-    // (selection.js moveBarFit `across`): measured at its present height,
-    // once for each thing it can hold.
+    // How the bar's width goes with its height (selection.js moveBarFit
+    // `across`): its places' widths are fixed in heights of it, so only the
+    // gaps between them, as laid out, are measured.
     barAcross() {
-      if (bar.hidden) return null;
-      const key = bar.textContent;
-      if (!widths.has(key)) {
-        const h = parseFloat(bar.style.getPropertyValue("--move-h")) || 44;
-        const parts = [...bar.children].filter((c) => !c.hidden && c !== chipSet).length + chipSet.children.length;
-        const fixed = Math.max(0, parts - 1) * 8; // the gaps (style.css), the same at any height
-        widths.set(key, { perH: (bar.offsetWidth - fixed) / h, fixed });
-      }
-      return { room: window.innerWidth - 16, ...widths.get(key) };
+      return barAcross(window.innerWidth - 16, parseFloat(getComputedStyle(chipSet).columnGap) || 0);
     },
+    fitBar,
   };
 }
 

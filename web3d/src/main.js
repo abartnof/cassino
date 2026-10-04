@@ -670,7 +670,9 @@ async function main() {
     const Z = stage.portrait ? ZONES_PORTRAIT : ZONES;
     const near = director.toScreen(new Vector3(Z.middle.x, 0, Z.middle.z + CARD.height / 2 + Z.stack.dz)).y;
     const hand = yourHandOnScreen();
-    const across = upright() ? overlay.barAcross() : null;
+    // On a desktop the bar's width goes with its height; upright, it spans
+    // the screen whatever its height.
+    const across = desktop() ? overlay.barAcross() : null;
     barFit = moveBarFit({ near, top: hand ? hand.top : director.handEdge("you").y, lift: hand ? hand.lift : 0, across });
     overlay.placeMoveBar(barFit.y, barFit.h);
   }

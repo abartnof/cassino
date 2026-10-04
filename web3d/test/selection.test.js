@@ -2,7 +2,7 @@
 // (docs/TABLE3D.md section 8).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { EMPTY, chipsOf, choose, itemState, moveBar, moveBarFit, pick, selectionText } from "../src/selection.js";
+import { BAR, EMPTY, barAcross, chipsOf, choose, fitLabels, itemState, moveBar, moveBarFit, pick, selectionText } from "../src/selection.js";
 
 test("tapping a hand card chooses it, and again lets it go", () => {
   const a = choose(EMPTY, "3H");
@@ -111,24 +111,76 @@ test("the sweep warning, before the move: which chip leaves a sweep, and what wo
   assert.equal(sweepWarning(chips.filter((c) => c.kind !== "trail")), null);
 });
 
-test("the move bar: Take, Build and Trail always there, lit when the choice makes one", () => {
+test("the move bar: Take, Build and Trail each in its own place, always there, lit when the choice makes one", () => {
   const off = moveBar([]);
-  assert.deepEqual(off.map((b) => [b.label, b.enabled]), [["Take", false], ["Build", false], ["Trail", false]]);
+  assert.deepEqual(
+    off.map((p) => [p.kind, p.buttons.map((b) => [b.label, b.enabled])]),
+    [
+      ["take", [["Take", false]]],
+      ["build", [["Build", false]]],
+      ["trail", [["Trail", false]]],
+    ],
+  );
   const chips = [
     { kind: "build", label: "Build 6", move: "build 6 3H 2D AC" },
     { kind: "build", label: "Build 3s", move: "build 3 3H 2D AC" },
     { kind: "take", label: "Take", move: "take 3H 2D AC" },
   ];
   assert.deepEqual(
-    moveBar(chips).map((b) => [b.kind, b.label, b.enabled, b.move ?? null]),
+    moveBar(chips).map((p) => [p.kind, p.buttons.map((b) => [b.label, b.short, b.enabled, b.move ?? null])]),
     [
-      ["take", "Take", true, "take 3H 2D AC"],
-      ["build", "Build 6", true, "build 6 3H 2D AC"],
-      ["build", "Build 3s", true, "build 3 3H 2D AC"],
-      ["trail", "Trail", false, null],
+      ["take", [["Take", "Take", true, "take 3H 2D AC"]]],
+      ["build", [["Build 6", "6", true, "build 6 3H 2D AC"], ["Build 3s", "3s", true, "build 3 3H 2D AC"]]],
+      ["trail", [["Trail", "Trail", false, null]]],
     ],
-    "each kind in its place, as many of it as the choice makes",
+    "each kind in its own place, as many of it as the choice makes sharing it",
   );
+  const ace = moveBar([
+    { kind: "take", label: "Take as 1", move: "take AC AH" },
+    { kind: "take", label: "Take as 14", move: "take AC=14 KS AH" },
+  ]);
+  assert.deepEqual(ace[0].buttons.map((b) => b.short), ["as 1", "as 14"]);
+});
+
+// The words on a place's buttons, fitted to its width: a measure as a font
+// would, each character 0.6 of the size.
+const measure = (text, px) => text.length * 0.6 * px;
+test("a place's words are as large as the bar's where they fit, smaller where not, and short where small would be too small", () => {
+  const h = 80; // the words at most 0.38 of it: 30.4 px
+  const one = (label, width) => fitLabels([{ label, short: label }], { width, h, gap: 6, measure });
+  assert.deepEqual(one("Take", 240), [{ text: "Take", px: h * BAR.label }], "room to spare: as large as the bar's");
+  const long = one("Take as 14", 200)[0];
+  assert.equal(long.text, "Take as 14");
+  assert.ok(long.px < h * BAR.label && Math.abs(measure("Take as 14", long.px) - (200 - 2 * BAR.pad * h - BAR.slack)) < 1e-9, "fitted to the room inside the padding, with a little to spare");
+  // Two moves share a place: both the same size, the longer fitted.
+  const two = fitLabels(
+    [
+      { label: "Build 6", short: "6" },
+      { label: "Build 3s", short: "3s" },
+    ],
+    { width: 240, h, gap: 6, measure },
+  );
+  assert.deepEqual(two.map((b) => b.text), ["Build 6", "Build 3s"]);
+  assert.equal(two[0].px, two[1].px);
+  assert.ok(two[0].px >= 13, `${two[0].px}`);
+  // On a phone's narrow bar the long words would be too small to read:
+  // the short ones, at the bar's size where they fit.
+  const small = fitLabels(
+    [
+      { label: "Build 6", short: "6" },
+      { label: "Build 3s", short: "3s" },
+    ],
+    { width: 100, h: 36, gap: 4, measure },
+  );
+  assert.deepEqual(small.map((b) => b.text), ["6", "3s"]);
+  assert.equal(small[0].px, 36 * BAR.label);
+});
+
+test("the move bar's width goes only with its height, whatever the choice makes", () => {
+  const across = barAcross(374, 8);
+  assert.equal(across.perH, BAR.sum + 3 * BAR.place);
+  assert.equal(across.fixed, 3 * 8, "three gaps between four places");
+  assert.equal(across.room, 374);
 });
 
 test("the move bar fills the space between the table and your hand, clear of a card chosen", () => {

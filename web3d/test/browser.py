@@ -623,33 +623,96 @@ def check_ending(browser, failures):
 def check_move_bar(browser, failures):
     """The move bar, always there on your turn: Take, Build and Trail dimmed
     with nothing chosen, lit by a choice, and between the table and your
-    hand, on a desktop and on a phone held upright."""
-    for viewport in ({"width": 1280, "height": 800}, {"width": 390, "height": 844}):
+    hand, on a desktop and on a phone held upright; each in its place."""
+    for viewport in ({"width": 1280, "height": 800}, {"width": 390, "height": 844}, {"width": 844, "height": 390}):
         check_move_bar_at(browser, failures, viewport)
+        check_split_place(browser, failures, viewport)
+
+
+def check_split_place(browser, failures, viewport):
+    """Two moves of a kind share its place (seed 85 opens with A♠ and 3♥ 4♦
+    making builds of 4s and of 8): the places stay put, and each move's
+    words fit its button."""
+    where = f"{viewport['width']}x{viewport['height']}"
+    page = open_page(browser, "seed=85&skill=1&speed=6", viewport=viewport, calm=True)
+    settle(page)
+    places = page.evaluate(PLACES_JS)
+    for code in ("AS", "3H", "4D"):
+        click_card(page, code)
+        settle(page)
+    if page.evaluate("window.cassino3d.chips()") != ["Build 4s", "Build 8"]:
+        failures.append(f"{where}: seed 85's two builds not offered: {page.evaluate('window.cassino3d.chips()')}")
+    if page.evaluate(PLACES_JS) != places:
+        failures.append(f"{where}: two builds moved the places: {places} then {page.evaluate(PLACES_JS)}")
+    over = page.evaluate("""() => [...document.querySelectorAll('.move-bar md-filled-button')].filter((b) => {
+      const label = b.shadowRoot.querySelector('.label');
+      return label.scrollWidth > b.shadowRoot.querySelector('button').clientWidth - 2;
+    }).map((b) => b.textContent)""")
+    if over:
+        failures.append(f"{where}: labels wider than their buttons, two builds sharing a place: {over}")
+    shot(page, f"t2-move-bar-split-{where}")
+    page.context.close()
+
+
+PLACES_JS = """() => Object.fromEntries([...document.querySelectorAll('.move-bar .sum, .move-bar .place')].map((e) => {
+  const r = e.getBoundingClientRect();
+  return [e.dataset.kind ?? 'sum', [Math.round(r.left), Math.round(r.width)]];
+}))"""
 
 
 def check_move_bar_at(browser, failures, viewport):
     where = f"{viewport['width']}x{viewport['height']}"
     page = open_page(browser, "seed=2&skill=1&speed=6", viewport=viewport, calm=True)
     settle(page)
-    chips = page.locator(".move-bar [data-kind]")
+    chips = page.locator(".move-bar md-filled-button")
     labels = [chips.nth(i).inner_text().strip() for i in range(chips.count())]
     if labels != ["Take", "Build", "Trail"] or page.evaluate("window.cassino3d.chips()"):
         failures.append(f"{where}: the move bar with nothing chosen: {labels}, lit {page.evaluate('window.cassino3d.chips()')}")
+    # Every place there from the start, the running sum's too, and none
+    # moving as a choice is made (play-testing: "have all possible buttons
+    # up, so the user doesn't have to constantly wonder if the buttons are
+    # in the right place").
+    places = page.evaluate(PLACES_JS)
+    if sorted(places) != ["build", "sum", "take", "trail"]:
+        failures.append(f"{where}: the move bar's places with nothing chosen: {places}")
     s = page.evaluate("window.cassino3d.state()")
+    build = next((m for m in s["moves"] if m.startswith("build")), None)
+    if build:
+        click_card(page, build.split()[2])
+        settle(page)
+        for code in [w for w in build.split()[3:] if w != "on"][:1]:
+            click_card(page, code)
+            settle(page)
+        if not page.locator(".move-bar .sum").inner_text().strip().startswith("Sum "):
+            failures.append(f"{where}: no running sum shown with table cards picked")
+        if page.evaluate(PLACES_JS) != places:
+            failures.append(f"{where}: the move bar's places moved as a move was chosen: {places} then {page.evaluate(PLACES_JS)}")
+        click_card(page, build.split()[2])  # let it go
+        settle(page)
     trail = next(m for m in s["moves"] if m.startswith("trail"))
     card = trail.split()[1]
     click_card(page, card)
     settle(page)
     if "Trail" not in page.evaluate("window.cassino3d.chips()"):
         failures.append(f"{where}: choosing a card did not light Trail")
+    if page.evaluate(PLACES_JS) != places:
+        failures.append(f"{where}: the move bar's places moved as a card was chosen: {places} then {page.evaluate(PLACES_JS)}")
     bar = page.locator(".move-bar").bounding_box()
     table_y = max(page.evaluate("(c) => window.cassino3d.screenPoint(c).y", c["card"]) for i in s["table"] for c in i["cards"])
     hand_y = min(page.evaluate("(c) => window.cassino3d.screenPoint(c).y", c["card"]) for c in s["hand"] if c["card"] != card)
-    if not (table_y < bar["y"] and bar["y"] + bar["height"] < hand_y):
-        failures.append(f"{where}: the move bar is not between the table and your hand: {bar}, table at {table_y}, hand at {hand_y}")
+    if not page.evaluate("document.documentElement.classList.contains('sideways')"):
+        if not (table_y < bar["y"] and bar["y"] + bar["height"] < hand_y):
+            failures.append(f"{where}: the move bar is not between the table and your hand: {bar}, table at {table_y}, hand at {hand_y}")
     if bar["x"] < 0 or bar["x"] + bar["width"] > viewport["width"]:
         failures.append(f"{where}: the move bar runs off the screen: {bar}")
+    # Every label inside its button, with a little to spare: a label wider
+    # than its room is cut short with an ellipsis.
+    over = page.evaluate("""() => [...document.querySelectorAll('.move-bar md-filled-button')].filter((b) => {
+      const label = b.shadowRoot.querySelector('.label');
+      return label.scrollWidth > b.shadowRoot.querySelector('button').clientWidth - 2;
+    }).map((b) => b.textContent)""")
+    if over:
+        failures.append(f"{where}: labels wider than their buttons: {over}")
     shot(page, f"t2-move-bar-{where}")
     page.context.close()
 

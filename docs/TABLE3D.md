@@ -248,19 +248,27 @@ Material Design 3, from piquet's shell.
   on tap (`offer.why_not`). **The move bar** (play-testing: nothing to hunt
   for below the hand after each choice): the running sum and Take, Build
   and Trail are always there on your turn, each lit with its move when the
-  choice makes one (as many of a kind as it makes) and dimmed under its
-  plain name when not (`selection.js` `moveBar`). They are large filled
-  buttons, solid even when dimmed (play-testing: they are there for the
-  play, no need to hide them). On a desktop the bar fills the space
-  between the table's first row and your hand, clear of a card chosen from
-  it, as tall as there is room for, 40 to 84 px (`moveBarFit`), and stays
-  put as the table fills (the rows grow away from you; the middle was
-  moved further off to make room, and a chosen card stands 1.6 cm out of
-  the hand, not 2.2); your own words are then said beside your hand, the
-  tail pointing back at it. A phone held upright has the bar in the same
-  place (play-testing: "above the cards, not below, to match the desktop
-  version"), as tall as fits its width as well, and your words above it;
-  held sideways, the bar is a row of the controls' column.
+  choice makes one and dimmed under its plain name when not
+  (`selection.js` `moveBar`). Each has a place of its own, always there
+  and always as wide, so nothing moves as a choice is made (the sixth
+  play-testing: "have all possible buttons up, so the user doesn't have to
+  constantly wonder if the buttons are in the right place"): the sum's
+  place says "Sum", faintly, until there is one; two moves of a kind
+  share its place, each word fitted to its half (`fitLabels`), or, where
+  that would be too small to read, only the words that tell them apart
+  (*4s*, *8*). They are large filled buttons, solid even when dimmed
+  (play-testing: they are there for the play, no need to hide them). On a
+  desktop the bar fills the space between the table's first row and your
+  hand, clear of a card chosen from it, as tall as there is room for, 40
+  to 84 px, and no wider than the window (`moveBarFit`), and stays put as
+  the table fills (the rows grow away from you; the middle was moved
+  further off to make room, and a chosen card stands 1.6 cm out of the
+  hand, not 2.2); your own words are then said beside your hand, the tail
+  pointing back at it. A phone held upright has the bar in the same place
+  (play-testing: "above the cards, not below, to match the desktop
+  version"), its four places sharing the screen's width, and your words
+  above it; held sideways, the bar is a two-by-two grid in the controls'
+  column.
 - **The score HUD**, from the designer's handoff (the spec and its approved
   reference implementation are commit c484091; the reference's numbers are
   the source of truth, and `hud.js` and `style.css` port them). A dark card

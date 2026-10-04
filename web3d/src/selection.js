@@ -51,20 +51,56 @@ export function chipsOf(offer) {
 }
 
 // The move bar (play-testing: the buttons always there, lighting up and
-// dimming, so nothing is hunted for after each choice): Take, Build and
-// Trail in their places, each lit with its move when the choice makes one,
-// as many of a kind as it makes (Build 6, Build 3s), and dimmed under its
-// plain name when it makes none. `chips` as chipsOf gives them.
+// dimming, so nothing is hunted for after each choice; and then "have all
+// possible buttons up, so the user doesn't have to constantly wonder if the
+// buttons are in the right place"): the running sum, then Take, Build and
+// Trail, each in a place of its own that is always there at the same width,
+// so nothing moves as a choice is made. A place is lit with its moves when
+// the choice makes any, as many as it makes sharing it (Build 6, Build 3s),
+// and dimmed under its plain name when it makes none. `chips` as chipsOf
+// gives them; each move's `short` words say only what tells it from the
+// others of its kind (6, 3s), for a place too narrow for the whole.
 const KINDS = [
   ["take", "Take"],
   ["build", "Build"],
   ["trail", "Trail"],
 ];
 export function moveBar(chips) {
-  return KINDS.flatMap(([kind, name]) => {
+  return KINDS.map(([kind, name]) => {
     const mine = chips.filter((c) => c.kind === kind);
-    return mine.length ? mine.map((c) => ({ ...c, kind, enabled: true })) : [{ kind, label: name, enabled: false }];
+    const short = (label) => label.replace(new RegExp(`^${name} `), "") || label;
+    const buttons = mine.length ? mine.map((c) => ({ ...c, kind, short: short(c.label), enabled: true })) : [{ kind, label: name, short: name, enabled: false }];
+    return { kind, name, buttons };
   });
+}
+
+// The places' widths, in heights of the bar: the running sum's and each
+// move's; the padding inside a button, alone in its place or sharing it;
+// the size of its words, at most; and `slack` px to spare beside them (a
+// browser draws words a little wider than a canvas measures them, and cuts
+// short with an ellipsis what does not fit).
+export const BAR = Object.freeze({ sum: 2.1, place: 2.9, pad: 0.3, split: 0.12, label: 0.38, slack: 4 });
+
+// How the bar's width goes with its height, for moveBarFit's `across`: the
+// places' widths, and the three gaps between the four places, `room` px
+// to fit in.
+export function barAcross(room, gap) {
+  return { room, perH: BAR.sum + 3 * BAR.place, fixed: 3 * gap };
+}
+
+// The words on a place's buttons, `width` px wide all told, `gap` px apart,
+// on a bar `h` px high: as large as the bar's words where they fit inside
+// the padding, smaller where they do not -- all of a place's the same size
+// -- and, where that would be smaller than `least` px, the short words
+// instead. `measure(text, px)`: the words' width at that size.
+export function fitLabels(buttons, { width, h, gap, measure, least = 13 }) {
+  const n = buttons.length;
+  const room = (width - gap * (n - 1)) / n - 2 * h * (n > 1 ? BAR.split : BAR.pad) - BAR.slack;
+  const size = h * BAR.label;
+  const fit = (key) => Math.min(size, ...buttons.map((b) => (size * room) / measure(b[key], size)));
+  const full = fit("label");
+  const [key, px] = full >= Math.min(least, size) ? ["label", full] : ["short", fit("short")];
+  return buttons.map((b) => ({ text: b[key], px }));
 }
 
 // Where the move bar sits on a desktop or a phone held upright, and how

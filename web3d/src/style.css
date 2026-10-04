@@ -376,25 +376,40 @@ md-dialog {
 }
 
 /* The move bar: the running sum and Take, Build and Trail, always there on
-   your turn. On a phone it is a row of the controls; on a desktop it sits
-   between the table and your hand, where the page measures it to be. */
+   your turn, each in a place of its own as wide as a set number of the
+   bar's heights (selection.js BAR, set on the bar as --move-sum and
+   --move-place), so nothing moves as a choice is made. On a desktop and a
+   phone held upright it sits between the table and your hand, where the
+   page measures it to be (upright, the places share the screen's width);
+   held sideways it is a two-by-two grid in the controls' column. */
 .move-bar {
   flex-basis: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 12px;
 }
 .move-bar[hidden] {
   display: none;
 }
-/* The moves: large filled buttons, solid even when dimmed, as tall as the
-   page measures there is room for (--move-h). */
 .move-bar .chips {
   display: flex;
+  align-items: center;
   gap: 14px;
 }
+/* A move's place: its buttons share it, its words fitted to them by the
+   page (overlay.js fitBar). */
+.move-bar .place {
+  flex: none;
+  box-sizing: border-box;
+  width: calc(var(--move-h, 44px) * var(--move-place, 2.9));
+  display: flex;
+  gap: 6px;
+}
+/* The moves: large filled buttons, solid even when dimmed, as tall as the
+   page measures there is room for (--move-h). */
 .move-bar md-filled-button {
+  flex: 1 1 0;
+  min-width: 0;
   --md-filled-button-container-height: var(--move-h, 44px);
   --md-filled-button-container-shape: calc(var(--move-h, 44px) / 2);
   --md-filled-button-label-text-size: calc(var(--move-h, 44px) * 0.38);
@@ -402,21 +417,27 @@ md-dialog {
      foot was cut off. */
   --md-filled-button-label-text-line-height: calc(var(--move-h, 44px) * 0.5);
   --md-filled-button-label-text-weight: 600;
-  --md-filled-button-leading-space: calc(var(--move-h, 44px) * 0.62);
-  --md-filled-button-trailing-space: calc(var(--move-h, 44px) * 0.62);
+  --md-filled-button-leading-space: calc(var(--move-h, 44px) * var(--move-pad, 0.3));
+  --md-filled-button-trailing-space: calc(var(--move-h, 44px) * var(--move-pad, 0.3));
   --md-filled-button-disabled-container-color: #e1e3e8;
   --md-filled-button-disabled-container-opacity: 1;
   --md-filled-button-disabled-label-text-color: #6f747c;
   --md-filled-button-disabled-label-text-opacity: 1;
-  min-width: calc(var(--move-h, 44px) * 3.2);
 }
+.move-bar .place:not([data-n="1"]) md-filled-button {
+  --md-filled-button-leading-space: calc(var(--move-h, 44px) * var(--move-split, 0.12));
+  --md-filled-button-trailing-space: calc(var(--move-h, 44px) * var(--move-split, 0.12));
+}
+/* The running sum: a reading, not a button; in its place, faint, when
+   there is none. */
 .move-bar .sum {
+  flex: none;
   margin: 0;
   display: grid;
   place-items: center;
   box-sizing: border-box;
+  width: calc(var(--move-h, 44px) * var(--move-sum, 2.1));
   height: var(--move-h, 44px);
-  padding: 0 calc(var(--move-h, 44px) * 0.45);
   border-radius: calc(var(--move-h, 44px) / 2);
   font-size: calc(var(--move-h, 44px) * 0.36);
   font-weight: 600;
@@ -424,26 +445,43 @@ md-dialog {
   background: #e1e3e8;
   color: #1b1f24;
 }
-/* On a phone, compact buttons. Held sideways the bar is a row of the
-   controls' column, wrapping in it; held upright it sits between the table
-   and your hand, as on a desktop (play-testing), in one row. */
+.move-bar .sum.idle {
+  color: #9a9ea6;
+}
+/* On a phone, compact buttons. Held upright the bar sits between the table
+   and your hand, as on a desktop (play-testing), in one row; held sideways
+   it is a grid in the controls' column, each place half its width. */
 html.upright .move-bar,
 html.sideways .move-bar {
   --move-h: 40px;
-  gap: 8px;
-}
-html.sideways .move-bar,
-html.sideways .move-bar .chips {
-  flex-wrap: wrap;
 }
 html.upright .move-bar .chips,
 html.sideways .move-bar .chips {
-  justify-content: center;
   gap: 8px;
 }
-html.upright .move-bar md-filled-button,
-html.sideways .move-bar md-filled-button {
-  min-width: 0;
+html.upright .move-bar .place {
+  gap: 4px;
+}
+html.upright .move-bar .chips {
+  display: grid;
+  grid-template-columns: minmax(0, 0.75fr) repeat(3, minmax(0, 1fr));
+  width: 100%;
+}
+html.upright .move-bar .place,
+html.upright .move-bar .sum {
+  width: auto;
+}
+html.sideways .move-bar {
+  align-self: stretch;
+}
+html.sideways .move-bar .chips {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+}
+html.sideways .move-bar .place,
+html.sideways .move-bar .sum {
+  width: auto;
 }
 html:not(.sideways) .move-bar {
   position: fixed;
@@ -451,6 +489,16 @@ html:not(.sideways) .move-bar {
   top: var(--move-bar-y, 55%);
   translate: -50% -50%;
   flex-basis: auto;
+}
+/* Upright, the four places divide the screen's width between them, the
+   sum's the narrowest. */
+html.upright .move-bar {
+  left: 8px;
+  right: 8px;
+  translate: 0 -50%;
+  /* No wider than a desktop's, on a tablet. */
+  max-width: calc(var(--move-h, 40px) * (var(--move-sum, 2.1) + 3 * var(--move-place, 2.9)) + 24px);
+  margin-inline: auto;
 }
 
 /* The hints and the explanations toggled at the foot of the controls, on a
