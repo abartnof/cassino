@@ -156,7 +156,7 @@ async function main() {
     later: (ms, fn) => director.at(ms, fn, "linger"),
   });
 
-  const hud = createHud(overlay.hudSlot, { later: (ms, fn) => director.at(ms, fn), onToggle: (open) => overlay.setScoreOpen(open) });
+  const hud = createHud(overlay.hudSlot, { later: (ms, fn) => director.at(ms, fn), onToggle: (open) => overlay.setScoreOpen(open), room: () => hudRoom() });
   const seats = () => (state.watching ? { you: "South", them: "North" } : { you: "You", them: "Opp" });
   // The HUD and the panel's names, shown at once from the state -- or, as a
   // game opens, from its deal (`upTo`: the events seen so far), so nothing
@@ -780,20 +780,50 @@ async function main() {
     if (document.documentElement.className !== was) overlay.refold();
   }
   arrange();
+  // The room the score's ledger may take, down from the score as folded: it
+  // scrolls past it, and never comes down over the drawer at the foot of
+  // the left, the trackers' panel (the seventh play-testing: "ensure the
+  // scoring hud is scrollable, but it won't overlap with the bottom
+  // drawer"). Upright, the panel lies under the score, open with its
+  // ledger, and both stop above the controls; sideways, at the window's
+  // foot.
+  function hudRoom() {
+    const rect = (sel) => document.querySelector(sel).getBoundingClientRect();
+    const folded = rect(".info").bottom - rect(".hud-panel").height;
+    const panel = document.querySelector(".aids-panel");
+    const drawer = panel.hidden ? null : panel.getBoundingClientRect();
+    let floor;
+    if (sideways.matches) floor = window.innerHeight - 8;
+    else if (isUpright()) floor = Math.min(rect(".controls").top, rect(".bar").top) - 8 - (drawer ? drawer.height + 6 : 0);
+    else floor = (drawer ? drawer.top : window.innerHeight) - 12;
+    return floor - folded;
+  }
+  function hudFit() {
+    hud.fit();
+  }
+
+  // The strips are what stays put: the score as it is folded (its
+  // hand-by-hand ledger, and the aids' panel under it upright, lie over the
+  // table when open: the seventh play-testing, "The hud shouldn't shrink
+  // everything, it should just overlap it"), and the controls at a height
+  // of their own (style.css), so nothing said in them frames the table
+  // afresh ("on iPad, the camera is often slightly moving when I'm
+  // selecting cards": the prompt, emptied while a chosen card rose, did).
   function fitStrips() {
     arrange();
     const rect = (sel) => document.querySelector(sel).getBoundingClientRect();
     const panel = document.querySelector(".aids-panel");
     const hud = rect(".info");
+    const folded = hud.bottom - rect(".hud-panel").height;
     const upright = isUpright();
     panel.style.top = upright ? `${hud.bottom + 6}px` : "";
+    hudFit();
     if (sideways.matches) {
       stage.setStrips({ top: 0, foot: 0, left: hud.right + 8, right: window.innerWidth - rect(".controls").left + 8, raised: 0 });
       return;
     }
-    const top = (upright && !panel.hidden ? panel.getBoundingClientRect().bottom : hud.bottom) + 6;
     const foot = window.innerHeight - Math.min(rect(".controls").top, rect(".bar").top) + 6;
-    stage.setStrips({ top, foot, raised: 0 });
+    stage.setStrips({ top: folded + 6, foot, raised: 0 });
   }
   new ResizeObserver(() => {
     fitStrips();
@@ -826,6 +856,9 @@ async function main() {
 
   function show() {
     const busy = director.busy();
+    // Room for the aids' line under the prompt, upright, while an aid that
+    // speaks there is on (style.css).
+    document.documentElement.classList.toggle("aid-line-on", !state.watching && Boolean(state.aids?.hints || prefs.sweepWarning));
     const after = prefs.match === "best-of-7" && !state.watching ? seriesLine(series) : null;
     overlay.show({ state, chips: busy ? [] : chipsOf(offer), message, busy, aid: aidLine(), after });
     // The cards still out and the log tell what the cards have shown: they

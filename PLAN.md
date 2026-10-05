@@ -204,6 +204,13 @@ legal move. RULES.md now says each held card answers for one build value.
   face up gone from the game's end; and at the game's end your opponent
   says one thing, no more ("You are quite normal." when you lose, "Well
   played." or the like when you win), the claim and the rematch gone.
+  On a tablet or a phone held upright the table holds still as cards are
+  chosen ("the camera is often slightly moving when I'm selecting cards,
+  and it's nauseating": the prompt, emptied while a chosen card rose,
+  framed the table afresh; the controls now keep a height of their own),
+  and the score's ledger lies over the table when open instead of
+  shrinking it; the ledger scrolls, stopping above the trackers' drawer
+  (or, upright, the controls).
 - **The South African game, researched**
   (`research/12-south-african-khasino.md`): KASA's rulebooks and its own
   online game as the canonical sources, twenty open-source engines, and

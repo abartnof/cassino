@@ -1345,17 +1345,23 @@ html.upright .bar {
 html.upright .brand {
   display: none;
 }
-/* Room kept for the prompt and the note, so they come and go without the
-   table being framed again under a finger (the move's choices are in the
-   move bar, between the table and your hand); the prompt one line (the
-   sixth play-testing: the table given the room). */
+/* Room kept for the prompt and the note, a line each, and for the aids'
+   line while an aid that speaks there is on (`aid-line-on`, set by the
+   page): a height of its own, whatever is said in it, so nothing said
+   there frames the table again under a finger (the seventh play-testing:
+   "on iPad, the camera is often slightly moving when I'm selecting
+   cards"; the prompt, emptied while a chosen card rose, did). The prompt
+   one line (the sixth play-testing: the table given the room). */
 html.upright .controls {
   bottom: 60px;
-  min-height: 46px;
+  height: 50px;
   box-sizing: border-box;
   align-content: flex-end;
   row-gap: 2px;
   padding: 4px 10px 6px;
+}
+html.upright.aid-line-on .controls {
+  height: 71px;
 }
 html.upright .controls .prompt,
 html.upright .controls .note,

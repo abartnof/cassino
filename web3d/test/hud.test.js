@@ -3,7 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
-import { CATS, POPUP_BUSY, blank, handTotal, hudEvents, ledgerOf, ledgerTotals, popupsOf, segmentState } from "../src/hud.js";
+import { CATS, HAND_H, PANEL_CHROME, POPUP_BUSY, blank, handTotal, hudEvents, ledgerOf, ledgerTotals, listHeight, popupsOf, segmentState } from "../src/hud.js";
 import { loadEngine } from "../src/engine.js";
 
 const line = (item, who, points, suit = null) => ({ item, suit, who, points });
@@ -193,4 +193,17 @@ test("the count's popups, line by line: whose popup each line brings, the aces o
   ];
   assert.deepEqual(popupsOf(lines), ["opp", "opp", "you", "opp", null, "you", null]);
   assert.ok(POPUP_BUSY > 1000);
+});
+
+// The seventh play-testing: "when the hud gets long enough, it collides
+// with the bottom drawer. please fix this by ensuring the scoring hud is
+// scrollable, but it won't overlap with the bottom drawer." The ledger's
+// list is as tall as its hands, or as the room the page measures allows
+// (less the ledger's own rules, heads and total), and scrolls past it.
+test("the ledger's list: all its hands where there is room, and no taller than the room, scrolling past it", () => {
+  assert.equal(listHeight(2, 1000), 2 * HAND_H, "room enough: every hand");
+  assert.equal(listHeight(5, 600), 600 - PANEL_CHROME, "short of room: as tall as it, less the ledger's chrome");
+  assert.equal(listHeight(5, 40), 0, "no room: the totals alone, never over the drawer");
+  assert.equal(listHeight(0, 600), 0);
+  assert.equal(listHeight(9, Infinity), 9 * HAND_H, "unmeasured: the whole of it");
 });

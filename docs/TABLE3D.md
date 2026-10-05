@@ -330,7 +330,14 @@ Material Design 3, from piquet's shell.
   - the chevron opens the **ledger**: every hand's six lines in the
     counting order (most cards, most spades, Big Cassino, Little Cassino,
     aces, sweeps), its subtotal under them, "Hand N · live" for the hand
-    under way, and the total. One level, no further toggles;
+    under way, and the total. One level, no further toggles. It is as tall
+    as its hands or as the room below the score allows, and scrolls past
+    that (`hud.js` `listHeight`; the seventh play-testing: "when the hud
+    gets long enough, it collides with the bottom drawer"): across the
+    table it stops above the trackers' drawer at the foot of the left,
+    upright above the controls with the aids' panel under it. Open, it lies
+    over the table, which is not framed again for it ("The hud shouldn't
+    shrink everything, it should just overlap it");
   - three springs, sampled for CSS `linear()`: fast spatial (damping 0.6,
     stiffness 800), default spatial (0.75, 380), effects (1.0, 1600).
     Reduced motion collapses every duration.
@@ -490,12 +497,17 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   yours beside it, and room for the move bar between); the layout and
   choreography take their zones from the view; a staging test measures the
   portrait camera's reach over whole games and holds `CAMERA_PORTRAIT.reach`
-  to it; the page measures the overlay's strips (upright: under the HUD,
-  above the controls and the bar of icons at the foot; the aids' panel
-  folded into the HUD, open while its hand-by-hand scores are, the HUD a
-  little shorter, the foot kept for the prompt's one line and the note,
-  since the sixth play-testing found the table's cards too small in the
-  window a browser leaves on an iPhone;
+  to it; the page measures the overlay's strips (upright: under the HUD as
+  it is folded, above the controls and the bar of icons at the foot; the
+  aids' panel folded into the HUD, open while its hand-by-hand scores are,
+  both then lying over the table, the HUD a little shorter, the foot kept
+  for the prompt's one line and the note, since the sixth play-testing
+  found the table's cards too small in the window a browser leaves on an
+  iPhone; the controls a fixed height, a line more while an aid that
+  speaks under the prompt is on, so that nothing said there frames the
+  table afresh: the seventh play-testing found the camera "often slightly
+  moving when I'm selecting cards" on an iPad, the prompt emptied while a
+  chosen card rose;
   sideways: between the HUD's column and the controls') and frames the table
   between them, laying the cards out afresh when the phone turns. The Large
   Text faces (automatic on a phone or a tablet, or chosen in the settings)

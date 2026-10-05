@@ -117,8 +117,17 @@ export function popupsOf(lines) {
 
 // ---- the widget --------------------------------------------------------------
 
-const HAND_H = 170;
-const LIST_MAX = 510;
+export const HAND_H = 170; // a hand's six lines and subtotal, in the list
+// The ledger's own rules, heads and total, round its list.
+export const PANEL_CHROME = 90;
+
+// The ledger's list, in px: all of its `hands`, or as tall as the `room`
+// the page measures for the whole ledger allows, less its chrome, scrolling
+// past it (the seventh play-testing: the score "collides with the bottom
+// drawer"); with no room, only the totals.
+export function listHeight(hands, room) {
+  return Math.max(0, Math.min(hands * HAND_H, room - PANEL_CHROME));
+}
 const POPUP_MS = 1700;
 const TICK_MS = 70;
 const TICK_FROM = 90;
@@ -145,8 +154,10 @@ function replay(node, cls) {
 // `later(ms, fn)` runs on the table's clock (director.at), so the HUD holds
 // when the table is held and keeps time with the cards.
 // `onToggle(open)`: the chevron pressed, the ledger opened or folded (on a
-// phone held upright the trackers open and fold with it: main.js).
-export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms), onToggle = () => {} } = {}) {
+// phone held upright the trackers open and fold with it: main.js), before
+// the ledger is sized, so the room it is given knows of them. `room()`: the
+// height in px the whole ledger may take (main.js measures it).
+export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms), onToggle = () => {}, room = () => Infinity } = {}) {
   const lines = { you: [], opp: [] };
   const line = (side) => {
     const row = el("div", { class: `hud-line ${side}` });
@@ -268,13 +279,19 @@ export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms), onTogg
         return hand;
       }),
     );
-    const listH = Math.min(all.length * HAND_H, LIST_MAX);
-    list.style.height = `${listH}px`;
-    panel.style.height = open ? `${90 + listH}px` : "0px";
+    fit();
     totYou.textContent = String(totals.you);
     totOpp.textContent = String(totals.opp);
     totYou.classList.toggle("lead", totals.you > totals.opp);
     totOpp.classList.toggle("lead", totals.opp > totals.you);
+  }
+
+  // The ledger sized to its hands and the room it has.
+  function fit() {
+    const listH = listHeight(list.children.length, room());
+    const height = open ? `${PANEL_CHROME + listH}px` : "0px";
+    if (list.style.height !== `${listH}px`) list.style.height = `${listH}px`;
+    if (panel.style.height !== height) panel.style.height = height;
   }
 
   chevron.addEventListener("click", () => {
@@ -282,8 +299,8 @@ export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms), onTogg
     hud.classList.toggle("open", open);
     chevron.setAttribute("aria-expanded", String(open));
     chevron.setAttribute("aria-label", open ? "Hide hand-by-hand scores" : "Show hand-by-hand scores");
-    drawList();
     onToggle(open);
+    drawList();
   });
 
   // One scoring event, played out: the bars ripple at once, the popup rolls
@@ -326,8 +343,7 @@ export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms), onTogg
   }
 
   return {
-    // Shown at once, nothing played out: a new game, a sitting restored, an
-    // undo.
+    // Shown at once, nothing played out: a new game, a sitting restored.
     reset(given, who = { you: "You", opp: "Opp" }) {
       epoch++;
       queue.you.length = 0;
@@ -383,5 +399,8 @@ export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms), onTogg
       current,
     }),
     node: hud,
+    // The room changed (the window, the drawer under the score): the
+    // ledger sized again.
+    fit,
   };
 }

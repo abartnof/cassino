@@ -932,6 +932,143 @@ def check_tablet_faces(browser, failures):
         page.context.close()
 
 
+WATCH_STILL_JS = """() => {
+  const s = window.cassino3d.state();
+  const code = s.table[0].cards[0].card;
+  const from = window.cassino3d.screenPoint(code);
+  const strips = JSON.stringify(window.cassino3d.strips());
+  window.moved = [];
+  window.watching = true;
+  const watch = () => {
+    if (!window.watching) return;
+    const p = window.cassino3d.screenPoint(code);
+    if (Math.hypot(p.x - from.x, p.y - from.y) > 0.5) window.moved.push(`${code} moved ${(p.x - from.x).toFixed(1)}, ${(p.y - from.y).toFixed(1)} px`);
+    const now = JSON.stringify(window.cassino3d.strips());
+    if (now !== strips) window.moved.push(`strips ${strips} became ${now}`);
+    requestAnimationFrame(watch);
+  };
+  requestAnimationFrame(watch);
+}"""
+
+
+def check_still(browser, failures):
+    """The table holds still while cards are chosen, on a tablet and a phone
+    held upright (the seventh play-testing: "at least on iPad, the camera is
+    often slightly moving when I'm selecting cards, and it's nauseating"),
+    and while the score's hand-by-hand ledger is open, which lies over the
+    table instead of shrinking it ("The hud shouldn't shrink everything, it
+    should just overlap it")."""
+    for viewport in ({"width": 820, "height": 1180}, {"width": 390, "height": 844}):
+        where = f"{viewport['width']}x{viewport['height']}"
+        page = open_page(browser, "seed=7&speed=2", viewport=viewport, device={"user_agent": IPAD, "has_touch": True})
+        settle(page)
+        page.wait_for_timeout(1500)
+        s = page.evaluate("window.cassino3d.state()")
+        if s["prompt"] != "play" or not s["table"]:
+            failures.append(f"still {where}: not your turn with a table to watch ({s['prompt']})")
+            page.context.close()
+            continue
+        page.evaluate(WATCH_STILL_JS)
+        hand = [c["card"] for c in s["hand"]]
+        for code in hand[:2]:
+            click_card(page, code)  # chosen: it lifts, and the prompt changes
+            page.wait_for_timeout(900)
+            click_card(page, code)  # let go
+            page.wait_for_timeout(900)
+        # A table card tapped with nothing chosen: the note says why not.
+        click_card(page, s["table"][-1]["cards"][-1]["card"])
+        page.wait_for_timeout(900)
+        page.locator(".hud-chev").click()
+        page.wait_for_timeout(1200)
+        page.locator(".hud-chev").click()
+        page.wait_for_timeout(1200)
+        moved = page.evaluate("window.watching = false, window.moved")
+        if moved:
+            failures.append(f"still {where}: the table moved as cards were chosen or the score opened: {moved[:3]} ({len(moved)} frames)")
+        page.context.close()
+
+
+LONG_GAME_JS = """() => {
+  // A game some hands along (three if any seed gets there, else two),
+  // kept as the page keeps a sitting, for the page to restore on its next
+  // load.
+  const e = window.cassino3d.engine;
+  let two = null;
+  for (let seed = 1; seed < 80; seed++) {
+    let s = e.start({ game: "classic", aces14: false, sweeps: false, raising: true, skill: 1, seed });
+    s = e.send("set hints on").state;
+    for (let n = 0; n < 3000 && s.prompt !== "over"; n++) {
+      const hands = s.events.filter((x) => x.kind === "hand_ends").length;
+      if (s.prompt === "next_hand" && hands >= 3) {
+        localStorage.setItem("cassino.sitting", s.saved);
+        return 3;
+      }
+      if (s.prompt === "next_hand" && hands === 2 && !two) two = s.saved;
+      // You play the hint, so the game stays close.
+      s = e.send(s.prompt === "play" ? (e.hint()?.move ?? s.moves[0]) : "next").state;
+    }
+  }
+  if (!two) return null;
+  localStorage.setItem("cassino.sitting", two);
+  return 2;
+}"""
+
+
+def check_hud_room(browser, failures):
+    """The score's hand-by-hand ledger, two or three hands along (eleven
+    points a hand: a fourth would end the game), scrolls rather
+    than running down over the drawer at the foot of the left (the seventh
+    play-testing: "when the hud gets long enough, it collides with the
+    bottom drawer"); upright, over the table and its panel under it, both
+    clear of the controls."""
+    for viewport in ({"width": 1280, "height": 720}, {"width": 1366, "height": 650}, {"width": 820, "height": 1180}, {"width": 390, "height": 844}):
+        where = f"{viewport['width']}x{viewport['height']}"
+        context = browser.new_context(viewport=viewport)
+        context.set_offline(True)
+        page = context.new_page()
+        page.errors = []
+        page.on("pageerror", lambda e: page.errors.append(str(e)))
+        url = f"{PAGE.as_uri()}?tutorial=0&welcome=0&speed=8"
+        page.goto(url)
+        page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
+        hands = page.evaluate(LONG_GAME_JS)
+        if hands is None:
+            failures.append(f"hud {where}: no game found hands along")
+            context.close()
+            continue
+        page.goto(url)
+        page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
+        settle(page)
+        if page.evaluate("window.cassino3d.state().events.filter((x) => x.kind === 'hand_ends').length") < hands:
+            failures.append(f"hud {where}: the long game was not restored")
+            context.close()
+            continue
+        # The drawer open too, where it is a drawer (across the table).
+        upright = page.evaluate("document.documentElement.classList.contains('upright')")
+        if not upright and page.locator(".aids-head").is_visible():
+            page.locator(".aids-head").click()
+        page.locator(".hud-chev").click()
+        page.wait_for_timeout(1500)
+        box = page.locator(".hud").bounding_box()
+        hud_bottom = box["y"] + box["height"]
+        scrolls = page.evaluate("(() => { const l = document.querySelector('.hud-list'); return l.scrollHeight > l.clientHeight + 1; })()")
+        panel = page.locator(".aids-panel")
+        drawer = panel.bounding_box() if panel.is_visible() else None
+        if upright:
+            controls = page.evaluate("Math.min(document.querySelector('.controls').getBoundingClientRect().top, document.querySelector('.bar').getBoundingClientRect().top)")
+            lowest = drawer["y"] + drawer["height"] if drawer else hud_bottom
+            if lowest > controls:
+                failures.append(f"hud {where}: the score and its panel run down to {lowest:.0f} px, over the controls at {controls:.0f}")
+        elif drawer and hud_bottom > drawer["y"]:
+            failures.append(f"hud {where}: the score runs down to {hud_bottom:.0f} px, over the drawer at {drawer['y']:.0f}")
+        if not scrolls and viewport["height"] < 700:
+            failures.append(f"hud {where}: {hands} hands' ledger does not scroll on a short window")
+        shot(page, f"t4-hud-room-{where}")
+        if page.errors:
+            failures.append(f"hud {where}: console errors {page.errors[:3]}")
+        context.close()
+
+
 def check_settings(browser, failures):
     """The settings: hints turned on in the dialog; a hint shown, lit and
     chosen and played; no undo (the seventh play-testing: "remove undo");
@@ -1169,6 +1306,8 @@ def main() -> int:
         check_tutorial(browser, failures)
         check_phone(browser, failures)
         check_tablet_faces(browser, failures)
+        check_still(browser, failures)
+        check_hud_room(browser, failures)
         check_desktop_frame(browser, failures)
         check_phone_talk(browser, failures)
         check_phone_room(browser, failures)
