@@ -1146,6 +1146,26 @@ def check_hud_room(browser, failures):
         if not scrolls and viewport["height"] < 700:
             failures.append(f"hud {where}: {hands} hands' ledger does not scroll on a short window")
         shot(page, f"t4-hud-room-{where}")
+        # The next hand dealt, the ledger still open: it lies over the move
+        # bar, not under it (the user: "the action buttons occlude the hud
+        # when the hud is opened").
+        page.locator("md-filled-button.next").click()
+        settle(page)
+        page.wait_for_timeout(1500)
+        under = page.evaluate("""() => {
+          const hud = document.querySelector('.hud').getBoundingClientRect();
+          const out = [];
+          for (const b of document.querySelectorAll('.move-bar md-filled-button')) {
+            const r = b.getBoundingClientRect();
+            const x = (Math.max(r.left, hud.left) + Math.min(r.right, hud.right)) / 2;
+            const y = (Math.max(r.top, hud.top) + Math.min(r.bottom, hud.bottom)) / 2;
+            if (r.right <= hud.left || r.left >= hud.right || r.bottom <= hud.top || r.top >= hud.bottom) continue;
+            if (!document.elementFromPoint(x, y)?.closest('.info')) out.push(b.dataset.label);
+          }
+          return out;
+        }""")
+        if under:
+            failures.append(f"hud {where}: the move bar's {under} lie over the open score")
         if page.errors:
             failures.append(f"hud {where}: console errors {page.errors[:3]}")
         context.close()

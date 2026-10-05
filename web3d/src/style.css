@@ -598,7 +598,11 @@ html.sideways .aid-toggles {
    card of neutral greys, the system font, tabular numerals, and three
    springs sampled for CSS linear(): fast spatial (damping 0.6, stiffness
    800), default spatial (0.75, 380) and effects (1.0, 1600). */
+/* Over the controls, the move bar among them: the score open lies over
+   its buttons, not under them (the user: "the action buttons occlude the
+   hud when the hud is opened"). Its drawer too; their tips above both. */
 .info {
+  z-index: 2;
   position: fixed;
   top: 12px;
   left: 12px;
@@ -984,6 +988,7 @@ html.sideways .aid-toggles {
 /* Our own aids under the HUD, in its palette: each player's captures (the
    trackers) and the cards still out. */
 .aids-panel {
+  z-index: 2;
   position: fixed;
   left: 12px;
   bottom: 16px;

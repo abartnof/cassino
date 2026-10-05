@@ -221,7 +221,8 @@ legal move. RULES.md now says each held card answers for one build value.
   not taken for a choice). And one window, not two: the page opens on the
   new game's menu, the tutorial a switch in it (turned on there, from its
   first page), Continue beside Deal with a game kept; the welcome and the
-  tutorial's switch in the settings gone.
+  tutorial's switch in the settings gone. The score, opened, lies over the move
+  bar's buttons, not under them.
   On a phone or a tablet your hand is a row spaced wide, not a fan, lying
   just off the table so that its cards are the table's size, and the
   field closes in: on an iPad held upright the table's cards from 100 to
