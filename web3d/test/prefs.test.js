@@ -32,8 +32,8 @@ test("storage that throws, or holds nonsense, gives the defaults and never fails
   const p = loadPrefs(store);
   assert.equal(p.skill, DEFAULTS.skill);
   assert.equal(p.speed, DEFAULTS.speed);
-  assert.equal(p.rules.game, "classic");
-  assert.equal(p.rules.aces14, false, "aces 1 or 14 only with Royal");
+  assert.equal(p.rules.game, DEFAULTS.rules.game);
+  assert.equal(p.rules.aces14, false, "aces 1 or 14 off unless chosen");
 });
 
 test("the scoring board is gone: a setting kept for it is forgotten", () => {
@@ -204,8 +204,14 @@ test("the new game's menu starts from the game played last", () => {
   assert.deepEqual(menuChoices(prefs, { ...royal, watching: true }), { rules: DEFAULTS.rules, skill: DEFAULTS.skill, match: "best-of-7" });
 });
 
-// The user: "flip Royal Casino and casino so that casino becomes the
-// default, and is left of [Royal] casino in the buttons."
-test("plain Cassino is the default game", () => {
-  assert.equal(DEFAULTS.rules.game, "classic");
+// The user: "I want Royal Casino on the left and to be the default.
+// Casino is the variant and on the right." A game kept under the old
+// default, plain Cassino (before version 4), is not taken for a choice.
+test("Royal Cassino is the default game, and plain Cassino kept as the old default is not a choice", () => {
+  assert.equal(DEFAULTS.rules.game, "royal");
+  const store = memory();
+  store.setItem("cassino.prefs", JSON.stringify({ rules: { game: "classic", aces14: false, sweeps: false, raising: true }, v: 3 }));
+  assert.equal(loadPrefs(store).rules.game, "royal");
+  savePrefs(store, { ...DEFAULTS, rules: { ...DEFAULTS.rules, game: "classic" } });
+  assert.equal(loadPrefs(store).rules.game, "classic", "chosen since, it is kept");
 });

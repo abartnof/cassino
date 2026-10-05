@@ -148,8 +148,8 @@ export function createChrome(root, on) {
   // begins. `showNewGame(from, done)`: `done(choice)` once, with { kind:
   // "deal" | "daily" | "watch", rules, skill, match }, or null if it was
   // closed without one. `from`: what it starts from (prefs.js menuChoices),
-  // { rules, skill, match }. Plain Cassino on the left, Royal on the right
-  // (the user).
+  // { rules, skill, match }. Royal Cassino on the left, the default, and
+  // plain Cassino, the variant, on the right (the user).
   const GAME_WORDS = {
     classic: "Jacks, queens and kings are taken only by their own rank, in pairs; the other cards build up to 10.",
     royal: "Jacks, queens and kings count 11, 12 and 13, and build like the rest.",
@@ -161,7 +161,7 @@ export function createChrome(root, on) {
     let rules = { ...from.rules };
     let chosen = null;
     const segment = (value, label) => el("md-outlined-segmented-button", { "data-game": value, label });
-    const gameSet = el("md-outlined-segmented-button-set", { class: "game-set", "aria-label": "The game" }, segment("classic", "Cassino"), segment("royal", "Royal Cassino"));
+    const gameSet = el("md-outlined-segmented-button-set", { class: "game-set", "aria-label": "The game" }, segment("royal", "Royal Cassino"), segment("classic", "Cassino"));
     const gameWords = el("p", { class: "game-words" });
     const aces = sw({ "data-rule": "aces14" }, (v) => (rules = { ...rules, aces14: v }));
     const sweeps = sw({ "data-rule": "sweeps" }, (v) => (rules = { ...rules, sweeps: v }));

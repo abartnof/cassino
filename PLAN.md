@@ -216,8 +216,9 @@ legal move. RULES.md now says each held card answers for one build value.
   the game they start begins (Royal could be chosen in the settings and
   not happen until a new game); the settings say what game is under way.
   The menu starts from the last game's settings, as the engine has them
-  (no tracking added), plain Cassino on the left and the default, Royal
-  Cassino on the right.
+  (no tracking added); Royal Cassino on the left and the default, plain
+  Cassino the variant on the right (a game kept under the old default is
+  not taken for a choice).
   On a phone or a tablet your hand is a row spaced wide, not a fan, lying
   just off the table so that its cards are the table's size, and the
   field closes in: on an iPad held upright the table's cards from 100 to
@@ -248,7 +249,7 @@ legal move. RULES.md now says each held card answers for one build value.
 
 | Decision | Choice | Reasoning |
 |---|---|---|
-| The games | Two-player **Classic** and **Royal** Cassino, chosen at the start | the user; `RULES.md` |
+| The games | Two-player **Classic** and **Royal** Cassino, chosen at the start; Royal the table's default since the seventh play-testing (the terminal's stays Classic) | the user; `RULES.md` |
 | Settings | "Aces count 1 or 14" (Royal only, off), "Score sweeps" (off since the first play-testing) and "Raise builds" (on; a choice since the fifth) | `RULES.md`, "Authority" |
 | Rule authority | pagat.com, Casino and Royal Casino | `RULES.md` |
 | Language | **Rust from the first line**; no Python oracle | `DESIGN.md` §4 |

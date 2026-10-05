@@ -8,8 +8,9 @@
 const PREFS = "cassino.prefs";
 // What is kept is every setting, defaults too: the version says which
 // defaults it was kept under, so a default changed since (sweeps, version
-// 2; the trackers' panel folded, 3) is not taken for the person's choice.
-const VERSION = 3;
+// 2; the trackers' panel folded, 3; Royal Cassino the game, 4) is not
+// taken for the person's choice.
+const VERSION = 4;
 const SITTING = "cassino.sitting";
 const SERIES = "cassino.series";
 
@@ -17,7 +18,10 @@ export const DEFAULTS = Object.freeze({
   // Sweeps scored only if chosen: pagat's Casino has them as a variant, and
   // play-testing preferred the game without them (docs/RULES.md). Builds
   // raised unless chosen otherwise (play-testing asked for the choice).
-  rules: Object.freeze({ game: "classic", aces14: false, sweeps: false, raising: true }),
+  // Royal Cassino the game unless plain Cassino, the variant, is chosen
+  // (the user: "I want Royal Casino on the left and to be the default.
+  // Casino is the variant and on the right").
+  rules: Object.freeze({ game: "royal", aces14: false, sweeps: false, raising: true }),
   skill: 3,
   speed: 1,
   surface: "random",
@@ -91,7 +95,7 @@ export function loadPrefs(store) {
     kept = {};
   }
   const r = kept.rules ?? {};
-  const game = r.game === "royal" ? "royal" : "classic";
+  const game = ["royal", "classic"].includes(r.game) && kept.v >= 4 ? r.game : DEFAULTS.rules.game;
   const aids = kept.aids ?? {};
   return {
     rules: {

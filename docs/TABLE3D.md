@@ -432,8 +432,10 @@ Material Design 3, from piquet's shell.
   it needs a new game to apply ... it's new game with x setting, all picked
   from one menu screen"): the plus at the top, New game at the game's end
   and the welcome's New game all open one screen with the game's own
-  settings, Cassino or Royal Cassino (with what each means; plain Cassino
-  on the left and the default, as the user asked), aces 1 or 14, sweeps,
+  settings, Royal Cassino or Cassino (with what each means; Royal on the
+  left and the default, plain Cassino the variant on the right: the user,
+  "I want Royal Casino on the left and to be the default. Casino is the
+  variant and on the right"), aces 1 or 14, sweeps,
   raising builds, the skill dial (1 to 4 in halves) and the match (one
   game, or a World Series: the best of seven, `series.js`); Deal starts the
   game with them, Today's deal (seeded from the date) and Watch a game

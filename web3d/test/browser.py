@@ -73,6 +73,11 @@ def open_page(browser, query="seed=7", viewport=None, calm=False, device=None):
     # Nor the welcome, unless it is what is tested.
     if "welcome" not in query:
         query += "&welcome=0"
+    # The seeds here were chosen for plain Cassino: it, unless a game is
+    # named, or the default is what is tested ("nogame"; Royal Cassino
+    # since the seventh play-testing).
+    if "game=" not in query and "nogame" not in query:
+        query += "&game=classic"
     page.goto(f"{PAGE.as_uri()}?{query}")
     page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
     return page
@@ -373,14 +378,15 @@ def check_new_game(browser, failures):
     casino to be on, but it isn't happening"): the plus opens it, put aside
     it changes nothing, and Deal starts a game with what it shows; "Raise
     builds" on by default (play-testing asked for the choice)."""
-    page = open_page(browser, "seed=7&speed=100", calm=True)
+    page = open_page(browser, "seed=7&speed=100&nogame", calm=True)
     settle(page)
     page.locator("md-icon-button.settings-open").click()
     page.wait_for_timeout(1200)
     settings = page.locator(".settings-dialog")
     if settings.locator("md-switch[data-rule], .game-set, md-outlined-select.skill, md-outlined-select.match").count():
         failures.append("new game: the game's own settings are still in the settings")
-    if "This game: Cassino," not in settings.locator(".game-line").inner_text():
+    # Royal Cassino the default (the user).
+    if "This game: Royal Cassino," not in settings.locator(".game-line").inner_text():
         failures.append(f"new game: the settings do not say what game is under way: {settings.locator('.game-line').inner_text()!r}")
     settings.locator("md-filled-tonal-button", has_text="Done").click()
     page.wait_for_timeout(800)
@@ -392,16 +398,15 @@ def check_new_game(browser, failures):
     shot(page, "t6-new-game")
     if not page.evaluate("document.querySelector('.new-game-dialog md-switch[data-rule=\"raising\"]').selected"):
         failures.append("new game: Raise builds is not on by default")
-    dialog.locator('md-outlined-segmented-button[data-game="royal"]').click()
+    dialog.locator('md-outlined-segmented-button[data-game="classic"]').click()
     dialog.locator(".new-game-cancel").click()
     page.wait_for_function("!document.querySelector('.new-game-dialog').open")
-    if page.evaluate("window.cassino3d.state().saved") != before or page.evaluate("window.cassino3d.prefs().rules.game") != "classic":
+    if page.evaluate("window.cassino3d.state().saved") != before or page.evaluate("window.cassino3d.prefs().rules.game") != "royal":
         failures.append("new game: the menu put aside changed the game or the next one's rules")
     # Royal, aces 1 or 14, no raising: dealt so.
     page.locator("md-icon-button.new-game").click()
 
     def royal(d):
-        d.locator('md-outlined-segmented-button[data-game="royal"]').click()
         d.locator('md-switch[data-rule="aces14"]').click()
         d.locator('md-switch[data-rule="raising"]').click()
 
@@ -425,8 +430,8 @@ def check_new_game(browser, failures):
       return [[...d.querySelectorAll('md-outlined-segmented-button')].find((b) => b.selected)?.dataset.game, d.querySelector('md-switch[data-rule="aces14"]').selected, d.querySelector('md-switch[data-rule="raising"]').selected,
         [...d.querySelectorAll('md-outlined-segmented-button')].map((b) => b.getAttribute('label'))];
     }""")
-    if shown != ["royal", True, False, ["Cassino", "Royal Cassino"]]:
-        failures.append(f"new game: the menu does not start from the last game, Cassino left of Royal Cassino: {shown}")
+    if shown != ["royal", True, False, ["Royal Cassino", "Cassino"]]:
+        failures.append(f"new game: the menu does not start from the last game, Royal Cassino left of Cassino: {shown}")
     page.locator(".new-game-dialog .new-game-cancel").click()
     if page.errors:
         failures.append(f"new game: console errors {page.errors[:5]}")
