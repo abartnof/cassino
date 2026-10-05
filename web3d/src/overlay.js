@@ -14,7 +14,7 @@ import "@material/web/button/filled-button.js";
 import "@material/web/iconbutton/icon-button.js";
 import { besideAt, boxRect, covers } from "./dialogue.js";
 import { trackerTable } from "./scorebug.js";
-import { BAR, barAcross, barMask, fitLabels, moveBar, pointIn } from "./selection.js";
+import { BAR, barAcross, barHoles, clipPathFor, fitLabels, holeGroups, moveBar, pointIn } from "./selection.js";
 
 // `later(ms, fn)` runs `fn` after `ms` on the table's clock (director.at),
 // so a box lingers as long as the table runs, and holds when it is held.
@@ -61,8 +61,11 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onCardTap = () 
   // The places' widths, in the bar's heights (selection.js BAR), for the
   // style sheet.
   bar.style.setProperty("--move-place", String(BAR.place));
-  // The move bar under the cards: each card crossing it cut out of it
-  // (selection.js barMask), and a tap there the card's, not a button's.
+  // The move bar under the cards: each card crossing it cut out of it, by
+  // clip paths drawn at once (a mask image flickered), shared among the
+  // bar, its row and its places so that no two cut from one overlap
+  // (selection.js barHoles, holeGroups, clipPathFor); and a tap there the
+  // card's, not a button's.
   let holes = [];
   bar.addEventListener(
     "click",
@@ -75,12 +78,18 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onCardTap = () 
     true,
   );
   function maskMoveBar(polys) {
-    const m = bar.hidden ? null : barMask(bar.getBoundingClientRect(), polys);
-    holes = m ? m.holes : [];
-    const value = m ? `url("data:image/svg+xml,${encodeURIComponent(m.svg)}")` : "";
-    if (bar.style.maskImage === value) return;
-    bar.style.maskImage = value;
-    bar.style.webkitMaskImage = value;
+    holes = bar.hidden ? [] : barHoles(bar.getBoundingClientRect(), polys);
+    const groups = holeGroups(holes, 3);
+    const levels = [[bar], [chipSet], [...chipSet.querySelectorAll(".place")]];
+    levels.forEach((nodes, k) => {
+      for (const node of nodes) {
+        const value = groups[k] ? clipPathFor(node.getBoundingClientRect(), groups[k]) : "";
+        if (node.dataset.clip !== value) {
+          node.dataset.clip = value;
+          node.style.clipPath = value;
+        }
+      }
+    });
   }
   bar.style.setProperty("--move-pad", String(BAR.pad));
   bar.style.setProperty("--move-split", String(BAR.split));

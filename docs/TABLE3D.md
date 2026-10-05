@@ -360,8 +360,12 @@ Material Design 3, from piquet's shell.
   cards (the user: "put the action buttons ... on a layer lower than the
   cards so that they do not occlude the cards"): drawn over the table, it
   has each card that crosses it on the screen cut out of it, frame by
-  frame, by a mask (so that cards overlapping each other are both cut
-  out), and a tap there is the card's (`selection.js` `barMask`). The running sum's place
+  frame, by clip paths, drawn at once (a mask image, decoded afresh each
+  frame, made the buttons flicker: the user, "when a card passes over the
+  action buttons, the action buttons flicker"), shared among the bar, its
+  row and its places so that no two cut from one element overlap (one
+  path cuts overlapping cards out only by halves); and a tap there is the
+  card's (`selection.js` `barHoles`, `holeGroups`, `clipPathFor`). The running sum's place
   before them went in the seventh play-testing ("remove the sum button to
   the left of the action buttons"). On a
   desktop the bar fills the space between the table's first row and your

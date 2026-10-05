@@ -222,20 +222,27 @@ test("the move bar is never wider than the room across", () => {
 });
 
 // The user: "put the action buttons (take, build, trail) on a layer lower
-// than the cards so that they do not occlude the cards." Each card that
-// crosses the move bar on the screen is cut out of it (a mask, so cards
-// that overlap still both show), and a tap there is the card's.
-test("the move bar's mask: the cards that cross it cut out of it, and a tap in one is the card's", async () => {
-  const { barMask, pointIn } = await import("../src/selection.js");
+// than the cards so that they do not occlude the cards"; and then "when a
+// card passes over the action buttons, the action buttons flicker" (a mask
+// image, decoded afresh each frame, lagged its frame). Each card that
+// crosses the bar is cut out of it by a clip path, drawn at once: the
+// cards that cross it, shared among the bar's nested elements so that no
+// two cut from one element overlap (one path cuts overlapping cards out
+// only by halves), and a tap in one is the card's.
+test("the move bar's cut-outs: the cards that cross it, overlapping ones on different elements, and a tap in one the card's", async () => {
+  const { barHoles, holeGroups, clipPathFor, pointIn } = await import("../src/selection.js");
   const bar = { left: 100, top: 400, width: 300, height: 50 };
   const square = (x, y, s = 40) => [{ x, y }, { x: x + s, y }, { x: x + s, y: y + s }, { x, y: y + s }];
-  assert.equal(barMask(bar, [square(0, 0), square(500, 400)]), null, "no card on the bar: no mask");
-  const m = barMask(bar, [square(0, 0), square(150, 380), square(170, 390)]);
-  assert.equal(m.holes.length, 2, "only the cards that cross it");
-  assert.match(m.svg, /<mask/);
-  assert.match(m.svg, /width="300" height="50"/);
-  // Its points in the bar's own place: the first card from (50, -20).
-  assert.match(m.svg, /50,-20 90,-20 90,20 50,20/);
-  assert.ok(pointIn(m.holes[0], 160, 410));
-  assert.ok(!pointIn(m.holes[0], 260, 410));
+  assert.deepEqual(barHoles(bar, [square(0, 0), square(500, 400)]), [], "no card on the bar");
+  const holes = barHoles(bar, [square(0, 0), square(150, 380), square(170, 390), square(300, 400)]);
+  assert.equal(holes.length, 3, "only the cards that cross it");
+  const groups = holeGroups(holes, 3);
+  assert.deepEqual(groups.map((g) => g.length), [2, 1], "the two that overlap apart; the one clear of them with the first");
+  assert.deepEqual(holeGroups([square(150, 380), square(155, 385), square(160, 390), square(165, 395)], 3).map((g) => g.length), [1, 1, 2], "more overlapping than elements: the rest on the last");
+  const path = clipPathFor(bar, [square(150, 380)]);
+  assert.match(path, /^path\(evenodd, "M-24 -24H324V74H-24Z /, "the bar's box, and room round it");
+  assert.match(path, /M50 -20L90 -20L90 20L50 20Z"\)$/, "the card in the bar's own place");
+  assert.equal(clipPathFor(bar, []), "");
+  assert.ok(pointIn(holes[0], 160, 410));
+  assert.ok(!pointIn(holes[0], 260, 410));
 });

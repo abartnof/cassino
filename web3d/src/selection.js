@@ -198,30 +198,48 @@ export function sweepWarning(chips) {
 // The move bar under the cards (the user: "put the action buttons ... on a
 // layer lower than the cards so that they do not occlude the cards"). The
 // bar is drawn over the table, so each card that crosses it on the screen
-// is cut out of it: `polys`, each card's outline on the screen; `bar`, its
-// box ({ left, top, width, height }). Null if no card crosses it; else
-// `svg`, an image as large as the bar, opaque but where the cards are,
-// for its mask (a mask, so that cards overlapping each other are both cut
-// out), and `holes`, the cards that cross it, for a tap there to be the
-// card's (pointIn).
-export function barMask(bar, polys) {
+// is cut out of it, by clip paths, which are drawn at once (a mask image,
+// decoded afresh each frame, made the buttons flicker: the user, "when a
+// card passes over the action buttons, the action buttons flicker").
+// `polys`: each card's outline on the screen; `bar`: its box ({ left, top,
+// width, height }). The cards that cross it:
+export function barHoles(bar, polys) {
   const right = bar.left + bar.width;
   const bottom = bar.top + bar.height;
-  const holes = polys.filter((poly) => {
-    const xs = poly.map((p) => p.x);
-    const ys = poly.map((p) => p.y);
-    return Math.max(...xs) > bar.left && Math.min(...xs) < right && Math.max(...ys) > bar.top && Math.min(...ys) < bottom;
+  return polys.filter((poly) => {
+    const b = boxOf(poly);
+    return b.right > bar.left && b.left < right && b.bottom > bar.top && b.top < bottom;
   });
-  if (!holes.length) return null;
+}
+function boxOf(poly) {
+  const xs = poly.map((p) => p.x);
+  const ys = poly.map((p) => p.y);
+  return { left: Math.min(...xs), right: Math.max(...xs), top: Math.min(...ys), bottom: Math.max(...ys) };
+}
+// The holes shared among `levels` nested elements, each cutting its own
+// out (their cuts add up): one path cuts overlapping cards out only by
+// halves, so cards whose boxes overlap go to different elements, as far
+// as there are elements; past that, to the last.
+export function holeGroups(holes, levels) {
+  const groups = [];
+  const meets = (a, b) => a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom;
+  for (const hole of holes) {
+    const box = boxOf(hole);
+    let k = groups.findIndex((g) => g.every((h) => !meets(boxOf(h), box)));
+    if (k < 0) k = groups.length < levels ? groups.length : levels - 1;
+    (groups[k] ??= []).push(hole);
+  }
+  return groups;
+}
+// An element's clip path with these holes cut out of it: its box (`box`,
+// on the screen), with room round it for what is drawn just outside (the
+// buttons' outlines), less each hole, in its own place; "" with none.
+export function clipPathFor(box, holes, pad = 24) {
+  if (!holes.length) return "";
   const at = (n) => Math.round(n * 10) / 10;
-  const shapes = holes.map((poly) => `<polygon points="${poly.map((p) => `${at(p.x - bar.left)},${at(p.y - bar.top)}`).join(" ")}"/>`).join("");
-  const w = at(bar.width);
-  const h = at(bar.height);
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">` +
-    `<mask id="m"><rect width="${w}" height="${h}" fill="white"/><g fill="black">${shapes}</g></mask>` +
-    `<rect width="${w}" height="${h}" fill="white" mask="url(#m)"/></svg>`;
-  return { svg, holes };
+  const outer = `M${-pad} ${-pad}H${at(box.width + pad)}V${at(box.height + pad)}H${-pad}Z`;
+  const cuts = holes.map((poly) => `M${poly.map((p) => `${at(p.x - box.left)} ${at(p.y - box.top)}`).join("L")}Z`);
+  return `path(evenodd, "${[outer, ...cuts].join(" ")}")`;
 }
 
 // Whether a point lies in a polygon (its corners in order).

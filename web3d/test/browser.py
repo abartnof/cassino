@@ -1268,7 +1268,7 @@ def check_bar_under(browser, failures):
     masked = 0
     for k in range(160):
         page.evaluate("window.cassino3d.tick(40)")
-        if page.evaluate("(() => { const b = document.querySelector('.move-bar'); return !b.hidden && b.style.maskImage.includes('svg'); })()"):
+        if page.evaluate("(() => { const b = document.querySelector('.move-bar'); return !b.hidden && [b, ...b.querySelectorAll('.chips, .place')].some((e) => e.style.clipPath.includes('path')); })()"):
             masked += 1
             if masked == 1:
                 shot(page, "t2-bar-under")
@@ -1280,7 +1280,7 @@ def check_bar_under(browser, failures):
       const b = document.querySelector('.move-bar').getBoundingClientRect();
       return ['middle', 'your-hand'].flatMap((z) => window.cassino3d.cardRects(z)).some((r) => r.right > b.left && r.left < b.right && r.bottom > b.top && r.top < b.bottom);
     }""")
-    still = page.evaluate("document.querySelector('.move-bar').style.maskImage.includes('svg')")
+    still = page.evaluate("[document.querySelector('.move-bar'), ...document.querySelectorAll('.move-bar .chips, .move-bar .place')].some((e) => e.style.clipPath.includes('path'))")
     if still and not crossing:
         failures.append("bar under: at rest, the move bar is cut with no card across it")
     if page.errors:
