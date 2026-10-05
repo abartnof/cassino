@@ -385,6 +385,12 @@ Material Design 3, from piquet's shell.
   version"), its three places sharing the screen's width, and your words
   below your hand; held sideways, its places are stacked in the controls'
   column.
+- **Helper text** under the cards, what to do ("Choose a card from your
+  hand, then the table cards.") and why a card cannot join, only with the
+  explanations on (the user: "fold all on screen helper text that's just
+  sort of loose into the explanations mode"); the game's result is said
+  whatever, and the hint and the sweep warning keep their own switches.
+  Upright, the room they took goes to the table while they are off.
 - **The score HUD**, from the designer's handoff (the spec and its approved
   reference implementation are commit c484091; the reference's numbers are
   the source of truth, and `hud.js` and `style.css` port them). A dark card

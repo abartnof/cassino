@@ -87,12 +87,16 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onCardTap = () 
   bar.style.setProperty("--move-pad", String(BAR.pad));
   bar.style.setProperty("--move-split", String(BAR.split));
   // `leftHanded`: the move bar the other way round (selection.js moveBar).
-  function show({ state, chips, message, busy = false, aid = null, after = null, leftHanded = false }) {
-    prompt.textContent = busy ? "" : promptText(state, chips);
+  // `explain`: the explanations on, and with them the helper text under the
+  // cards, what to do and why a card cannot join (the user: "fold all on
+  // screen helper text that's just sort of loose into the explanations
+  // mode"); the game's result is said whatever.
+  function show({ state, chips, message, busy = false, aid = null, after = null, leftHanded = false, explain = false }) {
+    prompt.textContent = busy || (!explain && state.prompt !== "over") ? "" : promptText(state, chips);
     if (!busy && after && state.prompt === "over") prompt.textContent += ` ${after}`;
     aidLine.hidden = busy || !aid;
     aidLine.textContent = aid ?? "";
-    note.textContent = message ?? "";
+    note.textContent = explain ? (message ?? "") : "";
     // The move bar, always there on your turn (play-testing): Take, Build
     // and Trail each in its place, lit when the choice makes one and dimmed
     // when not (selection.js moveBar). The chips are made again only when

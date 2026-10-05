@@ -1369,13 +1369,21 @@ html.upright .brand {
    one line (the sixth play-testing: the table given the room). */
 html.upright .controls {
   bottom: 60px;
-  height: 50px;
+  /* The prompt and the note only with the explanations (the user): with
+     them off, their room goes to the table. */
+  height: 8px;
   box-sizing: border-box;
   align-content: flex-end;
   row-gap: 2px;
   padding: 4px 10px 6px;
 }
+html.upright.explain-on .controls {
+  height: 50px;
+}
 html.upright.aid-line-on .controls {
+  height: 29px;
+}
+html.upright.explain-on.aid-line-on .controls {
   height: 71px;
 }
 html.upright .controls .prompt,

@@ -498,6 +498,15 @@ def check_aid_toggles(browser, failures):
         failures.append("no hint and explanation toggles under the cards")
         page.context.close()
         return
+    # The helper text under the cards (what to do, why a card cannot join)
+    # only with the explanations on (the user: "fold all on screen helper
+    # text that's just sort of loose into the explanations mode").
+    s0 = page.evaluate("window.cassino3d.state()")
+    click_card(page, s0["table"][0]["cards"][0]["card"])  # nothing chosen: a note, with explanations
+    page.wait_for_timeout(300)
+    said = (page.locator(".controls .prompt").inner_text().strip(), page.locator(".controls .note").inner_text().strip())
+    if any(said):
+        failures.append(f"helper text with the explanations off: {said}")
     # The lesser aid first (play-testing: explanations tell less than hints,
     # so they sit to the left), and so in the settings.
     order = page.evaluate("[...document.querySelectorAll('.aid-toggles [data-aid]')].map((b) => b.dataset.aid)")
@@ -513,6 +522,8 @@ def check_aid_toggles(browser, failures):
     page.wait_for_timeout(300)
     if not page.evaluate("window.cassino3d.state().aids.explain") or not page.locator(".game-log").is_visible():
         failures.append("the explanations toggle did not turn them on and open the log")
+    if not page.locator(".controls .prompt").inner_text().strip().startswith("Choose"):
+        failures.append(f"no helper text with the explanations on: {page.locator('.controls .prompt').inner_text()!r}")
     if not page.evaluate("window.cassino3d.prefs().aids.hints"):
         failures.append("the hints toggle was not kept in the settings")
     page.context.close()
@@ -1183,9 +1194,18 @@ def check_hud_room(browser, failures):
         # should automatically retract").
         if not page.locator(".hud.open").count():
             failures.append(f"hud {where}: the score was not open to fold")
-        # The prompt's line: never under the score (hudRoom stops it above).
-        line = page.locator(".controls .prompt").bounding_box()
-        page.mouse.click(line["x"] + line["width"] / 2, line["y"] + line["height"] / 2)
+        # A point on the table clear of the score and the panel under it:
+        # beside the score, or, where it is the window's width, just below.
+        hud = page.locator(".hud").bounding_box()
+        if hud["width"] < 0.8 * viewport["width"]:
+            point = (viewport["width"] - 40, viewport["height"] * 0.5)
+        else:
+            low = hud["y"] + hud["height"]
+            if page.locator(".aids-panel").is_visible():
+                panel = page.locator(".aids-panel").bounding_box()
+                low = max(low, panel["y"] + panel["height"])
+            point = (viewport["width"] / 2, low + 5)
+        page.mouse.click(*point)
         page.wait_for_timeout(800)
         if page.locator(".hud.open").count():
             failures.append(f"hud {where}: a tap outside the open score did not fold it")

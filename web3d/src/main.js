@@ -914,10 +914,13 @@ async function main() {
   function show() {
     const busy = director.busy();
     // Room for the aids' line under the prompt, upright, while an aid that
-    // speaks there is on (style.css).
+    // speaks there is on; and for the prompt and the note, while the
+    // explanations are (style.css).
+    const explain = Boolean(state.watching ? prefs.aids.explain : state.aids?.explain);
     document.documentElement.classList.toggle("aid-line-on", !state.watching && Boolean(state.aids?.hints || prefs.sweepWarning));
+    document.documentElement.classList.toggle("explain-on", explain);
     const after = prefs.match === "best-of-7" && !state.watching ? seriesLine(series) : null;
-    overlay.show({ state, chips: busy ? [] : chipsOf(offer), message, busy, aid: aidLine(), after, leftHanded: prefs.leftHanded });
+    overlay.show({ state, chips: busy ? [] : chipsOf(offer), message, busy, aid: aidLine(), after, leftHanded: prefs.leftHanded, explain });
     // The cards still out and the log tell what the cards have shown: they
     // wait for the cards to come to rest, as the trackers do (review T7).
     if (!busy) {

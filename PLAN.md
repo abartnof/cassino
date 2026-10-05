@@ -237,7 +237,8 @@ legal move. RULES.md now says each held card answers for one build value.
   each cut-out takes in the card's ink outline, which it had lost there;
   a big build grows away from you, clear of the bar. Nothing said in the
   prompt at a hand's end: the score has it. No line said mentions a trump (the
-  user).
+  user). The helper text under the cards (what to do, why a card cannot
+  join) only with the explanations on.
   On a phone or a tablet your hand is a row spaced wide, not a fan, lying
   just off the table so that its cards are the table's size, and the
   field closes in: on an iPad held upright the table's cards from 100 to
