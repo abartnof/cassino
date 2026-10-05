@@ -97,7 +97,7 @@ export function initialPlacement(state, view = {}) {
 
 // A state laid out, its sweep cards taken from its own events.
 function layoutOf(state, view = {}) {
-  return layout(state, { chosen: view.chosen ?? null, picked: view.picked ?? [], sweeps: sweepCards(state.events, state.hand_number), zones: view.zones });
+  return layout(state, { chosen: view.chosen ?? null, picked: view.picked ?? [], sweeps: sweepCards(state.events, state.hand_number), zones: view.zones, sort: view.sort });
 }
 
 // Before the first deal of a sitting: the whole pack squared at the first
@@ -352,7 +352,7 @@ class Plan {
   // A state between, laid out where this view lays things (its zones), but
   // as nobody has chosen anything in it.
   layout(state) {
-    return layoutOf(state, { zones: this.view.zones });
+    return layoutOf(state, { zones: this.view.zones, sort: this.view.sort });
   }
 
   // A motion for a mesh, never overlapping the motion before it.

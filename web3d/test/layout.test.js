@@ -291,3 +291,37 @@ test("on a touch screen the face-down cards beside your row are spaced as its ca
     assert.ok(Math.abs(xs[0] - CARD.width / 2 - (stock + CARD.width / 2) - gap) < 0.05, `stock ${stock.toFixed(2)}, the row starts at ${(xs[0] - CARD.width / 2).toFixed(2)}`);
   }
 });
+
+// The user: "A option (which default to on) should be that cards and
+// [builds] on the table, dynamically automatically sort in descending
+// order, left to right." Highest first, a build by its value, a loose card
+// by its rank (an ace one, a king thirteen), equal ones as they came;
+// across the first row, then the next. Off, as they came.
+test("the table sorted: highest first, left to right, a build by its value", async () => {
+  const { tableOrder } = await import("../src/layout.js");
+  const s = state({
+    hand: ["AS"],
+    table: [
+      [1, ["3S"]],
+      [2, ["KD"]],
+      [3, ["2H", "5C"], { value: 7, multiple: false, controller: "you" }],
+      [4, ["AC"]],
+      [5, ["7D"]],
+      [6, ["9C"]],
+      [7, ["QH"]],
+    ],
+  });
+  assert.deepEqual(tableOrder(s.table, true).map((i) => i.id), [2, 7, 6, 3, 5, 1, 4]);
+  assert.deepEqual(tableOrder(s.table, false).map((i) => i.id), [1, 2, 3, 4, 5, 6, 7]);
+  const at = (sort) => {
+    const slots = layout(s, { sort }).filter((x) => x.zone === "middle");
+    const place = (id) => slots.find((x) => x.item === id).pose.position;
+    return [1, 2, 3, 4, 5, 6, 7].map(place);
+  };
+  const sorted = at(true);
+  // The first row's six, left to right: K, Q, 9, the build of 7, 7, 3; the ace next row.
+  const firstRow = [2, 7, 6, 3, 5, 1].map((id) => sorted[id - 1]);
+  for (let k = 1; k < firstRow.length; k++) assert.ok(firstRow[k].x > firstRow[k - 1].x && Math.abs(firstRow[k].z - firstRow[0].z) < 2.5, `item ${k}`);
+  assert.ok(sorted[3].z < firstRow[0].z - 5, "the ace in the row beyond");
+  assert.deepEqual(at(false)[0], layout(s).filter((x) => x.zone === "middle")[0].pose.position, "off, as they came, as the layout always laid them");
+});

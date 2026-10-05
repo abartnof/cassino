@@ -127,8 +127,13 @@ node-tested, as in piquet.
   that leaves their build alone (`badges.js`); a build made, raised or
   taken shows its badge once the cards rest.
   An item keeps its slot while it lies there; new items take the next free
-  slot. The grid shrinks the cards a little as the table fills, and on a
-  phone it wraps.
+  slot. Or, sorted (a setting, on by default; the user: "cards and
+  [builds] on the table, dynamically automatically sort in descending
+  order, left to right"), the items lie highest first, a build by its
+  value and a loose card by its rank, equal ones as they came, across the
+  first row and on into the next, and slide to their places as the table
+  changes (`layout.js` `tableOrder`). The grid shrinks the cards a little
+  as the table fills, and on a phone it wraps.
 - **The piles**: each player's captures face down at their right, squared,
   their thickness the count. Each sweep's capturing card lies crosswise in
   the pile, face up, offset from the last.

@@ -107,20 +107,22 @@ test("the reducer replays a move into the state the engine reaches", { skip }, (
 test("every choreography of real games ends exactly at the layout, faces only where known, in every arrangement", { skip }, () => {
   // Across the table (a computer's, a tablet's: its hand a row, the
   // seventh play-testing) and upright.
-  for (const zones of [ZONES, ZONES_PORTRAIT, ZONES_TOUCH]) {
+  // Each with the table sorted (the default since the seventh
+  // play-testing) and as it came.
+  for (const [zones, sort] of [[ZONES, true], [ZONES, false], [ZONES_PORTRAIT, true], [ZONES_TOUCH, true]]) {
     let worst = 0;
-    const where = zones === ZONES ? "across" : zones === ZONES_TOUCH ? "tablet" : "upright";
+    const where = `${zones === ZONES ? "across" : zones === ZONES_TOUCH ? "tablet" : "upright"}${sort ? ", sorted" : ""}`;
     for (const [seed, game] of [[1, "classic"], [2, "royal"], [5, "classic"]]) {
       let state = engine.start({ game, aces14: game === "royal", sweeps: true, skill: 2, seed });
       const start = opening(state);
-      let placement = playOut(start, state, initialPlacement(start, { zones }), `${where} seed ${seed} opening`, { zones }).placement;
+      let placement = playOut(start, state, initialPlacement(start, { zones, sort }), `${where} seed ${seed} opening`, { zones, sort }).placement;
       for (let n = 0; state.prompt !== "over"; n++) {
         // Now and then a card chosen and table cards picked, seen first.
-        const view = n % 3 === 0 && state.prompt === "play" ? { zones, chosen: state.hand[0].card, picked: state.table.length ? codes(state.table[0].cards) : [] } : { zones };
+        const view = n % 3 === 0 && state.prompt === "play" ? { zones, sort, chosen: state.hand[0].card, picked: state.table.length ? codes(state.table[0].cards) : [] } : { zones, sort };
         if (view.chosen) placement = playOut(state, state, placement, `${where} seed ${seed} step ${n} choosing`, view).placement;
         const command = state.prompt === "play" ? state.moves[(n * 7) % state.moves.length] : "next";
         const next = engine.send(command).state;
-        const result = playOut(state, next, placement, `${where} seed ${seed} step ${n} ${command}`, { zones });
+        const result = playOut(state, next, placement, `${where} seed ${seed} step ${n} ${command}`, { zones, sort });
         worst = Math.min(worst, throughTable(result));
         placement = result.placement;
         state = next;

@@ -1171,6 +1171,55 @@ def check_hud_room(browser, failures):
         context.close()
 
 
+TABLE_ORDER_JS = """() => {
+  const s = window.cassino3d.state();
+  const ranks = "A23456789TJQK";
+  return s.table.map((i) => {
+    const top = i.cards[i.cards.length - 1].card;
+    const p = window.cassino3d.screenPoint(i.cards[0].card);
+    return { id: i.id, value: i.build ? i.build.value : ranks.indexOf(top[0]) + 1, x: p.x, y: p.y };
+  });
+}"""
+
+
+def check_sorted(browser, failures):
+    """The table sorted by default, highest on the left (the user: "cards
+    and [builds] on the table, dynamically automatically sort in
+    descending order, left to right"); turned off in the settings, as the
+    cards came."""
+    page = open_page(browser, "seed=7&speed=8", calm=True)
+    settle(page)
+    made = 0
+    while made < 3 and play_by_clicking(page, failures, made + 700):
+        made += 1
+    settle(page)
+
+    def rows():
+        items = page.evaluate(TABLE_ORDER_JS)
+        first = max(i["y"] for i in items)
+        return [i for i in sorted(items, key=lambda i: i["x"]) if abs(i["y"] - first) < 30], items
+
+    row, items = rows()
+    values = [i["value"] for i in row]
+    if len(row) < 2 or values != sorted(values, reverse=True):
+        failures.append(f"sorted: the table's first row is not highest first, left to right: {values}")
+    page.locator("md-icon-button.settings-open").click()
+    page.wait_for_timeout(1200)
+    page.locator('.settings-dialog md-switch[data-pref="sortTable"]').click()
+    page.locator(".settings-dialog md-filled-tonal-button", has_text="Done").click()
+    page.wait_for_timeout(800)
+    settle(page)
+    row, items = rows()
+    came = [i["id"] for i in page.evaluate("window.cassino3d.state().table")][: len(row)]
+    if [i["id"] for i in row] != came:
+        failures.append(f"sorted: turned off, the table is not as the cards came: {[i['id'] for i in row]} against {came}")
+    if page.evaluate("window.cassino3d.prefs().sortTable") is not False:
+        failures.append("sorted: the setting was not kept off")
+    if page.errors:
+        failures.append(f"sorted: console errors {page.errors[:3]}")
+    page.context.close()
+
+
 def check_settings(browser, failures):
     """The settings: hints turned on in the dialog; a hint shown, lit and
     chosen and played; no undo (the seventh play-testing: "remove undo");
@@ -1408,6 +1457,7 @@ def main() -> int:
         check_phone(browser, failures)
         check_tablet_faces(browser, failures)
         check_still(browser, failures)
+        check_sorted(browser, failures)
         check_hud_room(browser, failures)
         check_desktop_frame(browser, failures)
         check_phone_talk(browser, failures)

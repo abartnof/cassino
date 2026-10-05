@@ -86,6 +86,7 @@ const PAGE_AIDS = [
   ["buildValues", "Build values", "A badge with each build's value, always in view. Always on while the tutorial is"],
   ["unseen", "Cards still out", "Which aces and Cassinos, and how many spades, you have not seen"],
   ["sweepWarning", "Sweep warning", "Say when a single card would clear the table"],
+  ["sortTable", "Sort the table", "The cards and builds on the table in descending order, left to right, as they change"],
 ];
 
 // `on`: { newGame(), aid(name, on), pref(name, value), copy(button),

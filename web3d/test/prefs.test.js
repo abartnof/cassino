@@ -230,3 +230,11 @@ test("Royal Cassino is the default game, and plain Cassino kept as the old defau
   savePrefs(store, { ...DEFAULTS, rules: { ...DEFAULTS.rules, game: "classic" } });
   assert.equal(loadPrefs(store).rules.game, "classic", "chosen since, it is kept");
 });
+
+// The user: the table sorted, "A option (which default to on)".
+test("the table sorted: on by default, and kept when turned off", () => {
+  assert.equal(DEFAULTS.sortTable, true);
+  const store = memory();
+  savePrefs(store, { ...DEFAULTS, sortTable: false });
+  assert.equal(loadPrefs(store).sortTable, false);
+});

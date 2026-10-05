@@ -88,6 +88,18 @@ export function gridPlace(slot, count, Z = ZONES) {
   return { x: m.x + (col - (inRow - 1) / 2) * pitchX, z: m.z - row * pitchZ };
 }
 
+// The table's items in the order they lie on the grid: as they came, or,
+// sorted (the user: "cards and [builds] on the table, dynamically
+// automatically sort in descending order, left to right"), highest first,
+// a build by its value and a loose card by its rank (an ace one, a king
+// thirteen), equal ones as they came.
+const RANKS = "A23456789TJQK";
+const valueOf = (item) => item.build?.value ?? RANKS.indexOf(item.cards[0].card[0]) + 1;
+export function tableOrder(items, sort = false) {
+  if (!sort) return items;
+  return items.map((item, k) => ({ item, k })).sort((a, b) => valueOf(b.item) - valueOf(a.item) || a.k - b.k).map((x) => x.item);
+}
+
 function middle(items, picked, Z) {
   const slots = [];
   const chosen = new Set(picked);
@@ -216,12 +228,13 @@ function stock(count, dealer, Z) {
 
 // `zones`: where things rest (units.js): ZONES across a table, or
 // ZONES_PORTRAIT on a phone held upright.
-export function layout(state, { chosen = null, picked = [], sweeps = { you: [], them: [] }, zones = ZONES } = {}) {
+// `sort`: the table's items in descending order (tableOrder).
+export function layout(state, { chosen = null, picked = [], sweeps = { you: [], them: [] }, zones = ZONES, sort = false } = {}) {
   const counted = countedCards(state);
   return [
     ...yourHand(state.hand.map((c) => c.card), chosen, zones),
     ...theirHand(state.opponent_holds, zones, Math.ceil((state.table?.length ?? 0) / zones.middle.columns)),
-    ...middle(state.table, picked, zones),
+    ...middle(tableOrder(state.table, sort), picked, zones),
     ...pileOf("you", state.piles.you.cards, sweeps.you ?? [], counted.you, zones),
     ...pileOf("them", state.piles.them.cards, sweeps.them ?? [], counted.them, zones),
     ...countRow("you", counted.you, zones),
