@@ -2,7 +2,7 @@
 // fail, the URL's overrides, and the daily deal.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DEFAULTS, SKILLS, badgesOn, chooseGame, choosePlay, dailySeed, gameSaid, loadPrefs, welcomeWanted, savePrefs, loadSitting, saveSitting, withUrl } from "../src/prefs.js";
+import { DEFAULTS, SKILLS, badgesOn, chooseGame, choosePlay, dailySeed, gameSaid, loadPrefs, menuChoices, welcomeWanted, savePrefs, loadSitting, saveSitting, withUrl } from "../src/prefs.js";
 
 function memory() {
   const items = new Map();
@@ -187,6 +187,25 @@ test("a new game's choices: kept as they start it, aces 1 or 14 only with Royal,
 });
 
 test("the game under way, said in words, for the settings", () => {
-  assert.equal(gameSaid({ game: "classic", aces14: false, sweeps: false, raising: true }, 3), "Classic Cassino, no sweeps, builds raised; your opponent at 3");
+  assert.equal(gameSaid({ game: "classic", aces14: false, sweeps: false, raising: true }, 3), "Cassino, no sweeps, builds raised; your opponent at 3");
   assert.equal(gameSaid({ game: "royal", aces14: true, sweeps: true, raising: false }, 1.5), "Royal Cassino, aces 1 or 14, sweeps scored, no raising; your opponent at 1.5");
+});
+
+// The user: "if the user has previously played a game, please make the new
+// game settings, consistent with their previous game settings ... Do not
+// add any sort of user tracking." The menu starts from the game on the
+// table, played or finished (its rules and skill, from the engine's own
+// state); with none, or a watched one, from the settings kept already.
+test("the new game's menu starts from the game played last", () => {
+  const prefs = { ...DEFAULTS, match: "best-of-7" };
+  const royal = { rules: { game: "royal", aces14: true, sweeps: true, raising: false }, skill: 2, watching: false };
+  assert.deepEqual(menuChoices(prefs, royal), { rules: royal.rules, skill: 2, match: "best-of-7" });
+  assert.deepEqual(menuChoices(prefs, null), { rules: DEFAULTS.rules, skill: DEFAULTS.skill, match: "best-of-7" });
+  assert.deepEqual(menuChoices(prefs, { ...royal, watching: true }), { rules: DEFAULTS.rules, skill: DEFAULTS.skill, match: "best-of-7" });
+});
+
+// The user: "flip Royal Casino and casino so that casino becomes the
+// default, and is left of [Royal] casino in the buttons."
+test("plain Cassino is the default game", () => {
+  assert.equal(DEFAULTS.rules.game, "classic");
 });

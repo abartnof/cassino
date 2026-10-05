@@ -25,7 +25,7 @@ import { POPUP_BUSY, createHud, hudEvents, ledgerOf, popupsOf } from "./hud.js";
 import { RAMPS, cardMaterials, cardTexture } from "./materials.js";
 import { createOverlay } from "./overlay.js";
 import { badgeFontPx, badgeText, badgeTitle, badgesShown } from "./badges.js";
-import { badgesOn, chooseGame, choosePlay, dailySeed, loadPrefs, welcomeWanted, loadSeries, loadSitting, savePrefs, saveSeries, saveSitting, withUrl } from "./prefs.js";
+import { badgesOn, chooseGame, choosePlay, dailySeed, loadPrefs, menuChoices, welcomeWanted, loadSeries, loadSitting, savePrefs, saveSeries, saveSitting, withUrl } from "./prefs.js";
 import { recordGame, seriesLine } from "./series.js";
 import { COURTS as COURTS_ORDER, FIGURE, REVEAL_MS, courtFor, courtName, figureSides } from "./reveal.js";
 import { createScene } from "./scene.js";
@@ -325,7 +325,7 @@ async function main() {
   // and the game dealt, played or watched. `before()` as it starts;
   // `cancelled()` if the menu was put aside.
   function askNewGame({ before = () => {}, cancelled = () => {} } = {}) {
-    chrome.showNewGame(prefs, (picked) => {
+    chrome.showNewGame(menuChoices(prefs, state), (picked) => {
       if (!picked) return cancelled();
       before();
       const chosen = chooseGame(prefs, series, picked);

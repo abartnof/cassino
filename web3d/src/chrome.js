@@ -145,28 +145,30 @@ export function createChrome(root, on) {
   // it needs a new game to apply ... it's new game with x setting, all
   // picked from one menu screen"): the game and its rules, your opponent
   // and the match, chosen together, taking effect as the game they start
-  // begins. `showNewGame(prefs, done)`: `done(choice)` once, with { kind:
+  // begins. `showNewGame(from, done)`: `done(choice)` once, with { kind:
   // "deal" | "daily" | "watch", rules, skill, match }, or null if it was
-  // closed without one.
+  // closed without one. `from`: what it starts from (prefs.js menuChoices),
+  // { rules, skill, match }. Plain Cassino on the left, Royal on the right
+  // (the user).
   const GAME_WORDS = {
     classic: "Jacks, queens and kings are taken only by their own rank, in pairs; the other cards build up to 10.",
     royal: "Jacks, queens and kings count 11, 12 and 13, and build like the rest.",
   };
   const newGameDialog = el("md-dialog", { class: "new-game-dialog" });
   let newGameOpen = false;
-  function showNewGame(prefs, done) {
+  function showNewGame(from, done) {
     newGameOpen = true;
-    let rules = { ...prefs.rules };
+    let rules = { ...from.rules };
     let chosen = null;
     const segment = (value, label) => el("md-outlined-segmented-button", { "data-game": value, label });
-    const gameSet = el("md-outlined-segmented-button-set", { class: "game-set", "aria-label": "The game" }, segment("classic", "Classic"), segment("royal", "Royal"));
+    const gameSet = el("md-outlined-segmented-button-set", { class: "game-set", "aria-label": "The game" }, segment("classic", "Cassino"), segment("royal", "Royal Cassino"));
     const gameWords = el("p", { class: "game-words" });
     const aces = sw({ "data-rule": "aces14" }, (v) => (rules = { ...rules, aces14: v }));
     const sweeps = sw({ "data-rule": "sweeps" }, (v) => (rules = { ...rules, sweeps: v }));
     const raising = sw({ "data-rule": "raising" }, (v) => (rules = { ...rules, raising: v }));
     const options = (list, current) =>
       list.map(([value, words]) => el("md-select-option", { value: String(value), selected: String(value) === String(current) }, el("div", { slot: "headline" }, words)));
-    const skill = el("md-outlined-select", { class: "skill", label: "Your opponent" }, options(SKILLS.map((k) => [k.value, `${k.value} \u2014 ${k.words}`]), prefs.skill));
+    const skill = el("md-outlined-select", { class: "skill", label: "Your opponent" }, options(SKILLS.map((k) => [k.value, `${k.value} \u2014 ${k.words}`]), from.skill));
     const match = el(
       "md-outlined-select",
       { class: "match", label: "The match" },
@@ -175,7 +177,7 @@ export function createChrome(root, on) {
           ["single", "One game to 21"],
           ["best-of-7", "A World Series: the best of seven games"],
         ],
-        prefs.match,
+        from.match,
       ),
     );
     const drawRules = () => {

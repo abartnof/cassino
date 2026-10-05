@@ -403,13 +403,18 @@ Material Design 3, from piquet's shell.
   it needs a new game to apply ... it's new game with x setting, all picked
   from one menu screen"): the plus at the top, New game at the game's end
   and the welcome's New game all open one screen with the game's own
-  settings, Classic or Royal (with what each means), aces 1 or 14, sweeps,
+  settings, Cassino or Royal Cassino (with what each means; plain Cassino
+  on the left and the default, as the user asked), aces 1 or 14, sweeps,
   raising builds, the skill dial (1 to 4 in halves) and the match (one
   game, or a World Series: the best of seven, `series.js`); Deal starts the
   game with them, Today's deal (seeded from the date) and Watch a game
-  likewise, and Cancel changes nothing. What is chosen is kept for the
-  next menu (`prefs.js` `chooseGame`); another match begins its series
-  afresh.
+  likewise, and Cancel changes nothing. The menu starts from the game on
+  the table, played or finished, its rules and skill as the engine has
+  them (the user: "make the new game settings, consistent with their
+  previous game settings ... Do not add any sort of user tracking"), or,
+  with none, from the settings kept (`prefs.js` `menuChoices`); what is
+  chosen is kept as the settings (`chooseGame`), and another match begins
+  its series afresh.
 - **Settings**: what the game under way is (`gameSaid`) and where the next
   is chosen; the aids, Large Text, the table talk, the animation, the
   table top; copy the game record (`state.saved`).

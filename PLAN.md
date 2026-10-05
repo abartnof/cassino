@@ -215,6 +215,9 @@ legal move. RULES.md now says each held card answers for one build value.
   settings into a new game's menu, one screen, where they take effect as
   the game they start begins (Royal could be chosen in the settings and
   not happen until a new game); the settings say what game is under way.
+  The menu starts from the last game's settings, as the engine has them
+  (no tracking added), plain Cassino on the left and the default, Royal
+  Cassino on the right.
   On a phone or a tablet your hand is a row spaced wide, not a fan, lying
   just off the table so that its cards are the table's size, and the
   field closes in: on an iPad held upright the table's cards from 100 to

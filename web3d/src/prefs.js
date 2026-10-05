@@ -176,10 +176,24 @@ export function chooseGame(prefs, series, { rules, skill, match }) {
   return { patch, series: fresh };
 }
 
+// What the new game's menu starts from: the game on the table, played or
+// finished, as the engine has it (its rules and your opponent's skill), so
+// a new game is like the last unless changed (the user: "make the new game
+// settings, consistent with their previous game settings"); with none, or
+// a watched one, the settings kept. Nothing more is kept for it.
+export function menuChoices(prefs, state) {
+  const played = state && !state.watching && state.rules;
+  return {
+    rules: played ? { ...state.rules } : { ...prefs.rules },
+    skill: played && SKILLS.some((s) => s.value === state.skill) ? state.skill : prefs.skill,
+    match: prefs.match,
+  };
+}
+
 // The game under way in words, for the settings: its rules and your
 // opponent's skill.
 export function gameSaid(rules, skill) {
-  const parts = [rules.game === "royal" ? "Royal Cassino" : "Classic Cassino"];
+  const parts = [rules.game === "royal" ? "Royal Cassino" : "Cassino"];
   if (rules.game === "royal" && rules.aces14) parts.push("aces 1 or 14");
   parts.push(rules.sweeps ? "sweeps scored" : "no sweeps", rules.raising === false ? "no raising" : "builds raised");
   return `${parts.join(", ")}; your opponent at ${skill}`;

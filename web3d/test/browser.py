@@ -380,7 +380,7 @@ def check_new_game(browser, failures):
     settings = page.locator(".settings-dialog")
     if settings.locator("md-switch[data-rule], .game-set, md-outlined-select.skill, md-outlined-select.match").count():
         failures.append("new game: the game's own settings are still in the settings")
-    if "This game: Classic Cassino" not in settings.locator(".game-line").inner_text():
+    if "This game: Cassino," not in settings.locator(".game-line").inner_text():
         failures.append(f"new game: the settings do not say what game is under way: {settings.locator('.game-line').inner_text()!r}")
     settings.locator("md-filled-tonal-button", has_text="Done").click()
     page.wait_for_timeout(800)
@@ -414,6 +414,20 @@ def check_new_game(browser, failures):
     page.wait_for_timeout(1200)
     if "This game: Royal Cassino, aces 1 or 14" not in page.locator(".settings-dialog .game-line").inner_text():
         failures.append(f"new game: the settings do not say Royal is under way: {page.locator('.settings-dialog .game-line').inner_text()!r}")
+    page.locator(".settings-dialog md-filled-tonal-button", has_text="Done").click()
+    page.wait_for_timeout(800)
+    # The next menu starts from the game just played (the user: "make the
+    # new game settings, consistent with their previous game settings").
+    page.locator("md-icon-button.new-game").click()
+    page.locator(".new-game-dialog md-filled-button.deal").wait_for(state="visible", timeout=10_000)
+    shown = page.evaluate("""() => {
+      const d = document.querySelector('.new-game-dialog');
+      return [[...d.querySelectorAll('md-outlined-segmented-button')].find((b) => b.selected)?.dataset.game, d.querySelector('md-switch[data-rule="aces14"]').selected, d.querySelector('md-switch[data-rule="raising"]').selected,
+        [...d.querySelectorAll('md-outlined-segmented-button')].map((b) => b.getAttribute('label'))];
+    }""")
+    if shown != ["royal", True, False, ["Cassino", "Royal Cassino"]]:
+        failures.append(f"new game: the menu does not start from the last game, Cassino left of Royal Cassino: {shown}")
+    page.locator(".new-game-dialog .new-game-cancel").click()
     if page.errors:
         failures.append(f"new game: console errors {page.errors[:5]}")
     page.context.close()
