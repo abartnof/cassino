@@ -381,6 +381,10 @@ md-dialog {
   width: 100%;
   margin-bottom: 4px;
 }
+/* The new game's menu opening the page: its welcome. */
+.game-welcome {
+  margin: 0 0 4px;
+}
 /* The new game's menu: what the game chosen is, under its choice. */
 .game-words {
   margin: 4px 0 6px;

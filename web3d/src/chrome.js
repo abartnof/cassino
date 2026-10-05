@@ -82,7 +82,6 @@ const AIDS = [
   ["play_forced", "Play forced moves", "Make my move for me when it is the only one"],
 ];
 const PAGE_AIDS = [
-  ["tutorial", "Tutorial", "Its pages open by themselves the first time each idea comes up. The question mark has them at any time"],
   ["trackers", "Trackers", "Each player's captures under their score: cards, spades, aces, the Cassinos, sweeps"],
   ["buildValues", "Build values", "A badge with each build's value, always in view. Always on while the tutorial is"],
   ["unseen", "Cards still out", "Which aces and Cassinos, and how many spades, you have not seen"],
@@ -145,20 +144,26 @@ export function createChrome(root, on) {
   // it needs a new game to apply ... it's new game with x setting, all
   // picked from one menu screen"): the game and its rules, your opponent
   // and the match, chosen together, taking effect as the game they start
-  // begins. `showNewGame(from, done)`: `done(choice)` once, with { kind:
-  // "deal" | "daily" | "watch", rules, skill, match }, or null if it was
-  // closed without one. `from`: what it starts from (prefs.js menuChoices),
-  // { rules, skill, match }. Royal Cassino on the left, the default, and
-  // plain Cassino, the variant, on the right (the user).
+  // begins; and the tutorial with them (the user: "I asked for one new game
+  // window and this is two ... why don't you just put tutorial mode as an
+  // option within the new game config?"). It is also what opens the page:
+  // `opening`, it welcomes, and with a game kept (`canContinue`) offers to
+  // carry on with it. `showNewGame(from, done, { opening, canContinue })`:
+  // `done(choice)` once, with { kind: "deal" | "daily" | "watch" |
+  // "continue", rules, skill, match, tutorial }, or null if it was closed
+  // without one. `from`: what it starts from (prefs.js menuChoices),
+  // { rules, skill, match, tutorial }. Royal Cassino on the left, the
+  // default, and plain Cassino, the variant, on the right (the user).
   const GAME_WORDS = {
     classic: "Jacks, queens and kings are taken only by their own rank, in pairs; the other cards build up to 10.",
     royal: "Jacks, queens and kings count 11, 12 and 13, and build like the rest.",
   };
   const newGameDialog = el("md-dialog", { class: "new-game-dialog" });
   let newGameOpen = false;
-  function showNewGame(from, done) {
+  function showNewGame(from, done, { opening = false, canContinue = false } = {}) {
     newGameOpen = true;
     let rules = { ...from.rules };
+    const tutorialSwitch = sw({ "data-pref": "tutorial", selected: Boolean(from.tutorial) }, () => {});
     let chosen = null;
     const segment = (value, label) => el("md-outlined-segmented-button", { "data-game": value, label });
     const gameSet = el("md-outlined-segmented-button-set", { class: "game-set", "aria-label": "The game" }, segment("royal", "Royal Cassino"), segment("classic", "Cassino"));
@@ -194,14 +199,19 @@ export function createChrome(root, on) {
       drawRules();
     });
     const pick = (kind) => () => {
-      chosen = { kind, rules: { ...rules }, skill: Number(skill.value), match: match.value };
+      chosen = { kind, rules: { ...rules }, skill: Number(skill.value), match: match.value, tutorial: tutorialSwitch.selected };
       newGameDialog.close();
     };
+    const welcome = opening
+      ? el("p", { class: "game-welcome" }, canContinue ? "Your game is where you left it: carry on, or deal a new one." : "Two-handed Cassino, against the computer.")
+      : null;
     newGameDialog.replaceChildren(
-      el("div", { slot: "headline" }, "New game"),
+      el("div", { slot: "headline" }, opening ? "Cassino" : "New game"),
       el(
         "div",
         { slot: "content", class: "settings new-game" },
+        welcome,
+        row("Tutorial", "New to the game? Each idea explained the first time it comes up, and every build's value shown", tutorialSwitch),
         gameSet,
         gameWords,
         row("Aces count 1 or 14", "Royal: an ace in your hand takes as one or as fourteen", aces),
@@ -218,8 +228,13 @@ export function createChrome(root, on) {
       el(
         "div",
         { slot: "actions" },
-        el("md-text-button", { class: "new-game-cancel", onclick: () => newGameDialog.close() }, "Cancel"),
-        el("md-filled-button", { class: "deal", onclick: pick("deal"), autofocus: true }, "Deal"),
+        opening ? null : el("md-text-button", { class: "new-game-cancel", onclick: () => newGameDialog.close() }, "Cancel"),
+        canContinue
+          ? [
+              el("md-filled-tonal-button", { class: "deal", onclick: pick("deal") }, "Deal"),
+              el("md-filled-button", { class: "continue", onclick: pick("continue"), autofocus: true }, "Continue"),
+            ]
+          : el("md-filled-button", { class: "deal", onclick: pick("deal"), autofocus: true }, "Deal"),
       ),
     );
     drawRules();
@@ -300,49 +315,6 @@ export function createChrome(root, on) {
     el("div", { slot: "actions" }, el("md-filled-tonal-button", { onclick: () => credits.close() }, "Close")),
   );
 
-  // ---- the welcome ------------------------------------------------------------
-
-  // On opening the page: carry on with the game kept (if there is one),
-  // a new game, or the tutorial. `choose(choice)` is called once, with
-  // "continue", "new" or "tutorial"; closing the dialog any other way (the
-  // Escape key) carries on, or starts a new game.
-  const welcome = el("md-dialog", { class: "welcome-dialog" });
-  // Up from the call, not from when the dialog has drawn itself open (its
-  // `open` follows a render), so nothing else opens over it meanwhile.
-  let welcoming = false;
-  function showWelcome({ canContinue }, choose) {
-    welcoming = true;
-    let chosen = null;
-    const pick = (choice) => () => {
-      chosen = choice;
-      welcome.close();
-    };
-    const tutorialButton = el("md-outlined-button", { class: "welcome-tutorial", onclick: pick("tutorial") }, "Tutorial");
-    const fresh = canContinue
-      ? el("md-filled-tonal-button", { class: "welcome-new", onclick: pick("new") }, "New game")
-      : el("md-filled-button", { class: "welcome-new", onclick: pick("new"), autofocus: true }, "New game");
-    const carryOn = canContinue ? el("md-filled-button", { class: "welcome-continue", onclick: pick("continue"), autofocus: true }, "Continue") : null;
-    welcome.replaceChildren(
-      el("div", { slot: "headline" }, "Cassino"),
-      el(
-        "div",
-        { slot: "content", class: "welcome" },
-        el("p", {}, canContinue ? "Your game is where you left it." : "Two-handed Cassino, against the computer."),
-        el("p", {}, "New to the game? The tutorial explains each idea the first time it comes up, and shows the value of every build."),
-      ),
-      el("div", { slot: "actions" }, tutorialButton, fresh, carryOn),
-    );
-    welcome.addEventListener(
-      "closed",
-      () => {
-        welcoming = false;
-        choose(chosen ?? (canContinue ? "continue" : "new"));
-      },
-      { once: true },
-    );
-    welcome.show();
-  }
-
   // ---- the tutorial's pages ----------------------------------------------------
   const tutorial = el("md-dialog", { class: "tutorial-dialog" });
 
@@ -401,7 +373,7 @@ export function createChrome(root, on) {
     tutorial.show();
   }
 
-  root.append(bar, settings, newGameDialog, credits, tutorial, welcome);
+  root.append(bar, settings, newGameDialog, credits, tutorial);
 
   // Everything drawn from the person's settings and the state.
   let last = { prefs: null, state: null, busy: false };
@@ -451,11 +423,10 @@ export function createChrome(root, on) {
     settings,
     credits,
     showTutorial,
-    showWelcome,
     showNewGame,
-    // A dialog is up that the table waits on: a tutorial page, the
-    // welcome, the new game's menu.
-    tutorialOpen: () => tutorial.open || welcoming || newGameOpen,
+    // A dialog is up that the table waits on: a tutorial page, the new
+    // game's menu.
+    tutorialOpen: () => tutorial.open || newGameOpen,
   };
 }
 

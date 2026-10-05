@@ -386,6 +386,8 @@ def check_new_game(browser, failures):
     if settings.locator("md-switch[data-rule], .game-set, md-outlined-select.skill, md-outlined-select.match").count():
         failures.append("new game: the game's own settings are still in the settings")
     # Royal Cassino the default (the user).
+    if settings.locator('md-switch[data-pref="tutorial"]').count():
+        failures.append("new game: the tutorial's switch is still in the settings")
     if "This game: Royal Cassino," not in settings.locator(".game-line").inner_text():
         failures.append(f"new game: the settings do not say what game is under way: {settings.locator('.game-line').inner_text()!r}")
     settings.locator("md-filled-tonal-button", has_text="Done").click()
@@ -439,46 +441,47 @@ def check_new_game(browser, failures):
 
 
 def check_welcome(browser, failures):
-    """The welcome on opening: the table held at the pack until a choice;
-    the tutorial chosen turns the tutorial on, from its first page; with a
-    game kept, Continue is offered and carries on with it."""
-    page = open_page(browser, "welcome=1&tutorial")
+    """The page opens on the new game's menu, the one window (the user: "I
+    asked for one new game window and this is two ... put tutorial mode as
+    an option within the new game config"): the table held at the pack
+    behind it; the game and the tutorial chosen there, the tutorial then
+    from its first page; and with a game kept, Continue carries on with it."""
+    page = open_page(browser, "welcome=1&tutorial=0")
     page.wait_for_timeout(1500)
-    dialog = page.locator(".welcome-dialog")
-    if not dialog.is_visible() or page.locator(".welcome-continue").count():
-        failures.append("the welcome did not open, or offered to continue with no game kept")
+    dialog = page.locator(".new-game-dialog")
+    if not dialog.is_visible() or dialog.locator(".continue, .new-game-cancel").count() or page.locator(".welcome-dialog").count():
+        failures.append("opening: the new game's menu did not open alone, or offered to continue or cancel with no game kept")
+        page.context.close()
         return
     if page.evaluate("window.cassino3d.state().events.length") and page.evaluate("window.cassino3d.said().length"):
-        failures.append("the table talked behind the welcome")
+        failures.append("opening: the table talked behind the menu")
     shot(page, "t10-welcome")
-    page.locator(".welcome-tutorial").click()
+
+    def tutorial_royal(d):
+        d.locator('md-switch[data-pref="tutorial"]').click()
+        d.locator('md-outlined-segmented-button[data-game="royal"]').click()
+
+    deal_from_menu(page, tutorial_royal)
     page.locator(".tutorial-dialog .tutorial-close").wait_for(state="visible", timeout=10_000)
     prefs = page.evaluate("window.cassino3d.prefs()")
     if not prefs["tutorial"] or prefs["seen"] not in ([], ["intro"]):
-        failures.append(f"the tutorial chosen did not turn it on from its first page: {prefs['tutorial']}, {prefs['seen']}")
+        failures.append(f"opening: the tutorial chosen did not turn it on from its first page: {prefs['tutorial']}, {prefs['seen']}")
+    if page.evaluate("window.cassino3d.state().rules.game") != "royal":
+        failures.append(f"opening: not dealt the game chosen: {page.evaluate('window.cassino3d.state().rules')}")
     page.locator(".tutorial-close").click()
     settle(page)
     page.reload()
     page.wait_for_timeout(1500)
-    if not page.locator(".welcome-continue").is_visible():
-        failures.append("no Continue offered with a game kept")
+    if not page.locator(".new-game-dialog .continue").is_visible():
+        failures.append("opening: no Continue offered with a game kept")
     else:
         saved = page.evaluate("window.cassino3d.state().saved")
-        page.locator(".welcome-continue").click()
+        page.locator(".new-game-dialog .continue").click()
         page.wait_for_timeout(500)
         if page.evaluate("window.cassino3d.state().saved") != saved:
-            failures.append("Continue did not carry on with the game kept")
-    page.context.close()
-    # New game, with no game kept: the new game's menu, over the held table,
-    # and the game dealt as chosen there.
-    page = open_page(browser, "welcome=1&speed=8")
-    page.wait_for_timeout(1500)
-    page.locator(".welcome-new").click()
-    deal_from_menu(page, lambda d: d.locator('md-outlined-segmented-button[data-game="royal"]').click())
-    settle(page)
-    s = page.evaluate("window.cassino3d.state()")
-    if s["rules"]["game"] != "royal" or not s["events"]:
-        failures.append(f"the welcome's New game did not deal the game chosen in its menu: {s['rules']}")
+            failures.append("opening: Continue did not carry on with the game kept")
+    if page.errors:
+        failures.append(f"opening: console errors {page.errors[:3]}")
     page.context.close()
 
 

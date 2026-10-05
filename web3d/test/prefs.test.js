@@ -2,7 +2,7 @@
 // fail, the URL's overrides, and the daily deal.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DEFAULTS, SKILLS, badgesOn, chooseGame, choosePlay, dailySeed, gameSaid, loadPrefs, menuChoices, welcomeWanted, savePrefs, loadSitting, saveSitting, withUrl } from "../src/prefs.js";
+import { DEFAULTS, SKILLS, badgesOn, chooseGame, dailySeed, gameSaid, loadPrefs, menuChoices, welcomeWanted, savePrefs, loadSitting, saveSitting, withUrl } from "../src/prefs.js";
 
 function memory() {
   const items = new Map();
@@ -99,7 +99,9 @@ test("the trackers' panel starts folded, and stays as it was left", () => {
   assert.equal(loadPrefs(store).trackersOpen, false);
 });
 
-test("the welcome: shown on opening, unless the address asks for a game", () => {
+// On opening, the new game's menu, which welcomes (with Continue for a
+// game kept), unless the address asks for a game.
+test("the new game's menu on opening, unless the address asks for a game", () => {
   assert.equal(welcomeWanted(new URLSearchParams("")), true);
   assert.equal(welcomeWanted(new URLSearchParams("skill=2")), true);
   assert.equal(welcomeWanted(new URLSearchParams("seed=7")), false, "a shared game's link goes straight to it");
@@ -107,10 +109,22 @@ test("the welcome: shown on opening, unless the address asks for a game", () => 
   assert.equal(welcomeWanted(new URLSearchParams("welcome=0")), false);
 });
 
-test("the welcome's choices: the tutorial from its first page, or a game without it", () => {
-  assert.deepEqual(choosePlay("tutorial"), { tutorial: true, seen: [] });
-  assert.deepEqual(choosePlay("new"), { tutorial: false });
-  assert.deepEqual(choosePlay("continue"), {});
+// The user: "I asked for one new game window and this is two ... Since
+// the tutorial depends on the config of the new game, why don't you just
+// put tutorial mode as an option within the new game config?" The tutorial
+// is chosen with the rest of a new game: turned on there, from its first
+// page; left on, its pages read already are not read again; off, none.
+test("the tutorial, chosen in the new game's menu: turned on, from its first page", () => {
+  const series = { format: "single", you: 0, them: 0, counted: [] };
+  const game = { rules: DEFAULTS.rules, skill: 3, match: "single" };
+  const off = { ...DEFAULTS, tutorial: false, seen: ["intro", "pairing"] };
+  const on = { ...DEFAULTS, tutorial: true, seen: ["intro", "pairing"] };
+  assert.equal(menuChoices(off, null).tutorial, false);
+  assert.equal(menuChoices(on, null).tutorial, true);
+  assert.deepEqual(chooseGame(off, series, { ...game, tutorial: true }).patch.seen, []);
+  assert.equal(chooseGame(off, series, { ...game, tutorial: true }).patch.tutorial, true);
+  assert.equal("seen" in chooseGame(on, series, { ...game, tutorial: true }).patch, false, "left on: what was read stays read");
+  assert.equal(chooseGame(on, series, { ...game, tutorial: false }).patch.tutorial, false);
 });
 
 test("the table talk: everything by default, or the calls, or none", () => {
@@ -199,9 +213,10 @@ test("the game under way, said in words, for the settings", () => {
 test("the new game's menu starts from the game played last", () => {
   const prefs = { ...DEFAULTS, match: "best-of-7" };
   const royal = { rules: { game: "royal", aces14: true, sweeps: true, raising: false }, skill: 2, watching: false };
-  assert.deepEqual(menuChoices(prefs, royal), { rules: royal.rules, skill: 2, match: "best-of-7" });
-  assert.deepEqual(menuChoices(prefs, null), { rules: DEFAULTS.rules, skill: DEFAULTS.skill, match: "best-of-7" });
-  assert.deepEqual(menuChoices(prefs, { ...royal, watching: true }), { rules: DEFAULTS.rules, skill: DEFAULTS.skill, match: "best-of-7" });
+  const tutorial = DEFAULTS.tutorial;
+  assert.deepEqual(menuChoices(prefs, royal), { rules: royal.rules, skill: 2, match: "best-of-7", tutorial });
+  assert.deepEqual(menuChoices(prefs, null), { rules: DEFAULTS.rules, skill: DEFAULTS.skill, match: "best-of-7", tutorial });
+  assert.deepEqual(menuChoices(prefs, { ...royal, watching: true }), { rules: DEFAULTS.rules, skill: DEFAULTS.skill, match: "best-of-7", tutorial });
 });
 
 // The user: "I want Royal Casino on the left and to be the default.

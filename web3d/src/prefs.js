@@ -149,33 +149,32 @@ export function withUrl(prefs, params) {
   return out;
 }
 
-// The welcome on opening the page (Continue, New game, Tutorial): shown
-// unless the address asks for a game (a shared game's seed, watch mode)
-// or for none (welcome=0, for tests).
+// The new game's menu on opening the page, which welcomes (with Continue
+// for a game kept): shown unless the address asks for a game (a shared
+// game's seed, watch mode) or for none (welcome=0, for tests).
 export function welcomeWanted(params) {
   return !params.has("seed") && !params.has("watch") && params.get("welcome") !== "0";
-}
-
-// What a choice at the welcome sets: the tutorial on from its first page
-// again, or a game without it; continuing changes nothing.
-export function choosePlay(choice) {
-  if (choice === "tutorial") return { tutorial: true, seen: [] };
-  if (choice === "new") return { tutorial: false };
-  return {};
 }
 
 // A new game's choices, from the new game's menu (the seventh
 // play-testing: the game's own settings taken out of the settings, where
 // Royal could be chosen and not happen until a new game): what they set,
 // kept for the next game too, and the series, begun afresh for another
-// match. Aces 1 or 14 is Royal's alone.
-export function chooseGame(prefs, series, { rules, skill, match }) {
+// match. Aces 1 or 14 is Royal's alone. And the tutorial, chosen with the
+// rest (the user: "put tutorial mode as an option within the new game
+// config"): turned on here, from its first page; left on, its pages read
+// already are not read again.
+export function chooseGame(prefs, series, { rules, skill, match, tutorial }) {
   const game = rules.game === "royal" ? "royal" : "classic";
   const patch = {
     rules: { game, aces14: game === "royal" && rules.aces14 === true, sweeps: rules.sweeps === true, raising: rules.raising !== false },
     skill,
     match,
   };
+  if (typeof tutorial === "boolean") {
+    patch.tutorial = tutorial;
+    if (tutorial && !prefs.tutorial) patch.seen = [];
+  }
   const fresh = match !== prefs.match || series.format !== match ? { format: match, you: 0, them: 0, counted: [] } : series;
   return { patch, series: fresh };
 }
@@ -184,13 +183,15 @@ export function chooseGame(prefs, series, { rules, skill, match }) {
 // finished, as the engine has it (its rules and your opponent's skill), so
 // a new game is like the last unless changed (the user: "make the new game
 // settings, consistent with their previous game settings"); with none, or
-// a watched one, the settings kept. Nothing more is kept for it.
+// a watched one, the settings kept. Nothing more is kept for it. The
+// tutorial as it is set.
 export function menuChoices(prefs, state) {
   const played = state && !state.watching && state.rules;
   return {
     rules: played ? { ...state.rules } : { ...prefs.rules },
     skill: played && SKILLS.some((s) => s.value === state.skill) ? state.skill : prefs.skill,
     match: prefs.match,
+    tutorial: Boolean(prefs.tutorial),
   };
 }
 

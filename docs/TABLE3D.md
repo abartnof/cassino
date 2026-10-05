@@ -530,10 +530,15 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   move, reloads, reads the credits and watches a game. **Undo removed** in
   the seventh play-testing ("remove undo"): the table takes no move back
   (the engine and the terminal keep it).
-  **After play-testing**: a welcome on opening the page (`chrome.js`
-  `showWelcome`): Continue (with a game kept), New game, or Tutorial,
-  which turns the tutorial on from its first page (New game turns it off).
-  With no game kept, the table is held at the pack behind it, as a
+  **After play-testing**: a welcome on opening the page: Continue (with a
+  game kept), New game, or Tutorial, which turned the tutorial on from its
+  first page. Since the seventh play-testing ("I asked for one new game
+  window and this is two ... why don't you just put tutorial mode as an
+  option within the new game config?") the page opens on the new game's
+  menu itself (`chrome.js` `showNewGame`, `opening`), the tutorial a
+  switch in it, turned on there from its first page, and Continue beside
+  Deal with a game kept; the settings no longer have the tutorial's
+  switch. With no game kept, the table is held at the pack behind it, as a
   tutorial page holds it, so nothing is dealt or said until the choice. A
   link that names a game (`?seed`, `?watch`) goes straight to it. On a
   desktop, Explanations and Hints are toggled at the foot of the controls,
@@ -549,7 +554,8 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   `pageDue`, from the moves on offer and what your opponent has just done;
   node-tested against real games, every page reached), and all of them at
   any time from the question mark. The tutorial is on for a new player and
-  a switch in the settings; a page read already does not come again. The
+  a switch in the new game's menu (in the settings until the seventh
+  play-testing); a page read already does not come again. The
   browser test reads the introduction, meets a page of the ladder in play,
   and pages through the help.
 - **T8. Phones.** Piquet's phone framing and Large Text faces, fitted to a

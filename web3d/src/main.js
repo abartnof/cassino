@@ -25,7 +25,7 @@ import { POPUP_BUSY, createHud, hudEvents, ledgerOf, popupsOf } from "./hud.js";
 import { RAMPS, cardMaterials, cardTexture } from "./materials.js";
 import { createOverlay } from "./overlay.js";
 import { badgeFontPx, badgeText, badgeTitle, badgesShown } from "./badges.js";
-import { badgesOn, chooseGame, choosePlay, dailySeed, loadPrefs, menuChoices, welcomeWanted, loadSeries, loadSitting, savePrefs, saveSeries, saveSitting, withUrl } from "./prefs.js";
+import { badgesOn, chooseGame, dailySeed, loadPrefs, menuChoices, welcomeWanted, loadSeries, loadSitting, savePrefs, saveSeries, saveSitting, withUrl } from "./prefs.js";
 import { recordGame, seriesLine } from "./series.js";
 import { COURTS as COURTS_ORDER, FIGURE, REVEAL_MS, courtFor, courtName, figureSides } from "./reveal.js";
 import { createScene } from "./scene.js";
@@ -242,7 +242,8 @@ async function main() {
 
   // A new sitting, played or watched, with the next game's rules; the
   // house rules are agreed aloud as the cards are dealt. `welcome`:
-  // the table held at the pack while the welcome asks how to begin.
+  // the table held at the pack while the new game's menu, opening the
+  // page, asks how to begin.
   function newGame({ seed = randomSeed(), watch = false, welcome = false } = {}) {
     hideOpponent();
     badgeFrom = null;
@@ -264,21 +265,19 @@ async function main() {
     const dealt = !params.has("nodeal");
     const opening = dialogue.words(heard(speech(state, 0), prefs.talk));
     const timing = director.restart(state, { dealt, waits: dealt ? openingWaits(opening) : {} });
-    // The welcome holds the clock before anything timed on it, the talk
-    // included, can come (a line scheduled first would slip out behind it).
-    // New game asks how, in the new game's menu, over the held table; put
+    // On opening, the new game's menu holds the clock before anything
+    // timed on it, the talk included, can come (a line scheduled first
+    // would slip out behind it), over the table held at the pack; put
     // aside, the game behind it is played as it was dealt.
     if (welcome)
       director.gate(0, (release) =>
-        chrome.showWelcome({ canContinue: false }, (choice) => {
-          change(choosePlay(choice));
-          const go = () => {
+        askNewGame({
+          opening: true,
+          cancelled: () => {
             release();
             refresh();
             introduce();
-          };
-          if (choice === "new") askNewGame({ cancelled: go });
-          else go();
+          },
         }),
       );
     if (dealt) {
@@ -306,36 +305,29 @@ async function main() {
     return said.length ? { [first]: Math.max(...said.map((l) => l.end)) + TURN } : {};
   }
 
-  // The welcome's choice over a game kept: carry on, begin afresh from the
-  // new game's menu (put aside, the game kept goes on), or the tutorial.
-  function begin(choice) {
-    const carryOn = () => {
-      refresh();
-      introduce();
-    };
-    if (choice === "new") return askNewGame({ before: () => change(choosePlay(choice)), cancelled: carryOn });
-    change(choosePlay(choice));
-    if (choice === "tutorial") return newGame();
-    carryOn();
-  }
-
   // The new game's menu (chrome.js showNewGame; the seventh play-testing:
-  // the game's own settings chosen there, with the game they start): its
-  // choices kept for the next, a new match begun if another was chosen,
-  // and the game dealt, played or watched. `before()` as it starts;
-  // `cancelled()` if the menu was put aside.
-  function askNewGame({ before = () => {}, cancelled = () => {} } = {}) {
+  // the game's own settings chosen there, the tutorial among them, with the
+  // game they start): its choices kept for the next, a new match begun if
+  // another was chosen, and the game dealt, played or watched. `opening`:
+  // it opens the page, with Continue for a game kept (`canContinue`), which
+  // carries on with it, the tutorial as chosen there. `cancelled()` if it
+  // was put aside, or the game kept carried on.
+  function askNewGame({ opening = false, canContinue = false, cancelled = () => {} } = {}) {
     chrome.showNewGame(menuChoices(prefs, state), (picked) => {
       if (!picked) return cancelled();
-      before();
       const chosen = chooseGame(prefs, series, picked);
+      if (picked.kind === "continue") {
+        change({ tutorial: chosen.patch.tutorial, ...(chosen.patch.seen ? { seen: chosen.patch.seen } : {}) });
+        placeBadges();
+        return cancelled();
+      }
       if (chosen.series !== series) {
         series = chosen.series;
         saveSeries(store, series);
       }
       change(chosen.patch);
       newGame({ seed: picked.kind === "daily" ? dailySeed() : randomSeed(), watch: picked.kind === "watch" });
-    });
+    }, { opening, canContinue });
   }
 
   // ---- the tutorial -------------------------------------------------------
@@ -1032,7 +1024,15 @@ async function main() {
     badgeFrom = state;
     scoreShown();
     refresh();
-    if (welcomeWanted(params)) chrome.showWelcome({ canContinue: true }, begin);
+    if (welcomeWanted(params))
+      askNewGame({
+        opening: true,
+        canContinue: true,
+        cancelled: () => {
+          refresh();
+          introduce();
+        },
+      });
   } else if (STAGING) {
     stageEnding();
   } else {
