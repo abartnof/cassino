@@ -362,10 +362,16 @@ Material Design 3, from piquet's shell.
   has each card that crosses it on the screen cut out of it, frame by
   frame, by clip paths, drawn at once (a mask image, decoded afresh each
   frame, made the buttons flicker: the user, "when a card passes over the
-  action buttons, the action buttons flicker"), shared among the bar, its
-  row and its places so that no two cut from one element overlap (one
-  path cuts overlapping cards out only by halves); and a tap there is the
-  card's (`selection.js` `barHoles`, `holeGroups`, `clipPathFor`). The running sum's place
+  action buttons, the action buttons flicker"), each grown by the card's
+  ink outline (cut without it, the card lost its outline there), and
+  cards that overlap, as a heap of captured cards carried across, cut as
+  one, the outline round them all (one path cuts overlapping cards out
+  only by halves: the user, "if there are many cards piled up on the
+  table, the cards collide in a funny way with the action buttons"); and
+  a tap there is the card's (`selection.js` `barHoles`, `mergeHoles`,
+  `clipPathFor`). A build of four cards or more keeps its nearest card
+  where a three-card build's is and grows away from you, clear of the bar,
+  the row behind moved back for it (`layout.js` `middleDepth`). The running sum's place
   before them went in the seventh play-testing ("remove the sum button to
   the left of the action buttons"). On a
   desktop the bar fills the space between the table's first row and your

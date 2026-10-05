@@ -229,20 +229,51 @@ test("the move bar is never wider than the room across", () => {
 // cards that cross it, shared among the bar's nested elements so that no
 // two cut from one element overlap (one path cuts overlapping cards out
 // only by halves), and a tap in one is the card's.
-test("the move bar's cut-outs: the cards that cross it, overlapping ones on different elements, and a tap in one the card's", async () => {
-  const { barHoles, holeGroups, clipPathFor, pointIn } = await import("../src/selection.js");
+test("the move bar's cut-outs: the cards that cross it, overlapping ones as one, and a tap in one the card's", async () => {
+  const { barHoles, mergeHoles, clipPathFor, pointIn } = await import("../src/selection.js");
   const bar = { left: 100, top: 400, width: 300, height: 50 };
   const square = (x, y, s = 40) => [{ x, y }, { x: x + s, y }, { x: x + s, y: y + s }, { x, y: y + s }];
   assert.deepEqual(barHoles(bar, [square(0, 0), square(500, 400)]), [], "no card on the bar");
-  const holes = barHoles(bar, [square(0, 0), square(150, 380), square(170, 390), square(300, 400)]);
+  const holes = barHoles(bar, [square(0, 0), square(150, 380), square(170, 390), square(300, 400)], 0);
   assert.equal(holes.length, 3, "only the cards that cross it");
-  const groups = holeGroups(holes, 3);
-  assert.deepEqual(groups.map((g) => g.length), [2, 1], "the two that overlap apart; the one clear of them with the first");
-  assert.deepEqual(holeGroups([square(150, 380), square(155, 385), square(160, 390), square(165, 395)], 3).map((g) => g.length), [1, 1, 2], "more overlapping than elements: the rest on the last");
+  // A heap of cards carried across the bar, overlapping, cut out as one
+  // (the user: "if there are many cards piled up on the table, the cards
+  // collide in a funny way with the action buttons": one path cut a pile
+  // of overlapping cards out only by halves).
+  const merged = mergeHoles(holes);
+  assert.equal(merged.length, 2, "the two that overlap as one; the one clear of them alone");
+  const heap = mergeHoles(Array.from({ length: 12 }, (_, k) => square(150 + k * 3, 380 + k * 2)));
+  assert.equal(heap.length, 1, "a heap of twelve, one cut");
+  for (const [x, y] of [[151, 381], [150 + 11 * 3 + 39, 380 + 22 + 39], [200, 420]]) assert.ok(pointIn(heap[0], x, y), `${x}, ${y} in the heap's cut`);
   const path = clipPathFor(bar, [square(150, 380)]);
   assert.match(path, /^path\(evenodd, "M-24 -24H324V74H-24Z /, "the bar's box, and room round it");
   assert.match(path, /M50 -20L90 -20L90 20L50 20Z"\)$/, "the card in the bar's own place");
   assert.equal(clipPathFor(bar, []), "");
   assert.ok(pointIn(holes[0], 160, 410));
   assert.ok(!pointIn(holes[0], 260, 410));
+});
+
+// And the card's ink outline, drawn just outside its face, cut out with it
+// (the user saw "a cell shading error": the card lost its outline where it
+// crossed a button).
+test("a card's cut-out takes in its ink outline", async () => {
+  const { barHoles } = await import("../src/selection.js");
+  const bar = { left: 100, top: 400, width: 300, height: 50 };
+  const [hole] = barHoles(bar, [[{ x: 150, y: 380 }, { x: 190, y: 380 }, { x: 190, y: 420 }, { x: 150, y: 420 }]], 3);
+  const near = (a, b) => Math.abs(a - b) < 1e-9;
+  assert.ok(near(hole[0].x, 147) && near(hole[0].y, 377) && near(hole[2].x, 193) && near(hole[2].y, 423), JSON.stringify(hole));
+});
+
+test("an outline not square is grown as far along every edge", async () => {
+  const { barHoles } = await import("../src/selection.js");
+  // A parallelogram, as a card seen aslant: each edge pushed out by 3.
+  const poly = [{ x: 150, y: 400 }, { x: 190, y: 400 }, { x: 210, y: 440 }, { x: 170, y: 440 }];
+  const [hole] = barHoles({ left: 0, top: 0, width: 1000, height: 1000 }, [poly], 3);
+  // The top edge now at y 397, the bottom at 443.
+  assert.ok(Math.abs(hole[0].y - 397) < 1e-9 && Math.abs(hole[2].y - 443) < 1e-9, JSON.stringify(hole));
+  // The slanted edge from (190, 400) to (210, 440) pushed out 3 along its normal.
+  const nx = 40 / Math.hypot(20, 40);
+  const ny = -20 / Math.hypot(20, 40);
+  const dist = (p) => (p.x - 190) * nx + (p.y - 400) * ny;
+  assert.ok(Math.abs(dist(hole[1]) - 3) < 1e-9 && Math.abs(dist(hole[2]) - 3) < 1e-9);
 });

@@ -202,13 +202,35 @@ export function sweepWarning(chips) {
 // decoded afresh each frame, made the buttons flicker: the user, "when a
 // card passes over the action buttons, the action buttons flicker").
 // `polys`: each card's outline on the screen; `bar`: its box ({ left, top,
-// width, height }). The cards that cross it:
-export function barHoles(bar, polys) {
+// width, height }). The cards that cross it, each grown by its ink outline,
+// drawn just outside its face (`ink` px: cut without it, a card crossing a
+// button lost its outline there, "a cell shading error"):
+export function barHoles(bar, polys, ink = 3.5) {
   const right = bar.left + bar.width;
   const bottom = bar.top + bar.height;
-  return polys.filter((poly) => {
-    const b = boxOf(poly);
-    return b.right > bar.left && b.left < right && b.bottom > bar.top && b.top < bottom;
+  return polys
+    .map((poly) => grow(poly, ink))
+    .filter((poly) => {
+      const b = boxOf(poly);
+      return b.right > bar.left && b.left < right && b.bottom > bar.top && b.top < bottom;
+    });
+}
+// A convex outline pushed out by `d` along each edge: each corner along its
+// bisector, as far as keeps both its edges `d` out.
+function grow(poly, d) {
+  const n = poly.length;
+  return poly.map((p, i) => {
+    const a = poly[(i + n - 1) % n];
+    const b = poly[(i + 1) % n];
+    const unit = (x, y) => {
+      const l = Math.hypot(x, y) || 1;
+      return [x / l, y / l];
+    };
+    const [ax, ay] = unit(p.x - a.x, p.y - a.y);
+    const [bx, by] = unit(p.x - b.x, p.y - b.y);
+    const [mx, my] = unit(ax + bx, ay + by);
+    const half = Math.sqrt(Math.max(1e-6, (1 - (ax * bx + ay * by)) / 2)); // sin of half the corner's angle
+    return { x: p.x + (mx * d) / half, y: p.y + (my * d) / half };
   });
 }
 function boxOf(poly) {
@@ -216,20 +238,43 @@ function boxOf(poly) {
   const ys = poly.map((p) => p.y);
   return { left: Math.min(...xs), right: Math.max(...xs), top: Math.min(...ys), bottom: Math.max(...ys) };
 }
-// The holes shared among `levels` nested elements, each cutting its own
-// out (their cuts add up): one path cuts overlapping cards out only by
-// halves, so cards whose boxes overlap go to different elements, as far
-// as there are elements; past that, to the last.
-export function holeGroups(holes, levels) {
-  const groups = [];
+// The holes that overlap, merged into one, the outline round them all (a
+// convex hull), as many times as it takes for none to overlap: one path
+// cuts overlapping cards out only by halves, and a heap of captured cards
+// carried across the bar is many (the user: "if there are many cards piled
+// up on the table, the cards collide in a funny way with the action
+// buttons").
+export function mergeHoles(holes) {
+  let groups = holes.map((h) => [...h]);
   const meets = (a, b) => a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom;
-  for (const hole of holes) {
-    const box = boxOf(hole);
-    let k = groups.findIndex((g) => g.every((h) => !meets(boxOf(h), box)));
-    if (k < 0) k = groups.length < levels ? groups.length : levels - 1;
-    (groups[k] ??= []).push(hole);
+  for (let merged = true; merged; ) {
+    merged = false;
+    outer: for (let i = 0; i < groups.length; i++) {
+      for (let j = i + 1; j < groups.length; j++) {
+        if (!meets(boxOf(groups[i]), boxOf(groups[j]))) continue;
+        groups[i] = hull([...groups[i], ...groups[j]]);
+        groups.splice(j, 1);
+        merged = true;
+        break outer;
+      }
+    }
   }
   return groups;
+}
+// The convex hull of points, its corners in order (Andrew's monotone chain).
+function hull(points) {
+  const ps = [...points].sort((a, b) => a.x - b.x || a.y - b.y);
+  const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  const half = (list) => {
+    const out = [];
+    for (const p of list) {
+      while (out.length >= 2 && cross(out[out.length - 2], out[out.length - 1], p) <= 0) out.pop();
+      out.push(p);
+    }
+    out.pop();
+    return out;
+  };
+  return [...half(ps), ...half([...ps].reverse())];
 }
 // An element's clip path with these holes cut out of it: its box (`box`,
 // on the screen), with room round it for what is drawn just outside (the

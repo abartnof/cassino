@@ -61,9 +61,11 @@ function yourHand(codes, chosen, Z) {
 // face up went in the seventh play-testing). It lies just beyond the
 // middle's last row: `back` further off for each row past the first
 // (`rows`).
-function theirHand(count, Z, rows = 1) {
+// `deeper`: how much further back a big build has pushed the table's rows
+// (middleDepth).
+function theirHand(count, Z, rows = 1, deeper = 0) {
   const zone = Z.theirHand;
-  const centre = new Vector3(...zone.centre).add(new Vector3(0, 0, -(zone.back ?? 0) * Math.max(0, rows - 1)));
+  const centre = new Vector3(...zone.centre).add(new Vector3(0, 0, -(zone.back ?? 0) * Math.max(0, rows - 1) - deeper));
   return fan({
     count,
     centre,
@@ -114,17 +116,40 @@ export function handOrder(hand, sort = false, aces14 = false) {
   return hand.map((c, k) => ({ c, k })).sort((a, b) => value(b.c) - value(a.c) || a.k - b.k).map((x) => x.c);
 }
 
+// How far a build reaches back past a three-card build's, whose nearest
+// card it keeps (the user: "if there are many cards piled up on the table,
+// the cards collide in a funny way with the action buttons": a big build
+// fanned toward you, into the move bar's room). Each row's line, the first
+// at the zone's and each next one back by the grid's pitch and by as far
+// as the row before it reaches past it; and how much further back than
+// the grid the table's last row then reaches (for your opponent's hand).
+const overflow = (item, Z) => Math.max(0, item.cards.length - 3) * Z.stack.dz;
+export function middleDepth(items, Z = ZONES) {
+  const m = Z.middle;
+  const pitchZ = CARD.height + m.gapZ + Z.stack.dz * 2;
+  const rows = Math.ceil(items.length / m.columns);
+  const reach = (r) => Math.max(0, ...items.slice(r * m.columns, (r + 1) * m.columns).map((item) => overflow(item, Z)));
+  const lines = [];
+  for (let r = 0; r < rows; r++) lines.push(r === 0 ? m.z : lines[r - 1] - pitchZ - reach(r - 1));
+  const deeper = rows ? m.z - (rows - 1) * pitchZ - lines[rows - 1] + reach(rows - 1) : 0;
+  return { lines, deeper };
+}
+
 function middle(items, picked, Z) {
   const slots = [];
   const chosen = new Set(picked);
+  const { lines } = middleDepth(items, Z);
   items.forEach((item, slot) => {
-    const { x, z } = gridPlace(slot, items.length, Z);
+    const { x } = gridPlace(slot, items.length, Z);
+    const z = lines[Math.floor(slot / Z.middle.columns)];
     const codes = item.cards.map((c) => c.card);
     // A build's cards from the first laid, each a little down and to the
-    // right of the last; centred on the grid place.
+    // right of the last; centred on the grid place, or, four cards and
+    // more, its nearest where a three-card build's is, the rest growing
+    // away from you.
     const n = codes.length;
     const x0 = x - ((n - 1) * Z.stack.dx) / 2;
-    const z0 = z - ((n - 1) * Z.stack.dz) / 2;
+    const z0 = z - ((Math.min(n, 3) - 1) * Z.stack.dz) / 2 - overflow(item, Z);
     const lifted = codes.some((c) => chosen.has(c)) ? PICKED_LIFT : 0;
     codes.forEach((code, i) => {
       slots.push({
@@ -248,7 +273,7 @@ export function layout(state, { chosen = null, picked = [], sweeps = { you: [], 
   const counted = countedCards(state);
   return [
     ...yourHand(handOrder(state.hand, sort, state.rules?.aces14).map((c) => c.card), chosen, zones),
-    ...theirHand(state.opponent_holds, zones, Math.ceil((state.table?.length ?? 0) / zones.middle.columns)),
+    ...theirHand(state.opponent_holds, zones, Math.ceil((state.table?.length ?? 0) / zones.middle.columns), middleDepth(state.table ?? [], zones).deeper),
     ...middle(tableOrder(state.table, sort), picked, zones),
     ...pileOf("you", state.piles.you.cards, sweeps.you ?? [], counted.you, zones),
     ...pileOf("them", state.piles.them.cards, sweeps.them ?? [], counted.them, zones),

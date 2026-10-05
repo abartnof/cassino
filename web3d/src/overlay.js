@@ -14,7 +14,7 @@ import "@material/web/button/filled-button.js";
 import "@material/web/iconbutton/icon-button.js";
 import { besideAt, boxRect, covers } from "./dialogue.js";
 import { trackerTable } from "./scorebug.js";
-import { BAR, barAcross, barHoles, clipPathFor, fitLabels, holeGroups, moveBar, pointIn } from "./selection.js";
+import { BAR, barAcross, barHoles, clipPathFor, fitLabels, mergeHoles, moveBar, pointIn } from "./selection.js";
 
 // `later(ms, fn)` runs `fn` after `ms` on the table's clock (director.at),
 // so a box lingers as long as the table runs, and holds when it is held.
@@ -61,11 +61,10 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onCardTap = () 
   // The places' widths, in the bar's heights (selection.js BAR), for the
   // style sheet.
   bar.style.setProperty("--move-place", String(BAR.place));
-  // The move bar under the cards: each card crossing it cut out of it, by
-  // clip paths drawn at once (a mask image flickered), shared among the
-  // bar, its row and its places so that no two cut from one overlap
-  // (selection.js barHoles, holeGroups, clipPathFor); and a tap there the
-  // card's, not a button's.
+  // The move bar under the cards: each card crossing it cut out of it, by a
+  // clip path drawn at once (a mask image flickered), cards that overlap
+  // cut out as one (selection.js barHoles, mergeHoles, clipPathFor); and a
+  // tap there the card's, not a button's.
   let holes = [];
   bar.addEventListener(
     "click",
@@ -78,18 +77,12 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onCardTap = () 
     true,
   );
   function maskMoveBar(polys) {
-    holes = bar.hidden ? [] : barHoles(bar.getBoundingClientRect(), polys);
-    const groups = holeGroups(holes, 3);
-    const levels = [[bar], [chipSet], [...chipSet.querySelectorAll(".place")]];
-    levels.forEach((nodes, k) => {
-      for (const node of nodes) {
-        const value = groups[k] ? clipPathFor(node.getBoundingClientRect(), groups[k]) : "";
-        if (node.dataset.clip !== value) {
-          node.dataset.clip = value;
-          node.style.clipPath = value;
-        }
-      }
-    });
+    const box = bar.hidden ? null : bar.getBoundingClientRect();
+    holes = box ? mergeHoles(barHoles(box, polys)) : [];
+    const value = box ? clipPathFor(box, holes) : "";
+    if (bar.dataset.clip === value) return;
+    bar.dataset.clip = value;
+    bar.style.clipPath = value;
   }
   bar.style.setProperty("--move-pad", String(BAR.pad));
   bar.style.setProperty("--move-split", String(BAR.split));
@@ -561,7 +554,10 @@ function el(tag, attrs = {}, ...children) {
 function promptText(state, chips) {
   const last = [...state.events].reverse().find((e) => e.kind === "game_ends" || e.kind === "hand_ends");
   if (state.prompt === "over") return last?.text ?? "The game is over.";
-  if (state.prompt === "next_hand") return last?.text ?? "The hand is over.";
+  // At a hand's end, nothing: the score says the game's score (the user:
+  // the line "after a hand that says game you n, opponent N is redundant
+  // information given the scoring hud").
+  if (state.prompt === "next_hand") return "";
   if (!chips.length) return "Choose a card from your hand, then the table cards.";
   return "Choose what to do.";
 }

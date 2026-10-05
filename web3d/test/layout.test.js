@@ -340,3 +340,25 @@ test("sorted, your hand too: highest first, left to right, an ace high where it 
   assert.deepEqual(xs(true), ["KC", "TD", "7H", "AS"]);
   assert.deepEqual(xs(false), ["7H", "AS", "KC", "TD"]);
 });
+
+// The user: "if there are many cards piled up on the table, the cards
+// collide in a funny way with the action buttons." A build of four cards
+// or more fanned toward you past a three-card build's reach, into the move
+// bar's room. Its nearest card now lies where a three-card build's does,
+// the rest growing away from you, each index still showing; the row behind
+// moves back to make room, and your opponent's hand with it.
+test("a big build grows away from you: its nearest card where a three-card build's is, the row behind moved back", () => {
+  const codes = ["AH", "2H", "3H", "AD", "2D", "AC"];
+  const build = (n) => state({ hand: ["KS"], table: [[1, codes.slice(0, n), { value: 9, multiple: true, controller: "you" }], ...[2, 3, 4, 5, 6, 7].map((id) => [id, [`${id}S`]])] });
+  const nearest = (n) => Math.max(...layout(build(n)).filter((x) => x.item === 1).map((x) => x.pose.position.z));
+  assert.ok(Math.abs(nearest(6) - nearest(3)) < 1e-9, `six cards' nearest at ${nearest(6)}, three's at ${nearest(3)}`);
+  assert.ok(Math.abs(nearest(4) - nearest(3)) < 1e-9);
+  const six = layout(build(6)).filter((x) => x.item === 1).sort((a, b) => a.index - b.index);
+  for (let k = 1; k < six.length; k++) assert.ok(Math.abs(six[k].pose.position.z - six[k - 1].pose.position.z - ZONES.stack.dz) < 1e-9, "each index showing");
+  // The second row (item 7, the seventh on a six-wide grid) clear of the big build's far card.
+  const far = Math.min(...six.map((x) => x.pose.position.z)) - CARD.height / 2;
+  const behind = layout(build(6)).find((x) => x.item === 7).pose.position.z + CARD.height / 2;
+  assert.ok(behind <= far - ZONES.middle.gapZ + 1e-9, `the row behind reaches ${behind.toFixed(2)}, the build ${far.toFixed(2)}`);
+  const theirs = (n) => layout(build(n)).find((x) => x.zone === "their-hand").pose.position.z;
+  assert.ok(theirs(6) <= theirs(3) - 3 * ZONES.stack.dz + 1e-9, "your opponent's hand drawn back with it");
+});

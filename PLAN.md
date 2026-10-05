@@ -225,14 +225,18 @@ legal move. RULES.md now says each held card answers for one build value.
   bar's buttons, not under them. Your pile and the stock beside your row
   as far from it as its cards from each other. The table sorted, highest
   first, left to right, as it changes (a setting, on by default), and
-  your hand with it. The score's ledger, open, folds at a tap outside it. The move
-  bar in the order of how often each move is made by competent play (a
+  your hand with it. The score's ledger, open, folds at a tap outside it.
+  The move bar in the order of how often each move is made by competent play (a
   count over 300 games of each game at skill 3 and 50 at skill 4: a trail
   half the moves, a capture two in five, a build one in ten): Build, Take,
   Trail, the most used under a right thumb; a "Left-handed" setting turns
   it round. And the bar under the cards: each card crossing it cut out of
   it as it is drawn, a tap there the card's. The tutorial near the end of
-  the new game's menu; Royal's aces 1 or 14 on by default.
+  the new game's menu; Royal's aces 1 or 14 on by default. The cards cut
+  out of the move bar by clip paths, not a mask image, which flickered;
+  each cut-out takes in the card's ink outline, which it had lost there;
+  a big build grows away from you, clear of the bar. Nothing said in the
+  prompt at a hand's end: the score has it.
   On a phone or a tablet your hand is a row spaced wide, not a fan, lying
   just off the table so that its cards are the table's size, and the
   field closes in: on an iPad held upright the table's cards from 100 to

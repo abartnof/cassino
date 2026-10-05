@@ -90,7 +90,7 @@ const TARGET_PORTRAIT = Object.freeze([0, 0, -16]);
 export const CAMERA_PORTRAIT = Object.freeze({
   position: over(TARGET_PORTRAIT, 90),
   target: TARGET_PORTRAIT,
-  reach: Object.freeze({ up: 0.293, down: -0.345, across: 0.312 }),
+  reach: Object.freeze({ up: 0.341, down: -0.345, across: 0.312 }),
   // Your hand's own reach across -- with its cards raised, and as it is held
   // in play -- and how much more it reaches for each unit its fan is
   // lengthened (layout.js `fill`): framing.js lengthens it to take whatever

@@ -1129,6 +1129,11 @@ def check_hud_room(browser, failures):
             failures.append(f"hud {where}: the long game was not restored")
             context.close()
             continue
+        # At a hand's end the prompt says nothing: the score has the game's
+        # score (the user: the line "is redundant information given the
+        # scoring hud").
+        if page.locator(".controls .prompt").inner_text().strip():
+            failures.append(f"hud {where}: at a hand's end the prompt says {page.locator('.controls .prompt').inner_text()!r}")
         # The drawer open too, where it is a drawer (across the table).
         upright = page.evaluate("document.documentElement.classList.contains('upright')")
         if not upright and page.locator(".aids-head").is_visible():
@@ -1286,6 +1291,53 @@ def check_bar_under(browser, failures):
     if page.errors:
         failures.append(f"bar under: console errors {page.errors[:3]}")
     page.context.close()
+
+
+BIG_BUILD_JS = """() => {
+  // A game at your turn with a build of five cards or more on the table,
+  // kept as the page keeps a sitting.
+  const e = window.cassino3d.engine;
+  for (let seed = 1; seed < 400; seed++) {
+    let s = e.start({ game: "classic", aces14: false, sweeps: false, raising: true, skill: 2, seed });
+    for (let n = 0; n < 400 && s.prompt !== "over"; n++) {
+      if (s.prompt === "play" && s.table.some((i) => i.build && i.cards.length >= 5)) {
+        localStorage.setItem("cassino.sitting", s.saved);
+        return seed;
+      }
+      const builds = s.moves.filter((m) => m.startsWith("build"));
+      s = e.send(s.prompt === "play" ? (builds[n % Math.max(1, builds.length)] ?? s.moves[0]) : "next").state;
+    }
+  }
+  return null;
+}"""
+
+
+def check_big_build(browser, failures):
+    """A big build lies clear of the move bar (the user: "if there are many
+    cards piled up on the table, the cards collide in a funny way with the
+    action buttons"): at rest, nothing is cut out of the bar, on a computer
+    and a phone."""
+    for viewport, device in (({"width": 1280, "height": 800}, None), ({"width": 390, "height": 664}, {"has_touch": True, "is_mobile": True})):
+        where = f"{viewport['width']}x{viewport['height']}"
+        context = browser.new_context(viewport=viewport, **(device or {}))
+        context.set_offline(True)
+        page = context.new_page()
+        url = f"{PAGE.as_uri()}?tutorial=0&welcome=0&speed=8&game=classic"
+        page.goto(url)
+        page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
+        if page.evaluate(BIG_BUILD_JS) is None:
+            failures.append(f"big build {where}: no game found with a build of five cards")
+            context.close()
+            continue
+        page.goto(url)
+        page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
+        settle(page)
+        page.wait_for_timeout(500)
+        cut = page.evaluate("[document.querySelector('.move-bar'), ...document.querySelectorAll('.move-bar .chips, .move-bar .place')].some((e) => e.style.clipPath.includes('path'))")
+        if cut:
+            failures.append(f"big build {where}: at rest, a card crosses the move bar")
+        shot(page, f"t2-big-build-{where}")
+        context.close()
 
 
 def check_settings(browser, failures):
@@ -1527,6 +1579,7 @@ def main() -> int:
         check_still(browser, failures)
         check_sorted(browser, failures)
         check_bar_under(browser, failures)
+        check_big_build(browser, failures)
         check_hud_room(browser, failures)
         check_desktop_frame(browser, failures)
         check_phone_talk(browser, failures)
