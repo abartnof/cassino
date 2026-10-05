@@ -272,3 +272,22 @@ test("on a touch screen your hand is a row, spaced wide, not fanned", async () =
     }
   }
 });
+
+// The user: "look at the spacing between the cards that are in the users
+// hand when they have four, and compare that to how little space there is
+// between the cards that are held up and the cards on the outside that are
+// faced down. Please make the spacing ... uniform." Your pile at the
+// row's right and the stock at its left (your deal) lie as far from its
+// outer cards as its cards from each other.
+test("on a touch screen the face-down cards beside your row are spaced as its cards are", async () => {
+  const { ZONES_PORTRAIT, ZONES_TOUCH } = await import("../src/units.js");
+  for (const zones of [ZONES_PORTRAIT, ZONES_TOUCH]) {
+    const slots = layout(state({ hand: ["AS", "7H", "TD", "KC"], piles: [6, 0], dealer: "you" }), { zones });
+    const xs = slots.filter((s) => s.zone === "your-hand").map((s) => s.pose.position.x).sort((a, b) => a - b);
+    const gap = zones.yourHand.gap;
+    const pile = slots.find((s) => s.zone === "your-pile").pose.position.x;
+    const stock = slots.find((s) => s.zone === "stock").pose.position.x;
+    assert.ok(Math.abs(pile - CARD.width / 2 - (xs[3] + CARD.width / 2) - gap) < 0.05, `pile ${pile.toFixed(2)}, the row ends at ${(xs[3] + CARD.width / 2).toFixed(2)}`);
+    assert.ok(Math.abs(xs[0] - CARD.width / 2 - (stock + CARD.width / 2) - gap) < 0.05, `stock ${stock.toFixed(2)}, the row starts at ${(xs[0] - CARD.width / 2).toFixed(2)}`);
+  }
+});

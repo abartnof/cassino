@@ -107,7 +107,10 @@ node-tested, as in piquet.
   cards are larger. Upright, `ZONES_PORTRAIT`; a tablet held sideways has
   its own arrangement and eye (`ZONES_TOUCH`, `CAMERA_TOUCH`: the middle
   five wide and the piles in from the edges, the cards about a tenth
-  larger than a computer's at the same window). A computer keeps the fan.
+  larger than a computer's at the same window). Your pile and the stock
+  beside the row lie as far from a row of four as its cards from each
+  other (the user: "make the spacing between the users hands (face up or
+  down) uniform"). A computer keeps the fan.
 - **Their hand**: `state.opponent_holds` anonymous cards, backs to you and
   square to the eye; never face up (the replay after the game that
   turned it face up went in the seventh play-testing).

@@ -77,7 +77,7 @@ export const CAMERA = Object.freeze({
 export const CAMERA_TOUCH = Object.freeze({
   ...CAMERA,
   fov: 24,
-  widthTan: 0.365,
+  widthTan: 0.34,
   reach: Object.freeze({ up: 0.256, foot: 0.199 }),
 });
 
@@ -90,7 +90,7 @@ const TARGET_PORTRAIT = Object.freeze([0, 0, -16]);
 export const CAMERA_PORTRAIT = Object.freeze({
   position: over(TARGET_PORTRAIT, 90),
   target: TARGET_PORTRAIT,
-  reach: Object.freeze({ up: 0.293, down: -0.345, across: 0.301 }),
+  reach: Object.freeze({ up: 0.293, down: -0.345, across: 0.312 }),
   // Your hand's own reach across -- with its cards raised, and as it is held
   // in play -- and how much more it reaches for each unit its fan is
   // lengthened (layout.js `fill`): framing.js lengthens it to take whatever
@@ -162,17 +162,22 @@ export const ZONES = Object.freeze({
 // camera's reach (above) is measured over whole games by the staging test
 // (test/staging.test.js).
 const YOURS_PORTRAIT = Object.freeze([0, 1.2, 8.5]);
+// Your hand's row: its cards ROW_GAP apart, and your pile and the stock
+// beside it as far from a row of four (the user: "make the spacing between
+// the users hands (face up or down) uniform").
+const ROW_GAP = 2;
+const BESIDE_ROW = 1.5 * (CARD.width + ROW_GAP) + CARD.width + ROW_GAP;
 const THEIRS_PORTRAIT = Object.freeze([0, 5, -37.5]);
 export const ZONES_PORTRAIT = Object.freeze({
   eye: CAMERA_PORTRAIT.position,
-  yourHand: Object.freeze({ centre: YOURS_PORTRAIT, gap: 2, lean: facingEye(CAMERA_PORTRAIT.position, YOURS_PORTRAIT) }),
+  yourHand: Object.freeze({ centre: YOURS_PORTRAIT, gap: ROW_GAP, lean: facingEye(CAMERA_PORTRAIT.position, YOURS_PORTRAIT) }),
   theirHand: Object.freeze({ centre: THEIRS_PORTRAIT, radius: 12, spread: 4.5, lean: facingEye(CAMERA_PORTRAIT.position, THEIRS_PORTRAIT) }),
   middle: Object.freeze({ x: 0, z: -12, columns: 5, gapX: 0.8, gapZ: 1.4 }),
   stack: Object.freeze({ dx: 1.2, dz: 1.8 }),
-  yourPile: Object.freeze({ x: 20, z: 8.5, sweepStep: 1 }),
+  yourPile: Object.freeze({ x: BESIDE_ROW, z: YOURS_PORTRAIT[2], sweepStep: 1 }),
   theirPile: Object.freeze({ x: -16, z: -37.5, sweepStep: 1 }),
   count: Object.freeze({ first: 7, step: 3.9 }),
-  stock: Object.freeze({ you: Object.freeze({ x: -20, z: 8.5 }), them: Object.freeze({ x: 16, z: -37.5 }) }),
+  stock: Object.freeze({ you: Object.freeze({ x: -BESIDE_ROW, z: YOURS_PORTRAIT[2] }), them: Object.freeze({ x: 16, z: -37.5 }) }),
 });
 
 // A tablet held sideways (touch, across the table): ZONES, with your hand
@@ -182,15 +187,15 @@ export const ZONES_PORTRAIT = Object.freeze({
 // cards in the player's hand, just space them wide. whatever size and
 // spacing this turns out to be, try to Make the cards on the table this
 // same size. plenty of whitespace to use."); the middle five items wide,
-// and the piles and the stocks in from the edges, for CAMERA_TOUCH's
-// closer field.
+// your pile and the stock beside your row as its cards are spaced, and
+// your opponent's in from the edges, for CAMERA_TOUCH's closer field.
 const YOURS_TOUCH = Object.freeze([0, 1.2, 1.5]);
 export const ZONES_TOUCH = Object.freeze({
   ...ZONES,
   eye: CAMERA_TOUCH.position,
-  yourHand: Object.freeze({ centre: YOURS_TOUCH, gap: 2, lean: facingEye(CAMERA_TOUCH.position, YOURS_TOUCH) }),
+  yourHand: Object.freeze({ centre: YOURS_TOUCH, gap: ROW_GAP, lean: facingEye(CAMERA_TOUCH.position, YOURS_TOUCH) }),
   middle: Object.freeze({ ...ZONES.middle, columns: 5 }),
-  yourPile: Object.freeze({ ...ZONES.yourPile, x: 30, z: YOURS_TOUCH[2] }),
+  yourPile: Object.freeze({ ...ZONES.yourPile, x: BESIDE_ROW, z: YOURS_TOUCH[2] }),
   theirPile: Object.freeze({ ...ZONES.theirPile, x: -30 }),
-  stock: Object.freeze({ you: Object.freeze({ x: -30, z: YOURS_TOUCH[2] }), them: Object.freeze({ x: 30, z: ZONES.stock.them.z }) }),
+  stock: Object.freeze({ you: Object.freeze({ x: -BESIDE_ROW, z: YOURS_TOUCH[2] }), them: Object.freeze({ x: 30, z: ZONES.stock.them.z }) }),
 });
