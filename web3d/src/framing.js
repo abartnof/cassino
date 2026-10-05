@@ -50,7 +50,8 @@ const MAX_FILL = 2.4;
 // A phone as the tests and the page assume one, when no height is given.
 const PHONE_HEIGHT = 844;
 
-export function framing(aspect, inset = 0, height = PHONE_HEIGHT, strips = STRIPS, sides = null) {
+// `eye`: the eye across the table, CAMERA, or on a tablet CAMERA_TOUCH.
+export function framing(aspect, inset = 0, height = PHONE_HEIGHT, strips = STRIPS, sides = null, eye = CAMERA) {
   const upright = aspect < PORTRAIT_BELOW || !!sides;
   if (!upright) {
     // The field: the eye's own, widened for a squarer window to keep the
@@ -59,14 +60,14 @@ export function framing(aspect, inset = 0, height = PHONE_HEIGHT, strips = STRIP
     // grows as the window shortens).
     const area = aspect * (1 - inset);
     const band = 1 - DESKTOP_FOOT / height;
-    const { up, foot } = CAMERA.reach;
-    const tan = Math.max(Math.tan((CAMERA.fov * Math.PI) / 360), CAMERA.widthTan / area, (up + foot) / (2 * band));
+    const { up, foot } = eye.reach;
+    const tan = Math.max(Math.tan((eye.fov * Math.PI) / 360), eye.widthTan / area, (up + foot) / (2 * band));
     const fov = (360 / Math.PI) * Math.atan(tan);
     // The picture lifted so that your hand ends just above the strip (in
     // device coordinates).
     const lift = -1 + (2 * DESKTOP_FOOT) / height + foot / tan;
     // The play area's centre, in normalised device coordinates.
-    return { upright, position: CAMERA.position, target: CAMERA.target, fov, shift: inset, lift, fill: 1 };
+    return { upright, position: eye.position, target: eye.target, fov, shift: inset, lift, fill: 1 };
   }
   // The band between the strips, in device coordinates; the field just tall
   // enough for the table's reach to fill it -- or, on a squat window, wide
@@ -99,8 +100,8 @@ export function framing(aspect, inset = 0, height = PHONE_HEIGHT, strips = STRIP
 
 // Aim a camera as the page does, for a window of this shape (and, upright,
 // this height in CSS pixels, between these strips and columns).
-export function aim(camera, aspect, inset = 0, height = PHONE_HEIGHT, strips = STRIPS, sides = null) {
-  const f = framing(aspect, inset, height, strips, sides);
+export function aim(camera, aspect, inset = 0, height = PHONE_HEIGHT, strips = STRIPS, sides = null, eye = CAMERA) {
+  const f = framing(aspect, inset, height, strips, sides, eye);
   camera.position.set(...f.position);
   camera.lookAt(...f.target);
   camera.fov = f.fov;
@@ -118,8 +119,8 @@ export function aim(camera, aspect, inset = 0, height = PHONE_HEIGHT, strips = S
   return f;
 }
 
-export function cameraFor(aspect, inset = 0, height = PHONE_HEIGHT, strips = STRIPS, sides = null) {
+export function cameraFor(aspect, inset = 0, height = PHONE_HEIGHT, strips = STRIPS, sides = null, eye = CAMERA) {
   const camera = new PerspectiveCamera(CAMERA.fov, aspect, CAMERA.near, CAMERA.far);
-  aim(camera, aspect, inset, height, strips, sides);
+  aim(camera, aspect, inset, height, strips, sides, eye);
   return camera;
 }

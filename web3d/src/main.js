@@ -35,7 +35,7 @@ import { chooseSurface } from "./surfaces.js";
 import { chunk, heard, speech } from "./talk.js";
 import { pageDue, parseTutorial } from "./tutorial.js";
 import TUTORIAL_TEXT from "../tutorial.md";
-import { CARD, PORTRAIT_BELOW, ZONES, ZONES_PORTRAIT } from "./units.js";
+import { CARD, PORTRAIT_BELOW, ZONES, ZONES_PORTRAIT, ZONES_TOUCH } from "./units.js";
 import { cardCorners } from "./kinematics.js";
 
 /* global WASM_BASE64, ART, COURTS, WORDS */
@@ -77,9 +77,19 @@ async function main() {
   let logOpen = false;
   let badgeFrom = null; // the state the cards are moving from (badges.js)
 
+  // A phone or a tablet: Large Text faces by default, and your hand a row
+  // the table's size (the seventh play-testing), under the tablet's own eye
+  // across the table (units.js ZONES_TOUCH, CAMERA_TOUCH); ?touch=0 or 1
+  // says so for tests.
+  const touch = params.has("touch") ? params.get("touch") !== "0" : largeTextHere();
   const stage = createScene(document.getElementById("stage"), {
     table: chooseSurface({ chosen: prefs.surface, saved: null }),
+    touch,
   });
+  // Where everything rests: stacked on a phone held upright (or sideways,
+  // between columns), and across the table a tablet's arrangement or a
+  // computer's.
+  const zonesNow = () => (stage.portrait ? ZONES_PORTRAIT : touch ? ZONES_TOUCH : ZONES);
   const anisotropy = stage.renderer.capabilities.getMaxAnisotropy();
   const textures = await loadTextures(ART, { anisotropy, pixelRatio: stage.renderer.getPixelRatio() });
   const deck = createDeck(stage, textures);
@@ -87,7 +97,6 @@ async function main() {
   // The card faces: Large Text on a phone or a tablet and the classic faces
   // elsewhere, or whichever is chosen in the settings, changed where the
   // cards lie (faces.js, after piquet's main.js).
-  const touch = largeTextHere();
   const faceSets = { classic: textures.faces };
   let facesShown = "classic";
   function showFaces(choice) {
@@ -125,8 +134,9 @@ async function main() {
     stage,
     deck,
     // A phone held upright (or sideways, between columns) lays the table
-    // out stacked (units.js ZONES_PORTRAIT).
-    view: () => ({ ...sel, zones: stage.portrait ? ZONES_PORTRAIT : ZONES }),
+    // out stacked (units.js ZONES_PORTRAIT); a tablet across it, its hand
+    // in a row (ZONES_TOUCH).
+    view: () => ({ ...sel, zones: zonesNow() }),
     decorate,
     rested: () => {
       badgeFrom = state; // from here, a move starts from this table
@@ -603,7 +613,7 @@ async function main() {
   let barFit = null;
   function placeMoveBar() {
     if (!desktop() && !upright()) return (barFit = null);
-    const Z = stage.portrait ? ZONES_PORTRAIT : ZONES;
+    const Z = zonesNow();
     const near = director.toScreen(new Vector3(Z.middle.x, 0, Z.middle.z + CARD.height / 2 + Z.stack.dz)).y;
     const hand = yourHandOnScreen();
     // On a desktop the bar's width goes with its height; upright, it spans
@@ -620,7 +630,7 @@ async function main() {
   const FULL = ["AS", "AH", "AD", "AC"];
   function fullHand(who) {
     if (!state) return null;
-    const zones = stage.portrait ? ZONES_PORTRAIT : ZONES;
+    const zones = zonesNow();
     const full = who === "you" ? { ...state, hand: FULL.map((card) => ({ card })) } : { ...state, opponent_holds: 4 };
     const points = layout(full, { zones })
       .filter((m) => m.zone === (who === "you" ? "your-hand" : "their-hand"))

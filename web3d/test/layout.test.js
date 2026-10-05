@@ -254,3 +254,21 @@ test("your opponent's hand is never laid out face up: the replay with both hands
   assert.equal(slots.length, 4);
   for (const s of slots) assert.ok(!s.faceUp && s.code === null, s.key);
 });
+
+// The seventh play-testing: "On mobile and ipad, don't bother fanning the
+// cards in the player's hand, just space them wide." On a touch screen
+// (ZONES_PORTRAIT, the phone's and the upright tablet's; ZONES_TOUCH, a
+// tablet held sideways) your hand is a row: every card turned alike, side
+// by side with room between them.
+test("on a touch screen your hand is a row, spaced wide, not fanned", async () => {
+  const { ZONES_PORTRAIT, ZONES_TOUCH } = await import("../src/units.js");
+  for (const zones of [ZONES_PORTRAIT, ZONES_TOUCH]) {
+    const hand = layout(opening, { zones }).filter((s) => s.zone === "your-hand").sort((a, b) => a.pose.position.x - b.pose.position.x);
+    assert.equal(hand.length, 4);
+    for (const s of hand) assert.ok(s.pose.quaternion.angleTo(hand[0].pose.quaternion) < 1e-6, `${s.code} turned unlike the rest`);
+    for (let i = 1; i < hand.length; i++) {
+      const gap = hand[i].pose.position.x - hand[i - 1].pose.position.x - CARD.width;
+      assert.ok(gap >= 1, `${hand[i - 1].code} and ${hand[i].code} ${gap.toFixed(2)} cm apart`);
+    }
+  }
+});

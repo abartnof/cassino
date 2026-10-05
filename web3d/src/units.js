@@ -66,6 +66,21 @@ export const CAMERA = Object.freeze({
   reach: Object.freeze({ up: 0.252, foot: 0.239 }),
 });
 
+// The eye across the table on a tablet (ZONES_TOUCH, below): where your
+// hand lies in a row, the table's size, near the table (the seventh
+// play-testing), and the piles have come in from the far edges, so the
+// field closes in on the table: the cards about a tenth larger, as wide a
+// view as the table needs (`widthTan`, the piles' outer edges and a sweep
+// laid crosswise in them) and as tall (`reach`, your hand's lowest corner
+// now near the table), the eye where it was (test/eye.test.js measures
+// both).
+export const CAMERA_TOUCH = Object.freeze({
+  ...CAMERA,
+  fov: 24,
+  widthTan: 0.365,
+  reach: Object.freeze({ up: 0.256, foot: 0.199 }),
+});
+
 // The eye for a phone held upright, over the stacked arrangement of
 // ZONES_PORTRAIT (cassino's, below; the reach is measured for it). Its field is not fixed: framing.js fits it to the band the
 // overlay leaves, from `reach` -- how far the table's cards reach from the
@@ -75,7 +90,7 @@ const TARGET_PORTRAIT = Object.freeze([0, 0, -16]);
 export const CAMERA_PORTRAIT = Object.freeze({
   position: over(TARGET_PORTRAIT, 90),
   target: TARGET_PORTRAIT,
-  reach: Object.freeze({ up: 0.295, down: -0.448, across: 0.289 }),
+  reach: Object.freeze({ up: 0.293, down: -0.345, across: 0.301 }),
   // Your hand's own reach across -- with its cards raised, and as it is held
   // in play -- and how much more it reaches for each unit its fan is
   // lengthened (layout.js `fill`): framing.js lengthens it to take whatever
@@ -135,21 +150,47 @@ export const ZONES = Object.freeze({
 // The table for a phone held upright, under CAMERA_PORTRAIT, seen from
 // above: the middle five items wide, so ten lie in two rows (99.6 per cent
 // of tables in play); your opponent's hand beyond them, its pile and stock
-// beside it; your hand nearer the eye than the table, so its faces read
-// large, with your pile and stock beside it; and between the middle and
-// your hand, room for the move bar (test/eye.test.js). The count rows
-// overlap so all six cards fit across. The camera's reach (above) is
-// measured over whole games by the staging test (test/staging.test.js).
-const YOURS_PORTRAIT = Object.freeze([0, 26, 13]);
+// beside it; your hand a row of cards spaced `gap` apart, not fanned (the
+// seventh play-testing: "On mobile and ipad, don't bother fanning the
+// cards in the player's hand, just space them wide"), lying just off the
+// table and just nearer you than its first row, so its cards are the
+// table's size ("try to Make the cards on the table this same size"),
+// with your pile and stock beside it; and between the middle and your
+// hand, room for the move bar (test/eye.test.js). Your hand no longer
+// held up close to the eye, the field closes in, and the table's cards
+// are larger. The count rows overlap so all six cards fit across. The
+// camera's reach (above) is measured over whole games by the staging test
+// (test/staging.test.js).
+const YOURS_PORTRAIT = Object.freeze([0, 1.2, 8.5]);
 const THEIRS_PORTRAIT = Object.freeze([0, 5, -37.5]);
 export const ZONES_PORTRAIT = Object.freeze({
   eye: CAMERA_PORTRAIT.position,
-  yourHand: Object.freeze({ centre: YOURS_PORTRAIT, radius: 24, spread: 9, lean: facingEye(CAMERA_PORTRAIT.position, YOURS_PORTRAIT) }),
+  yourHand: Object.freeze({ centre: YOURS_PORTRAIT, gap: 2, lean: facingEye(CAMERA_PORTRAIT.position, YOURS_PORTRAIT) }),
   theirHand: Object.freeze({ centre: THEIRS_PORTRAIT, radius: 12, spread: 4.5, lean: facingEye(CAMERA_PORTRAIT.position, THEIRS_PORTRAIT) }),
   middle: Object.freeze({ x: 0, z: -12, columns: 5, gapX: 0.8, gapZ: 1.4 }),
   stack: Object.freeze({ dx: 1.2, dz: 1.8 }),
-  yourPile: Object.freeze({ x: 18.5, z: 13, sweepStep: 1 }),
+  yourPile: Object.freeze({ x: 20, z: 8.5, sweepStep: 1 }),
   theirPile: Object.freeze({ x: -16, z: -37.5, sweepStep: 1 }),
   count: Object.freeze({ first: 7, step: 3.9 }),
-  stock: Object.freeze({ you: Object.freeze({ x: -18.5, z: 13 }), them: Object.freeze({ x: 16, z: -37.5 }) }),
+  stock: Object.freeze({ you: Object.freeze({ x: -20, z: 8.5 }), them: Object.freeze({ x: 16, z: -37.5 }) }),
+});
+
+// A tablet held sideways (touch, across the table): ZONES, with your hand
+// a row spaced wide, not fanned, lying just off the table between the
+// move bar and the window's foot, so that its cards are the table's size
+// (the seventh play-testing: "On mobile and ipad, don't bother fanning the
+// cards in the player's hand, just space them wide. whatever size and
+// spacing this turns out to be, try to Make the cards on the table this
+// same size. plenty of whitespace to use."); the middle five items wide,
+// and the piles and the stocks in from the edges, for CAMERA_TOUCH's
+// closer field.
+const YOURS_TOUCH = Object.freeze([0, 1.2, 1.5]);
+export const ZONES_TOUCH = Object.freeze({
+  ...ZONES,
+  eye: CAMERA_TOUCH.position,
+  yourHand: Object.freeze({ centre: YOURS_TOUCH, gap: 2, lean: facingEye(CAMERA_TOUCH.position, YOURS_TOUCH) }),
+  middle: Object.freeze({ ...ZONES.middle, columns: 5 }),
+  yourPile: Object.freeze({ ...ZONES.yourPile, x: 30, z: YOURS_TOUCH[2] }),
+  theirPile: Object.freeze({ ...ZONES.theirPile, x: -30 }),
+  stock: Object.freeze({ you: Object.freeze({ x: -30, z: YOURS_TOUCH[2] }), them: Object.freeze({ x: 30, z: ZONES.stock.them.z }) }),
 });

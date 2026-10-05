@@ -17,7 +17,7 @@
 // hands), rewritten for the middle of the cassino table.
 
 import { Vector3 } from "three";
-import { fan, lying } from "./kinematics.js";
+import { fan, lying, row } from "./kinematics.js";
 import { countLines, countOf } from "./scorebug.js";
 import { CARD, ZONES } from "./units.js";
 
@@ -42,17 +42,13 @@ function toward(centre, side) {
   return centre.clone().add(new Vector3(0, 0, 300 * side));
 }
 
+// Your hand: fanned, or, on a phone or a tablet (a zone with a `gap`), a
+// row of cards spaced wide (the seventh play-testing).
 function yourHand(codes, chosen, Z) {
   const zone = Z.yourHand;
   const centre = new Vector3(...zone.centre);
-  const poses = fan({
-    count: codes.length,
-    centre,
-    facing: toward(centre, 1),
-    radius: zone.radius,
-    spread: zone.spread * DEG,
-    tilt: zone.lean * DEG,
-  });
+  const held = { count: codes.length, centre, facing: toward(centre, 1), tilt: zone.lean * DEG };
+  const poses = zone.gap !== undefined ? row({ ...held, gap: zone.gap }) : fan({ ...held, radius: zone.radius, spread: zone.spread * DEG });
   return codes.map((code, i) => {
     const pose = poses[i];
     if (code === chosen) pose.position.addScaledVector(new Vector3(0, 1, 0).applyQuaternion(pose.quaternion), CHOSEN_LIFT);

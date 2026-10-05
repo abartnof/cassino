@@ -10,7 +10,7 @@ import { cardCorners } from "../src/kinematics.js";
 import { layout } from "../src/layout.js";
 import { DESKTOP_FOOT, cameraFor } from "../src/framing.js";
 import { FOG } from "../src/reveal.js";
-import { CAMERA, CAMERA_PORTRAIT, CARD, PITCH, ZONES, ZONES_PORTRAIT } from "../src/units.js";
+import { CAMERA, CAMERA_PORTRAIT, CAMERA_TOUCH, CARD, PITCH, ZONES, ZONES_PORTRAIT, ZONES_TOUCH } from "../src/units.js";
 
 const card = (code) => ({ card: code, label: code, rank: 0, suit: code[1] });
 // A state as the protocol gives it, with only what the layout reads: four
@@ -29,7 +29,7 @@ const dealt = (items = 4) => ({
 // tools below).
 const DESKTOP = { width: 1280, height: 800, zones: ZONES, eye: CAMERA };
 const PHONE = { width: 390, height: 844, strips: { top: 260, foot: 151 }, zones: ZONES_PORTRAIT, eye: CAMERA_PORTRAIT };
-const camera = (w) => cameraFor(w.width / w.height, 0, w.height, w.strips, null);
+const camera = (w) => cameraFor(w.width / w.height, 0, w.height, w.strips, null, w.across ?? CAMERA);
 const screen = (w, cam) => (p) => {
   const v = p.clone().project(cam);
   return { x: ((v.x + 1) / 2) * w.width, y: ((1 - v.y) / 2) * w.height };
@@ -51,10 +51,13 @@ const off = (slot, eye, side = 1) => {
   return Math.acos(Math.min(1, normal.dot(to))) * DEG;
 };
 
+// A row of cards (a phone's, a tablet's) is turned alike, so its end cards
+// are seen a little more aslant than a fan's: within ten degrees.
 test("your hand is seen straight on, and your opponent's backs", () => {
-  for (const w of [DESKTOP, PHONE]) {
+  for (const w of [DESKTOP, PHONE, { zones: ZONES_TOUCH, eye: CAMERA_TOUCH }]) {
     const slots = layout(dealt(), { zones: w.zones });
-    for (const s of slots.filter((x) => x.zone === "your-hand")) assert.ok(off(s, w.eye.position) < 8, `your ${s.code}: ${off(s, w.eye.position).toFixed(1)} degrees off`);
+    const most = w.zones.yourHand.gap !== undefined ? 10 : 8;
+    for (const s of slots.filter((x) => x.zone === "your-hand")) assert.ok(off(s, w.eye.position) < most, `your ${s.code}: ${off(s, w.eye.position).toFixed(1)} degrees off`);
     for (const s of slots.filter((x) => x.zone === "their-hand")) assert.ok(off(s, w.eye.position, -1) < 8, `their back: ${off(s, w.eye.position, -1).toFixed(1)} degrees off`);
   }
 });
@@ -192,4 +195,85 @@ test("nothing on the table is lost in the air: every card nearer the eye than th
     const far = Math.max(...slots.flatMap((s) => cardCorners(s.pose).map((c) => c.distanceTo(eye))));
     assert.ok(far < FOG.play[0], `${w.width}: a card ${far.toFixed(0)} cm off`);
   }
+});
+
+// The seventh play-testing: your hand spaced wide on a phone or a tablet,
+// and "whatever size and spacing this turns out to be, try to Make the
+// cards on the table this same size. plenty of whitespace to use." A card
+// of your hand and a card of the table's first row are the same size on
+// the screen, to within a tenth, held upright (a phone in a browser's
+// window and with none, a tablet) or sideways (a tablet).
+const TOUCH = [
+  { width: 390, height: 664, strips: { top: 120, foot: 115 }, zones: ZONES_PORTRAIT, touch: true },
+  { width: 390, height: 844, strips: { top: 120, foot: 115 }, zones: ZONES_PORTRAIT, touch: true },
+  { width: 820, height: 1180, strips: { top: 120, foot: 115 }, zones: ZONES_PORTRAIT, touch: true },
+  { width: 1180, height: 820, zones: ZONES_TOUCH, across: CAMERA_TOUCH, eye: CAMERA_TOUCH },
+  { width: 1180, height: 740, zones: ZONES_TOUCH, across: CAMERA_TOUCH, eye: CAMERA_TOUCH },
+];
+// Tablets held sideways, as Safari leaves their windows and with none.
+const TABLETS = [
+  [1180, 820],
+  [1180, 740],
+  [1024, 768],
+  [1024, 690],
+  [1366, 1024],
+  [1366, 950],
+].map(([width, height]) => ({ width, height, zones: ZONES_TOUCH, across: CAMERA_TOUCH, eye: CAMERA_TOUCH }));
+// A card's extent on the screen, across and up.
+const cardSize = (w, zone) => {
+  const at = screen(w, camera(w));
+  const slot = layout(dealt(4), { zones: w.zones }).find((s) => s.zone === zone);
+  const ps = cardCorners(slot.pose).map(at);
+  const span = (k) => Math.max(...ps.map((p) => p[k])) - Math.min(...ps.map((p) => p[k]));
+  return { w: span("x"), h: span("y") };
+};
+// The same size across, to a tenth; up, the table's card is shorter as it
+// lies flat on the table, seen slanting, where your hand's cards are turned
+// square to the eye, so to a fifth.
+test("on a touch screen your hand's cards are the table's size", () => {
+  for (const w of [...TOUCH, ...TABLETS]) {
+    const hand = cardSize(w, "your-hand");
+    const table = cardSize(w, "middle");
+    assert.ok(Math.abs(hand.w / table.w - 1) <= 0.1 && hand.h / table.h <= 1.2, `${w.width}x${w.height}: your hand's cards ${hand.w.toFixed(0)}x${hand.h.toFixed(0)} px, the table's ${table.w.toFixed(0)}x${table.h.toFixed(0)}`);
+  }
+});
+
+// The tablet's eye closes in on the table (the seventh play-testing:
+// "plenty of whitespace to use"): its cards larger than a computer's at
+// the same window, and all of it still in view.
+test("a tablet held sideways: the table's cards larger than a computer's, and all of it in view", () => {
+  for (const w of TABLETS) {
+    const computer = { ...w, zones: ZONES, across: CAMERA, eye: CAMERA };
+    assert.ok(cardSize(w, "middle").w >= 1.05 * cardSize(computer, "middle").w, `${w.width}x${w.height}: ${cardSize(w, "middle").w.toFixed(0)} px against ${cardSize(computer, "middle").w.toFixed(0)}`);
+    const hand = extent(w, 4, "your-hand");
+    assert.ok(hand.bottom <= w.height - DESKTOP_FOOT, `${w.width}x${w.height}: your hand ends at ${hand.bottom.toFixed(0)} px`);
+    const all = extent(w, 2 * ZONES_TOUCH.middle.columns, null, { chosen: "7H" });
+    assert.ok(all.left >= 0 && all.right <= w.width, `${w.width}x${w.height}: the table spans ${all.left.toFixed(0)} to ${all.right.toFixed(0)} px`);
+    const one = extent(w, ZONES_TOUCH.middle.columns, "their-hand");
+    assert.ok(one.top >= 0, `${w.width}x${w.height}, one row: their hand from ${one.top.toFixed(0)} px`);
+    const two = extent(w, 2 * ZONES_TOUCH.middle.columns, "their-hand");
+    assert.ok(two.bottom >= 0.4 * (two.bottom - two.top) - 0.5, `${w.width}x${w.height}, two rows: their hand ${two.top.toFixed(0)} to ${two.bottom.toFixed(0)} px`);
+    const { gap } = room(w);
+    assert.ok(gap >= (w.height >= 900 ? 84 : 40) + 14, `${w.width}x${w.height}: the move bar has ${gap.toFixed(0)} px`);
+  }
+});
+
+test("the tablet's reach is what its table truly reaches", () => {
+  const eye = new Vector3(...CAMERA_TOUCH.position);
+  const forward = new Vector3(...CAMERA_TOUCH.target).sub(eye).normalize();
+  const right = new Vector3().crossVectors(forward, new Vector3(0, 1, 0)).normalize();
+  const up = new Vector3().crossVectors(right, forward);
+  const tangent = (c) => {
+    const d = c.clone().sub(eye);
+    return { x: d.dot(right) / d.dot(forward), y: d.dot(up) / d.dot(forward) };
+  };
+  const corners = (zone, items) => layout(dealt(items), { zones: ZONES_TOUCH }).filter((s) => !zone || s.zone === zone).flatMap((s) => cardCorners(s.pose).map(tangent));
+  const foot = Math.max(...corners("your-hand", 4).map((t) => -t.y));
+  assert.ok(CAMERA_TOUCH.reach.foot >= foot && CAMERA_TOUCH.reach.foot - foot < 0.005, `foot ${CAMERA_TOUCH.reach.foot} against ${foot.toFixed(3)}`);
+  const theirs = corners("their-hand", 2 * ZONES_TOUCH.middle.columns).map((t) => t.y);
+  const twoFifths = Math.min(...theirs) + 0.4 * (Math.max(...theirs) - Math.min(...theirs));
+  assert.ok(CAMERA_TOUCH.reach.up >= twoFifths && CAMERA_TOUCH.reach.up - twoFifths < 0.005, `up ${CAMERA_TOUCH.reach.up} against ${twoFifths.toFixed(3)}`);
+  // The piles' outer edges, and a sweep laid crosswise in them.
+  const across = Math.max(...corners(null, 2 * ZONES_TOUCH.middle.columns).map((t) => Math.abs(t.x)));
+  assert.ok(CAMERA_TOUCH.widthTan >= across + 0.01 && CAMERA_TOUCH.widthTan - across < 0.025, `widthTan ${CAMERA_TOUCH.widthTan} against ${across.toFixed(3)}`);
 });

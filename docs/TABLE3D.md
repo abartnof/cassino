@@ -37,7 +37,9 @@ over it: the eye looks down at 70 degrees to the table (play-testing found
 the cards "too hard to see, esp. in mobile mode" from the old eyes, at 42
 degrees across the table and 29 on a phone; at 70 a card lying on the table
 is foreshortened by 6 per cent, against 32 and 52). Your hand floats before
-you, fanned, turned square to the eye; your opponent's lies just beyond the
+you, fanned, turned square to the eye (on a phone or a tablet, a row of
+cards spaced wide, lying just off the table, the table's size: the
+seventh play-testing; §8); your opponent's lies just beyond the
 middle's last row, tipped toward you, its backs square to the eye
 (`units.js` `PITCH`, `facingEye`; `test/eye.test.js`). Across the table the
 field is 31 degrees (the sixth play-testing: "too much white space on the
@@ -92,7 +94,20 @@ naming its origin (`// From piquet web3d/src/kinematics.js @ 254cb3c.`).
 `layout(state) -> Map<card, Pose>` is a pure function of the protocol state,
 node-tested, as in piquet.
 
-- **Your hand**: `state.hand`, fanned and floating, square to the eye.
+- **Your hand**: `state.hand`, fanned and floating, square to the eye; on
+  a phone or a tablet a row, spaced wide (`kinematics.js` `row`; the
+  seventh play-testing: "On mobile and ipad, don't bother fanning the cards
+  in the player's hand, just space them wide. whatever size and spacing
+  this turns out to be, try to Make the cards on the table this same size.
+  plenty of whitespace to use"). The row lies just off the table, just
+  nearer you than its first row with the move bar between, so its cards are
+  as far from the eye as the table's and as wide on the screen (to a tenth;
+  a table card, lying flat and seen slanting, is a little shorter); your
+  hand no longer held up near the eye, the field closes in and the table's
+  cards are larger. Upright, `ZONES_PORTRAIT`; a tablet held sideways has
+  its own arrangement and eye (`ZONES_TOUCH`, `CAMERA_TOUCH`: the middle
+  five wide and the piles in from the edges, the cards about a tenth
+  larger than a computer's at the same window). A computer keeps the fan.
 - **Their hand**: `state.opponent_holds` anonymous cards, backs to you and
   square to the eye; never face up (the replay after the game that
   turned it face up went in the seventh play-testing).
@@ -505,8 +520,9 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   middle that grows. **Done**: cassino's own stacked arrangement
   (`units.js` `ZONES_PORTRAIT`; since the eye was raised, the middle five
   wide, so ten items lie in two rows, your opponent's hand beyond them with
-  its pile and stock beside it, your hand nearer the eye than the table with
-  yours beside it, and room for the move bar between); the layout and
+  its pile and stock beside it, your hand a row just off the table, nearer
+  you than its first row, with yours beside it, and room for the move bar
+  between); the layout and
   choreography take their zones from the view; a staging test measures the
   portrait camera's reach over whole games and holds `CAMERA_PORTRAIT.reach`
   to it; the page measures the overlay's strips (upright: under the HUD as

@@ -223,11 +223,14 @@ export function toss(from, to, { clearance, flight = 0.86, turnBy = 0.8, settle 
 //
 // Cassino's change: `clearance` adds a hop over the way, for a hand held low
 // (a phone's upright table), where a card turning up from the table would
-// otherwise dip a corner through it (the table review's T12).
+// otherwise dip a corner through it (the table review's T12). And a hand
+// lying lower than the card starts (a row just off the table on a phone or
+// a tablet, below a tall stock: the seventh play-testing) is come down to
+// on the same curve, the hop carrying it over the way.
 export function rise(from, to, { clearance = 0 } = {}) {
   const a = from.position.clone();
   const b = to.position.clone();
-  const lift = Math.max(0, b.y - a.y);
+  const lift = b.y - a.y;
   // It turns once it is clear of the table, not before.
   const turn = (u) => minimumJerk((u - 0.15) / 0.7);
   return (t) => {
@@ -354,6 +357,23 @@ export function fan({
     });
   }
   return poses;
+}
+
+// A hand laid out in a row (the seventh play-testing: "On mobile and ipad,
+// don't bother fanning the cards in the player's hand, just space them
+// wide"): side by side, `gap` apart, all turned alike, facing `facing` and
+// leaning back by `tilt`, as `fan` turns its cards.
+export function row({ count, centre, facing, gap = 1.2, tilt = 0 }) {
+  const forward = facing.clone().sub(centre).normalize();
+  const right = new Vector3().crossVectors(UP, forward).normalize();
+  const up = new Vector3().crossVectors(forward, right);
+  const frame = new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(right, up, forward));
+  frame.multiply(new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), -tilt));
+  const pitch = CARD.width + gap;
+  return Array.from({ length: count }, (_, i) => ({
+    position: new Vector3((i - (count - 1) / 2) * pitch, 0, 0).applyQuaternion(frame).add(centre),
+    quaternion: frame.clone(),
+  }));
 }
 
 // A pose held: the path of a card that waits its turn.

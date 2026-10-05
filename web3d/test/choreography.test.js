@@ -7,7 +7,7 @@ import { Vector3 } from "three";
 import { TIMING, choreograph, initialPlacement, opening, stagesBetween } from "../src/choreography.js";
 import { cardCorners } from "../src/kinematics.js";
 import { layout, sweepCards } from "../src/layout.js";
-import { ZONES, ZONES_PORTRAIT } from "../src/units.js";
+import { ZONES, ZONES_PORTRAIT, ZONES_TOUCH } from "../src/units.js";
 import { loadEngine } from "../src/engine.js";
 import { countLines, countOf } from "../src/scorebug.js";
 
@@ -104,10 +104,12 @@ test("the reducer replays a move into the state the engine reaches", { skip }, (
   }
 });
 
-test("every choreography of real games ends exactly at the layout, faces only where known, in either arrangement", { skip }, () => {
-  for (const zones of [ZONES, ZONES_PORTRAIT]) {
+test("every choreography of real games ends exactly at the layout, faces only where known, in every arrangement", { skip }, () => {
+  // Across the table (a computer's, a tablet's: its hand a row, the
+  // seventh play-testing) and upright.
+  for (const zones of [ZONES, ZONES_PORTRAIT, ZONES_TOUCH]) {
     let worst = 0;
-    const where = zones === ZONES ? "across" : "upright";
+    const where = zones === ZONES ? "across" : zones === ZONES_TOUCH ? "tablet" : "upright";
     for (const [seed, game] of [[1, "classic"], [2, "royal"], [5, "classic"]]) {
       let state = engine.start({ game, aces14: game === "royal", sweeps: true, skill: 2, seed });
       const start = opening(state);
