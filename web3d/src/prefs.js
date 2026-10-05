@@ -1,6 +1,7 @@
 // The person's settings and their sitting, kept in the browser
-// (docs/TABLE3D.md section 8): the rules and skill for the next game, the
-// aids, how the table looks and moves. Every read and write survives
+// (docs/TABLE3D.md section 8): the rules and skill the last new game was
+// chosen with (the next one's, unless changed in its menu), the aids, how
+// the table looks and moves. Every read and write survives
 // storage that is missing, full or blocked (a private window, cleared site
 // data): the page then simply starts from the defaults.
 
@@ -157,6 +158,31 @@ export function choosePlay(choice) {
   if (choice === "tutorial") return { tutorial: true, seen: [] };
   if (choice === "new") return { tutorial: false };
   return {};
+}
+
+// A new game's choices, from the new game's menu (the seventh
+// play-testing: the game's own settings taken out of the settings, where
+// Royal could be chosen and not happen until a new game): what they set,
+// kept for the next game too, and the series, begun afresh for another
+// match. Aces 1 or 14 is Royal's alone.
+export function chooseGame(prefs, series, { rules, skill, match }) {
+  const game = rules.game === "royal" ? "royal" : "classic";
+  const patch = {
+    rules: { game, aces14: game === "royal" && rules.aces14 === true, sweeps: rules.sweeps === true, raising: rules.raising !== false },
+    skill,
+    match,
+  };
+  const fresh = match !== prefs.match || series.format !== match ? { format: match, you: 0, them: 0, counted: [] } : series;
+  return { patch, series: fresh };
+}
+
+// The game under way in words, for the settings: its rules and your
+// opponent's skill.
+export function gameSaid(rules, skill) {
+  const parts = [rules.game === "royal" ? "Royal Cassino" : "Classic Cassino"];
+  if (rules.game === "royal" && rules.aces14) parts.push("aces 1 or 14");
+  parts.push(rules.sweeps ? "sweeps scored" : "no sweeps", rules.raising === false ? "no raising" : "builds raised");
+  return `${parts.join(", ")}; your opponent at ${skill}`;
 }
 
 // The sitting under way, as the engine saves it (state.saved), to restore

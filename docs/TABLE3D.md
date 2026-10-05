@@ -383,10 +383,21 @@ Material Design 3, from piquet's shell.
   popups tell each line's points (the winner of each line chanted it until
   the sixth play-testing, which left the count to the popups), a line a
   beat, a player's popup holding their next line back.
-- **Settings**: Classic or Royal, aces 1 or 14, sweeps, raising builds, the skill dial (1 to
-  4 in halves), the match (one game, or a World Series: the best of seven,
-  `series.js`), the aids, Large Text, watch mode, a new game, copy the game
-  record (`state.saved`), the daily deal (seeded from the date).
+- **The new game's menu** (the seventh play-testing: "it's confusing that
+  you can set royal casino to be on, but it isn't happening- that's because
+  it needs a new game to apply ... it's new game with x setting, all picked
+  from one menu screen"): the plus at the top, New game at the game's end
+  and the welcome's New game all open one screen with the game's own
+  settings, Classic or Royal (with what each means), aces 1 or 14, sweeps,
+  raising builds, the skill dial (1 to 4 in halves) and the match (one
+  game, or a World Series: the best of seven, `series.js`); Deal starts the
+  game with them, Today's deal (seeded from the date) and Watch a game
+  likewise, and Cancel changes nothing. What is chosen is kept for the
+  next menu (`prefs.js` `chooseGame`); another match begins its series
+  afresh.
+- **Settings**: what the game under way is (`gameSaid`) and where the next
+  is chosen; the aids, Large Text, the table talk, the animation, the
+  table top; copy the game record (`state.saved`).
 - **Fairness**: the game's seed in the settings, shown once the game is
   over, so the same deal can be played again; and the last move seen again
   from the top bar. The replay after the game with both hands face up was
@@ -456,7 +467,8 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   and explanations; undo; saved sittings across a reload. **Done**: the top
   bar (new game, hint, undo, the game log, help, settings); the settings
   dialog (`chrome.js`: the next game's rules and your opponent's skill in
-  halves, New game, Today's deal, Watch a game; the engine's aids and the
+  halves, New game, Today's deal, Watch a game, all in the new game's
+  menu since the seventh play-testing; the engine's aids and the
   page's: trackers, cards still out, the sweep warning, undo; animation
   speed and the table top); the credits on screen; preferences and the
   sitting kept in the browser (`prefs.js`, node-tested, surviving storage

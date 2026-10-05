@@ -2,7 +2,7 @@
 // fail, the URL's overrides, and the daily deal.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DEFAULTS, SKILLS, badgesOn, choosePlay, dailySeed, loadPrefs, welcomeWanted, savePrefs, loadSitting, saveSitting, withUrl } from "../src/prefs.js";
+import { DEFAULTS, SKILLS, badgesOn, chooseGame, choosePlay, dailySeed, gameSaid, loadPrefs, welcomeWanted, savePrefs, loadSitting, saveSitting, withUrl } from "../src/prefs.js";
 
 function memory() {
   const items = new Map();
@@ -168,4 +168,25 @@ test("the series is kept, checked, and survives storage that fails", () => {
   assert.equal(loadSeries(broken).format, "single");
   saveSeries(broken, { format: "best-of-7", you: 0, them: 0, counted: [] });
   assert.equal(loadPrefs(store).match, "single");
+});
+
+// The seventh play-testing: "it's confusing that you can set royal casino
+// to be on, but it isn't happening- that's because it needs a new game to
+// apply. solve this problem by removing game level settings from the
+// config, and putting them into a new game menu." The menu's choices take
+// effect as the game they start begins, and are kept for the next.
+test("a new game's choices: kept as they start it, aces 1 or 14 only with Royal, a new match begun afresh", () => {
+  const series = { format: "best-of-7", you: 2, them: 1, counted: [5, 6, 7] };
+  const prefs = { ...DEFAULTS, match: "best-of-7" };
+  const royal = chooseGame(prefs, series, { rules: { game: "royal", aces14: true, sweeps: true, raising: false }, skill: 2.5, match: "best-of-7" });
+  assert.deepEqual(royal.patch, { rules: { game: "royal", aces14: true, sweeps: true, raising: false }, skill: 2.5, match: "best-of-7" });
+  assert.equal(royal.series, series, "the same match: the series goes on");
+  const classic = chooseGame(prefs, series, { rules: { game: "classic", aces14: true, sweeps: false, raising: true }, skill: 3, match: "single" });
+  assert.equal(classic.patch.rules.aces14, false, "aces 1 or 14 is Royal's");
+  assert.deepEqual(classic.series, { format: "single", you: 0, them: 0, counted: [] }, "another match: begun afresh");
+});
+
+test("the game under way, said in words, for the settings", () => {
+  assert.equal(gameSaid({ game: "classic", aces14: false, sweeps: false, raising: true }, 3), "Classic Cassino, no sweeps, builds raised; your opponent at 3");
+  assert.equal(gameSaid({ game: "royal", aces14: true, sweeps: true, raising: false }, 1.5), "Royal Cassino, aces 1 or 14, sweeps scored, no raising; your opponent at 1.5");
 });

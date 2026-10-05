@@ -25,7 +25,7 @@ import { POPUP_BUSY, createHud, hudEvents, ledgerOf, popupsOf } from "./hud.js";
 import { RAMPS, cardMaterials, cardTexture } from "./materials.js";
 import { createOverlay } from "./overlay.js";
 import { badgeFontPx, badgeText, badgeTitle, badgesShown } from "./badges.js";
-import { badgesOn, choosePlay, dailySeed, loadPrefs, welcomeWanted, loadSeries, loadSitting, savePrefs, saveSeries, saveSitting, withUrl } from "./prefs.js";
+import { badgesOn, chooseGame, choosePlay, dailySeed, loadPrefs, welcomeWanted, loadSeries, loadSitting, savePrefs, saveSeries, saveSitting, withUrl } from "./prefs.js";
 import { recordGame, seriesLine } from "./series.js";
 import { COURTS as COURTS_ORDER, FIGURE, REVEAL_MS, courtFor, courtName, figureSides } from "./reveal.js";
 import { createScene } from "./scene.js";
@@ -148,7 +148,7 @@ async function main() {
       advance(sent.state);
     },
     onNext: () => advance(engine.send("next").state),
-    onNewGame: () => newGame(),
+    onNewGame: () => askNewGame(),
     // A badge tapped is its build tapped.
     onBadge: (id) => tapped(director.placement().find((m) => m.item === id) ?? null),
     // The trackers' panel folded or opened: kept for next time.
@@ -176,11 +176,7 @@ async function main() {
     savePrefs(store, saved);
   }
   const chrome = createChrome(document.getElementById("overlay"), {
-    newGame: () => newGame(),
-    daily: () => newGame({ seed: dailySeed() }),
-    watch: () => newGame({ watch: true }),
-    rules: (rules) => change({ rules }),
-    skill: (value) => change({ skill: value }),
+    newGame: () => askNewGame(),
     aid: (name, on) => {
       change({ aids: { ...prefs.aids, [name]: on } });
       // A watched game keeps its own (S3).
@@ -200,10 +196,6 @@ async function main() {
       if (name === "surface") stage.setSurface(chooseSurface({ chosen: value, saved: null }));
       if (name === "faces") showFaces(value);
       if (name === "buildValues" || name === "tutorial") placeBadges();
-      if (name === "match") {
-        series = { format: value, you: 0, them: 0, counted: [] };
-        saveSeries(store, series);
-      }
       refresh();
     },
     copy: async (button) => {
@@ -264,13 +256,19 @@ async function main() {
     const timing = director.restart(state, { dealt, waits: dealt ? openingWaits(opening) : {} });
     // The welcome holds the clock before anything timed on it, the talk
     // included, can come (a line scheduled first would slip out behind it).
+    // New game asks how, in the new game's menu, over the held table; put
+    // aside, the game behind it is played as it was dealt.
     if (welcome)
       director.gate(0, (release) =>
         chrome.showWelcome({ canContinue: false }, (choice) => {
           change(choosePlay(choice));
-          release();
-          refresh();
-          introduce();
+          const go = () => {
+            release();
+            refresh();
+            introduce();
+          };
+          if (choice === "new") askNewGame({ cancelled: go });
+          else go();
         }),
       );
     if (dealt) {
@@ -298,12 +296,36 @@ async function main() {
     return said.length ? { [first]: Math.max(...said.map((l) => l.end)) + TURN } : {};
   }
 
-  // The welcome's choice over a game kept: carry on, or begin afresh.
+  // The welcome's choice over a game kept: carry on, begin afresh from the
+  // new game's menu (put aside, the game kept goes on), or the tutorial.
   function begin(choice) {
+    const carryOn = () => {
+      refresh();
+      introduce();
+    };
+    if (choice === "new") return askNewGame({ before: () => change(choosePlay(choice)), cancelled: carryOn });
     change(choosePlay(choice));
-    if (choice !== "continue") return newGame();
-    refresh();
-    introduce();
+    if (choice === "tutorial") return newGame();
+    carryOn();
+  }
+
+  // The new game's menu (chrome.js showNewGame; the seventh play-testing:
+  // the game's own settings chosen there, with the game they start): its
+  // choices kept for the next, a new match begun if another was chosen,
+  // and the game dealt, played or watched. `before()` as it starts;
+  // `cancelled()` if the menu was put aside.
+  function askNewGame({ before = () => {}, cancelled = () => {} } = {}) {
+    chrome.showNewGame(prefs, (picked) => {
+      if (!picked) return cancelled();
+      before();
+      const chosen = chooseGame(prefs, series, picked);
+      if (chosen.series !== series) {
+        series = chosen.series;
+        saveSeries(store, series);
+      }
+      change(chosen.patch);
+      newGame({ seed: picked.kind === "daily" ? dailySeed() : randomSeed(), watch: picked.kind === "watch" });
+    });
   }
 
   // ---- the tutorial -------------------------------------------------------

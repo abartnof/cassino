@@ -210,7 +210,11 @@ legal move. RULES.md now says each held card answers for one build value.
   framed the table afresh; the controls now keep a height of their own),
   and the score's ledger lies over the table when open instead of
   shrinking it; the ledger scrolls, stopping above the trackers' drawer
-  (or, upright, the controls).
+  (or, upright, the controls). The game's own settings (Classic or Royal,
+  aces, sweeps, raising, your opponent's skill, the match) moved out of the
+  settings into a new game's menu, one screen, where they take effect as
+  the game they start begins (Royal could be chosen in the settings and
+  not happen until a new game); the settings say what game is under way.
 - **The South African game, researched**
   (`research/12-south-african-khasino.md`): KASA's rulebooks and its own
   online game as the canonical sources, twenty open-source engines, and

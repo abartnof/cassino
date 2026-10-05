@@ -356,27 +356,66 @@ def check_trackers(browser, failures):
     page.context.close()
 
 
-def check_raising(browser, failures):
-    """"Raise builds" in the settings (play-testing asked for the choice):
-    on by default; turned off, the next game is dealt without raising, and
-    the switch says so."""
+def deal_from_menu(page, choose=None):
+    """The new game's menu, open: `choose(dialog)` sets what it should, and
+    Deal starts the game."""
+    dialog = page.locator(".new-game-dialog")
+    dialog.locator("md-filled-button.deal").wait_for(state="visible", timeout=10_000)
+    if choose:
+        choose(dialog)
+    dialog.locator("md-filled-button.deal").click()
+    page.wait_for_function("!document.querySelector('.new-game-dialog').open")
+
+
+def check_new_game(browser, failures):
+    """The game's own settings in the new game's menu, not the settings
+    (the seventh play-testing: "it's confusing that you can set royal
+    casino to be on, but it isn't happening"): the plus opens it, put aside
+    it changes nothing, and Deal starts a game with what it shows; "Raise
+    builds" on by default (play-testing asked for the choice)."""
     page = open_page(browser, "seed=7&speed=100", calm=True)
     settle(page)
     page.locator("md-icon-button.settings-open").click()
     page.wait_for_timeout(1200)
-    switch = page.locator('md-switch[data-rule="raising"]')
-    if not switch.count() or not page.evaluate("document.querySelector('md-switch[data-rule=\"raising\"]').selected"):
-        failures.append("raising: no Raise builds switch, or not on by default")
-        page.context.close()
-        return
-    switch.click()
-    page.locator(".settings-dialog md-filled-tonal-button", has_text="Done").click()
+    settings = page.locator(".settings-dialog")
+    if settings.locator("md-switch[data-rule], .game-set, md-outlined-select.skill, md-outlined-select.match").count():
+        failures.append("new game: the game's own settings are still in the settings")
+    if "This game: Classic Cassino" not in settings.locator(".game-line").inner_text():
+        failures.append(f"new game: the settings do not say what game is under way: {settings.locator('.game-line').inner_text()!r}")
+    settings.locator("md-filled-tonal-button", has_text="Done").click()
     page.wait_for_timeout(800)
+    before = page.evaluate("window.cassino3d.state().saved")
+    # Put aside: nothing changes.
     page.locator("md-icon-button.new-game").click()
-    page.wait_for_timeout(800)
+    dialog = page.locator(".new-game-dialog")
+    dialog.locator("md-filled-button.deal").wait_for(state="visible", timeout=10_000)
+    shot(page, "t6-new-game")
+    if not page.evaluate("document.querySelector('.new-game-dialog md-switch[data-rule=\"raising\"]').selected"):
+        failures.append("new game: Raise builds is not on by default")
+    dialog.locator('md-outlined-segmented-button[data-game="royal"]').click()
+    dialog.locator(".new-game-cancel").click()
+    page.wait_for_function("!document.querySelector('.new-game-dialog').open")
+    if page.evaluate("window.cassino3d.state().saved") != before or page.evaluate("window.cassino3d.prefs().rules.game") != "classic":
+        failures.append("new game: the menu put aside changed the game or the next one's rules")
+    # Royal, aces 1 or 14, no raising: dealt so.
+    page.locator("md-icon-button.new-game").click()
+
+    def royal(d):
+        d.locator('md-outlined-segmented-button[data-game="royal"]').click()
+        d.locator('md-switch[data-rule="aces14"]').click()
+        d.locator('md-switch[data-rule="raising"]').click()
+
+    deal_from_menu(page, royal)
     settle(page)
-    if page.evaluate("window.cassino3d.state().rules.raising") is not False:
-        failures.append(f"raising: the next game raises: {page.evaluate('window.cassino3d.state().rules')}")
+    rules = page.evaluate("window.cassino3d.state().rules")
+    if rules != {"game": "royal", "aces14": True, "sweeps": False, "raising": False}:
+        failures.append(f"new game: dealt with {rules}, not Royal with aces 1 or 14 and no raising")
+    page.locator("md-icon-button.settings-open").click()
+    page.wait_for_timeout(1200)
+    if "This game: Royal Cassino, aces 1 or 14" not in page.locator(".settings-dialog .game-line").inner_text():
+        failures.append(f"new game: the settings do not say Royal is under way: {page.locator('.settings-dialog .game-line').inner_text()!r}")
+    if page.errors:
+        failures.append(f"new game: console errors {page.errors[:5]}")
     page.context.close()
 
 
@@ -410,6 +449,17 @@ def check_welcome(browser, failures):
         page.wait_for_timeout(500)
         if page.evaluate("window.cassino3d.state().saved") != saved:
             failures.append("Continue did not carry on with the game kept")
+    page.context.close()
+    # New game, with no game kept: the new game's menu, over the held table,
+    # and the game dealt as chosen there.
+    page = open_page(browser, "welcome=1&speed=8")
+    page.wait_for_timeout(1500)
+    page.locator(".welcome-new").click()
+    deal_from_menu(page, lambda d: d.locator('md-outlined-segmented-button[data-game="royal"]').click())
+    settle(page)
+    s = page.evaluate("window.cassino3d.state()")
+    if s["rules"]["game"] != "royal" or not s["events"]:
+        failures.append(f"the welcome's New game did not deal the game chosen in its menu: {s['rules']}")
     page.context.close()
 
 
@@ -592,6 +642,7 @@ def check_ending(browser, failures):
     if not before["court"] or not after["ending"] or after["ending"] == before["ending"]:
         failures.append(f"ending: the arrows did not step to another ending: {before} then {after}")
     page.locator("md-filled-button.again").click()
+    deal_from_menu(page)
     settle(page)
     if page.evaluate("window.cassino3d.opponent()")["revealed"] is not None:
         failures.append("ending: a new game kept the camera pulled back")
@@ -1174,10 +1225,9 @@ def check_settings(browser, failures):
     shot(page, "t6-watch")
     # Another watched game started while this one waits between moves
     # plays on too (the table review's T2).
-    page.locator("md-icon-button.settings-open").click()
-    page.wait_for_function("document.querySelector('.settings-dialog').open")
-    page.locator(".settings-dialog md-outlined-button.watch").click()
-    page.wait_for_function("!document.querySelector('.settings-dialog').open")
+    page.locator("md-icon-button.new-game").click()
+    page.locator(".new-game-dialog md-outlined-button.watch").click()
+    page.wait_for_function("!document.querySelector('.new-game-dialog').open")
     start = len(page.evaluate("window.cassino3d.state()")["events"])
     for _ in range(80):
         page.evaluate("window.cassino3d.tick(400)")
@@ -1296,7 +1346,7 @@ def main() -> int:
         check_settings(browser, failures)
         check_badges(browser, failures)
         check_trackers(browser, failures)
-        check_raising(browser, failures)
+        check_new_game(browser, failures)
         check_welcome(browser, failures)
         check_aid_toggles(browser, failures)
         check_cheers(browser, failures)

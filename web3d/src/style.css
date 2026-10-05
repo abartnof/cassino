@@ -381,6 +381,12 @@ md-dialog {
   width: 100%;
   margin-bottom: 4px;
 }
+/* The new game's menu: what the game chosen is, under its choice. */
+.game-words {
+  margin: 4px 0 6px;
+  font-size: 13px;
+  color: var(--md-sys-color-on-surface-variant);
+}
 .credit {
   margin-bottom: 12px;
 }
@@ -1458,6 +1464,12 @@ html.sideways .game-log {
   margin: 0 0 4px;
   font-size: 13px;
   color: var(--md-sys-color-on-surface-variant);
+}
+/* The settings' first line: the game under way, its rules chosen in the
+   new game's menu. */
+.game-line {
+  margin: 0 0 8px;
+  font-size: 14px;
 }
 
 /* ?ending: the game's endings stepped through, under the figure. */

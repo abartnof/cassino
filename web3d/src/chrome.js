@@ -16,7 +16,7 @@ import "@material/web/select/select-option.js";
 import "@material/web/switch/switch.js";
 import "@material/web/labs/segmentedbutton/outlined-segmented-button.js";
 import "@material/web/labs/segmentedbuttonset/outlined-segmented-button-set.js";
-import { DEFAULTS, SKILLS, SPEEDS, badgesOn } from "./prefs.js";
+import { SKILLS, SPEEDS, badgesOn, gameSaid } from "./prefs.js";
 import { PATTERNS } from "./surfaces.js";
 
 // Simple stroked icons, piquet's, drawn for its page.
@@ -89,9 +89,9 @@ const PAGE_AIDS = [
   ["sweepWarning", "Sweep warning", "Say when a single card would clear the table"],
 ];
 
-// `on`: { newGame(), daily(), watch(), rules(rules), skill(value),
-// aid(name, on), pref(name, value), copy(button), hint(), again(),
-// log(open), help() }.
+// `on`: { newGame(), aid(name, on), pref(name, value), copy(button),
+// hint(), again(), log(open), help() }; newGame() is the plus pressed (the
+// page opens the new game's menu, `showNewGame`).
 export function createChrome(root, on) {
   // ---- the top bar ---------------------------------------------------------
   const fresh = el("md-icon-button", { class: "new-game", title: "A new game", "aria-label": "A new game", onclick: () => on.newGame() }, symbol("add"));
@@ -130,7 +130,6 @@ export function createChrome(root, on) {
   const aidBar = el("div", { class: "aid-toggles" }, aidSet);
   root.querySelector(".controls")?.append(aidBar);
 
-  // ---- settings ------------------------------------------------------------
   const row = (title, words, control) =>
     el("label", { class: "setting" }, el("span", { class: "setting-text" }, el("span", { class: "setting-title" }, title), el("span", { class: "setting-words" }, words)), control);
   const sw = (attrs, onChange) => {
@@ -139,46 +138,101 @@ export function createChrome(root, on) {
     return s;
   };
 
-  // The next game's rules.
-  let rules = { ...DEFAULTS.rules };
-  const segment = (value, label) => el("md-outlined-segmented-button", { "data-game": value, label });
-  const gameSet = el("md-outlined-segmented-button-set", { class: "game-set", "aria-label": "The game" }, segment("classic", "Classic"), segment("royal", "Royal"));
-  gameSet.addEventListener("segmented-button-set-selection", (e) => {
-    const game = e.detail.button.dataset.game;
-    rules = { ...rules, game, aces14: game === "royal" && rules.aces14 };
-    on.rules(rules);
-    draw();
-  });
-  const aces = sw({ "data-rule": "aces14" }, (v) => {
-    rules = { ...rules, aces14: v };
-    on.rules(rules);
-  });
-  const sweeps = sw({ "data-rule": "sweeps" }, (v) => {
-    rules = { ...rules, sweeps: v };
-    on.rules(rules);
-  });
-  const raising = sw({ "data-rule": "raising" }, (v) => {
-    rules = { ...rules, raising: v };
-    on.rules(rules);
-  });
-  const skill = el(
-    "md-outlined-select",
-    { class: "skill", label: "Your opponent" },
-    SKILLS.map((s) => el("md-select-option", { value: String(s.value) }, el("div", { slot: "headline" }, `${s.value} — ${s.words}`))),
-  );
-  skill.addEventListener("change", () => on.skill(Number(skill.value)));
-  const match = el(
-    "md-outlined-select",
-    { class: "match", "data-pref": "match", label: "The match" },
-    [
-      ["single", "One game to 21"],
-      ["best-of-7", "A World Series: the best of seven games"],
-    ].map(([v, words]) => el("md-select-option", { value: v }, el("div", { slot: "headline" }, words))),
-  );
-  match.addEventListener("change", () => on.pref("match", match.value));
-  const startNew = el("md-filled-tonal-button", { class: "start-new", onclick: () => (settings.close(), on.newGame()) }, "New game");
-  const daily = el("md-outlined-button", { class: "daily", onclick: () => (settings.close(), on.daily()) }, "Today's deal");
-  const watch = el("md-outlined-button", { class: "watch", onclick: () => (settings.close(), on.watch()) }, "Watch a game");
+  // ---- a new game --------------------------------------------------------------
+
+  // The new game's menu (the seventh play-testing: "it's confusing that you
+  // can set royal casino to be on, but it isn't happening- that's because
+  // it needs a new game to apply ... it's new game with x setting, all
+  // picked from one menu screen"): the game and its rules, your opponent
+  // and the match, chosen together, taking effect as the game they start
+  // begins. `showNewGame(prefs, done)`: `done(choice)` once, with { kind:
+  // "deal" | "daily" | "watch", rules, skill, match }, or null if it was
+  // closed without one.
+  const GAME_WORDS = {
+    classic: "Jacks, queens and kings are taken only by their own rank, in pairs; the other cards build up to 10.",
+    royal: "Jacks, queens and kings count 11, 12 and 13, and build like the rest.",
+  };
+  const newGameDialog = el("md-dialog", { class: "new-game-dialog" });
+  let newGameOpen = false;
+  function showNewGame(prefs, done) {
+    newGameOpen = true;
+    let rules = { ...prefs.rules };
+    let chosen = null;
+    const segment = (value, label) => el("md-outlined-segmented-button", { "data-game": value, label });
+    const gameSet = el("md-outlined-segmented-button-set", { class: "game-set", "aria-label": "The game" }, segment("classic", "Classic"), segment("royal", "Royal"));
+    const gameWords = el("p", { class: "game-words" });
+    const aces = sw({ "data-rule": "aces14" }, (v) => (rules = { ...rules, aces14: v }));
+    const sweeps = sw({ "data-rule": "sweeps" }, (v) => (rules = { ...rules, sweeps: v }));
+    const raising = sw({ "data-rule": "raising" }, (v) => (rules = { ...rules, raising: v }));
+    const options = (list, current) =>
+      list.map(([value, words]) => el("md-select-option", { value: String(value), selected: String(value) === String(current) }, el("div", { slot: "headline" }, words)));
+    const skill = el("md-outlined-select", { class: "skill", label: "Your opponent" }, options(SKILLS.map((k) => [k.value, `${k.value} \u2014 ${k.words}`]), prefs.skill));
+    const match = el(
+      "md-outlined-select",
+      { class: "match", label: "The match" },
+      options(
+        [
+          ["single", "One game to 21"],
+          ["best-of-7", "A World Series: the best of seven games"],
+        ],
+        prefs.match,
+      ),
+    );
+    const drawRules = () => {
+      for (const b of gameSet.querySelectorAll("md-outlined-segmented-button")) b.selected = b.dataset.game === rules.game;
+      gameWords.textContent = GAME_WORDS[rules.game];
+      aces.selected = rules.game === "royal" && rules.aces14;
+      aces.disabled = rules.game !== "royal";
+      sweeps.selected = rules.sweeps;
+      raising.selected = rules.raising !== false;
+    };
+    gameSet.addEventListener("segmented-button-set-selection", (e) => {
+      const game = e.detail.button.dataset.game;
+      rules = { ...rules, game, aces14: game === "royal" && rules.aces14 };
+      drawRules();
+    });
+    const pick = (kind) => () => {
+      chosen = { kind, rules: { ...rules }, skill: Number(skill.value), match: match.value };
+      newGameDialog.close();
+    };
+    newGameDialog.replaceChildren(
+      el("div", { slot: "headline" }, "New game"),
+      el(
+        "div",
+        { slot: "content", class: "settings new-game" },
+        gameSet,
+        gameWords,
+        row("Aces count 1 or 14", "Royal: an ace in your hand takes as one or as fourteen", aces),
+        row("Score sweeps", "A point for each capture that clears the table", sweeps),
+        row("Raise builds", "A card from your hand may raise a build to a higher total, yours or your opponent's", raising),
+        el("div", { class: "selects" }, skill, match),
+        el(
+          "div",
+          { class: "starts" },
+          el("md-outlined-button", { class: "daily", onclick: pick("daily") }, "Today's deal"),
+          el("md-outlined-button", { class: "watch", onclick: pick("watch") }, "Watch a game"),
+        ),
+      ),
+      el(
+        "div",
+        { slot: "actions" },
+        el("md-text-button", { class: "new-game-cancel", onclick: () => newGameDialog.close() }, "Cancel"),
+        el("md-filled-button", { class: "deal", onclick: pick("deal"), autofocus: true }, "Deal"),
+      ),
+    );
+    drawRules();
+    newGameDialog.addEventListener(
+      "closed",
+      () => {
+        newGameOpen = false;
+        done(chosen);
+      },
+      { once: true },
+    );
+    newGameDialog.show();
+  }
+
+  // ---- settings ------------------------------------------------------------
 
   const aidSwitches = AIDS.map(([name, title, words]) => row(title, words, sw({ "data-aid": name }, (v) => on.aid(name, v))));
   const pageSwitches = PAGE_AIDS.map(([name, title, words]) => row(title, words, sw({ "data-pref": name }, (v) => on.pref(name, v))));
@@ -209,6 +263,9 @@ export function createChrome(root, on) {
     ["classic", "Classic"],
     ["jumbo", "Large Text (Optimized for smaller screens)"],
   ]);
+  // The game under way, and where the next is chosen: its own settings are
+  // in the new game's menu.
+  const gameLine = el("p", { class: "game-line" });
   // Fairness you can check (DESIGN.md §12.3): the seed deals the cards.
   const seedLine = el("p", { class: "seed-line" });
   const copy = el("md-text-button", { class: "copy", onclick: () => on.copy(copy) }, "Copy game record");
@@ -220,14 +277,8 @@ export function createChrome(root, on) {
     el(
       "div",
       { slot: "content", class: "settings" },
+      gameLine,
       seedLine,
-      el("h3", {}, "The next game"),
-      gameSet,
-      row("Aces count 1 or 14", "Royal: an ace in your hand takes as one or as fourteen", aces),
-      row("Score sweeps", "A point for each capture that clears the table", sweeps),
-      row("Raise builds", "A card from your hand may raise a build to a higher total, yours or your opponent's", raising),
-      el("div", { class: "selects" }, skill, match),
-      el("div", { class: "starts" }, startNew, daily, watch),
       el("h3", {}, "Help at the table"),
       aidSwitches,
       pageSwitches,
@@ -348,20 +399,18 @@ export function createChrome(root, on) {
     tutorial.show();
   }
 
-  root.append(bar, settings, credits, tutorial, welcome);
+  root.append(bar, settings, newGameDialog, credits, tutorial, welcome);
 
   // Everything drawn from the person's settings and the state.
   let last = { prefs: null, state: null, busy: false };
   function draw() {
     const { prefs, state, busy } = last;
     if (!prefs) return;
-    for (const b of gameSet.querySelectorAll("md-outlined-segmented-button")) b.selected = b.dataset.game === rules.game;
-    aces.selected = rules.aces14;
-    aces.disabled = rules.game !== "royal";
-    sweeps.selected = rules.sweeps;
-    raising.selected = rules.raising !== false;
-    skill.value = String(prefs.skill);
-    match.value = prefs.match;
+    // The game under way, and where the next one is chosen.
+    gameLine.textContent =
+      state && !state.watching && state.rules
+        ? `This game: ${gameSaid(state.rules, state.skill ?? prefs.skill)}. A new game, from the plus at the top, chooses the next one's.`
+        : "A new game, from the plus at the top, chooses its rules and your opponent.";
     // The aids as the person set them (a watched game has none of its own:
     // the table review's T14).
     for (const s of settings.querySelectorAll("md-switch[data-aid]")) s.selected = Boolean(state?.watching ? prefs.aids[s.dataset.aid] : (state?.aids?.[s.dataset.aid] ?? prefs.aids[s.dataset.aid]));
@@ -391,12 +440,7 @@ export function createChrome(root, on) {
 
   return {
     sync(prefs, state, { busy = false, canAgain = false } = {}) {
-      if (!last.prefs) rules = { ...prefs.rules };
       last = { prefs, state, busy, canAgain };
-      draw();
-    },
-    setRules(r) {
-      rules = { ...r };
       draw();
     },
     logOpen(open) {
@@ -406,7 +450,10 @@ export function createChrome(root, on) {
     credits,
     showTutorial,
     showWelcome,
-    tutorialOpen: () => tutorial.open || welcoming,
+    showNewGame,
+    // A dialog is up that the table waits on: a tutorial page, the
+    // welcome, the new game's menu.
+    tutorialOpen: () => tutorial.open || welcoming || newGameOpen,
   };
 }
 
