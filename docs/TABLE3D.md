@@ -132,7 +132,10 @@ node-tested, as in piquet.
   order, left to right"), the items lie highest first, a build by its
   value and a loose card by its rank, equal ones as they came, across the
   first row and on into the next, and slide to their places as the table
-  changes (`layout.js` `tableOrder`). The grid shrinks the cards a little
+  changes (`layout.js` `tableOrder`); and your hand with it (the user: "if
+  the user turns on card sorting, then their own cards should also stay
+  sorted"), highest first, an ace high where it may count fourteen
+  (`handOrder`). The grid shrinks the cards a little
   as the table fills, and on a phone it wraps.
 - **The piles**: each player's captures face down at their right, squared,
   their thickness the count. Each sweep's capturing card lies crosswise in

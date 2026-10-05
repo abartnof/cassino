@@ -100,6 +100,20 @@ export function tableOrder(items, sort = false) {
   return items.map((item, k) => ({ item, k })).sort((a, b) => valueOf(b.item) - valueOf(a.item) || a.k - b.k).map((x) => x.item);
 }
 
+// Your hand in the order it is held: as dealt, or, sorted as the table is
+// (the user: "if the user turns on card sorting, then their own cards
+// should also stay sorted"), highest first, an ace high where it may count
+// fourteen (`aces14`: Royal's aces 1 or 14), else low; equal ranks as
+// dealt.
+export function handOrder(hand, sort = false, aces14 = false) {
+  if (!sort) return hand;
+  const value = (c) => {
+    const rank = RANKS.indexOf(c.card[0]) + 1;
+    return rank === 1 && aces14 ? 14 : rank;
+  };
+  return hand.map((c, k) => ({ c, k })).sort((a, b) => value(b.c) - value(a.c) || a.k - b.k).map((x) => x.c);
+}
+
 function middle(items, picked, Z) {
   const slots = [];
   const chosen = new Set(picked);
@@ -228,11 +242,12 @@ function stock(count, dealer, Z) {
 
 // `zones`: where things rest (units.js): ZONES across a table, or
 // ZONES_PORTRAIT on a phone held upright.
-// `sort`: the table's items in descending order (tableOrder).
+// `sort`: the table's items and your hand in descending order (tableOrder,
+// handOrder).
 export function layout(state, { chosen = null, picked = [], sweeps = { you: [], them: [] }, zones = ZONES, sort = false } = {}) {
   const counted = countedCards(state);
   return [
-    ...yourHand(state.hand.map((c) => c.card), chosen, zones),
+    ...yourHand(handOrder(state.hand, sort, state.rules?.aces14).map((c) => c.card), chosen, zones),
     ...theirHand(state.opponent_holds, zones, Math.ceil((state.table?.length ?? 0) / zones.middle.columns)),
     ...middle(tableOrder(state.table, sort), picked, zones),
     ...pileOf("you", state.piles.you.cards, sweeps.you ?? [], counted.you, zones),

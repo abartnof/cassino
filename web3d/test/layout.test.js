@@ -325,3 +325,18 @@ test("the table sorted: highest first, left to right, a build by its value", asy
   assert.ok(sorted[3].z < firstRow[0].z - 5, "the ace in the row beyond");
   assert.deepEqual(at(false)[0], layout(s).filter((x) => x.zone === "middle")[0].pose.position, "off, as they came, as the layout always laid them");
 });
+
+// The user: "if the user turns on card sorting, then their own cards should
+// also stay sorted." Your hand as the table: highest first, left to right;
+// an ace high where it may count fourteen (Royal's aces 1 or 14), else low.
+test("sorted, your hand too: highest first, left to right, an ace high where it counts fourteen", async () => {
+  const { handOrder } = await import("../src/layout.js");
+  const hand = ["7H", "AS", "KC", "TD"].map((code) => ({ card: code }));
+  assert.deepEqual(handOrder(hand, true, false).map((c) => c.card), ["KC", "TD", "7H", "AS"]);
+  assert.deepEqual(handOrder(hand, true, true).map((c) => c.card), ["AS", "KC", "TD", "7H"]);
+  assert.deepEqual(handOrder(hand, false, true).map((c) => c.card), ["7H", "AS", "KC", "TD"]);
+  const s = { ...state({ hand: ["7H", "AS", "KC", "TD"] }), rules: { game: "royal", aces14: false } };
+  const xs = (sort) => layout(s, { sort }).filter((x) => x.zone === "your-hand").sort((a, b) => a.pose.position.x - b.pose.position.x).map((x) => x.code);
+  assert.deepEqual(xs(true), ["KC", "TD", "7H", "AS"]);
+  assert.deepEqual(xs(false), ["7H", "AS", "KC", "TD"]);
+});

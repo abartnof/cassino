@@ -224,7 +224,8 @@ legal move. RULES.md now says each held card answers for one build value.
   tutorial's switch in the settings gone. The score, opened, lies over the move
   bar's buttons, not under them. Your pile and the stock beside your row
   as far from it as its cards from each other. The table sorted, highest
-  first, left to right, as it changes (a setting, on by default). The move
+  first, left to right, as it changes (a setting, on by default), and
+  your hand with it. The move
   bar in the order of how often each move is made by competent play (a
   count over 300 games of each game at skill 3 and 50 at skill 4: a trail
   half the moves, a capture two in five, a build one in ten): Build, Take,

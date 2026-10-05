@@ -19,7 +19,7 @@ import { createDeck } from "./deck.js";
 import { TURN, createDialogue, saying } from "./dialogue.js";
 import { createDirector } from "./director.js";
 import { facesFor, jumboTextures, largeTextHere } from "./faces.js";
-import { layout, tableOrder } from "./layout.js";
+import { handOrder, layout, tableOrder } from "./layout.js";
 import { decodeBase64, loadEngine } from "./engine.js";
 import { POPUP_BUSY, createHud, hudEvents, ledgerOf, popupsOf } from "./hud.js";
 import { RAMPS, cardMaterials, cardTexture } from "./materials.js";
@@ -979,7 +979,7 @@ async function main() {
   let focus = null; // { row: "hand" | "table", index }
   focusedCard = () => focused();
   const rowCards = (row) =>
-    row === "hand" ? state.hand.map((c) => c.card) : tableOrder(state.table, prefs.sortTable).map((item) => item.cards[item.cards.length - 1].card);
+    row === "hand" ? handOrder(state.hand, prefs.sortTable, state.rules?.aces14).map((c) => c.card) : tableOrder(state.table, prefs.sortTable).map((item) => item.cards[item.cards.length - 1].card);
   function focused() {
     if (!focus) return null;
     const cards = rowCards(focus.row);

@@ -1207,6 +1207,13 @@ def check_sorted(browser, failures):
     values = [i["value"] for i in row]
     if len(row) < 2 or values != sorted(values, reverse=True):
         failures.append(f"sorted: the table's first row is not highest first, left to right: {values}")
+    # Your hand too (the user: "their own cards should also stay sorted"),
+    # an ace low in plain Cassino.
+    hand_js = """() => window.cassino3d.state().hand.map((c) => ({ code: c.card, x: window.cassino3d.screenPoint(c.card).x }))"""
+    held = sorted(page.evaluate(hand_js), key=lambda c: c["x"])
+    ranks = ["A23456789TJQK".index(c["code"][0]) + 1 for c in held]
+    if ranks != sorted(ranks, reverse=True):
+        failures.append(f"sorted: your hand is not highest first, left to right: {[c['code'] for c in held]}")
     page.locator("md-icon-button.settings-open").click()
     page.wait_for_timeout(1200)
     page.locator('.settings-dialog md-switch[data-pref="sortTable"]').click()
@@ -1219,6 +1226,9 @@ def check_sorted(browser, failures):
         failures.append(f"sorted: turned off, the table is not as the cards came: {[i['id'] for i in row]} against {came}")
     if page.evaluate("window.cassino3d.prefs().sortTable") is not False:
         failures.append("sorted: the setting was not kept off")
+    held = [c["code"] for c in sorted(page.evaluate(hand_js), key=lambda c: c["x"])]
+    if held != [c["card"] for c in page.evaluate("window.cassino3d.state().hand")]:
+        failures.append(f"sorted: turned off, your hand is not as dealt: {held}")
     # Left-handed: the move bar the other way round (the user).
     labels = lambda: [b.inner_text().strip() for b in page.locator(".move-bar md-filled-button").all()]
     if labels() != ["Build", "Take", "Trail"]:
