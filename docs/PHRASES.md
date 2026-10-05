@@ -36,8 +36,6 @@ Sources:
 - **Bt**: the Swedish dealer's warning, "Båten går!" (the boat's leaving), in translation [05-S34][10-S24]
 - **Ka**: KASA, the South African game: "8 out", said on taking your own build of eight [12-S6]
 - **Sc**: the Italian game's shout at a sweep, "Scopa!" [05-S49]
-- **Hk**: the Hungarian game's "Ausz!" (out!) [05-S12][01-S20]
-- **Gz**: the Literary Gazette (1818): "The game is up." [04-S49]
 - **MP**: the Mineral Point Tribune (1878): "It's hard on those who get swept." [04-S102]
 - **SM**: the Sporting Magazine (1793): "Ne'er leave one card upon the board alone" [08-S2]
 - **Rd**: the Richmond Dispatch (1894), asked which card one would be: "I'd be the big cassino, because it counts so much every one would be after me." [04-S140]
@@ -46,8 +44,6 @@ Sources:
 - **Da**: a strategy blog reasoning aloud from what an opponent did: "he must not have a Ten" [08-S37]
 - **Ol**: a letter of 1804: cassino played "very much at our leisure" [04-S45]
 - **It**: the Italian table's "Tocca a te" (your turn) [05-S50]
-- **Ws**: a family's "World Series" of cassino, the best of seven [05-S74]
-- **Tn**: the Tunisian game's loser's plea, "Khallini narba7 marra!" (let me win once!), in translation [05-S67]
 - **T**: the table's own
 - **Pt**: play-testing: a line asked for word for word
 
@@ -489,14 +485,6 @@ Sources:
 |  | The last trick is mine. | F |
 |  | Last to take, so the rest are mine. | T |
 |  | Those come to me. | T |
-| `game-won` | And I am out. | N |
-|  | That's game. | T |
-|  | Game. Twenty-one. | T |
-|  | I claim the game. | F |
-|  | I'm out. | N |
-|  | Twenty-one, and thank you. | T |
-|  | Out! | Hk |
-|  | The game is up. | Gz |
 | `good-game` | Good game. | T |
 |  | Well played. | T |
 |  | Thank you for the game. | T |
@@ -687,16 +675,6 @@ Sources:
 |  | Now, what have we here? | T |
 |  | Oh, I like this. | T |
 |  | Wait, wait. Yes. | T |
-| `rematch` | Another game? | T |
-|  | Same again? | T |
-|  | Shall we go again? | T |
-|  | Best of seven? | Ws |
-|  | One more? | T |
-| `rematch-reply` | You're on. | T |
-|  | Gladly. | T |
-|  | Let me win one back. | T |
-|  | Let me win once! | Tn |
-|  | Deal them up. | T |
 | `idle` | Take your time. | T |
 |  | No hurry. | T |
 |  | At your leisure. | Ol |

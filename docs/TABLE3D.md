@@ -166,9 +166,10 @@ director on the table's clock).
 the game ends, the camera pulls back over 2.6 s, past the table's near edge
 just behind your seat, and the air clears: your opponent was a court card
 all along, standing on the far side of the table, cel-shaded and inked like
-the cards, and it says the game's last words from there ("That's game.",
-"Well played.", a rematch offered; and when you have lost, its last word,
-"You are quite normal."), each line in a balloon beside the
+the cards, and it says the game's last word from there: one line, no more
+(the seventh play-testing: "the opponent should say 1 thing to me, no
+more"), "You are quite normal." when you have lost, a gracious "Well
+played." when you have won, in a balloon beside the
 card, three quarters up it, by the face, its tail pointing at the card (to
 its left where there is no room on its right). The figure is made as each
 game begins, so it stands the moment the game ends. The table has edges (`reveal.js`
@@ -221,9 +222,8 @@ eight!"), a sweep, a Cassino or an ace felt by the other ("It's hard on
 those who get swept.", 1878; "Such luck!"). The dealer announces a new hand
 and each deal, "Last." is answered ("The boat's leaving!"), your opponent
 thinks aloud now and then before a move ("With this one, I'll fall on
-you.", Cuarenta), names Royal's values as the game begins, offers a
-rematch, and, kept waiting,
-says so ("Take your time."). The talk follows each build's controller
+you.", Cuarenta), names Royal's values as the game begins, and, kept
+waiting, says so ("Take your time."). The talk follows each build's controller
 through the events (`talk.js` `followBuilds`, checked against the engine's
 table at every step), and the run of play (`followPlay`; the sixth
 play-testing found the talk "staccato", each line about its own move
@@ -261,7 +261,7 @@ What one speaker says at one moment is said in one box (`talk.js`
 `chunk`: "Low deals. My deal."), so nobody waits through a run of lines
 one by one. A setting, "Table talk", chooses everything, the chatter
 included; only the calls that carry the game (the house rules, the build
-calls, "Last.", a sweep, cash, the game won); or nothing (`talk.js`
+calls, "Last.", a sweep, cash, the game's last word); or nothing (`talk.js`
 `heard`).
 
 **Where a line is said.** By its speaker's hand: on a desktop beside it,

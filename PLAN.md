@@ -201,7 +201,9 @@ legal move. RULES.md now says each held card answers for one build value.
 - **The seventh play-testing** (2026-10-05): undo removed from the table
   (the engine and the terminal keep it); the running sum's place gone from
   the move bar, Take, Build and Trail alone; the replay with both hands
-  face up gone from the game's end.
+  face up gone from the game's end; and at the game's end your opponent
+  says one thing, no more ("You are quite normal." when you lose, "Well
+  played." or the like when you win), the claim and the rematch gone.
 - **The South African game, researched**
   (`research/12-south-african-khasino.md`): KASA's rulebooks and its own
   online game as the canonical sources, twenty open-source engines, and

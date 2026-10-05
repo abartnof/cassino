@@ -174,9 +174,21 @@ test("nothing is said while a hand is scored: the score's popups tell it", () =>
   };
   const ends = { kind: "hand_ends", hand: 1, yours: 4, theirs: 4, totals: { you: 19, them: 12 } };
   assert.deepEqual(said(speech(state([scored, ends]))), []);
-  // The game's end has its words still: the winner's claim, and the rest.
+  // The game's end has its word still.
   const over = speech(state([scored, { ...ends, totals: { you: 12, them: 21 } }, { kind: "game_ends", hand: 1, you_won: false }]));
-  assert.deepEqual(said(over), ["them:game-won", "you:good-game", "them:rematch", "you:rematch-reply", "them:quite-normal"]);
+  assert.deepEqual(said(over), ["them:quite-normal"]);
+});
+
+// The seventh play-testing: "when the game concludes, the opponent should
+// say 1 thing to me, no more. when I lost, the opponent said like three
+// things to me: just one will suffice." One line, your opponent's, from
+// beside the court card, heard whenever the calls are; nothing from you.
+test("the game's end: your opponent says one thing, no more", () => {
+  for (const [won, line] of [[false, "them:quite-normal"], [true, "them:good-game"]]) {
+    const lines = speech(state([{ kind: "game_ends", hand: 1, you_won: won }]));
+    assert.deepEqual(said(lines), [line], won ? "you won" : "you lost");
+    assert.deepEqual(said(heard(lines, "calls")), [line]);
+  }
 });
 
 // The game lost (play-testing): your opponent, revealed a court card, "says
@@ -184,7 +196,7 @@ test("nothing is said while a hand is scored: the score's popups tell it", () =>
 test("losing, your opponent's last word is that you are quite normal", () => {
   const lines = speech(state([{ kind: "game_ends", hand: 1, you_won: false }]));
   assert.equal(said(lines).at(-1), "them:quite-normal");
-  assert.deepEqual(said(heard(lines, "calls")), ["them:game-won", "them:quite-normal"]);
+  assert.deepEqual(said(heard(lines, "calls")), ["them:quite-normal"]);
   assert.deepEqual(heard(lines, "none"), []);
   assert.deepEqual(WORDS.groups["quite-normal"].map((k) => WORDS.texts[k]), ["You are quite normal."]);
   assert.ok(!said(speech(state([{ kind: "game_ends", hand: 1, you_won: true }]))).includes("them:quite-normal"), "not when you win");
@@ -258,8 +270,8 @@ test("lines one speaker says at one moment are said as one, so nobody waits thro
 });
 
 test("the talk at three levels: none, the calls that carry the game, or everything", () => {
-  const lines = ["sweeps-ask", "build-8", "last", "sweep", "cash", "game-won"].map((phrase) => ({ who: "them", phrase }));
-  const chatter = ["left-7", "take-many", "take-big-casino", "clinch-cards", "residue", "good-game", "trail"].map((phrase) => ({ who: "them", phrase, chatter: true }));
+  const lines = ["sweeps-ask", "build-8", "last", "sweep", "cash", "quite-normal"].map((phrase) => ({ who: "them", phrase }));
+  const chatter = ["left-7", "take-many", "take-big-casino", "clinch-cards", "residue", "haul-reply", "trail"].map((phrase) => ({ who: "them", phrase, chatter: true }));
   assert.deepEqual(heard([...lines, ...chatter], "none"), []);
   assert.deepEqual(heard([...lines, ...chatter], "all"), [...lines, ...chatter]);
   assert.deepEqual(heard([...lines, ...chatter], "calls"), lines);

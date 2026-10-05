@@ -83,8 +83,6 @@ SOURCES = {
           "[05-S34][10-S24]",
     "Ka": "KASA, the South African game: \"8 out\", said on taking your own build of eight [12-S6]",
     "Sc": "the Italian game's shout at a sweep, \"Scopa!\" [05-S49]",
-    "Hk": "the Hungarian game's \"Ausz!\" (out!) [05-S12][01-S20]",
-    "Gz": "the Literary Gazette (1818): \"The game is up.\" [04-S49]",
     "MP": "the Mineral Point Tribune (1878): \"It's hard on those who get swept.\" [04-S102]",
     "SM": "the Sporting Magazine (1793): \"Ne'er leave one card upon the board alone\" [08-S2]",
     "Rd": "the Richmond Dispatch (1894), asked which card one would be: \"I'd be the big "
@@ -96,9 +94,6 @@ SOURCES = {
           "[08-S37]",
     "Ol": "a letter of 1804: cassino played \"very much at our leisure\" [04-S45]",
     "It": "the Italian table's \"Tocca a te\" (your turn) [05-S50]",
-    "Ws": "a family's \"World Series\" of cassino, the best of seven [05-S74]",
-    "Tn": "the Tunisian game's loser's plea, \"Khallini narba7 marra!\" (let me win once!), in "
-          "translation [05-S67]",
     "T": "the table's own",
     "Pt": "play-testing: a line asked for word for word",
 }
@@ -208,10 +203,9 @@ def phrase_groups():
     add("residue", ("And the rest are mine.", "T"), ("The last cards come to me.", "T"), ("I'll take what's left.", "T"),
         ("The last trick is mine.", "F"), ("Last to take, so the rest are mine.", "T"), ("Those come to me.", "T"))
 
-    # The game: the winner claims it, the other is gracious.
-    add("game-won", ("And I am out.", "N"), ("That's game.", "T"), ("Game. Twenty-one.", "T"),
-        ("I claim the game.", "F"), ("I'm out.", "N"), ("Twenty-one, and thank you.", "T"), ("Out!", "Hk"),
-        ("The game is up.", "Gz"))
+    # The game's end: one line, your opponent's (the seventh play-testing:
+    # "the opponent should say 1 thing to me, no more"), gracious when you
+    # have won.
     add("good-game", ("Good game.", "T"), ("Well played.", "T"), ("Thank you for the game.", "T"),
         ("Well done.", "T"), ("Nicely played.", "T"), ("A good game. Thank you.", "T"))
     # The court card's last word, when you lose: the game's end shows that
@@ -301,10 +295,6 @@ def phrase_groups():
         ("Cards in hand aren't yours till taken.", "Bg"), ("Tocca a me. My turn.", "It"), ("Hmm, what to do.", "T"))
     add("think-take", ("With this one, I'll fall on you.", "Ec"), ("Aha.", "T"), ("I think I see something.", "T"),
         ("Now, what have we here?", "T"), ("Oh, I like this.", "T"), ("Wait, wait. Yes.", "T"))
-    add("rematch", ("Another game?", "T"), ("Same again?", "T"), ("Shall we go again?", "T"), ("Best of seven?", "Ws"),
-        ("One more?", "T"))
-    add("rematch-reply", ("You're on.", "T"), ("Gladly.", "T"), ("Let me win one back.", "T"), ("Let me win once!", "Tn"),
-        ("Deal them up.", "T"))
     add("idle", ("Take your time.", "T"), ("No hurry.", "T"), ("At your leisure.", "Ol"), ("Tocca a te. Your turn.", "It"),
         ("If I were a card, I'd be Big Cassino.", "Rd"), ("Thinking it over?", "T"), ("Whenever you're ready.", "T"),
         ("A tough one?", "T"))

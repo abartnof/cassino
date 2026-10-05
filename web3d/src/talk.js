@@ -197,17 +197,13 @@ export function speech(state, since = 0) {
       case "residue":
         if (e.you !== null) remark(who, "residue");
         break;
-      case "game_ends": {
-        const winner = e.you_won ? "you" : "them";
-        say(winner, "game-won");
-        remark(other(winner), "good-game");
-        remark(winner, "rematch");
-        remark(other(winner), "rematch-reply");
-        // Your opponent, revealed a court card all along, has the last
-        // word when it wins (play-testing).
-        if (winner === "them") say("them", "quite-normal");
+      case "game_ends":
+        // One line, your opponent's, from beside the court card it turns
+        // out to have been all along (the seventh play-testing: "the
+        // opponent should say 1 thing to me, no more"): winning, its last
+        // word (play-testing); losing, a gracious one.
+        say("them", e.you_won ? "good-game" : "quite-normal");
         break;
-      }
       default:
         break;
     }
@@ -307,8 +303,8 @@ export function chunk(lines) {
 
 // The table talk at a level (a setting): "none"; "calls", what carries the
 // game -- the house rules, the build calls, "Last.", a sweep, cash, the
-// game won; or "all", the chatter too: every move remarked, the builds
-// answered, the game proposed and the rematch.
+// game's last word; or "all", the chatter too: every move remarked, the
+// builds answered.
 export function heard(lines, level) {
   if (level === "none") return [];
   if (level === "calls") return lines.filter((l) => !l.chatter);
