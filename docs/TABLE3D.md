@@ -349,7 +349,11 @@ Material Design 3, from piquet's shell.
   that would be too small to read, only the words that tell them apart
   (*4s*, *8*). They are large filled buttons, solid even when dimmed
   (play-testing: they are there for the play, no need to hide them), each
-  with a faint outline (the sixth play-testing). The running sum's place
+  with a faint outline (the sixth play-testing). They run Build, Take,
+  Trail, left to right, the move made least to the move made most, so the
+  most used is under a right thumb (the user, from a few hundred games;
+  `measurements/README.md`, "How often each move is made"); "Left-handed"
+  in the settings turns them the other way round. The running sum's place
   before them went in the seventh play-testing ("remove the sum button to
   the left of the action buttons"). On a
   desktop the bar fills the space between the table's first row and your

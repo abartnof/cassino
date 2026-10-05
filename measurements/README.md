@@ -102,3 +102,32 @@ Every rung beats the one below in every setting.
 | Date | A | B | Rules | Unit | Plan | Result |
 |---|---|---|---|---|---|---|
 | 2026-10-03 | searcher, last deal solved for the game (100 for deciding it, plus the margin) | 4 searcher | Classic | game | 100 × 4 | No clear difference after 400 pairs: +0.005 games a pair, 95% interval −0.005 to +0.015. Reverted (code in 49aed21) |
+
+## How often each move is made
+
+For the move bar's order (the user: "run a few hundred automated games,
+and look at the order in which people use the action buttons. The most
+common action button should be on the far right, and the least common
+action button should be on the left, to make the UX good for someone's
+thumb"; and, the players being "somewhat competent", by the competent
+rungs, 3 to 4). Both seats played by the computer, sweeps not scored,
+builds raised; `node web3d/tools/moves.mjs <games> <skill>`. A count, not
+a comparison of agents, so no sequential plan: the shares and their 95%
+intervals.
+
+| Date | Skill | Rules | Games | Moves | Build | Take | Trail |
+|---|---|---|---|---|---|---|---|
+| 2026-10-05 | 3 counter | Royal | 300 | 52,080 | 13.1% ± 0.3 | 35.9% ± 0.4 | 51.1% ± 0.4 |
+| 2026-10-05 | 3 counter | Classic | 300 | 52,896 | 8.5% ± 0.2 | 41.4% ± 0.4 | 50.1% ± 0.4 |
+| 2026-10-05 | 4 searcher | Royal | 50 | 8,736 | 15.6% ± 0.8 | 35.3% ± 1.0 | 49.1% ± 1.0 |
+| 2026-10-05 | 4 searcher | Classic | 50 | 8,736 | 10.6% ± 0.6 | 40.6% ± 1.0 | 48.8% ± 1.0 |
+| 2026-10-05 | 2 greedy | Royal | 300 | 52,080 | 0.0% | 39.1% ± 0.4 | 60.9% ± 0.4 |
+| 2026-10-05 | 2 greedy | Classic | 300 | 51,888 | 0.0% | 43.5% ± 0.4 | 56.5% ± 0.4 |
+
+The same order at every competent rung and in both games: a trail is
+about half the moves, a capture about two in five, a build one in ten.
+The move bar runs Build, Take, Trail, left to right (`selection.js`
+`BAR_ORDER`), the other way round for a left hand (a setting). The greedy
+rung never builds, which is why the competent rungs decide; skill 4 was
+run for 50 games of each, at about 3 s a game, its shares already well
+apart.

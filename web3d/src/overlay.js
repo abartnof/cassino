@@ -63,7 +63,8 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onBadge = () =>
   bar.style.setProperty("--move-place", String(BAR.place));
   bar.style.setProperty("--move-pad", String(BAR.pad));
   bar.style.setProperty("--move-split", String(BAR.split));
-  function show({ state, chips, message, busy = false, aid = null, after = null }) {
+  // `leftHanded`: the move bar the other way round (selection.js moveBar).
+  function show({ state, chips, message, busy = false, aid = null, after = null, leftHanded = false }) {
     prompt.textContent = busy ? "" : promptText(state, chips);
     if (!busy && after && state.prompt === "over") prompt.textContent += ` ${after}`;
     aidLine.hidden = busy || !aid;
@@ -77,7 +78,7 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onBadge = () =>
     const hidden = bar.hidden;
     bar.hidden = state.watching || state.prompt !== "play";
     if (hidden && !bar.hidden) requestAnimationFrame(fitBar);
-    const places = moveBar(chips);
+    const places = moveBar(chips, { leftHanded });
     const moves = places.flatMap((p) => p.buttons.map((c) => `${c.kind}|${c.label}|${c.move ?? ""}`)).join("\n");
     if (chipSet.dataset.moves !== moves) {
       chipSet.dataset.moves = moves;

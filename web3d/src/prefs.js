@@ -44,6 +44,9 @@ export const DEFAULTS = Object.freeze({
   // The table's cards and builds in descending order, left to right, on
   // unless turned off (the user).
   sortTable: true,
+  // The move bar the other way round, the move made most under a left
+  // thumb; off unless chosen (the user).
+  leftHanded: false,
   // What is said at the table: "all", "calls" (what carries the game) or
   // "none" (talk.js heard).
   talk: "all",
@@ -119,6 +122,7 @@ export function loadPrefs(store) {
     unseen: isBool(kept.unseen) ? kept.unseen : DEFAULTS.unseen,
     sweepWarning: isBool(kept.sweepWarning) ? kept.sweepWarning : DEFAULTS.sweepWarning,
     sortTable: isBool(kept.sortTable) ? kept.sortTable : DEFAULTS.sortTable,
+    leftHanded: isBool(kept.leftHanded) ? kept.leftHanded : DEFAULTS.leftHanded,
     talk: ["all", "calls", "none"].includes(kept.talk) ? kept.talk : DEFAULTS.talk,
     tutorial: isBool(kept.tutorial) ? kept.tutorial : DEFAULTS.tutorial,
     seen: Array.isArray(kept.seen) ? kept.seen.filter((k) => typeof k === "string") : [],

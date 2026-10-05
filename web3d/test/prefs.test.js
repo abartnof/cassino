@@ -238,3 +238,13 @@ test("the table sorted: on by default, and kept when turned off", () => {
   savePrefs(store, { ...DEFAULTS, sortTable: false });
   assert.equal(loadPrefs(store).sortTable, false);
 });
+
+// The user: the move bar "turn[ed] ... to the other direction for
+// left-handed players, but it should default to the way that I'm
+// describing".
+test("left-handed: off by default, and kept when on", () => {
+  assert.equal(DEFAULTS.leftHanded, false);
+  const store = memory();
+  savePrefs(store, { ...DEFAULTS, leftHanded: true });
+  assert.equal(loadPrefs(store).leftHanded, true);
+});

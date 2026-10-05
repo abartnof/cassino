@@ -61,13 +61,20 @@ export function chipsOf(offer) {
 // plain name when it makes none. `chips` as chipsOf gives them; each move's
 // `short` words say only what tells it from the others of its kind (6, 3s),
 // for a place too narrow for the whole.
-const KINDS = [
-  ["take", "Take"],
-  ["build", "Build"],
-  ["trail", "Trail"],
-];
-export function moveBar(chips) {
-  return KINDS.map(([kind, name]) => {
+//
+// The places' order, left to right, is the moves' from least made to most
+// (the user: "The most common action button should be on the far right,
+// and the least common action button should be on the left, to make the UX
+// good for someone's thumb"): over 300 games of each variant, a trail is
+// half the moves made, a capture about two in five, a build one in ten
+// (web3d/tools/moves.mjs; measurements/README.md). `leftHanded`: the other
+// way round, the move made most under a left thumb (a setting).
+export const BAR_ORDER = Object.freeze(["build", "take", "trail"]);
+const NAMES = { take: "Take", build: "Build", trail: "Trail" };
+export function moveBar(chips, { leftHanded = false } = {}) {
+  const kinds = leftHanded ? [...BAR_ORDER].reverse() : BAR_ORDER;
+  return kinds.map((kind) => {
+    const name = NAMES[kind];
     const mine = chips.filter((c) => c.kind === kind);
     const short = (label) => label.replace(new RegExp(`^${name} `), "") || label;
     const buttons = mine.length ? mine.map((c) => ({ ...c, kind, short: short(c.label), enabled: true })) : [{ kind, label: name, short: name, enabled: false }];

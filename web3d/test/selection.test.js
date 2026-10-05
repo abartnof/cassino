@@ -2,7 +2,7 @@
 // (docs/TABLE3D.md section 8).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { BAR, EMPTY, barAcross, chipsOf, choose, fitLabels, itemState, moveBar, moveBarFit, pick, selectionText } from "../src/selection.js";
+import { BAR, BAR_ORDER, EMPTY, barAcross, chipsOf, choose, fitLabels, itemState, moveBar, moveBarFit, pick, selectionText } from "../src/selection.js";
 
 test("tapping a hand card chooses it, and again lets it go", () => {
   const a = choose(EMPTY, "3H");
@@ -116,8 +116,8 @@ test("the move bar: Take, Build and Trail each in its own place, always there, l
   assert.deepEqual(
     off.map((p) => [p.kind, p.buttons.map((b) => [b.label, b.enabled])]),
     [
-      ["take", [["Take", false]]],
       ["build", [["Build", false]]],
+      ["take", [["Take", false]]],
       ["trail", [["Trail", false]]],
     ],
   );
@@ -129,8 +129,8 @@ test("the move bar: Take, Build and Trail each in its own place, always there, l
   assert.deepEqual(
     moveBar(chips).map((p) => [p.kind, p.buttons.map((b) => [b.label, b.short, b.enabled, b.move ?? null])]),
     [
-      ["take", [["Take", "Take", true, "take 3H 2D AC"]]],
       ["build", [["Build 6", "6", true, "build 6 3H 2D AC"], ["Build 3s", "3s", true, "build 3 3H 2D AC"]]],
+      ["take", [["Take", "Take", true, "take 3H 2D AC"]]],
       ["trail", [["Trail", "Trail", false, null]]],
     ],
     "each kind in its own place, as many of it as the choice makes sharing it",
@@ -139,7 +139,7 @@ test("the move bar: Take, Build and Trail each in its own place, always there, l
     { kind: "take", label: "Take as 1", move: "take AC AH" },
     { kind: "take", label: "Take as 14", move: "take AC=14 KS AH" },
   ]);
-  assert.deepEqual(ace[0].buttons.map((b) => b.short), ["as 1", "as 14"]);
+  assert.deepEqual(ace.find((p) => p.kind === "take").buttons.map((b) => b.short), ["as 1", "as 14"]);
 });
 
 // The words on a place's buttons, fitted to its width: a measure as a font
@@ -178,6 +178,21 @@ test("a place's words are as large as the bar's where they fit, smaller where no
 
 // The seventh play-testing: "remove the sum button to the left of the
 // action buttons." The bar is Take, Build and Trail alone.
+// The user: "run a few hundred automated games, and look at the order in
+// which people use the action buttons. The most common action button
+// should be on the far right, and the least common action button should be
+// on the left, to make the UX good for someone's thumb. Another config can
+// be to turn the action buttons to the other direction for left-handed
+// players, but it should default to the way that I'm describing." Over
+// 300 games of each variant (web3d/tools/moves.mjs; measurements/README.md)
+// a trail is half the moves made, a capture about two in five, a build one
+// in ten: Build, Take, Trail, left to right; left-handed, the other way.
+test("the move bar: the moves least made at the left, the most at the right; turned round for a left hand", () => {
+  assert.deepEqual(BAR_ORDER, ["build", "take", "trail"]);
+  assert.deepEqual(moveBar([]).map((p) => p.kind), ["build", "take", "trail"]);
+  assert.deepEqual(moveBar([], { leftHanded: true }).map((p) => p.kind), ["trail", "take", "build"]);
+});
+
 test("the move bar's width goes only with its height, whatever the choice makes; it has no sum", () => {
   const across = barAcross(374, 8);
   assert.equal(across.perH, 3 * BAR.place);

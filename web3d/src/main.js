@@ -889,7 +889,7 @@ async function main() {
     // speaks there is on (style.css).
     document.documentElement.classList.toggle("aid-line-on", !state.watching && Boolean(state.aids?.hints || prefs.sweepWarning));
     const after = prefs.match === "best-of-7" && !state.watching ? seriesLine(series) : null;
-    overlay.show({ state, chips: busy ? [] : chipsOf(offer), message, busy, aid: aidLine(), after });
+    overlay.show({ state, chips: busy ? [] : chipsOf(offer), message, busy, aid: aidLine(), after, leftHanded: prefs.leftHanded });
     // The cards still out and the log tell what the cards have shown: they
     // wait for the cards to come to rest, as the trackers do (review T7).
     if (!busy) {

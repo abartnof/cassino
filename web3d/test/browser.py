@@ -728,7 +728,9 @@ def check_move_bar_at(browser, failures, viewport):
     settle(page)
     chips = page.locator(".move-bar md-filled-button")
     labels = [chips.nth(i).inner_text().strip() for i in range(chips.count())]
-    if labels != ["Take", "Build", "Trail"] or page.evaluate("window.cassino3d.chips()"):
+    # The moves least made at the left, the most at the right (the user,
+    # from how often each is made: selection.js BAR_ORDER).
+    if labels != ["Build", "Take", "Trail"] or page.evaluate("window.cassino3d.chips()"):
         failures.append(f"{where}: the move bar with nothing chosen: {labels}, lit {page.evaluate('window.cassino3d.chips()')}")
     # Every place there from the start, and none moving as a choice is made
     # (play-testing: "have all possible buttons up, so the user doesn't have
@@ -1215,6 +1217,17 @@ def check_sorted(browser, failures):
         failures.append(f"sorted: turned off, the table is not as the cards came: {[i['id'] for i in row]} against {came}")
     if page.evaluate("window.cassino3d.prefs().sortTable") is not False:
         failures.append("sorted: the setting was not kept off")
+    # Left-handed: the move bar the other way round (the user).
+    labels = lambda: [b.inner_text().strip() for b in page.locator(".move-bar md-filled-button").all()]
+    if labels() != ["Build", "Take", "Trail"]:
+        failures.append(f"left-handed: the move bar right-handed is {labels()}")
+    page.locator("md-icon-button.settings-open").click()
+    page.wait_for_timeout(1200)
+    page.locator('.settings-dialog md-switch[data-pref="leftHanded"]').click()
+    page.locator(".settings-dialog md-filled-tonal-button", has_text="Done").click()
+    page.wait_for_timeout(800)
+    if labels() != ["Trail", "Take", "Build"]:
+        failures.append(f"left-handed: the move bar left-handed is {labels()}")
     if page.errors:
         failures.append(f"sorted: console errors {page.errors[:3]}")
     page.context.close()
