@@ -107,7 +107,7 @@ SOURCES = {
           "thrust\", \"great battling, and little bloodshed\", those who \"play at playing\", one who "
           "\"neither showed you her cards, nor desired to see yours\" [13-S6]",
     "Dc": "Dickens: Pickwick (1836-37), \"Never was such luck\", \"Never was such cards\", \"the cards "
-          "were against him\", \"you're a trump\"; Nickleby (1838-39), \"We have all the talking to "
+          "were against him\"; Nickleby (1838-39), \"We have all the talking to "
           "ourselves\", \"I never had such luck, really\", \"We intend to win everything\", \"gains may be "
           "great\"; The Old Curiosity Shop (1840-41), \"many hundred thousand games of cribbage\"; Dombey "
           "and Son (1846-48), \"heave ahead\" [13-S7][13-S8][13-S9][13-S10]",
@@ -135,7 +135,7 @@ SOURCES = {
           "hold nothing but yarboroughs\" [13-S45]",
     "Sf": "Swift, Polite Conversation (1738): \"you have such good Luck at Cards\", \"my Right Hand "
           "itches\", \"a long Evening at Play\" [13-S46]",
-    "Gr": "Grose (1811): \"Something may turn up trumps\", \"All his cards are trumps\", \"He studies the "
+    "Gr": "Grose (1811): \"He studies the "
           "history of the four kings\" [13-S48]",
     "Cb": "Crabbe (1819): \"The game is never lost till won\" [13-S49]",
     "Lw": "Lowsley, Whist of the Future (1898): \"the cards resented grumbling\", \"a turning point ahead\", "
@@ -275,7 +275,7 @@ def phrase_groups():
     # have won.
     add("good-game", ("Good game.", "T"), ("Well played.", "T"), ("Thank you for the game.", "T"),
         ("Well done.", "T"), ("Nicely played.", "T"), ("A good game. Thank you.", "T"),
-        ("A good fight. Cut and thrust.", "Lm"), ("Great battling, little bloodshed.", "Lm"), ("You're a trump.", "Dc"),
+        ("A good fight. Cut and thrust.", "Lm"), ("Great battling, little bloodshed.", "Lm"),
         ("Congratulations! I'll get you next time.", "Lc"), ("Cheerful in defeat, as they say.", "Ps"))
     # The court card's last word, when you lose: the game's end shows that
     # your opponent was a playing card all along.
@@ -389,7 +389,7 @@ def phrase_groups():
     add("rib-no-builds", ("No builds in a while!", "T"), ("Playing, or only playing at playing?", "Lm"),
         ("Saving your builds for later?", "T"), ("All pairs and trails, I see.", "T"),
         ("Small cards, no builds, still smiling!", "Ps"), ("A builder's game, this. Just saying.", "T"))
-    add("rib-trails", ("Another for the table? Generous!", "T"), ("Trumps may turn up yet.", "Gr"),
+    add("rib-trails", ("Another for the table? Generous!", "T"),
         ("Are you sandbagging me?", "T"), ("Laying them all down, are we?", "T"), ("You're feeding me nicely.", "T"),
         ("Some hands, nothing comes. Patience.", "Kl"))
     add("own-dry-spell", ("I'll have to pass, I judge.", "Mt"), ("Just my luck.", "Fo"),
@@ -404,7 +404,7 @@ def phrase_groups():
         ("All those cards mine? Fancy!", "Bn"))
     # Luck felt: a second sweep in a hand, both Cassinos to one player.
     add("sweep-again", ("Never was such luck!", "Dc"), ("Never were such cards!", "Dc"),
-        ("Again? Such good luck at cards!", "Sf"), ("All your cards are trumps today.", "Gr"), ("Swept again! What a hand.", "T"))
+        ("Again? Such good luck at cards!", "Sf"), ("Swept again! What a hand.", "T"))
     add("both-cassinos", ("Both Cassinos! Lucky at cards today.", "Sf"), ("The big one and the little one, both!", "Sw"),
         ("Both of them? Never was such luck!", "Dc"), ("Three points of Cassinos. Well done.", "T"),
         ("Both Cassinos to you. Fancy!", "Bn"))
@@ -426,7 +426,7 @@ def phrase_groups():
     add("score-comeback-you", ("Now fate leans your way.", "Pp"), ("There, you see? Luck changes.", "Bh"),
         ("Too soon down, too soon up.", "Pp"), ("A good hand or two, and you're even.", "Ug"), ("Your turning point, was it?", "Lw"))
     add("score-comeback-them", ("Don't begrudge me one run of luck.", "Tr"), ("No cold prudence for me!", "Au"),
-        ("Luck's bound to change, you know.", "Bh"), ("My turning point, I think.", "Lw"), ("Trumps turned up at last.", "Gr"))
+        ("Luck's bound to change, you know.", "Bh"), ("My turning point, I think.", "Lw"))
     add("score-long", ("A long meal, this game.", "Lm"), ("No reason this should ever end.", "Et"),
         ("A long evening at play, this.", "Sf"), ("I could wish this lasted forever.", "Lm"),
         ("Our hundred-thousandth game, I think.", "Dc"))

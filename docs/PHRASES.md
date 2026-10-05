@@ -48,7 +48,7 @@ Sources:
 - **Pp**: Pope, The Rape of the Lock, canto III (1714): "swept the board", "On one nice Trick depends the gen'ral fate", "Now to the Baron fate inclines the field", "Too soon dejected, and too soon elate", "Sad chance of war!" [13-S1]
 - **Au**: Austen: The Watsons (c. 1804), "he lets nobody dream over their cards"; Pride and Prejudice (1813), Mr. Collins "apologizing if he thought he won too many"; Mansfield Park (1814), "The game will be yours", "No cold prudence for me", "with my usual luck" [13-S3][13-S4][13-S5]
 - **Lm**: Lamb, "Mrs. Battle's Opinions on Whist" (1821): "A clear fire, a clean hearth, and the rigour of the game", "cards were cards", "a long meal", "She fought a good fight: cut and thrust", "great battling, and little bloodshed", those who "play at playing", one who "neither showed you her cards, nor desired to see yours" [13-S6]
-- **Dc**: Dickens: Pickwick (1836-37), "Never was such luck", "Never was such cards", "the cards were against him", "you're a trump"; Nickleby (1838-39), "We have all the talking to ourselves", "I never had such luck, really", "We intend to win everything", "gains may be great"; The Old Curiosity Shop (1840-41), "many hundred thousand games of cribbage"; Dombey and Son (1846-48), "heave ahead" [13-S7][13-S8][13-S9][13-S10]
+- **Dc**: Dickens: Pickwick (1836-37), "Never was such luck", "Never was such cards", "the cards were against him"; Nickleby (1838-39), "We have all the talking to ourselves", "I never had such luck, really", "We intend to win everything", "gains may be great"; The Old Curiosity Shop (1840-41), "many hundred thousand games of cribbage"; Dombey and Son (1846-48), "heave ahead" [13-S7][13-S8][13-S9][13-S10]
 - **Tr**: Trollope: The Warden (1855), "thrice has constant fortune favoured", one who "counts all his suits"; The Way We Live Now (1875), "I never saw a fellow have such a run of luck", "one run of luck" [13-S13][13-S18]
 - **Mt**: Mark Twain: "Science vs. Luck" (c. 1867), "I call it a game of science!"; Roughing It (1872), "I'll have to pass, I judge", "you've ruther got the bulge on me" [13-S14][13-S17]
 - **Bh**: Bret Harte (1868-70): "Luck ... is bound to change", "start him fair" [13-S15]; and "I am throwing my cards on the table" (1885), as Farmer & Henley quote it [13-S53]
@@ -59,7 +59,7 @@ Sources:
 - **El**: Elwell, Bridge Axioms (1907): "Luck is a false friend", "He who plays the best talks the least", "the expert thinks before he plays" [13-S42]
 - **Ps**: Emily Post (1922): "a cheerful loser, a quiet winner"; "tranquil and cheerful even though you hold nothing but yarboroughs" [13-S45]
 - **Sf**: Swift, Polite Conversation (1738): "you have such good Luck at Cards", "my Right Hand itches", "a long Evening at Play" [13-S46]
-- **Gr**: Grose (1811): "Something may turn up trumps", "All his cards are trumps", "He studies the history of the four kings" [13-S48]
+- **Gr**: Grose (1811): "He studies the history of the four kings" [13-S48]
 - **Cb**: Crabbe (1819): "The game is never lost till won" [13-S49]
 - **Lw**: Lowsley, Whist of the Future (1898): "the cards resented grumbling", "a turning point ahead", "the information such hesitation conveys" [13-S55]
 - **Hn**: Hotten's Slang Dictionary (1874): a run of luck "very BEEFY" [13-S52]
@@ -530,7 +530,6 @@ Sources:
 |  | A good game. Thank you. | T |
 |  | A good fight. Cut and thrust. | Lm |
 |  | Great battling, little bloodshed. | Lm |
-|  | You're a trump. | Dc |
 |  | Congratulations! I'll get you next time. | Lc |
 |  | Cheerful in defeat, as they say. | Ps |
 | `quite-normal` | You are quite normal. | Pt |
@@ -748,7 +747,6 @@ Sources:
 |  | Small cards, no builds, still smiling! | Ps |
 |  | A builder's game, this. Just saying. | T |
 | `rib-trails` | Another for the table? Generous! | T |
-|  | Trumps may turn up yet. | Gr |
 |  | Are you sandbagging me? | T |
 |  | Laying them all down, are we? | T |
 |  | You're feeding me nicely. | T |
@@ -773,7 +771,6 @@ Sources:
 | `sweep-again` | Never was such luck! | Dc |
 |  | Never were such cards! | Dc |
 |  | Again? Such good luck at cards! | Sf |
-|  | All your cards are trumps today. | Gr |
 |  | Swept again! What a hand. | T |
 | `both-cassinos` | Both Cassinos! Lucky at cards today. | Sf |
 |  | The big one and the little one, both! | Sw |
@@ -812,7 +809,6 @@ Sources:
 |  | No cold prudence for me! | Au |
 |  | Luck's bound to change, you know. | Bh |
 |  | My turning point, I think. | Lw |
-|  | Trumps turned up at last. | Gr |
 | `score-long` | A long meal, this game. | Lm |
 |  | No reason this should ever end. | Et |
 |  | A long evening at play, this. | Sf |

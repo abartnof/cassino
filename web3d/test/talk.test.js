@@ -626,3 +626,10 @@ test("the new remarks are said in several ways, kindly, each from the period boo
     assert.ok((WORDS.groups[group] ?? []).length >= 4, `${group}: ${(WORDS.groups[group] ?? []).length} ways`);
   }
 });
+
+// The user: "remove the game dialog that says you're a Trump, and remove
+// any other dialog that references a trump please."
+test("nothing said mentions a trump", () => {
+  const trumps = Object.entries(WORDS.texts).filter(([, text]) => /trump/i.test(text));
+  assert.deepEqual(trumps, []);
+});

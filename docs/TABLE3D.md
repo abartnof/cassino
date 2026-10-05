@@ -273,8 +273,8 @@ the game was talked over, and to keep the player from quietly counting
 the cards; the period manuals knew the talker who talks "for a purpose"
 (1883). Your opponent ribs a long while without a build of yours (at your
 tenth move without one, and again at the twenty-second: "Playing, or
-only playing at playing?", Lamb), your fourth trail running ("Trumps may
-turn up yet.", Grose), your third capture running ("That's a beefy run of
+only playing at playing?", Lamb), your fourth trail running ("Are you
+sandbagging me?"), your third capture running ("That's a beefy run of
 luck!", Hotten), a second sweep in a hand ("Never was such luck!",
 Pickwick), both Cassinos to one player, and your clinch ("Counting all
 your suits, are you?", Trollope); grumbles its own dry spell ("Shall I
