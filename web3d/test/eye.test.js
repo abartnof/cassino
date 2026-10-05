@@ -56,9 +56,6 @@ test("your hand is seen straight on, and your opponent's backs", () => {
     const slots = layout(dealt(), { zones: w.zones });
     for (const s of slots.filter((x) => x.zone === "your-hand")) assert.ok(off(s, w.eye.position) < 8, `your ${s.code}: ${off(s, w.eye.position).toFixed(1)} degrees off`);
     for (const s of slots.filter((x) => x.zone === "their-hand")) assert.ok(off(s, w.eye.position, -1) < 8, `their back: ${off(s, w.eye.position, -1).toFixed(1)} degrees off`);
-    // In the replay after the game their faces are turned to you, as square.
-    const open = layout(dealt(), { zones: w.zones, theirs: ["2H", "3H", "4H", "5H"] }).filter((x) => x.zone === "their-hand");
-    for (const s of open) assert.ok(off(s, w.eye.position) < 8, `their ${s.code} in the replay: ${off(s, w.eye.position).toFixed(1)} degrees off`);
   }
 });
 

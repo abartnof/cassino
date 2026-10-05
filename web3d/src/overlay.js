@@ -18,7 +18,7 @@ import { BAR, barAcross, fitLabels, moveBar } from "./selection.js";
 
 // `later(ms, fn)` runs `fn` after `ms` on the table's clock (director.at),
 // so a box lingers as long as the table runs, and holds when it is held.
-export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () => {}, onBadge = () => {}, onFold = () => {}, later = (ms, fn) => setTimeout(fn, ms) }) {
+export function createOverlay(root, { onChip, onNext, onNewGame, onBadge = () => {}, onFold = () => {}, later = (ms, fn) => setTimeout(fn, ms) }) {
   root.innerHTML = `
     <div class="badges"></div>
     <div class="cheers" aria-hidden="true"></div>
@@ -41,14 +41,6 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
       <div class="move-bar" hidden><div class="chips" role="group" aria-label="Your move"></div></div>
       <md-filled-button class="next" hidden>Next hand</md-filled-button>
       <md-filled-button class="again" hidden>New game</md-filled-button>
-      <md-outlined-button class="replay" hidden>Replay with both hands</md-outlined-button>
-      <div class="replay-bar" hidden>
-        <md-text-button class="replay-back">Back</md-text-button>
-        <span class="replay-where"></span>
-        <md-text-button class="replay-next">Next</md-text-button>
-        <md-text-button class="replay-play">Play</md-text-button>
-        <md-text-button class="replay-leave">Leave the replay</md-text-button>
-      </div>
     </section>`;
   const $ = (s) => root.querySelector(s);
   const prompt = $(".prompt");
@@ -60,19 +52,10 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
   const aidLine = $(".aid-line");
   next.addEventListener("click", () => onNext());
   again.addEventListener("click", () => onNewGame());
-  // The replay after the game, with both hands face up.
-  const replayButton = $(".replay");
-  const replayBar = $(".replay-bar");
-  replayButton.addEventListener("click", () => onReplay("start"));
-  $(".replay-back").addEventListener("click", () => onReplay("back"));
-  $(".replay-next").addEventListener("click", () => onReplay("next"));
-  $(".replay-play").addEventListener("click", () => onReplay("play"));
-  $(".replay-leave").addEventListener("click", () => onReplay("leave"));
 
   // The prompt, the chips and the buttons, for a state and the offer for the
   // person's selection (null if nothing is chosen).
   // `aid`: a line the aids add under the prompt (a hint, the sweep warning).
-  // `replay`: { k, n, playing } while the game is replayed.
   // `after`: a line for the end of the game (the series, if one is played).
   const bar = $(".move-bar");
   // The places' widths, in the bar's heights (selection.js BAR), for the
@@ -80,16 +63,9 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
   bar.style.setProperty("--move-place", String(BAR.place));
   bar.style.setProperty("--move-pad", String(BAR.pad));
   bar.style.setProperty("--move-split", String(BAR.split));
-  function show({ state, chips, message, busy = false, aid = null, replay = null, after = null }) {
-    prompt.textContent = replay ? "The game replayed, both hands face up." : busy ? "" : promptText(state, chips);
-    if (!replay && !busy && after && state.prompt === "over") prompt.textContent += ` ${after}`;
-    replayBar.hidden = !replay;
-    if (replay) {
-      $(".replay-where").textContent = `Move ${replay.k} of ${replay.n}`;
-      $(".replay-back").disabled = replay.k === 0;
-      $(".replay-next").disabled = replay.k === replay.n;
-      $(".replay-play").textContent = replay.playing ? "Pause" : "Play";
-    }
+  function show({ state, chips, message, busy = false, aid = null, after = null }) {
+    prompt.textContent = busy ? "" : promptText(state, chips);
+    if (!busy && after && state.prompt === "over") prompt.textContent += ` ${after}`;
     aidLine.hidden = busy || !aid;
     aidLine.textContent = aid ?? "";
     note.textContent = message ?? "";
@@ -99,7 +75,7 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
     // what they offer changes, so one that has the keyboard's focus keeps it
     // (the table review's T15).
     const hidden = bar.hidden;
-    bar.hidden = Boolean(replay) || state.watching || state.prompt !== "play";
+    bar.hidden = state.watching || state.prompt !== "play";
     if (hidden && !bar.hidden) requestAnimationFrame(fitBar);
     const places = moveBar(chips);
     const moves = places.flatMap((p) => p.buttons.map((c) => `${c.kind}|${c.label}|${c.move ?? ""}`)).join("\n");
@@ -133,9 +109,8 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
       );
       fitBar();
     }
-    next.hidden = busy || replay || state.prompt !== "next_hand";
-    again.hidden = busy || replay || state.prompt !== "over";
-    replayButton.hidden = busy || replay || state.prompt !== "over" || state.watching;
+    next.hidden = busy || state.prompt !== "next_hand";
+    again.hidden = busy || state.prompt !== "over";
   }
 
   // Each place's words fitted to its width, as laid out, at the bar's height

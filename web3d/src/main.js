@@ -33,7 +33,6 @@ import { celebrationOf, trackers } from "./scorebug.js";
 import { EMPTY, choose, chipsOf, itemState, moveBarFit, pick, selectionOf, selectionText, sweepWarning, valuesSaid, whyNot } from "./selection.js";
 import { chooseSurface } from "./surfaces.js";
 import { chunk, heard, speech } from "./talk.js";
-import { commandsBetween, prefix, stops } from "./replay.js";
 import { pageDue, parseTutorial } from "./tutorial.js";
 import TUTORIAL_TEXT from "../tutorial.md";
 import { CARD, PORTRAIT_BELOW, ZONES, ZONES_PORTRAIT } from "./units.js";
@@ -127,7 +126,7 @@ async function main() {
     deck,
     // A phone held upright (or sideways, between columns) lays the table
     // out stacked (units.js ZONES_PORTRAIT).
-    view: () => ({ ...sel, zones: stage.portrait ? ZONES_PORTRAIT : ZONES, revealed: replay?.revealed ?? null }),
+    view: () => ({ ...sel, zones: stage.portrait ? ZONES_PORTRAIT : ZONES }),
     decorate,
     rested: () => {
       badgeFrom = state; // from here, a move starts from this table
@@ -135,7 +134,6 @@ async function main() {
       overlay.trackers(trackers(state), state.watching);
       show();
       if (state.watching) watchOn();
-      else if (replay) replayOn();
       else introduce();
       waitOnYou();
     },
@@ -151,7 +149,6 @@ async function main() {
     },
     onNext: () => advance(engine.send("next").state),
     onNewGame: () => newGame(),
-    onReplay: (what) => replayDo(what),
     // A badge tapped is its build tapped.
     onBadge: (id) => tapped(director.placement().find((m) => m.item === id) ?? null),
     // The trackers' panel folded or opened: kept for next time.
@@ -186,8 +183,8 @@ async function main() {
     skill: (value) => change({ skill: value }),
     aid: (name, on) => {
       change({ aids: { ...prefs.aids, [name]: on } });
-      // A watched game, or the replay's sitting, keeps its own (S3).
-      if (state.watching || replay) return;
+      // A watched game keeps its own (S3).
+      if (state.watching) return;
       const sent = engine.send(`set ${name} ${on ? "on" : "off"}`).state;
       // A forced move may now have been made for you: show what happened.
       if (sent.events.length !== state.events.length) advance(sent);
@@ -211,8 +208,7 @@ async function main() {
     },
     copy: async (button) => {
       try {
-        // During the replay, the whole game's record, not the step's (S3).
-        await navigator.clipboard.writeText(replay?.record ?? state.saved);
+        await navigator.clipboard.writeText(state.saved);
         button.textContent = "Copied";
       } catch {
         button.textContent = "Could not copy";
@@ -227,7 +223,7 @@ async function main() {
     // The last move seen again (DESIGN.md §12.3, "a 'last turn' replay"):
     // the cards from where they were, the score and the talk as they are.
     again: () => {
-      if (!lastMove || replay || director.busy()) return;
+      if (!lastMove || director.busy()) return;
       hideOpponent();
       badgeFrom = lastMove.before;
       director.again(lastMove.before, lastMove.after);
@@ -247,7 +243,6 @@ async function main() {
   // the table held at the pack while the welcome asks how to begin.
   function newGame({ seed = randomSeed(), watch = false, welcome = false } = {}) {
     hideOpponent();
-    replay = null;
     badgeFrom = null;
     lastMove = null;
     director.cancelTimed();
@@ -322,7 +317,7 @@ async function main() {
     change({ seen: [...prefs.seen, key] });
   }
   function introduce() {
-    if (!prefs.tutorial || replay || chrome.tutorialOpen()) return;
+    if (!prefs.tutorial || chrome.tutorialOpen()) return;
     if (director.held() || director.gatePending()) return; // a page is up, closing, or coming
     const key = pageDue(state, prefs.seen, tutorialSince);
     tutorialSince = state.events.length;
@@ -339,7 +334,7 @@ async function main() {
   // The engine's next state, played out.
   function advance(next) {
     const before = state;
-    lastMove = before && before.seed === next.seed && !next.watching && !replay ? { before, after: next } : null;
+    lastMove = before && before.seed === next.seed && !next.watching ? { before, after: next } : null;
     state = next;
     sel = EMPTY;
     offer = null;
@@ -378,7 +373,7 @@ async function main() {
   // A game finished counts in the series, once.
   function countGame() {
     const ends = state.events.findLast((e) => e.kind === "game_ends");
-    if (!ends || state.watching || replay || STAGING || prefs.match !== "best-of-7") return;
+    if (!ends || state.watching || STAGING || prefs.match !== "best-of-7") return;
     // Each game counted once, by its record (a seed can deal more than one
     // game: a seeded link, today's deal twice; the second review, S8); a
     // game from a seeded link is not kept in the saved series.
@@ -387,9 +382,8 @@ async function main() {
   }
 
   function persist() {
-    // A game from a seeded link is not kept over the sitting saved (T16),
-    // nor a step of the replay.
-    if (state.watching || fixedSeed || replay || STAGING) return;
+    // A game from a seeded link is not kept over the sitting saved (T16).
+    if (state.watching || fixedSeed || STAGING) return;
     saveSitting(store, state.prompt === "over" ? null : state.saved);
   }
 
@@ -404,95 +398,6 @@ async function main() {
       const { stepped, state: next } = engine.step();
       if (stepped) advance(next);
     });
-  }
-
-  // ---- the replay, both hands face up --------------------------------------
-
-  // After the game: its record stepped through, a decision at a time, with
-  // your opponent's hand shown (fairness you can check, DESIGN.md §12.3).
-  // Forward sends the record's next command to the replayed sitting; back
-  // restores the record up to there; leaving restores the finished game.
-  let replay = null; // { record, revealed, at, k, playing }
-  let replayStepping = false;
-  function settleOn(next) {
-    hideOpponent();
-    badgeFrom = null;
-    director.cancelTimed();
-    replayStepping = false; // a step pending went with the rest (as review T2)
-    lastMove = null; // nothing to see again across a replay (S5)
-    overlay.hush();
-    dialogue.stop();
-    state = next;
-    sel = EMPTY;
-    offer = null;
-    director.restart(state);
-    badgeFrom = state; // laid out at once: this is the table moves start from
-    scoreShown();
-    refresh();
-  }
-  function replayOn() {
-    if (!replay?.playing || replayStepping) return;
-    if (replay.k >= replay.at.length - 1) {
-      replay.playing = false;
-      show();
-      return;
-    }
-    replayStepping = true;
-    const token = replayToken;
-    director.at(900, () => {
-      replayStepping = false;
-      // A step pressed by hand meanwhile takes this one's place (S7).
-      if (token === replayToken && replay?.playing && !director.busy()) replayDo("next", true);
-    });
-  }
-  let replayToken = 0;
-  function replayDo(what, auto = false) {
-    if (!auto) replayToken++;
-    if (what === "start") {
-      if (state.prompt !== "over" || state.watching) return;
-      const record = state.saved;
-      replay = { record, revealed: engine.reveal(), at: stops(record), k: 0, playing: false };
-      const r = engine.restore(prefix(record, 0));
-      if (!r.ok) {
-        replay = null;
-        return;
-      }
-      settleOn(r.state);
-      return;
-    }
-    if (!replay) return;
-    if (what === "leave") {
-      const r = engine.restore(replay.record);
-      replay = null;
-      if (r.ok) settleOn(r.state);
-      return;
-    }
-    if (what === "play") {
-      replay.playing = !replay.playing;
-      show();
-      if (replay.playing && !director.busy()) replayOn();
-      return;
-    }
-    if (director.busy()) director.skip();
-    if (what === "next" && replay.k < replay.at.length - 1) {
-      const k = replay.k + 1;
-      // A command refused would leave the record: stop there (S2).
-      for (const command of commandsBetween(replay.record, replay.at[k - 1], replay.at[k])) {
-        if (!engine.send(command).ok) {
-          replay.playing = false;
-          show();
-          return;
-        }
-      }
-      replay.k = k;
-      advance(engine.state());
-    } else if (what === "back" && replay.k > 0) {
-      const k = replay.k - 1;
-      const r = engine.restore(prefix(replay.record, replay.at[k]));
-      if (!r.ok) return;
-      replay.k = k;
-      settleOn(r.state);
-    }
   }
 
   // ---- what is said -------------------------------------------------------
@@ -530,10 +435,10 @@ async function main() {
   let idleTimer = null;
   function waitOnYou() {
     clearTimeout(idleTimer);
-    if (state.prompt !== "play" || state.watching || replay || prefs.talk !== "all") return;
+    if (state.prompt !== "play" || state.watching || prefs.talk !== "all") return;
     const position = state.saved;
     idleTimer = setTimeout(() => {
-      if (state.saved !== position || state.prompt !== "play" || replay || prefs.talk !== "all") return;
+      if (state.saved !== position || state.prompt !== "play" || prefs.talk !== "all") return;
       if (document.hidden || director.held() || director.gatePending() || chrome.tutorialOpen() || director.busy()) return;
       dialogue.say([{ who: "them", phrase: "idle", delay: 0, chatter: true }], (line, words, ms) =>
         director.at(ms, () => overlay.say(line.who, words, speakerAt(line.who)), "talk"),
@@ -749,7 +654,7 @@ async function main() {
   // The camera pulls back past the table's near edge, and your opponent is a
   // court card standing across the table (reveal.js), cel-shaded and inked
   // like the cards; it says the game's last words from there. Gone again
-  // with a new game, the replay, or the last move seen again.
+  // with a new game, or the last move seen again.
   // Each game's figure is made as the game begins, so that it stands, and
   // its words are placed beside it, the moment the game ends.
   const figures = new Map(); // court -> its mesh, once made
@@ -787,7 +692,7 @@ async function main() {
   // if the game has not moved on meanwhile.
   function revealOpponent() {
     const court = courtFor(state.seed);
-    if (!figures.has(court)) return figureFor(court).then(() => state.prompt === "over" && !replay && revealOpponent());
+    if (!figures.has(court)) return figureFor(court).then(() => state.prompt === "over" && revealOpponent());
     stand(court);
     return stage.reveal({ instant: calm() }).then(() => STAGING && standing && showEndings());
   }
@@ -921,9 +826,8 @@ async function main() {
 
   function show() {
     const busy = director.busy();
-    const replaying = replay ? { k: replay.k, n: replay.at.length - 1, playing: replay.playing } : null;
     const after = prefs.match === "best-of-7" && !state.watching ? seriesLine(series) : null;
-    overlay.show({ state, chips: busy || replay ? [] : chipsOf(offer), message, busy, aid: replay ? null : aidLine(), replay: replaying, after });
+    overlay.show({ state, chips: busy ? [] : chipsOf(offer), message, busy, aid: aidLine(), after });
     // The cards still out and the log tell what the cards have shown: they
     // wait for the cards to come to rest, as the trackers do (review T7).
     if (!busy) {
@@ -932,7 +836,7 @@ async function main() {
     }
     overlay.showTrackers(prefs.trackers);
     overlay.setOpen(prefs.trackersOpen);
-    chrome.sync(prefs, state, { busy, canAgain: Boolean(lastMove) && !replay, replaying: Boolean(replay) });
+    chrome.sync(prefs, state, { busy, canAgain: Boolean(lastMove) });
   }
 
   function drawLog() {
@@ -949,7 +853,7 @@ async function main() {
     offer = sel.chosen && state.prompt === "play" ? engine.offer(selectionText(sel)) : null;
     if (offer?.error) offer = null;
     // The hint, once a position: it cannot change within a turn (T13).
-    const hintFor = !state.watching && !replay && state.prompt === "play" && state.aids.hints ? state.saved : null;
+    const hintFor = !state.watching && state.prompt === "play" && state.aids.hints ? state.saved : null;
     if (hintFor !== hintKey) {
       hintKey = hintFor;
       hint = hintFor ? engine.hint() : null;
@@ -967,7 +871,7 @@ async function main() {
       return;
     }
     message = null;
-    if (!slot || state.prompt !== "play" || state.watching || replay) return;
+    if (!slot || state.prompt !== "play" || state.watching) return;
     if (slot.zone === "your-hand") {
       sel = choose(sel, slot.code);
     } else if (slot.zone === "middle") {
@@ -1017,7 +921,7 @@ async function main() {
     return `${what}, on the table${why}.`;
   }
   window.addEventListener("keydown", (event) => {
-    if (event.defaultPrevented || document.querySelector("md-dialog[open]") || state.watching || replay) return;
+    if (event.defaultPrevented || document.querySelector("md-dialog[open]") || state.watching) return;
     const keys = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Enter", " ", "Escape"];
     if (!keys.includes(event.key)) return;
     // Keys pressed on a button are the button's own.
@@ -1085,7 +989,6 @@ async function main() {
     opponent: () => ({ court: standing, revealed: stage.revealed(), ending: endingsBar.hidden ? null : endingWords.textContent }),
     selection: () => sel,
     tutorialOpen: () => chrome.tutorialOpen(),
-    replay: () => (replay ? { k: replay.k, n: replay.at.length - 1 } : null),
     series: () => series,
     facesShown: () => facesShown,
     pageDue: () => pageDue(state, prefs.seen, tutorialSince),

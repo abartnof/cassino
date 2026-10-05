@@ -208,43 +208,14 @@ def play_by_clicking(page, failures, moves_made):
     return True
 
 
-def check_replay(page, failures):
-    """After the game, its replay with both hands face up: stepped forward,
-    your opponent's cards shown; stepped back; and left, the game over as it
-    was."""
-    over = page.evaluate("window.cassino3d.state()")
-    page.locator("md-outlined-button.replay").click()
-    settle(page)
-    r = page.evaluate("window.cassino3d.replay()")
-    if not r or r["k"] != 0 or r["n"] < 10:
-        failures.append(f"replay: did not start at the deal: {r}")
-        return
-    for _ in range(3):
-        page.locator(".replay-next").click()
-        settle(page)
-    s = page.evaluate("window.cassino3d.state()")
-    shown = set(page.evaluate("window.cassino3d.faces()"))
-    mine = {c["card"] for c in s["hand"]} | {c["card"] for i in s["table"] for c in i["cards"]}
-    if len(shown - mine) < s["opponent_holds"]:
-        failures.append(f"replay: your opponent's hand is not face up ({len(shown - mine)} of {s['opponent_holds']})")
-    shot(page, "t9-replay")
-    page.locator(".replay-back").click()
-    settle(page)
-    if page.evaluate("window.cassino3d.replay()")["k"] != 2:
-        failures.append("replay: back did not step back")
-    # Driven from the keyboard too (the second review, S6).
-    page.locator(".replay-next").focus()
-    page.keyboard.press("Enter")
-    settle(page)
-    if page.evaluate("window.cassino3d.replay()")["k"] != 3:
-        failures.append("replay: Enter on Next did not step")
-    page.locator(".replay-back").click()
-    settle(page)
-    page.locator(".replay-leave").click()
-    settle(page)
-    back = page.evaluate("window.cassino3d.state()")
-    if page.evaluate("window.cassino3d.replay()") is not None or back["saved"] != over["saved"]:
-        failures.append("replay: leaving did not bring the finished game back")
+def check_no_replay(page, failures):
+    """After the game, no replay with both hands face up (the seventh
+    play-testing: "remove the option to replay a game with both hands
+    visible"): only a new game is offered."""
+    if page.locator(".replay, .replay-bar").count():
+        failures.append("the game's end still offers the replay with both hands")
+    if page.locator(".controls md-filled-button.again").is_hidden():
+        failures.append("the game's end offers no new game")
 
 
 def check_count(page, s, failures):
@@ -1177,7 +1148,7 @@ def main() -> int:
         series = page.evaluate("window.cassino3d.series()")
         if series["you"] + series["them"] != 1 or "Series:" not in page.locator(".prompt").inner_text():
             failures.append(f"the finished game was not counted in the series: {series}")
-        check_replay(page, failures)
+        check_no_replay(page, failures)
         if len(HEARD) < 5 or not any("ast" in w for w in HEARD):
             failures.append(f"too little said at the table: {sorted(HEARD)}")
         check_offline(page, failures)

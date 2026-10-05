@@ -375,28 +375,24 @@ export function createChrome(root, on) {
     for (const b of talkSet.querySelectorAll("[data-talk]")) b.selected = b.dataset.talk === prefs.talk;
     surface.value = prefs.surface;
     faces.value = prefs.faces;
-    // During the replay nothing acts on its position but its own controls
-    // (the table's second review, S3).
-    const replaying = Boolean(last.replaying);
     // Shown once the game is over: during it, the seed in a second window
     // would show what your opponent holds (the table's second review, S4).
     seedLine.textContent = !state
       ? ""
-      : state.prompt === "over" || replaying
+      : state.prompt === "over"
         ? `This game's seed was ${state.seed}: the same seed deals the same cards, and your opponent saw only what you saw. Add ?seed=${state.seed} to the page's address to deal it again.`
         : "This game's seed is shown when it is over: the same seed deals the same cards, so it would show your opponent's hand now.";
     const watching = Boolean(state?.watching);
-    hint.hidden = watching || replaying || !state?.aids?.hints;
-    aidBar.hidden = watching || replaying;
+    hint.hidden = watching || !state?.aids?.hints;
+    aidBar.hidden = watching;
     hint.disabled = state?.prompt !== "play" || busy; // not while cards move (T10)
     again.disabled = !last.canAgain || busy;
-    again.hidden = replaying;
   }
 
   return {
-    sync(prefs, state, { busy = false, canAgain = false, replaying = false } = {}) {
+    sync(prefs, state, { busy = false, canAgain = false } = {}) {
       if (!last.prefs) rules = { ...prefs.rules };
-      last = { prefs, state, busy, canAgain, replaying };
+      last = { prefs, state, busy, canAgain };
       draw();
     },
     setRules(r) {

@@ -86,8 +86,9 @@ legal move. RULES.md now says each held card answers for one build value.
   major where the fixes met the new features, six minor). All fixed, each
   with a test, the triage recorded in each.
 - **Fairness and the match** (DESIGN.md §12.3): the seed shown; after the
-  game, a replay with both hands face up (the engine reveals the deals only
-  once the game is over); the last move seen again; a World Series, the
+  game, a replay with both hands face up (removed in the seventh
+  play-testing; the engine still reveals the deals once the game is over);
+  the last move seen again; a World Series, the
   best of seven; the sweep warning before a move (the offer says which
   move leaves a sweep).
 - **The first play-testing** (2026-10-03), each note done, test first:
@@ -199,7 +200,8 @@ legal move. RULES.md now says each held card answers for one build value.
   window on an iPhone, 34 by 45 px, is now 43 by 56.
 - **The seventh play-testing** (2026-10-05): undo removed from the table
   (the engine and the terminal keep it); the running sum's place gone from
-  the move bar, Take, Build and Trail alone.
+  the move bar, Take, Build and Trail alone; the replay with both hands
+  face up gone from the game's end.
 - **The South African game, researched**
   (`research/12-south-african-khasino.md`): KASA's rulebooks and its own
   online game as the canonical sources, twenty open-source engines, and
@@ -289,7 +291,7 @@ every part by others (`CREDITS.md`).
 1. **One design call made provisionally**: the game's seed is shown only once
    the game is over (shown during it, a second window could read your
    opponent's hand; the second review, S4). Fairness is still checkable
-   after the game, with the replay.
+   after the game: the seed deals the same cards again.
 
 2. **The trackers' fold** could not be made to fail here (Chromium and
    WebKit, mouse and touch); the whole heading is now its button. Worth

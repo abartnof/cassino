@@ -94,7 +94,8 @@ node-tested, as in piquet.
 
 - **Your hand**: `state.hand`, fanned and floating, square to the eye.
 - **Their hand**: `state.opponent_holds` anonymous cards, backs to you and
-  square to the eye; in the replay after the game, turned face up to it.
+  square to the eye; never face up (the replay after the game that
+  turned it face up went in the seventh play-testing).
 - **The table**: `state.table` items in arrival order on a grid that grows
   from the centre. A loose card lies flat. A build is a stack: its cards in
   the order laid, each offset so its whole index and a strip of its face
@@ -178,7 +179,7 @@ by the game's seed, from twelve cut from a Spanish-suited pack of about 1760
 so the figure stands in the band between the score and the controls, left
 of the middle, with room beside it for its words. With
 reduced motion, or at the Instant speed, the camera cuts instead of
-gliding. A new game, the replay, or the last move seen again brings the
+gliding. A new game, or the last move seen again, brings the
 play's eye back. `?ending` stages it, as piquet's does: a game played by a
 dull script to its end, taken back to your last decision; play the last
 card, and arrows then step through all 24 endings (each court winning and
@@ -379,11 +380,11 @@ Material Design 3, from piquet's shell.
   4 in halves), the match (one game, or a World Series: the best of seven,
   `series.js`), the aids, Large Text, watch mode, a new game, copy the game
   record (`state.saved`), the daily deal (seeded from the date).
-- **Fairness**: the game's seed in the settings; after the game, a replay
-  with both hands face up (`replay.js`: the record stepped a decision at a
-  time, forward by sending its commands, back by restoring a prefix; your
-  opponent's hand from the engine's `reveal`, fanned toward you); and the
-  last move seen again from the top bar.
+- **Fairness**: the game's seed in the settings, shown once the game is
+  over, so the same deal can be played again; and the last move seen again
+  from the top bar. The replay after the game with both hands face up was
+  removed in the seventh play-testing ("remove the option to replay a game
+  with both hands visible").
 
 ## 9. Teaching
 
@@ -530,7 +531,7 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   the table, in both arrangements; the reducer held to the engine's own
   states), the HUD (its model and, on a stand-in DOM, its widget), the
   talk and the phrase bank, the tutorial's moments, the staging test of
-  the phone camera's reach, the replay, the series, the preferences, and
+  the phone camera's reach, the series, the preferences, and
   the piquet modules brought across. `bin/gate` builds the engine module
   first, so nothing skips, and checks that the committed page is built
   from the sources.
@@ -538,7 +539,7 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   system Chromium; about fifteen minutes): it blocks every network request
   and plays a whole game by clicking, checking at every rest that no face
   is shown that the person could not know, the HUD at every hand's end, the
-  talk, the count; then the replay, a World Series game counted, the last
+  talk, the count; then no replay offered, a World Series game counted, the last
   move seen again; the settings (hints, no undo, the log, the keyboard path, a
   reload that brings the sitting back, the credits); watched games; the
   tutorial; a phone held either way, a tablet held upright and a tall

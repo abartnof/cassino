@@ -60,8 +60,9 @@ export async function loadEngine(bytes) {
       ex.cassino_hint();
       return out();
     },
-    // Every hand's deals once the game is over (null before): for the
-    // replay with both hands face up.
+    // Every hand's deals once the game is over (null before). The table no
+    // longer uses it (its replay with both hands face up went in the
+    // seventh play-testing); the protocol keeps it.
     reveal() {
       ex.cassino_reveal();
       return out();

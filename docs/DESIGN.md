@@ -582,8 +582,9 @@ shipped apps (§7.6).
 - **Undo** (off by default outside the tutorial). Removed from the table in
   the seventh play-testing ("remove undo"); the engine and the terminal
   keep it.
-- **Fairness you can check.** Every game shows its seed. After the game it can
-  be replayed with both hands face up. A **daily deal** is seeded from the
+- **Fairness you can check.** Every game shows its seed, once it is over, so
+  the same deal can be played again. (A replay with both hands face up was
+  built, and removed from the table in the seventh play-testing.) A **daily deal** is seeded from the
   date, so it needs no network, and everyone gets the same cards. "The
   computer cheats" is the dominant complaint about apps in this family
   [06-S19]. Your opponent sees only what you see, and the help says so.
@@ -641,7 +642,7 @@ layers that are on are shown, from your view: the explanation never reveals
 your opponent's hand.
 
 **Move quality** (sound, dubious, blunder) is measured by the evaluation lost
-against the hint. It appears only when you ask, or in the post-game replay.
+against the hint. It appears only when you ask.
 
 ### 12.5 Teaching
 

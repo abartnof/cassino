@@ -245,3 +245,12 @@ test("real games lay out 52 cards at every step, faces only where seen", { skip:
     }
   }
 });
+
+// The seventh play-testing: "remove the option to replay a game with both
+// hands visible." Nothing lays your opponent's hand out face up any more,
+// whatever the view asks.
+test("your opponent's hand is never laid out face up: the replay with both hands is gone", () => {
+  const slots = layout(opening, { theirs: ["2H", "3H", "4H", "5H"] }).filter((s) => s.zone === "their-hand");
+  assert.equal(slots.length, 4);
+  for (const s of slots) assert.ok(!s.faceUp && s.code === null, s.key);
+});
