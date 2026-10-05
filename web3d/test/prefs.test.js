@@ -43,6 +43,15 @@ test("the scoring board is gone: a setting kept for it is forgotten", () => {
   assert.equal("pegboard" in DEFAULTS, false);
 });
 
+// The seventh play-testing: "remove undo." The table takes no move back,
+// and a switch kept for it is forgotten.
+test("undo is gone: a setting kept for it is forgotten", () => {
+  const store = memory();
+  store.setItem("cassino.prefs", JSON.stringify({ undo: true }));
+  assert.equal("undo" in loadPrefs(store), false);
+  assert.equal("undo" in DEFAULTS, false);
+});
+
 // Play-testing: could raising "be turned off in the config"? On by default,
 // as the rules have it; kept settings from before the setting raise.
 test("builds are raised unless the setting is off, and the choice is kept", () => {

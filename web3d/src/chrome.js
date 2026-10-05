@@ -21,7 +21,6 @@ import { PATTERNS } from "./surfaces.js";
 
 // Simple stroked icons, piquet's, drawn for its page.
 const ICONS = {
-  undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
   settings: '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>',
   narration: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>',
   hint: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>',
@@ -88,17 +87,15 @@ const PAGE_AIDS = [
   ["buildValues", "Build values", "A badge with each build's value, always in view. Always on while the tutorial is"],
   ["unseen", "Cards still out", "Which aces and Cassinos, and how many spades, you have not seen"],
   ["sweepWarning", "Sweep warning", "Say when a single card would clear the table"],
-  ["undo", "Undo", "Allow taking back a move"],
 ];
 
 // `on`: { newGame(), daily(), watch(), rules(rules), skill(value),
-// aid(name, on), pref(name, value), copy(button), undo(), hint(), again(),
+// aid(name, on), pref(name, value), copy(button), hint(), again(),
 // log(open), help() }.
 export function createChrome(root, on) {
   // ---- the top bar ---------------------------------------------------------
   const fresh = el("md-icon-button", { class: "new-game", title: "A new game", "aria-label": "A new game", onclick: () => on.newGame() }, symbol("add"));
   const hint = el("md-icon-button", { class: "hint", title: "A hint", "aria-label": "A hint", onclick: () => on.hint() }, icon("hint"));
-  const undo = el("md-icon-button", { class: "undo", title: "Take back your move", "aria-label": "Undo", onclick: () => on.undo() }, icon("undo"));
   const again = el("md-icon-button", { class: "again-last", title: "See the last move again", "aria-label": "See the last move again", onclick: () => on.again() }, icon("again"));
   const log = el("md-icon-button", { class: "log-toggle", title: "The game log", "aria-label": "The game log", toggle: true }, icon("narration"));
   // `change` comes after the button has toggled (a click comes before: the
@@ -106,7 +103,7 @@ export function createChrome(root, on) {
   log.addEventListener("change", () => on.log(log.selected));
   const help = el("md-icon-button", { class: "help", title: "How to play", "aria-label": "How to play", onclick: () => on.help() }, symbol("help"));
   const gear = el("md-icon-button", { class: "settings-open", title: "Settings", "aria-label": "Settings", onclick: () => settings.show() }, icon("settings"));
-  const bar = el("header", { class: "surface bar" }, el("span", { class: "brand" }, "Cassino"), fresh, hint, undo, again, log, help, gear);
+  const bar = el("header", { class: "surface bar" }, el("span", { class: "brand" }, "Cassino"), fresh, hint, again, log, help, gear);
 
   // ---- the hints and the explanations, under the cards -----------------------
 
@@ -394,8 +391,6 @@ export function createChrome(root, on) {
     hint.disabled = state?.prompt !== "play" || busy; // not while cards move (T10)
     again.disabled = !last.canAgain || busy;
     again.hidden = replaying;
-    undo.hidden = watching || replaying || !prefs.undo;
-    undo.disabled = !state?.can_undo;
   }
 
   return {

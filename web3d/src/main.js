@@ -219,21 +219,6 @@ async function main() {
       }
       setTimeout(() => (button.textContent = "Copy game record"), 1600);
     },
-    undo: () => {
-      const sent = engine.send("undo");
-      if (!sent.ok) return;
-      director.cancelTimed();
-      overlay.hush();
-      dialogue.stop();
-      lastMove = null;
-      badgeFrom = state;
-      state = sent.state;
-      sel = EMPTY;
-      director.advance(state);
-      scoreShown();
-      persist();
-      refresh();
-    },
     hint: () => {
       if (!hint) return;
       sel = selectionOf(hint.move, state.table);

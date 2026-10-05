@@ -68,7 +68,7 @@ legal move. RULES.md now says each held card answers for one build value.
   its line is told; live trackers), T5 the table talk (a sourced phrase bank, `docs/PHRASES.md`; the
   house rules agreed aloud as the cards are dealt, the build calls, "Last.",
   "Clear!", the count chanted), T6 settings and aids (rules, skill, today's
-  deal, watch mode, hints, explanations in a game log, undo, the sitting
+  deal, watch mode, hints, explanations in a game log, the sitting
   kept across a reload, the credits on screen). A whole game is played by
   clicking in an offline browser test. The score is the designer's HUD
   (segmented lines to 21, the broadcast-swap popup, the per-hand ledger;
@@ -197,6 +197,8 @@ legal move. RULES.md now says each held card answers for one build value.
   hand" folded into the score, open with its hand-by-hand scores, the
   score a little shorter, the prompt one line. A table card in Safari's
   window on an iPhone, 34 by 45 px, is now 43 by 56.
+- **The seventh play-testing** (2026-10-05): undo removed from the table
+  (the engine and the terminal keep it).
 - **The South African game, researched**
   (`research/12-south-african-khasino.md`): KASA's rulebooks and its own
   online game as the canonical sources, twenty open-source engines, and

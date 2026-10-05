@@ -126,8 +126,8 @@ checks that no mesh in the opponent's hand or the stock carries a face.
 state into a timeline (`choreography.js`, after piquet's). A reducer replays
 the events into the states between, each laid out by `layout`, so every
 stage runs between two true layouts; a final settle lands everything on
-`layout(next)` whatever happened, and an undo or a new game is one direct
-transition. The tests hold the reducer to the engine's own states (a watched
+`layout(next)` whatever happened, and a new game or a sitting restored is
+one direct transition. The tests hold the reducer to the engine's own states (a watched
 game steps one move at a time), and every timeline of real games to its
 layout, its faces, no leak, and no card through the table.
 
@@ -455,8 +455,10 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   that fails); a hint shown under the prompt with its cards lit, chosen by
   the hint button; the game log with each move's notes (the explain aid);
   a watched game that plays itself. The director now draws only when a
-  card moved. The browser test turns hints and undo on in the dialog, takes
-  a hinted move back, reloads, reads the credits and watches a game.
+  card moved. The browser test turns hints on in the dialog, plays a hinted
+  move, reloads, reads the credits and watches a game. **Undo removed** in
+  the seventh play-testing ("remove undo"): the table takes no move back
+  (the engine and the terminal keep it).
   **After play-testing**: a welcome on opening the page (`chrome.js`
   `showWelcome`): Continue (with a game kept), New game, or Tutorial,
   which turns the tutorial on from its first page (New game turns it off).
@@ -537,7 +539,7 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   and plays a whole game by clicking, checking at every rest that no face
   is shown that the person could not know, the HUD at every hand's end, the
   talk, the count; then the replay, a World Series game counted, the last
-  move seen again; the settings (hints, undo, the log, the keyboard path, a
+  move seen again; the settings (hints, no undo, the log, the keyboard path, a
   reload that brings the sitting back, the credits); watched games; the
   tutorial; a phone held either way, a tablet held upright and a tall
   window, each played by tapping. It saves screenshots and strips of the

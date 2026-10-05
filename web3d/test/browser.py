@@ -966,16 +966,18 @@ def check_tablet_faces(browser, failures):
 
 
 def check_settings(browser, failures):
-    """The settings: hints and undo turned on in the dialog; a hint shown,
-    lit and chosen; a move taken back; the sitting kept across a reload;
-    the credits; and a watched game that plays itself."""
+    """The settings: hints turned on in the dialog; a hint shown, lit and
+    chosen and played; no undo (the seventh play-testing: "remove undo");
+    the sitting kept across a reload; the credits; and a watched game that
+    plays itself."""
     page = open_page(browser, "skill=2&speed=8")
     settle(page)
     page.locator("md-icon-button.settings-open").click()
     page.wait_for_timeout(1500)
     shot(page, "t6-settings")
     page.locator('md-switch[data-aid="hints"]').click()
-    page.locator('md-switch[data-pref="undo"]').click()
+    if page.locator('md-switch[data-pref="undo"]').count() or page.locator("md-icon-button.undo").count():
+        failures.append("settings: undo is still offered")
     page.locator(".settings-dialog md-filled-tonal-button", has_text="Done").click()
     page.wait_for_timeout(1200)
     settle(page)
@@ -997,10 +999,8 @@ def check_settings(browser, failures):
     before = len(s["events"])
     chip.click()
     settle(page)
-    page.locator("md-icon-button.undo").click()
-    settle(page)
-    if len(page.evaluate("window.cassino3d.state()")["events"]) != before:
-        failures.append("settings: undo did not take the move back")
+    if len(page.evaluate("window.cassino3d.state()")["events"]) <= before:
+        failures.append("settings: the hint's move was not played")
     # A move made by clicking, then the page reloaded: the sitting the page
     # saved itself comes back (the table review's Q1).
     play_by_clicking(page, failures, 3)

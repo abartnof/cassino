@@ -27,7 +27,6 @@ export const DEFAULTS = Object.freeze({
   match: "single",
   // The engine's aids (docs/PROTOCOL.md), and the page's own.
   aids: Object.freeze({ hints: false, explain: false, play_forced: false }),
-  undo: false,
   trackers: true,
   // The trackers' panel open, or folded to its heading: folded at first
   // (play-testing), since version 3 of the kept settings.
@@ -106,7 +105,6 @@ export function loadPrefs(store) {
     faces: ["auto", "classic", "jumbo"].includes(kept.faces) ? kept.faces : DEFAULTS.faces,
     match: kept.match === "best-of-7" ? "best-of-7" : "single",
     aids: Object.fromEntries(Object.entries(DEFAULTS.aids).map(([k, v]) => [k, isBool(aids[k]) ? aids[k] : v])),
-    undo: isBool(kept.undo) ? kept.undo : DEFAULTS.undo,
     trackers: isBool(kept.trackers) ? kept.trackers : DEFAULTS.trackers,
     trackersOpen: isBool(kept.trackersOpen) && kept.v >= 3 ? kept.trackersOpen : DEFAULTS.trackersOpen,
     buildValues: isBool(kept.buildValues) ? kept.buildValues : DEFAULTS.buildValues,

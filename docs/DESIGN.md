@@ -579,7 +579,9 @@ shipped apps (§7.6).
   complain about pace both ways [06-S20][06-S21].
 - **Hints and explanations** from the top rung, for your moves and your
   opponent's [06-S28].
-- **Undo** (off by default outside the tutorial).
+- **Undo** (off by default outside the tutorial). Removed from the table in
+  the seventh play-testing ("remove undo"); the engine and the terminal
+  keep it.
 - **Fairness you can check.** Every game shows its seed. After the game it can
   be replayed with both hands face up. A **daily deal** is seeded from the
   date, so it needs no network, and everyone gets the same cards. "The
