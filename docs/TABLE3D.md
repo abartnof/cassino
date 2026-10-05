@@ -281,24 +281,24 @@ are said.
 Material Design 3, from piquet's shell.
 
 - **Choosing a move**: tap a hand card, and it lifts; the table cards it
-  could take or build with light up (`offer.can_add`); tap them; a running
-  sum shows; chips offer exactly what the selection makes (`offer.moves`:
+  could take or build with light up (`offer.can_add`); tap them; the
+  move bar offers exactly what the selection makes (`offer.moves`:
   *Take*, *Build 8*, *Build 8s*, *Trail*). A card that cannot join says why
   on tap (`offer.why_not`). **The move bar** (play-testing: nothing to hunt
-  for below the hand after each choice): the running sum and Take, Build
-  and Trail are always there on your turn, each lit with its move when the
+  for below the hand after each choice): Take, Build and Trail are always
+  there on your turn, each lit with its move when the
   choice makes one and dimmed under its plain name when not
   (`selection.js` `moveBar`). Each has a place of its own, always there
   and always as wide, so nothing moves as a choice is made (the sixth
   play-testing: "have all possible buttons up, so the user doesn't have to
-  constantly wonder if the buttons are in the right place"): the sum's
-  place says "Sum", faintly, until there is one; two moves of a kind
+  constantly wonder if the buttons are in the right place"); two moves of a kind
   share its place, each word fitted to its half (`fitLabels`), or, where
   that would be too small to read, only the words that tell them apart
   (*4s*, *8*). They are large filled buttons, solid even when dimmed
   (play-testing: they are there for the play, no need to hide them), each
-  with a faint outline (the sixth play-testing), which the sum's place,
-  a reading and not a button, does not have. On a
+  with a faint outline (the sixth play-testing). The running sum's place
+  before them went in the seventh play-testing ("remove the sum button to
+  the left of the action buttons"). On a
   desktop the bar fills the space between the table's first row and your
   hand, clear of a card chosen from it, as tall as there is room for, 40
   to 84 px, and no wider than the window (`moveBarFit`), and stays put as
@@ -307,8 +307,8 @@ Material Design 3, from piquet's shell.
   hand, not 2.2); your own words are then said beside your hand, the tail
   pointing back at it. A phone held upright has the bar in the same place
   (play-testing: "above the cards, not below, to match the desktop
-  version"), its four places sharing the screen's width, and your words
-  below your hand; held sideways, the bar is a two-by-two grid in the controls'
+  version"), its three places sharing the screen's width, and your words
+  below your hand; held sideways, its places are stacked in the controls'
   column.
 - **The score HUD**, from the designer's handoff (the spec and its approved
   reference implementation are commit c484091; the reference's numbers are

@@ -663,9 +663,9 @@ def check_split_place(browser, failures, viewport):
     page.context.close()
 
 
-PLACES_JS = """() => Object.fromEntries([...document.querySelectorAll('.move-bar .sum, .move-bar .place')].map((e) => {
+PLACES_JS = """() => Object.fromEntries([...document.querySelectorAll('.move-bar .place')].map((e) => {
   const r = e.getBoundingClientRect();
-  return [e.dataset.kind ?? 'sum', [Math.round(r.left), Math.round(r.width)]];
+  return [e.dataset.kind, [Math.round(r.left), Math.round(r.width)]];
 }))"""
 
 
@@ -677,12 +677,12 @@ def check_move_bar_at(browser, failures, viewport):
     labels = [chips.nth(i).inner_text().strip() for i in range(chips.count())]
     if labels != ["Take", "Build", "Trail"] or page.evaluate("window.cassino3d.chips()"):
         failures.append(f"{where}: the move bar with nothing chosen: {labels}, lit {page.evaluate('window.cassino3d.chips()')}")
-    # Every place there from the start, the running sum's too, and none
-    # moving as a choice is made (play-testing: "have all possible buttons
-    # up, so the user doesn't have to constantly wonder if the buttons are
-    # in the right place").
+    # Every place there from the start, and none moving as a choice is made
+    # (play-testing: "have all possible buttons up, so the user doesn't have
+    # to constantly wonder if the buttons are in the right place"); no
+    # running sum (the seventh play-testing: "remove the sum button").
     places = page.evaluate(PLACES_JS)
-    if sorted(places) != ["build", "sum", "take", "trail"]:
+    if sorted(places) != ["build", "take", "trail"] or page.locator(".move-bar .sum").count():
         failures.append(f"{where}: the move bar's places with nothing chosen: {places}")
     s = page.evaluate("window.cassino3d.state()")
     build = next((m for m in s["moves"] if m.startswith("build")), None)
@@ -692,8 +692,6 @@ def check_move_bar_at(browser, failures, viewport):
         for code in [w for w in build.split()[3:] if w != "on"][:1]:
             click_card(page, code)
             settle(page)
-        if not page.locator(".move-bar .sum").inner_text().strip().startswith("Sum "):
-            failures.append(f"{where}: no running sum shown with table cards picked")
         if page.evaluate(PLACES_JS) != places:
             failures.append(f"{where}: the move bar's places moved as a move was chosen: {places} then {page.evaluate(PLACES_JS)}")
         click_card(page, build.split()[2])  # let it go
@@ -722,17 +720,15 @@ def check_move_bar_at(browser, failures, viewport):
     }).map((b) => b.textContent)""")
     if over:
         failures.append(f"{where}: labels wider than their buttons: {over}")
-    # A faint outline round each move's button (play-testing), lit or not;
-    # none round the sum, which is not one.
-    lines = page.evaluate("""() => [...document.querySelectorAll('.move-bar md-filled-button, .move-bar .sum')].map((b) => {
+    # A faint outline round each move's button (play-testing), lit or not.
+    lines = page.evaluate("""() => [...document.querySelectorAll('.move-bar md-filled-button')].map((b) => {
       const s = getComputedStyle(b);
-      return [b.classList.contains('sum') ? 'sum' : b.dataset.kind, s.outlineStyle, parseFloat(s.outlineWidth), s.outlineColor];
+      return [b.dataset.kind, s.outlineStyle, parseFloat(s.outlineWidth), s.outlineColor];
     })""")
     for kind, style, width, colour in lines:
         alpha = float(colour.rsplit(",", 1)[1].strip(" )")) if colour.startswith("rgba") else 1.0
-        outlined = style == "solid" and width >= 1 and 0 < alpha <= 0.4
-        if outlined != (kind != "sum"):
-            failures.append(f"{where}: the {kind} {'has no faint outline' if kind != 'sum' else 'is outlined'}: {style} {width} {colour}")
+        if not (style == "solid" and width >= 1 and 0 < alpha <= 0.4):
+            failures.append(f"{where}: the {kind} has no faint outline: {style} {width} {colour}")
     shot(page, f"t2-move-bar-{where}")
     page.context.close()
 
@@ -925,7 +921,7 @@ def check_phone_talk(browser, failures):
             setInterval(() => {
               const cards = [...window.cassino3d.cardRects('middle'), ...window.cassino3d.cardRects('your-hand')];
               const bar = document.querySelector('.move-bar');
-              const keep = bar && !bar.hidden ? [...bar.querySelectorAll('md-filled-button, .sum')].map((b) => b.getBoundingClientRect()) : [];
+              const keep = bar && !bar.hidden ? [...bar.querySelectorAll('md-filled-button')].map((b) => b.getBoundingClientRect()) : [];
               for (const d of document.querySelectorAll('.dialogue:not(.leaving)')) {
                 window.boxesSeen++;
                 const r = d.getBoundingClientRect();

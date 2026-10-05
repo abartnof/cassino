@@ -923,7 +923,7 @@ async function main() {
     const busy = director.busy();
     const replaying = replay ? { k: replay.k, n: replay.at.length - 1, playing: replay.playing } : null;
     const after = prefs.match === "best-of-7" && !state.watching ? seriesLine(series) : null;
-    overlay.show({ state, chips: busy || replay ? [] : chipsOf(offer), sum: replay ? null : (offer?.sum ?? null), message, busy, aid: replay ? null : aidLine(), replay: replaying, after });
+    overlay.show({ state, chips: busy || replay ? [] : chipsOf(offer), message, busy, aid: replay ? null : aidLine(), replay: replaying, after });
     // The cards still out and the log tell what the cards have shown: they
     // wait for the cards to come to rest, as the trackers do (review T7).
     if (!busy) {

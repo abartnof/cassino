@@ -139,13 +139,6 @@ html, body {
   color: #8c1d18;
   min-height: 1.2em;
 }
-.sum {
-  font-variant-numeric: tabular-nums;
-  padding: 4px 12px;
-  border-radius: 16px;
-  background: var(--md-sys-color-surface-variant);
-  color: var(--md-sys-color-on-surface-variant);
-}
 .badges {
   position: fixed;
   inset: 0;
@@ -396,13 +389,13 @@ md-dialog {
   color: var(--md-sys-color-on-surface-variant);
 }
 
-/* The move bar: the running sum and Take, Build and Trail, always there on
-   your turn, each in a place of its own as wide as a set number of the
-   bar's heights (selection.js BAR, set on the bar as --move-sum and
-   --move-place), so nothing moves as a choice is made. On a desktop and a
-   phone held upright it sits between the table and your hand, where the
-   page measures it to be (upright, the places share the screen's width);
-   held sideways it is a two-by-two grid in the controls' column. */
+/* The move bar: Take, Build and Trail, always there on your turn, each in
+   a place of its own as wide as a set number of the bar's heights
+   (selection.js BAR, set on the bar as --move-place), so nothing moves as
+   a choice is made. On a desktop and a phone held upright it sits between
+   the table and your hand, where the page measures it to be (upright, the
+   places share the screen's width); held sideways the places are stacked
+   in the controls' column. */
 .move-bar {
   flex-basis: 100%;
   display: flex;
@@ -446,8 +439,7 @@ md-dialog {
   --md-filled-button-disabled-label-text-opacity: 1;
 }
 /* A faint line round each move's button, lit or dimmed (play-testing), so
-   the buttons read as buttons, the sum beside them as a reading. Drawn on
-   the button's edge, round its corners (inside it, the button's own
+   the buttons read as buttons. Drawn on the button's edge, round its corners (inside it, the button's own
    background would cover it). */
 .move-bar md-filled-button {
   border-radius: calc(var(--move-h, 44px) / 2);
@@ -458,29 +450,9 @@ md-dialog {
   --md-filled-button-leading-space: calc(var(--move-h, 44px) * var(--move-split, 0.12));
   --md-filled-button-trailing-space: calc(var(--move-h, 44px) * var(--move-split, 0.12));
 }
-/* The running sum: a reading, not a button; in its place, faint, when
-   there is none. */
-.move-bar .sum {
-  flex: none;
-  margin: 0;
-  display: grid;
-  place-items: center;
-  box-sizing: border-box;
-  width: calc(var(--move-h, 44px) * var(--move-sum, 2.1));
-  height: var(--move-h, 44px);
-  border-radius: calc(var(--move-h, 44px) / 2);
-  font-size: calc(var(--move-h, 44px) * 0.36);
-  font-weight: 600;
-  white-space: nowrap;
-  background: #e1e3e8;
-  color: #1b1f24;
-}
-.move-bar .sum.idle {
-  color: #9a9ea6;
-}
 /* On a phone, compact buttons. Held upright the bar sits between the table
    and your hand, as on a desktop (play-testing), in one row; held sideways
-   it is a grid in the controls' column, each place half its width. */
+   the places are stacked in the controls' column. */
 html.upright .move-bar,
 html.sideways .move-bar {
   --move-h: 40px;
@@ -494,11 +466,10 @@ html.upright .move-bar .place {
 }
 html.upright .move-bar .chips {
   display: grid;
-  grid-template-columns: minmax(0, 0.75fr) repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   width: 100%;
 }
-html.upright .move-bar .place,
-html.upright .move-bar .sum {
+html.upright .move-bar .place {
   width: auto;
 }
 html.sideways .move-bar {
@@ -506,11 +477,10 @@ html.sideways .move-bar {
 }
 html.sideways .move-bar .chips {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   width: 100%;
 }
-html.sideways .move-bar .place,
-html.sideways .move-bar .sum {
+html.sideways .move-bar .place {
   width: auto;
 }
 html:not(.sideways) .move-bar {
@@ -520,14 +490,13 @@ html:not(.sideways) .move-bar {
   translate: -50% -50%;
   flex-basis: auto;
 }
-/* Upright, the four places divide the screen's width between them, the
-   sum's the narrowest. */
+/* Upright, the three places divide the screen's width between them. */
 html.upright .move-bar {
   left: 8px;
   right: 8px;
   translate: 0 -50%;
   /* No wider than a desktop's, on a tablet. */
-  max-width: calc(var(--move-h, 40px) * (var(--move-sum, 2.1) + 3 * var(--move-place, 2.9)) + 24px);
+  max-width: calc(var(--move-h, 40px) * 3 * var(--move-place, 2.9) + 16px);
   margin-inline: auto;
 }
 

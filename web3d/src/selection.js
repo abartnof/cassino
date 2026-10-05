@@ -53,13 +53,14 @@ export function chipsOf(offer) {
 // The move bar (play-testing: the buttons always there, lighting up and
 // dimming, so nothing is hunted for after each choice; and then "have all
 // possible buttons up, so the user doesn't have to constantly wonder if the
-// buttons are in the right place"): the running sum, then Take, Build and
-// Trail, each in a place of its own that is always there at the same width,
-// so nothing moves as a choice is made. A place is lit with its moves when
-// the choice makes any, as many as it makes sharing it (Build 6, Build 3s),
-// and dimmed under its plain name when it makes none. `chips` as chipsOf
-// gives them; each move's `short` words say only what tells it from the
-// others of its kind (6, 3s), for a place too narrow for the whole.
+// buttons are in the right place"): Take, Build and Trail, each in a place
+// of its own that is always there at the same width, so nothing moves as a
+// choice is made (the running sum's place before them went in the seventh
+// play-testing). A place is lit with its moves when the choice makes any,
+// as many as it makes sharing it (Build 6, Build 3s), and dimmed under its
+// plain name when it makes none. `chips` as chipsOf gives them; each move's
+// `short` words say only what tells it from the others of its kind (6, 3s),
+// for a place too narrow for the whole.
 const KINDS = [
   ["take", "Take"],
   ["build", "Build"],
@@ -74,18 +75,18 @@ export function moveBar(chips) {
   });
 }
 
-// The places' widths, in heights of the bar: the running sum's and each
-// move's; the padding inside a button, alone in its place or sharing it;
+// Each move's place's width, in heights of the bar; the padding inside a
+// button, alone in its place or sharing it;
 // the size of its words, at most; and `slack` px to spare beside them (a
 // browser draws words a little wider than a canvas measures them, and cuts
 // short with an ellipsis what does not fit).
-export const BAR = Object.freeze({ sum: 2.1, place: 2.9, pad: 0.3, split: 0.12, label: 0.38, slack: 4 });
+export const BAR = Object.freeze({ place: 2.9, pad: 0.3, split: 0.12, label: 0.38, slack: 4 });
 
 // How the bar's width goes with its height, for moveBarFit's `across`: the
-// places' widths, and the three gaps between the four places, `room` px
-// to fit in.
+// places' widths, and the two gaps between the three places, `room` px to
+// fit in.
 export function barAcross(room, gap) {
-  return { room, perH: BAR.sum + 3 * BAR.place, fixed: 3 * gap };
+  return { room, perH: 3 * BAR.place, fixed: 2 * gap };
 }
 
 // The words on a place's buttons, `width` px wide all told, `gap` px apart,

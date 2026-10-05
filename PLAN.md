@@ -198,7 +198,8 @@ legal move. RULES.md now says each held card answers for one build value.
   score a little shorter, the prompt one line. A table card in Safari's
   window on an iPhone, 34 by 45 px, is now 43 by 56.
 - **The seventh play-testing** (2026-10-05): undo removed from the table
-  (the engine and the terminal keep it).
+  (the engine and the terminal keep it); the running sum's place gone from
+  the move bar, Take, Build and Trail alone.
 - **The South African game, researched**
   (`research/12-south-african-khasino.md`): KASA's rulebooks and its own
   online game as the canonical sources, twenty open-source engines, and

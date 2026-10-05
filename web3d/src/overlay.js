@@ -1,7 +1,7 @@
 // The overlay: the 2D surfaces floating over the table, in Material Design 3
-// (docs/TABLE3D.md section 8): the prompt, the chips that offer what a
-// selection makes, the running sum, the "why not?" line, the next hand and
-// the end of the game; the badges over the builds; at the top left, a slot
+// (docs/TABLE3D.md section 8): the prompt, the move bar that offers what a
+// selection makes, the "why not?" line, the next hand and the end of the
+// game; the badges over the builds; at the top left, a slot
 // for the score HUD (hud.js); at the foot of the left, the aids' panel (each
 // player's captures, the cards still out); under the top bar, the game log;
 // and what is said at the table, in boxes by each speaker's hand. Each sits
@@ -38,7 +38,7 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
       <p class="prompt" aria-live="polite"></p>
       <p class="note" aria-live="polite"></p>
       <p class="aid-line" hidden></p>
-      <div class="move-bar" hidden><div class="chips" role="group" aria-label="Your move"><div class="sum idle">Sum</div></div></div>
+      <div class="move-bar" hidden><div class="chips" role="group" aria-label="Your move"></div></div>
       <md-filled-button class="next" hidden>Next hand</md-filled-button>
       <md-filled-button class="again" hidden>New game</md-filled-button>
       <md-outlined-button class="replay" hidden>Replay with both hands</md-outlined-button>
@@ -53,7 +53,6 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
   const $ = (s) => root.querySelector(s);
   const prompt = $(".prompt");
   const note = $(".note");
-  const sum = $(".sum");
   const chipSet = $(".chips");
   const next = $(".next");
   const again = $(".again");
@@ -78,11 +77,10 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
   const bar = $(".move-bar");
   // The places' widths, in the bar's heights (selection.js BAR), for the
   // style sheet.
-  bar.style.setProperty("--move-sum", String(BAR.sum));
   bar.style.setProperty("--move-place", String(BAR.place));
   bar.style.setProperty("--move-pad", String(BAR.pad));
   bar.style.setProperty("--move-split", String(BAR.split));
-  function show({ state, chips, sum: total, message, busy = false, aid = null, replay = null, after = null }) {
+  function show({ state, chips, message, busy = false, aid = null, replay = null, after = null }) {
     prompt.textContent = replay ? "The game replayed, both hands face up." : busy ? "" : promptText(state, chips);
     if (!replay && !busy && after && state.prompt === "over") prompt.textContent += ` ${after}`;
     replayBar.hidden = !replay;
@@ -95,10 +93,6 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
     aidLine.hidden = busy || !aid;
     aidLine.textContent = aid ?? "";
     note.textContent = message ?? "";
-    // The running sum, in its place even when there is none, so nothing
-    // moves when there is (play-testing).
-    sum.classList.toggle("idle", total == null);
-    sum.textContent = total == null ? "Sum" : `Sum ${total}`;
     // The move bar, always there on your turn (play-testing): Take, Build
     // and Trail each in its place, lit when the choice makes one and dimmed
     // when not (selection.js moveBar). The chips are made again only when
@@ -114,7 +108,6 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
       // Filled buttons, large and opaque (play-testing: they are there for
       // the play, no need to hide them), dimmed but still solid when not.
       chipSet.replaceChildren(
-        sum,
         ...places.map((p) =>
           el(
             "div",
@@ -157,9 +150,6 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReplay = () =
       ruler.font = `600 ${px}px ${family}`;
       return ruler.measureText(text).width;
     };
-    // The sum at the size its widest reading fits, so it never changes.
-    const inside = sum.clientWidth - 24; // its padding (style.css .sum)
-    if (inside > 0) sum.style.fontSize = `${Math.min(h * 0.36, (inside * h * 0.36) / measure("Sum 14", h * 0.36)).toFixed(1)}px`;
     for (const place of chipSet.querySelectorAll(".place")) {
       const buttons = [...place.children];
       const gap = parseFloat(getComputedStyle(place).columnGap) || 0;

@@ -176,11 +176,14 @@ test("a place's words are as large as the bar's where they fit, smaller where no
   assert.equal(small[0].px, 36 * BAR.label);
 });
 
-test("the move bar's width goes only with its height, whatever the choice makes", () => {
+// The seventh play-testing: "remove the sum button to the left of the
+// action buttons." The bar is Take, Build and Trail alone.
+test("the move bar's width goes only with its height, whatever the choice makes; it has no sum", () => {
   const across = barAcross(374, 8);
-  assert.equal(across.perH, BAR.sum + 3 * BAR.place);
-  assert.equal(across.fixed, 3 * 8, "three gaps between four places");
+  assert.equal(across.perH, 3 * BAR.place);
+  assert.equal(across.fixed, 2 * 8, "two gaps between three places");
   assert.equal(across.room, 374);
+  assert.equal("sum" in BAR, false);
 });
 
 test("the move bar fills the space between the table and your hand, clear of a card chosen", () => {
@@ -192,7 +195,7 @@ test("the move bar fills the space between the table and your hand, clear of a c
   assert.equal(moveBarFit({ near: 340, top: 380, lift: 26 }).h, 40, "never less than 40");
 });
 
-// On a phone the bar, its running sum shown, could be wider than the
+// On a phone the bar could be wider than the
 // screen: it is made only as tall as lets it fit across. Its width grows
 // with its height (`perH` px of width a px), past gaps that do not
 // (`fixed`).
