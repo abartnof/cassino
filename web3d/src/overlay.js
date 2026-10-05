@@ -14,11 +14,11 @@ import "@material/web/button/filled-button.js";
 import "@material/web/iconbutton/icon-button.js";
 import { besideAt, boxRect, covers } from "./dialogue.js";
 import { trackerTable } from "./scorebug.js";
-import { BAR, barAcross, fitLabels, moveBar } from "./selection.js";
+import { BAR, barAcross, barMask, fitLabels, moveBar, pointIn } from "./selection.js";
 
 // `later(ms, fn)` runs `fn` after `ms` on the table's clock (director.at),
 // so a box lingers as long as the table runs, and holds when it is held.
-export function createOverlay(root, { onChip, onNext, onNewGame, onBadge = () => {}, onFold = () => {}, later = (ms, fn) => setTimeout(fn, ms) }) {
+export function createOverlay(root, { onChip, onNext, onNewGame, onCardTap = () => {}, onBadge = () => {}, onFold = () => {}, later = (ms, fn) => setTimeout(fn, ms) }) {
   root.innerHTML = `
     <div class="badges"></div>
     <div class="cheers" aria-hidden="true"></div>
@@ -61,6 +61,27 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onBadge = () =>
   // The places' widths, in the bar's heights (selection.js BAR), for the
   // style sheet.
   bar.style.setProperty("--move-place", String(BAR.place));
+  // The move bar under the cards: each card crossing it cut out of it
+  // (selection.js barMask), and a tap there the card's, not a button's.
+  let holes = [];
+  bar.addEventListener(
+    "click",
+    (e) => {
+      if (!holes.some((poly) => pointIn(poly, e.clientX, e.clientY))) return;
+      e.stopPropagation();
+      e.preventDefault();
+      onCardTap(e.clientX, e.clientY);
+    },
+    true,
+  );
+  function maskMoveBar(polys) {
+    const m = bar.hidden ? null : barMask(bar.getBoundingClientRect(), polys);
+    holes = m ? m.holes : [];
+    const value = m ? `url("data:image/svg+xml,${encodeURIComponent(m.svg)}")` : "";
+    if (bar.style.maskImage === value) return;
+    bar.style.maskImage = value;
+    bar.style.webkitMaskImage = value;
+  }
   bar.style.setProperty("--move-pad", String(BAR.pad));
   bar.style.setProperty("--move-split", String(BAR.split));
   // `leftHanded`: the move bar the other way round (selection.js moveBar).
@@ -496,6 +517,7 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onBadge = () =>
       return barAcross(window.innerWidth - 16, parseFloat(getComputedStyle(chipSet).columnGap) || 0);
     },
     fitBar,
+    maskMoveBar,
     // What a box on a phone must not cover besides the cards: the move
     // bar's places, while it is up.
     cardsAvoided: () => (bar.hidden ? [] : [...chipSet.children].map((c) => c.getBoundingClientRect())),

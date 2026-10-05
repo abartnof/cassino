@@ -159,6 +159,8 @@ async function main() {
     },
     onNext: () => advance(engine.send("next").state),
     onNewGame: () => askNewGame(),
+    // A tap on a card over the move bar is the card's.
+    onCardTap: (x, y) => tapped(director.pick(x, y)),
     // A badge tapped is its build tapped.
     onBadge: (id) => tapped(director.placement().find((m) => m.item === id) ?? null),
     // The trackers' panel folded or opened: kept for next time.
@@ -555,7 +557,22 @@ async function main() {
   stage.onRender = () => {
     placeBadges();
     placeMoveBar();
+    maskMoveBar();
   };
+  // The move bar under the cards (the user: "put the action buttons ... on
+  // a layer lower than the cards so that they do not occlude the cards"):
+  // each card's face as it is drawn, for the bar to cut out where they
+  // cross it (overlay.js maskMoveBar).
+  const FACE = [
+    [-1, -1],
+    [1, -1],
+    [1, 1],
+    [-1, 1],
+  ].map(([sx, sy]) => new Vector3((sx * CARD.width) / 2, (sy * CARD.height) / 2, 0));
+  function maskMoveBar() {
+    const polys = director.meshes.filter((m) => m.visible).map((m) => FACE.map((c) => director.toScreen(c.clone().applyQuaternion(m.quaternion).add(m.position))));
+    overlay.maskMoveBar(polys);
+  }
 
   // On a desktop, not a phone (upright or sideways); and a phone held
   // upright.

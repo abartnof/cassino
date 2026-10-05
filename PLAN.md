@@ -229,7 +229,8 @@ legal move. RULES.md now says each held card answers for one build value.
   count over 300 games of each game at skill 3 and 50 at skill 4: a trail
   half the moves, a capture two in five, a build one in ten): Build, Take,
   Trail, the most used under a right thumb; a "Left-handed" setting turns
-  it round.
+  it round. And the bar under the cards: each card crossing it cut out of
+  it as it is drawn, a tap there the card's.
   On a phone or a tablet your hand is a row spaced wide, not a fan, lying
   just off the table so that its cards are the table's size, and the
   field closes in: on an iPad held upright the table's cards from 100 to

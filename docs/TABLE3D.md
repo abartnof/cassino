@@ -353,7 +353,12 @@ Material Design 3, from piquet's shell.
   Trail, left to right, the move made least to the move made most, so the
   most used is under a right thumb (the user, from a few hundred games;
   `measurements/README.md`, "How often each move is made"); "Left-handed"
-  in the settings turns them the other way round. The running sum's place
+  in the settings turns them the other way round. The bar lies under the
+  cards (the user: "put the action buttons ... on a layer lower than the
+  cards so that they do not occlude the cards"): drawn over the table, it
+  has each card that crosses it on the screen cut out of it, frame by
+  frame, by a mask (so that cards overlapping each other are both cut
+  out), and a tap there is the card's (`selection.js` `barMask`). The running sum's place
   before them went in the seventh play-testing ("remove the sum button to
   the left of the action buttons"). On a
   desktop the bar fills the space between the table's first row and your

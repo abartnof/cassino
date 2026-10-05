@@ -1233,6 +1233,35 @@ def check_sorted(browser, failures):
     page.context.close()
 
 
+def check_bar_under(browser, failures):
+    """The move bar under the cards (the user: "put the action buttons
+    (take, build, trail) on a layer lower than the cards so that they do
+    not occlude the cards"): as the cards are dealt over it on a phone,
+    each is cut out of the bar while it crosses it; at rest, nothing is."""
+    page = open_page(browser, "seed=7&manual", viewport={"width": 390, "height": 664}, calm=True, device={"has_touch": True, "is_mobile": True})
+    masked = 0
+    for k in range(160):
+        page.evaluate("window.cassino3d.tick(40)")
+        if page.evaluate("(() => { const b = document.querySelector('.move-bar'); return !b.hidden && b.style.maskImage.includes('svg'); })()"):
+            masked += 1
+            if masked == 1:
+                shot(page, "t2-bar-under")
+    if not masked:
+        failures.append("bar under: no card was cut out of the move bar as the cards were dealt over it")
+    page.evaluate("window.cassino3d.skip()")
+    page.evaluate("window.cassino3d.tick(100)")
+    crossing = page.evaluate("""() => {
+      const b = document.querySelector('.move-bar').getBoundingClientRect();
+      return ['middle', 'your-hand'].flatMap((z) => window.cassino3d.cardRects(z)).some((r) => r.right > b.left && r.left < b.right && r.bottom > b.top && r.top < b.bottom);
+    }""")
+    still = page.evaluate("document.querySelector('.move-bar').style.maskImage.includes('svg')")
+    if still and not crossing:
+        failures.append("bar under: at rest, the move bar is cut with no card across it")
+    if page.errors:
+        failures.append(f"bar under: console errors {page.errors[:3]}")
+    page.context.close()
+
+
 def check_settings(browser, failures):
     """The settings: hints turned on in the dialog; a hint shown, lit and
     chosen and played; no undo (the seventh play-testing: "remove undo");
@@ -1471,6 +1500,7 @@ def main() -> int:
         check_tablet_faces(browser, failures)
         check_still(browser, failures)
         check_sorted(browser, failures)
+        check_bar_under(browser, failures)
         check_hud_room(browser, failures)
         check_desktop_frame(browser, failures)
         check_phone_talk(browser, failures)

@@ -220,3 +220,22 @@ test("the move bar is never wider than the room across", () => {
   assert.equal(moveBarFit({ near: 340, top: 460, lift: 26, across: { room: 1200, perH: 8, fixed: 24 } }).h, 80, "room enough: as tall as before");
   assert.equal(moveBarFit({ near: 340, top: 460, lift: 26, across: { room: 200, perH: 8, fixed: 24 } }).h, 32, "never less than 32 to fit");
 });
+
+// The user: "put the action buttons (take, build, trail) on a layer lower
+// than the cards so that they do not occlude the cards." Each card that
+// crosses the move bar on the screen is cut out of it (a mask, so cards
+// that overlap still both show), and a tap there is the card's.
+test("the move bar's mask: the cards that cross it cut out of it, and a tap in one is the card's", async () => {
+  const { barMask, pointIn } = await import("../src/selection.js");
+  const bar = { left: 100, top: 400, width: 300, height: 50 };
+  const square = (x, y, s = 40) => [{ x, y }, { x: x + s, y }, { x: x + s, y: y + s }, { x, y: y + s }];
+  assert.equal(barMask(bar, [square(0, 0), square(500, 400)]), null, "no card on the bar: no mask");
+  const m = barMask(bar, [square(0, 0), square(150, 380), square(170, 390)]);
+  assert.equal(m.holes.length, 2, "only the cards that cross it");
+  assert.match(m.svg, /<mask/);
+  assert.match(m.svg, /width="300" height="50"/);
+  // Its points in the bar's own place: the first card from (50, -20).
+  assert.match(m.svg, /50,-20 90,-20 90,20 50,20/);
+  assert.ok(pointIn(m.holes[0], 160, 410));
+  assert.ok(!pointIn(m.holes[0], 260, 410));
+});

@@ -194,3 +194,43 @@ export function sweepWarning(chips) {
   const unseen = c.leaves.unseen === 1 ? "1 you have not seen" : `${c.leaves.unseen} you have not seen`;
   return `${c.label} leaves a sweep: ${valuesSaid(c.leaves.values)} would clear the table, and ${unseen}.`;
 }
+
+// The move bar under the cards (the user: "put the action buttons ... on a
+// layer lower than the cards so that they do not occlude the cards"). The
+// bar is drawn over the table, so each card that crosses it on the screen
+// is cut out of it: `polys`, each card's outline on the screen; `bar`, its
+// box ({ left, top, width, height }). Null if no card crosses it; else
+// `svg`, an image as large as the bar, opaque but where the cards are,
+// for its mask (a mask, so that cards overlapping each other are both cut
+// out), and `holes`, the cards that cross it, for a tap there to be the
+// card's (pointIn).
+export function barMask(bar, polys) {
+  const right = bar.left + bar.width;
+  const bottom = bar.top + bar.height;
+  const holes = polys.filter((poly) => {
+    const xs = poly.map((p) => p.x);
+    const ys = poly.map((p) => p.y);
+    return Math.max(...xs) > bar.left && Math.min(...xs) < right && Math.max(...ys) > bar.top && Math.min(...ys) < bottom;
+  });
+  if (!holes.length) return null;
+  const at = (n) => Math.round(n * 10) / 10;
+  const shapes = holes.map((poly) => `<polygon points="${poly.map((p) => `${at(p.x - bar.left)},${at(p.y - bar.top)}`).join(" ")}"/>`).join("");
+  const w = at(bar.width);
+  const h = at(bar.height);
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">` +
+    `<mask id="m"><rect width="${w}" height="${h}" fill="white"/><g fill="black">${shapes}</g></mask>` +
+    `<rect width="${w}" height="${h}" fill="white" mask="url(#m)"/></svg>`;
+  return { svg, holes };
+}
+
+// Whether a point lies in a polygon (its corners in order).
+export function pointIn(poly, x, y) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i];
+    const b = poly[j];
+    if (a.y > y !== b.y > y && x < ((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x) inside = !inside;
+  }
+  return inside;
+}
