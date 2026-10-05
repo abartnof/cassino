@@ -1150,11 +1150,14 @@ def check_hud_room(browser, failures):
         if not scrolls and viewport["height"] < 700:
             failures.append(f"hud {where}: {hands} hands' ledger does not scroll on a short window")
         shot(page, f"t4-hud-room-{where}")
-        # The next hand dealt, the ledger still open: it lies over the move
-        # bar, not under it (the user: "the action buttons occlude the hud
+        # The next hand dealt, the ledger open: it lies over the move bar,
+        # not under it (the user: "the action buttons occlude the hud
         # when the hud is opened").
         page.locator("md-filled-button.next").click()
         settle(page)
+        # (Next hand, a tap outside the score, folded it: open it again.)
+        if not page.locator(".hud.open").count():
+            page.locator(".hud-chev").click()
         page.wait_for_timeout(1500)
         under = page.evaluate("""() => {
           const hud = document.querySelector('.hud').getBoundingClientRect();
@@ -1170,6 +1173,17 @@ def check_hud_room(browser, failures):
         }""")
         if under:
             failures.append(f"hud {where}: the move bar's {under} lie over the open score")
+        # A tap outside the open score folds it (the user: "if the scoring
+        # heads up display is extended, and you click outside of it, it
+        # should automatically retract").
+        if not page.locator(".hud.open").count():
+            failures.append(f"hud {where}: the score was not open to fold")
+        # The prompt's line: never under the score (hudRoom stops it above).
+        line = page.locator(".controls .prompt").bounding_box()
+        page.mouse.click(line["x"] + line["width"] / 2, line["y"] + line["height"] / 2)
+        page.wait_for_timeout(800)
+        if page.locator(".hud.open").count():
+            failures.append(f"hud {where}: a tap outside the open score did not fold it")
         if page.errors:
             failures.append(f"hud {where}: console errors {page.errors[:3]}")
         context.close()

@@ -401,7 +401,9 @@ Material Design 3, from piquet's shell.
     table it stops above the trackers' drawer at the foot of the left,
     upright above the controls with the aids' panel under it. Open, it lies
     over the table, which is not framed again for it ("The hud shouldn't
-    shrink everything, it should just overlap it");
+    shrink everything, it should just overlap it"), and folds at a tap
+    anywhere else ("if the scoring heads up display is extended, and you
+    click outside of it, it should automatically retract");
   - three springs, sampled for CSS `linear()`: fast spatial (damping 0.6,
     stiffness 800), default spatial (0.75, 380), effects (1.0, 1600).
     Reduced motion collapses every duration.

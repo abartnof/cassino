@@ -207,3 +207,24 @@ test("the ledger's list: all its hands where there is room, and no taller than t
   assert.equal(listHeight(0, 600), 0);
   assert.equal(listHeight(9, Infinity), 9 * HAND_H, "unmeasured: the whole of it");
 });
+
+// The user: "if the scoring heads up display is extended, and you click
+// outside of it, it should automatically retract." The page folds it
+// (main.js); folding says so, as the chevron does, and folding it folded
+// does nothing.
+test("the widget folds when the page asks, as the chevron would", async () => {
+  globalThis.document = { createElement: (tag) => new FakeElement(tag) };
+  const { createHud } = await import("../src/hud.js");
+  const told = [];
+  const hud = createHud(new FakeElement("div"), { onToggle: (open) => told.push(open) });
+  hud.reset({ hands: [], live: blank() });
+  assert.equal(hud.isOpen(), false);
+  hud.fold();
+  assert.deepEqual(told, [], "folded already: nothing");
+  hud.setOpen(true);
+  assert.equal(hud.isOpen(), true);
+  hud.fold();
+  assert.equal(hud.isOpen(), false);
+  assert.deepEqual(told, [true, false]);
+  delete globalThis.document;
+});

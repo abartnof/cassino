@@ -294,14 +294,20 @@ export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms), onTogg
     if (panel.style.height !== height) panel.style.height = height;
   }
 
-  chevron.addEventListener("click", () => {
-    open = !open;
+  // The ledger opened or folded: by the chevron, or folded by the page
+  // when you tap anywhere else (the user: "if the scoring heads up display
+  // is extended, and you click outside of it, it should automatically
+  // retract").
+  function setOpen(next) {
+    if (next === open) return;
+    open = next;
     hud.classList.toggle("open", open);
     chevron.setAttribute("aria-expanded", String(open));
     chevron.setAttribute("aria-label", open ? "Hide hand-by-hand scores" : "Show hand-by-hand scores");
     onToggle(open);
     drawList();
-  });
+  }
+  chevron.addEventListener("click", () => setOpen(!open));
 
   // One scoring event, played out: the bars ripple at once, the popup rolls
   // in over the score while the number ticks up beneath it, and the score
@@ -402,5 +408,8 @@ export function createHud(root, { later = (ms, fn) => setTimeout(fn, ms), onTogg
     // The room changed (the window, the drawer under the score): the
     // ledger sized again.
     fit,
+    setOpen,
+    fold: () => setOpen(false),
+    isOpen: () => open,
   };
 }

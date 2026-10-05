@@ -169,6 +169,17 @@ async function main() {
   });
 
   const hud = createHud(overlay.hudSlot, { later: (ms, fn) => director.at(ms, fn), onToggle: (open) => overlay.setScoreOpen(open), room: () => hudRoom() });
+  // The score's ledger, open, folds at a tap anywhere but on it (or on the
+  // aids' panel that opens with it upright); the tap still does what it
+  // does there (the user: "if the scoring heads up display is extended, and
+  // you click outside of it, it should automatically retract").
+  document.addEventListener(
+    "pointerdown",
+    (e) => {
+      if (hud.isOpen() && !(e.target instanceof Element && e.target.closest(".info, .aids-panel, .tip"))) hud.fold();
+    },
+    true,
+  );
   const seats = () => (state.watching ? { you: "South", them: "North" } : { you: "You", them: "Opp" });
   // The HUD and the panel's names, shown at once from the state -- or, as a
   // game opens, from its deal (`upTo`: the events seen so far), so nothing
