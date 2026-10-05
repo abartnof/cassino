@@ -454,7 +454,9 @@ Material Design 3, from piquet's shell.
   "I want Royal Casino on the left and to be the default. Casino is the
   variant and on the right"), aces 1 or 14, sweeps,
   raising builds, the skill dial (1 to 4 in halves) and the match (one
-  game, or a World Series: the best of seven, `series.js`); Deal starts the
+  game, or a World Series: the best of seven, `series.js`); Royal's aces 1
+  or 14 on by default (the user: "Aces being high or low should be
+  selected by default"); Deal starts the
   game with them, Today's deal (seeded from the date) and Watch a game
   likewise, and Cancel changes nothing. The menu starts from the game on
   the table, played or finished, its rules and skill as the engine has
@@ -553,7 +555,8 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   window and this is two ... why don't you just put tutorial mode as an
   option within the new game config?") the page opens on the new game's
   menu itself (`chrome.js` `showNewGame`, `opening`), the tutorial a
-  switch in it, turned on there from its first page, and Continue beside
+  switch in it, near its end since most players never need it (the
+  user), turned on there from its first page, and Continue beside
   Deal with a game kept; the settings no longer have the tutorial's
   switch. With no game kept, the table is held at the pack behind it, as a
   tutorial page holds it, so nothing is dealt or said until the choice. A

@@ -33,7 +33,7 @@ test("storage that throws, or holds nonsense, gives the defaults and never fails
   assert.equal(p.skill, DEFAULTS.skill);
   assert.equal(p.speed, DEFAULTS.speed);
   assert.equal(p.rules.game, DEFAULTS.rules.game);
-  assert.equal(p.rules.aces14, false, "aces 1 or 14 off unless chosen");
+  assert.equal(p.rules.aces14, DEFAULTS.rules.aces14, "aces 1 or 14 as the default has it");
 });
 
 test("the scoring board is gone: a setting kept for it is forgotten", () => {
@@ -69,7 +69,7 @@ test("sweeps are off by default; the old default kept before then is not a choic
   const store = memory();
   // Kept before the default changed: every setting was saved, defaults too.
   store.setItem("cassino.prefs", JSON.stringify({ rules: { game: "royal", aces14: false, sweeps: true }, skill: 2 }));
-  assert.deepEqual(loadPrefs(store).rules, { game: "royal", aces14: false, sweeps: false, raising: true });
+  assert.deepEqual(loadPrefs(store).rules, { game: "royal", aces14: true, sweeps: false, raising: true }, "the aces kept before then, the old default too");
   assert.equal(loadPrefs(store).skill, 2, "the rest kept as it was");
   // Chosen since: kept.
   savePrefs(store, { ...loadPrefs(store), rules: { game: "classic", aces14: false, sweeps: true } });
@@ -247,4 +247,19 @@ test("left-handed: off by default, and kept when on", () => {
   const store = memory();
   savePrefs(store, { ...DEFAULTS, leftHanded: true });
   assert.equal(loadPrefs(store).leftHanded, true);
+});
+
+// The user: "Aces being high or low should be selected by default." Royal's
+// aces count 1 or 14 unless chosen otherwise; kept under the old default
+// (before version 5) it is not taken for a choice. Plain Cassino has no
+// such aces, whatever the address or the settings kept say.
+test("aces 1 or 14 on by default, with Royal; never with plain Cassino", () => {
+  assert.equal(DEFAULTS.rules.aces14, true);
+  const store = memory();
+  store.setItem("cassino.prefs", JSON.stringify({ rules: { game: "royal", aces14: false, sweeps: false, raising: true }, v: 4 }));
+  assert.equal(loadPrefs(store).rules.aces14, true, "the old default is not a choice");
+  savePrefs(store, { ...DEFAULTS, rules: { ...DEFAULTS.rules, aces14: false } });
+  assert.equal(loadPrefs(store).rules.aces14, false, "chosen since, it is kept");
+  assert.equal(withUrl(DEFAULTS, new URLSearchParams("game=classic")).rules.aces14, false);
+  assert.equal(chooseGame(DEFAULTS, { format: "single" }, { rules: { game: "classic", aces14: true }, skill: 3, match: "single" }).patch.rules.aces14, false);
 });

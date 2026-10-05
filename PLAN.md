@@ -230,7 +230,8 @@ legal move. RULES.md now says each held card answers for one build value.
   half the moves, a capture two in five, a build one in ten): Build, Take,
   Trail, the most used under a right thumb; a "Left-handed" setting turns
   it round. And the bar under the cards: each card crossing it cut out of
-  it as it is drawn, a tap there the card's.
+  it as it is drawn, a tap there the card's. The tutorial near the end of
+  the new game's menu; Royal's aces 1 or 14 on by default.
   On a phone or a tablet your hand is a row spaced wide, not a fan, lying
   just off the table so that its cards are the table's size, and the
   field closes in: on an iPad held upright the table's cards from 100 to
@@ -262,7 +263,7 @@ legal move. RULES.md now says each held card answers for one build value.
 | Decision | Choice | Reasoning |
 |---|---|---|
 | The games | Two-player **Classic** and **Royal** Cassino, chosen at the start; Royal the table's default since the seventh play-testing (the terminal's stays Classic) | the user; `RULES.md` |
-| Settings | "Aces count 1 or 14" (Royal only, off), "Score sweeps" (off since the first play-testing) and "Raise builds" (on; a choice since the fifth) | `RULES.md`, "Authority" |
+| Settings | "Aces count 1 or 14" (Royal only; on by default since the seventh play-testing), "Score sweeps" (off since the first play-testing) and "Raise builds" (on; a choice since the fifth) | `RULES.md`, "Authority" |
 | Rule authority | pagat.com, Casino and Royal Casino | `RULES.md` |
 | Language | **Rust from the first line**; no Python oracle | `DESIGN.md` §4 |
 | What replaces the oracle | A brute-force reference move generator, the worked examples, invariants | `DESIGN.md` §4, §13 |

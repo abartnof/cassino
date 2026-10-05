@@ -405,11 +405,13 @@ def check_new_game(browser, failures):
     page.wait_for_function("!document.querySelector('.new-game-dialog').open")
     if page.evaluate("window.cassino3d.state().saved") != before or page.evaluate("window.cassino3d.prefs().rules.game") != "royal":
         failures.append("new game: the menu put aside changed the game or the next one's rules")
-    # Royal, aces 1 or 14, no raising: dealt so.
+    # Royal, its aces 1 or 14 already on (the user: "Aces being high or
+    # low should be selected by default"), no raising: dealt so.
     page.locator("md-icon-button.new-game").click()
+    if not page.evaluate("document.querySelector('.new-game-dialog md-switch[data-rule=\"aces14\"]').selected"):
+        failures.append("new game: Royal's aces 1 or 14 not on by default")
 
     def royal(d):
-        d.locator('md-switch[data-rule="aces14"]').click()
         d.locator('md-switch[data-rule="raising"]').click()
 
     deal_from_menu(page, royal)

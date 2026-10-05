@@ -16,7 +16,7 @@ import "@material/web/select/select-option.js";
 import "@material/web/switch/switch.js";
 import "@material/web/labs/segmentedbutton/outlined-segmented-button.js";
 import "@material/web/labs/segmentedbuttonset/outlined-segmented-button-set.js";
-import { SKILLS, SPEEDS, badgesOn, gameSaid } from "./prefs.js";
+import { DEFAULTS, SKILLS, SPEEDS, badgesOn, gameSaid } from "./prefs.js";
 import { PATTERNS } from "./surfaces.js";
 
 // Simple stroked icons, piquet's, drawn for its page.
@@ -196,7 +196,8 @@ export function createChrome(root, on) {
     };
     gameSet.addEventListener("segmented-button-set-selection", (e) => {
       const game = e.detail.button.dataset.game;
-      rules = { ...rules, game, aces14: game === "royal" && rules.aces14 };
+      // To Royal from plain Cassino, its aces as the default has them.
+      rules = { ...rules, game, aces14: game === "royal" && (rules.game === "royal" ? rules.aces14 : DEFAULTS.rules.aces14) };
       drawRules();
     });
     const pick = (kind) => () => {
@@ -212,13 +213,14 @@ export function createChrome(root, on) {
         "div",
         { slot: "content", class: "settings new-game" },
         welcome,
-        row("Tutorial", "New to the game? Each idea explained the first time it comes up, and every build's value shown", tutorialSwitch),
         gameSet,
         gameWords,
         row("Aces count 1 or 14", "Royal: an ace in your hand takes as one or as fourteen", aces),
         row("Score sweeps", "A point for each capture that clears the table", sweeps),
         row("Raise builds", "A card from your hand may raise a build to a higher total, yours or your opponent's", raising),
         el("div", { class: "selects" }, skill, match),
+        // Near the end: most players never need it (the user).
+        row("Tutorial", "New to the game? Each idea explained the first time it comes up, and every build's value shown", tutorialSwitch),
         el(
           "div",
           { class: "starts" },

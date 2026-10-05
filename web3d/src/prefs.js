@@ -8,9 +8,9 @@
 const PREFS = "cassino.prefs";
 // What is kept is every setting, defaults too: the version says which
 // defaults it was kept under, so a default changed since (sweeps, version
-// 2; the trackers' panel folded, 3; Royal Cassino the game, 4) is not
-// taken for the person's choice.
-const VERSION = 4;
+// 2; the trackers' panel folded, 3; Royal Cassino the game, 4; Royal's
+// aces 1 or 14, 5) is not taken for the person's choice.
+const VERSION = 5;
 const SITTING = "cassino.sitting";
 const SERIES = "cassino.series";
 
@@ -21,7 +21,9 @@ export const DEFAULTS = Object.freeze({
   // Royal Cassino the game unless plain Cassino, the variant, is chosen
   // (the user: "I want Royal Casino on the left and to be the default.
   // Casino is the variant and on the right").
-  rules: Object.freeze({ game: "royal", aces14: false, sweeps: false, raising: true }),
+  // Its aces 1 or 14, unless chosen otherwise (the user: "Aces being high
+  // or low should be selected by default").
+  rules: Object.freeze({ game: "royal", aces14: true, sweeps: false, raising: true }),
   skill: 3,
   speed: 1,
   surface: "random",
@@ -106,7 +108,7 @@ export function loadPrefs(store) {
   return {
     rules: {
       game,
-      aces14: game === "royal" && r.aces14 === true,
+      aces14: game === "royal" && (isBool(r.aces14) && kept.v >= 5 ? r.aces14 : DEFAULTS.rules.aces14),
       sweeps: isBool(r.sweeps) && kept.v >= 2 ? r.sweeps : DEFAULTS.rules.sweeps,
       raising: isBool(r.raising) ? r.raising : DEFAULTS.rules.raising,
     },
@@ -142,7 +144,10 @@ export function savePrefs(store, prefs) {
 export function withUrl(prefs, params) {
   const out = { ...prefs, rules: { ...prefs.rules } };
   if (params.has("game")) out.rules.game = params.get("game") === "royal" ? "royal" : "classic";
-  if (params.has("aces14")) out.rules.aces14 = out.rules.game === "royal";
+  if (params.has("aces14")) out.rules.aces14 = true;
+  if (params.has("noaces14")) out.rules.aces14 = false;
+  // Aces 1 or 14 is Royal's alone.
+  out.rules.aces14 = out.rules.game === "royal" && out.rules.aces14;
   if (params.has("sweeps")) out.rules.sweeps = true;
   if (params.has("nosweeps")) out.rules.sweeps = false;
   if (params.has("noraise")) out.rules.raising = false;
