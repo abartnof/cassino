@@ -371,7 +371,10 @@ async function main() {
     sel = EMPTY;
     offer = null;
     badgeFrom = before;
-    const said = dialogue.words(heard(speech(state, before.events.length), prefs.talk));
+    // Kept waiting over this move, and told so: your opponent follows it up.
+    const waited = waitedOn !== null && waitedOn === before.saved;
+    waitedOn = null;
+    const said = dialogue.words(heard(speech(state, before.events.length, { waited }), prefs.talk));
     // The count paced by the score's popups, which tell it (nothing is said
     // then: the sixth play-testing).
     const scored = state.events.slice(before.events.length).find((e) => e.kind === "scored");
@@ -465,6 +468,7 @@ async function main() {
   // the wall's clock (a line queued on the table's would keep it drawing
   // while you think), and not while the table is held or the page hidden.
   let idleTimer = null;
+  let waitedOn = null; // the position your opponent remarked waiting on
   function waitOnYou() {
     clearTimeout(idleTimer);
     if (state.prompt !== "play" || state.watching || prefs.talk !== "all") return;
@@ -472,6 +476,7 @@ async function main() {
     idleTimer = setTimeout(() => {
       if (state.saved !== position || state.prompt !== "play" || prefs.talk !== "all") return;
       if (document.hidden || director.held() || director.gatePending() || chrome.tutorialOpen() || director.busy()) return;
+      waitedOn = position;
       dialogue.say([{ who: "them", phrase: "idle", delay: 0, chatter: true }], (line, words, ms) =>
         director.at(ms, () => overlay.say(line.who, words, speakerAt(line.who)), "talk"),
       );

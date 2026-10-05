@@ -4,7 +4,8 @@ Every phrase the dialogue boxes say, each in the ways it is said, so
 that nothing is said the same way twice running. Generated from the
 bank in `web3d/tools/phrases.py`; edit the bank, not this file. The
 source IDs in brackets are the literature review's
-(`cassino-lit-review.md`, Appendix B).
+(`cassino-lit-review.md`, Appendix B), and, for 13-S, the note on
+card-table banter in the period books (`research/13-table-banter.md`).
 
 Sources:
 
@@ -44,6 +45,40 @@ Sources:
 - **Da**: a strategy blog reasoning aloud from what an opponent did: "he must not have a Ten" [08-S37]
 - **Ol**: a letter of 1804: cassino played "very much at our leisure" [04-S45]
 - **It**: the Italian table's "Tocca a te" (your turn) [05-S50]
+- **Pp**: Pope, The Rape of the Lock, canto III (1714): "swept the board", "On one nice Trick depends the gen'ral fate", "Now to the Baron fate inclines the field", "Too soon dejected, and too soon elate", "Sad chance of war!" [13-S1]
+- **Au**: Austen: The Watsons (c. 1804), "he lets nobody dream over their cards"; Pride and Prejudice (1813), Mr. Collins "apologizing if he thought he won too many"; Mansfield Park (1814), "The game will be yours", "No cold prudence for me", "with my usual luck" [13-S3][13-S4][13-S5]
+- **Lm**: Lamb, "Mrs. Battle's Opinions on Whist" (1821): "A clear fire, a clean hearth, and the rigour of the game", "cards were cards", "a long meal", "She fought a good fight: cut and thrust", "great battling, and little bloodshed", those who "play at playing", one who "neither showed you her cards, nor desired to see yours" [13-S6]
+- **Dc**: Dickens: Pickwick (1836-37), "Never was such luck", "Never was such cards", "the cards were against him", "you're a trump"; Nickleby (1838-39), "We have all the talking to ourselves", "I never had such luck, really", "We intend to win everything", "gains may be great"; The Old Curiosity Shop (1840-41), "many hundred thousand games of cribbage"; Dombey and Son (1846-48), "heave ahead" [13-S7][13-S8][13-S9][13-S10]
+- **Tr**: Trollope: The Warden (1855), "thrice has constant fortune favoured", one who "counts all his suits"; The Way We Live Now (1875), "I never saw a fellow have such a run of luck", "one run of luck" [13-S13][13-S18]
+- **Mt**: Mark Twain: "Science vs. Luck" (c. 1867), "I call it a game of science!"; Roughing It (1872), "I'll have to pass, I judge", "you've ruther got the bulge on me" [13-S14][13-S17]
+- **Bh**: Bret Harte (1868-70): "Luck ... is bound to change", "start him fair" [13-S15]; and "I am throwing my cards on the table" (1885), as Farmer & Henley quote it [13-S53]
+- **Et**: George Eliot, Middlemarch (1871-72): "Come now, let us be serious!", "no reason why the renewal of rubbers should end" [13-S16]
+- **Bn**: E. F. Benson, Miss Mapp (1922): "All those shillings mine? Fancy!", "in a friendly game like this", "O poor little me" [13-S22]
+- **Cv**: Cavendish, Card-Table Talk (1879): "Play the one nearest your thumb", "not slow ... deliberate", Clay's "the cards must lie lucky"; and Seymour's "Talking is not allowed at Whist", in Cavendish (1889) [13-S28][13-S37]
+- **Fo**: R. F. Foster: Practical Poker (1905), "Just my luck", walking "three times round the chair", "jolly the game along", "the man who sees everything and says nothing"; Foster's Complete Hoyle (1914), "If you hads", "cheerful lies about their hands", "Fluke", "they have been lucky up to that time" [13-S41][13-S44]
+- **El**: Elwell, Bridge Axioms (1907): "Luck is a false friend", "He who plays the best talks the least", "the expert thinks before he plays" [13-S42]
+- **Ps**: Emily Post (1922): "a cheerful loser, a quiet winner"; "tranquil and cheerful even though you hold nothing but yarboroughs" [13-S45]
+- **Sf**: Swift, Polite Conversation (1738): "you have such good Luck at Cards", "my Right Hand itches", "a long Evening at Play" [13-S46]
+- **Gr**: Grose (1811): "Something may turn up trumps", "All his cards are trumps", "He studies the history of the four kings" [13-S48]
+- **Cb**: Crabbe (1819): "The game is never lost till won" [13-S49]
+- **Lw**: Lowsley, Whist of the Future (1898): "the cards resented grumbling", "a turning point ahead", "the information such hesitation conveys" [13-S55]
+- **Hn**: Hotten's Slang Dictionary (1874): a run of luck "very BEEFY" [13-S52]
+- **FH**: Farmer & Henley (1891), quoting Scott (1826): "No card seemed to turn up favourable" [13-S53]
+- **Ug**: "Uncle George" (1883): "talkative players, or those who talk for a purpose"; "two or three hands would bring back all of your losing" [13-S34]
+- **Kl**: Keller (1887): "Never exult in victory"; a time "when it is impossible to win a pot" [13-S35]
+- **Cu**: Curtis (1901): "no run of luck can be expected to continue indefinitely" [13-S40]
+- **Pb**: "Pembridge" (1880, 1895): players who grumble in the belief "it will bring them luck" [13-S38]
+- **Gs**: The Habits of Good Society (1859): "Lose without a murmur, win without triumph" [13-S25]
+- **Dh**: Dick's American Hoyle (1864), cribbage: "Be careful, watchful, and steady" [13-S26]
+- **Tl**: The Tatler (1831), a charming whist player: "I never speak when I play" [13-S50]
+- **Sk**: Schenck (1880): success in the game is "good luck; good cards; plenty of cheek; and good temper" [13-S29]
+- **Gt**: the Gettysburg Times (1926): "Deal me in!" [13-S64]
+- **Lc**: Lessons in Citizenship (1921), a good loser: "I hope I'll beat you next time" [13-S63]
+- **Od**: Our Deportment (1881): "Never hurry any one who is playing" [13-S33]
+- **Pe**: Pettes (1881): "Well, play something"; whist and talk, like turning "somersaults" [13-S30]
+- **Bs**: "Bob Short" (1791): "When in doubt win the trick" [13-S47]
+- **Ct**: Cooke (1896): "nor undue exultation at winning" [13-S39]
+- **Pl**: Pole (1889): "keep your eyes on the table" [13-S36]
 - **T**: the table's own
 - **Pt**: play-testing: a line asked for word for word
 
@@ -357,6 +392,7 @@ Sources:
 |  | Swept clean! | Ru |
 |  | The table's clear. | T |
 |  | Scopa! | Sc |
+|  | Swept the board! | Pp |
 | `cash` | Cash. | P |
 |  | Cash! | T |
 |  | An ace for an ace. | T |
@@ -479,6 +515,7 @@ Sources:
 |  | There was more for you there. | T |
 |  | A few were left behind. | Do |
 |  | There were more to take. | T |
+|  | No 'if you hads' from me. But still. | Fo |
 | `residue` | And the rest are mine. | T |
 |  | The last cards come to me. | T |
 |  | I'll take what's left. | T |
@@ -491,6 +528,11 @@ Sources:
 |  | Well done. | T |
 |  | Nicely played. | T |
 |  | A good game. Thank you. | T |
+|  | A good fight. Cut and thrust. | Lm |
+|  | Great battling, little bloodshed. | Lm |
+|  | You're a trump. | Dc |
+|  | Congratulations! I'll get you next time. | Lc |
+|  | Cheerful in defeat, as they say. | Ps |
 | `quite-normal` | You are quite normal. | Pt |
 | `new-hand` | New hand. | T |
 |  | Fresh cards. | T |
@@ -546,6 +588,7 @@ Sources:
 |  | That {card} didn't stay long. | T |
 |  | Your {card} comes in handy. | T |
 |  | The {card}? I'll have it. | T |
+|  | It's all thanks to you, I think. | Dc |
 | `trail-ace` | Ace, you won't fall on me. | Ec |
 |  | An ace, and I'll risk it. | T |
 |  | I'll let an ace go. | T |
@@ -596,6 +639,7 @@ Sources:
 |  | Hey, that was mine! | T |
 |  | Oh, you rascal! | T |
 |  | Well spotted. | T |
+|  | In a friendly game like this? | Bn |
 | `raised-mine` | Hey, that was my {old}! | T |
 |  | {Value} now? Clever. | T |
 |  | You've raised my build! | T |
@@ -644,6 +688,7 @@ Sources:
 |  | Ah, the good ten. | P |
 |  | Two points, just like that. | T |
 |  | Everyone was after that one. | Rd |
+|  | Sad chance of war! | Pp |
 | `little-casino-gone` | There goes the little one. | T |
 |  | Ah, the deuce of spades. | T |
 |  | A point for you. | T |
@@ -669,12 +714,15 @@ Sources:
 |  | Cards in hand aren't yours till taken. | Bg |
 |  | Tocca a me. My turn. | It |
 |  | Hmm, what to do. | T |
+|  | Oh, poor little me, is it? | Bn |
 | `think-take` | With this one, I'll fall on you. | Ec |
 |  | Aha. | T |
 |  | I think I see something. | T |
 |  | Now, what have we here? | T |
 |  | Oh, I like this. | T |
 |  | Wait, wait. Yes. | T |
+|  | When in doubt, take it. | Bs |
+|  | My right hand itches. Good sign! | Sf |
 | `idle` | Take your time. | T |
 |  | No hurry. | T |
 |  | At your leisure. | Ol |
@@ -683,3 +731,119 @@ Sources:
 |  | Thinking it over? | T |
 |  | Whenever you're ready. | T |
 |  | A tough one? | T |
+|  | No dreaming over your cards! | Au |
+|  | Play the one nearest your thumb! | Cv |
+|  | Whenever you're ready, heave ahead. | Dc |
+|  | Take your own time. I insist. | Od |
+| `game-start` | A clean table, and the rigour of the game. | Lm |
+|  | Come now, let us be serious! | Et |
+|  | Good luck, good cards, plenty of cheek. | Sk |
+|  | Deal me in! | Gt |
+|  | A fresh deal all round. Start fair. | Bh |
+|  | Gains may be great. So may losses. | Dc |
+| `rib-no-builds` | No builds in a while! | T |
+|  | Playing, or only playing at playing? | Lm |
+|  | Saving your builds for later? | T |
+|  | All pairs and trails, I see. | T |
+|  | Small cards, no builds, still smiling! | Ps |
+|  | A builder's game, this. Just saying. | T |
+| `rib-trails` | Another for the table? Generous! | T |
+|  | Trumps may turn up yet. | Gr |
+|  | Are you sandbagging me? | T |
+|  | Laying them all down, are we? | T |
+|  | You're feeding me nicely. | T |
+|  | Some hands, nothing comes. Patience. | Kl |
+| `own-dry-spell` | I'll have to pass, I judge. | Mt |
+|  | Just my luck. | Fo |
+|  | If I grumble enough, luck will turn. | Pb |
+|  | Shall I walk three times round my chair? | Fo |
+|  | No grumbling. The cards resent it. | Lw |
+|  | Cards on the table: I'm stuck. | Bh |
+|  | No card turns up for me. | FH |
+| `rib-streak` | Three running. Fortune favours you. | Tr |
+|  | That's a beefy run of luck! | Hn |
+|  | Lucky at cards today, aren't you? | Sf |
+|  | No run lasts forever, they say. | Cu |
+|  | Another? You're on a run. | T |
+| `own-streak` | I never had such luck, really! | Dc |
+|  | My usual luck! | Au |
+|  | Pure fluke. I'll take it, though. | Fo |
+|  | Couldn't play it better, I flatter myself. | Dc |
+|  | All those cards mine? Fancy! | Bn |
+| `sweep-again` | Never was such luck! | Dc |
+|  | Never were such cards! | Dc |
+|  | Again? Such good luck at cards! | Sf |
+|  | All your cards are trumps today. | Gr |
+|  | Swept again! What a hand. | T |
+| `both-cassinos` | Both Cassinos! Lucky at cards today. | Sf |
+|  | The big one and the little one, both! | Sw |
+|  | Both of them? Never was such luck! | Dc |
+|  | Three points of Cassinos. Well done. | T |
+|  | Both Cassinos to you. Fancy! | Bn |
+| `counting-you` | Counting all your suits, are you? | Tr |
+|  | Studying the history of the four kings? | Gr |
+|  | Sees everything, says nothing. I'm nervous. | Fo |
+|  | I won't ask to see your cards. | Lm |
+|  | Eyes on the table, as the books say. | Pl |
+| `score-ahead` | Sorry. I think I've won too many. | Au |
+|  | I intend to win everything. | Dc |
+|  | No crowing yet. Fortune kicks back. | Kl |
+|  | Luck? I call it a game of science! | Mt |
+|  | Win without triumph. I'm trying. | Gs |
+|  | Forgive my undue exultation. | Ct |
+| `score-behind` | The game will be yours, certainly. | Au |
+|  | You've got the bulge on me, partner. | Mt |
+|  | The cards are against me. | Dc |
+|  | I never saw such a run of luck! | Tr |
+|  | You've been lucky. So far. | Fo |
+|  | Luck's a fair-weather friend, you know. | El |
+| `score-close` | It all comes down to this hand. | Pp |
+|  | Never lost till it's won! | Cb |
+|  | Don't get nervous now. | T |
+|  | Careful, watchful, steady. Here we go. | Dh |
+|  | The cards must lie lucky now. | Cv |
+|  | I do love a determined opponent. | Lm |
+| `score-comeback-you` | Now fate leans your way. | Pp |
+|  | There, you see? Luck changes. | Bh |
+|  | Too soon down, too soon up. | Pp |
+|  | A good hand or two, and you're even. | Ug |
+|  | Your turning point, was it? | Lw |
+| `score-comeback-them` | Don't begrudge me one run of luck. | Tr |
+|  | No cold prudence for me! | Au |
+|  | Luck's bound to change, you know. | Bh |
+|  | My turning point, I think. | Lw |
+|  | Trumps turned up at last. | Gr |
+| `score-long` | A long meal, this game. | Lm |
+|  | No reason this should ever end. | Et |
+|  | A long evening at play, this. | Sf |
+|  | I could wish this lasted forever. | Lm |
+|  | Our hundred-thousandth game, I think. | Dc |
+| `take-offered` | You did say if I could take it! | T |
+|  | Don't mind if I do. | T |
+|  | As offered. Thank you kindly. | T |
+|  | Taken, as you said I might. | T |
+|  | I could, so I did. | T |
+| `take-back-raised` | Mine again, I think. | T |
+|  | Back where it belongs. | T |
+|  | You raised it for me. Thank you! | T |
+|  | And back it comes, bigger. | T |
+|  | Raised for me? How kind. | T |
+| `waited-take` | Worth the wait! | T |
+|  | Not slow. Deliberate. | Cv |
+|  | Thinking first: the expert's way. | El |
+|  | So that's what you were plotting. | T |
+|  | Patience rewarded. | T |
+| `waited-other` | All that thought, and there it is. | T |
+|  | Well, you played something! | Pe |
+|  | Hesitating? That tells me something. | Lw |
+|  | Deliberate, not slow. I know. | Cv |
+|  | Worth the thinking, I hope. | T |
+| `talkative` | I have all the talking to myself, it seems. | Dc |
+|  | Just jollying the game along. | Fo |
+|  | Good thing this isn't whist. | Cv |
+|  | Am I talking too much? On purpose? | Ug |
+|  | Pay no mind. Cheerful lies, mostly. | Fo |
+|  | But cards are cards. | Lm |
+|  | I never speak when I play. Ha! | Tl |
+|  | Best players talk least. Oh dear. | El |
+|  | Talk and play? Like turning somersaults. | Pe |

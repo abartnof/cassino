@@ -59,10 +59,10 @@ test("everything is said in several ways, the frequent moments in many", () => {
 test("the cut decides the deal, said as it is seen; then the house rules, as the cards are dealt", () => {
   const events = [{ kind: "cut", hand: 1 }, { kind: "first_dealer", hand: 1, you: true }, { kind: "dealt", hand: 1, deal: 1, last: false, you_deal: true }];
   const lines = speech(state(events));
-  assert.deepEqual(said(lines), ["them:low-deals", "them:your-deal", "them:sweeps-ask", "you:sweeps-yes"]);
-  assert.deepEqual(lines.map((l) => l.at), [1, 1, 2, 2], "with the cut cards seen, and as the deal begins");
+  assert.deepEqual(said(lines), ["them:low-deals", "them:your-deal", "them:sweeps-ask", "you:sweeps-yes", "them:game-start"]);
+  assert.deepEqual(lines.map((l) => l.at), [1, 1, 2, 2, 2], "with the cut cards seen, and as the deal begins");
   const royal = speech(state(events, { game: "royal", aces14: true, sweeps: false }));
-  assert.deepEqual(said(royal), ["them:low-deals", "them:your-deal", "them:sweeps-ask", "you:sweeps-no", "them:royal", "them:aces-14"]);
+  assert.deepEqual(said(royal), ["them:low-deals", "them:your-deal", "them:sweeps-ask", "you:sweeps-no", "them:royal", "them:aces-14", "them:game-start"]);
 });
 
 // Equal ranks cut again (docs/RULES.md §2): the engine tells each cut, and
@@ -71,7 +71,7 @@ test("a tied cut is cut again, and the house rules are not asked twice", () => {
   const cut = (yours, theirs) => ({ kind: "cut", hand: 1, yours: card(yours, Number(yours[0])), theirs: card(theirs, Number(theirs[0])) });
   const deal = { kind: "dealt", hand: 1, deal: 1, last: false, you_deal: true };
   const lines = speech(state([cut("5H", "5C"), cut("3D", "9S"), { kind: "first_dealer", hand: 1, you: true }, deal, { ...deal, deal: 2 }]));
-  assert.deepEqual(said(lines.filter((l) => l.phrase !== "deal-more")), ["them:cut-again", "them:low-deals", "them:your-deal", "them:sweeps-ask", "you:sweeps-yes"]);
+  assert.deepEqual(said(lines.filter((l) => l.phrase !== "deal-more")), ["them:cut-again", "them:low-deals", "them:your-deal", "them:sweeps-ask", "you:sweeps-yes", "them:game-start"]);
   assert.equal(lines[0].at, 0, "said as the equal cards are seen");
 });
 
@@ -502,5 +502,127 @@ test("over real games: every move says something, and every slot in the words is
       s = engine.step().state;
     }
     assert.deepEqual(quiet, [], "a move with nothing said");
+  }
+});
+
+// ---- the seventh play-testing: "add even more IF X then Y triggers. in
+// addition to textual if X then Y (i said X, then Y, so I'll follow up on
+// X), think about metatextual ones- you've been playing for a while with no
+// builds, so the opponent gently ribs you", from period books about card
+// play (research/13-table-banter.md), PG throughout. The talk revives how
+// the game was talked over, and keeps the player from quietly counting.
+
+const deal = (hand, dealt = 1, youDeal = false, last = false) => ({ kind: "dealt", hand, deal: dealt, last, you_deal: youDeal });
+const ends = (hand, yours, theirs, totals) => ({ kind: "hand_ends", hand, yours, theirs, totals });
+const trailBy = (you, code) => play(you, "trail", code);
+const pairBy = (you, code, taken) => play(you, "take", code, { value: c(code).rank, taken: [c(taken)], groups: [[c(taken)]] });
+
+test("a long while without a build of yours is ribbed: at your tenth move without one, and again at the twenty-second", () => {
+  const yours = (n) => Array.from({ length: n }, (_, i) => [trailBy(true, "23456789T"[i % 9] + "H"), trailBy(false, "23456789T"[i % 9] + "C")]).flat();
+  const ribs = (events) => only(speech(state(events)), ["rib-no-builds"]);
+  assert.deepEqual(ribs(yours(9)), []);
+  assert.deepEqual(ribs(yours(10)), ["them:rib-no-builds"]);
+  assert.deepEqual(ribs(yours(22)), ["them:rib-no-builds", "them:rib-no-builds"]);
+  // A build of yours starts the count again, across hands too.
+  const built = [...yours(6), play(true, "build", "5H", { value: 8, loose: [c("3S")] }), ...yours(9)];
+  assert.deepEqual(ribs(built), []);
+  assert.deepEqual(ribs([...yours(6), deal(2, 1), ...yours(4)]), ["them:rib-no-builds"], "the game's moves, not the hand's");
+});
+
+test("a fourth trail running is ribbed by the other player; your opponent's own is its dry spell", () => {
+  const run = [trailBy(true, "2H"), trailBy(false, "3C"), trailBy(true, "4H"), trailBy(false, "5C"), trailBy(true, "6H"), trailBy(false, "7C"), trailBy(true, "8H"), trailBy(false, "9C")];
+  const lines = speech(state(run));
+  assert.deepEqual(only(lines, ["rib-trails", "own-dry-spell", "trail-again"]), ["you:trail-again", "them:trail-again", "them:rib-trails", "them:own-dry-spell"]);
+  // Your opponent's fourth trail says its dry spell in place of a plain trail.
+  assert.deepEqual(chat(speech(state(run), 7)), ["them:own-dry-spell"]);
+});
+
+test("as a new hand is dealt, your opponent remarks on the score: far ahead or behind, a comeback, close near the end, a long game", () => {
+  const at = (before, totals, hand = 2) => only(speech(state([ends(hand - 1, totals.you - before.you, totals.them - before.them, totals), deal(hand, 1, false)])), (p) => p.startsWith("score-"));
+  assert.deepEqual(at({ you: 0, them: 0 }, { you: 2, them: 10 }), ["them:score-ahead"]);
+  assert.deepEqual(at({ you: 0, them: 0 }, { you: 10, them: 1 }), ["them:score-behind"]);
+  assert.deepEqual(at({ you: 4, them: 10 }, { you: 12, them: 13 }, 3), ["them:score-close"], "close near the end comes first");
+  assert.deepEqual(at({ you: 2, them: 9 }, { you: 10, them: 11 }), ["them:score-comeback-you"]);
+  assert.deepEqual(at({ you: 9, them: 2 }, { you: 11, them: 10 }), ["them:score-comeback-them"]);
+  assert.deepEqual(at({ you: 8, them: 6 }, { you: 11, them: 8 }, 4), ["them:score-long"]);
+  assert.deepEqual(at({ you: 0, them: 0 }, { you: 6, them: 5 }), [], "nothing to remark");
+  // Said by your opponent whoever deals; the dealer's "New hand." gives way
+  // when it is your opponent's deal.
+  const theirDeal = speech(state([ends(1, 2, 9, { you: 2, them: 9 }), deal(2, 1, false)]));
+  assert.deepEqual(chat(theirDeal), ["them:score-ahead"]);
+  const yourDeal = speech(state([ends(1, 2, 9, { you: 2, them: 9 }), deal(2, 1, true)]));
+  assert.deepEqual(chat(yourDeal), ["you:new-hand", "them:score-ahead"]);
+});
+
+test("the game opens with a word from your opponent, after the house rules", () => {
+  const lines = speech(state([deal(1, 1, true)]));
+  assert.deepEqual(said(lines), ["them:sweeps-ask", "you:sweeps-yes", "them:game-start"]);
+  assert.equal(lines.at(-1).chatter, true);
+});
+
+test("a Cassino trailed as 'a point, if you take it' and taken at once is answered for the offer", () => {
+  const lines = speech(state([trailBy(true, "2S"), play(false, "take", "2C", { value: 2, taken: [c("2S")], groups: [[c("2S")]] })]));
+  assert.deepEqual(chat(lines), ["you:trail-little-casino", "them:take-offered", "you:little-casino-gone"]);
+  const big = speech(state([trailBy(false, "TD"), play(true, "take", "TH", { value: 10, taken: [c("TD")], groups: [[c("TD")]] })]));
+  assert.deepEqual(chat(big), ["them:trail-big-casino", "you:take-offered", "them:big-casino-gone"]);
+});
+
+test("a build raised from under its builder and taken back by them is answered for it", () => {
+  const events = [
+    play(false, "build", "2C", { value: 6, build_kind: "new", loose: [c("4D")] }),
+    play(true, "build", "3H", { value: 9, build_kind: "raise", onto: c("2C"), loose: [] }),
+    play(false, "take", "9S", { value: 9, taken: [c("2C"), c("4D"), c("3H")], groups: [[c("2C"), c("4D"), c("3H")]] }),
+  ];
+  const lines = speech(state(events), 2);
+  assert.deepEqual(chat(lines), ["them:take-back-raised", "you:lost-build"]);
+});
+
+test("a second sweep in a hand, both Cassinos to one player, a run of three captures: each felt by the other", () => {
+  const sweep = (you, code) => [play(you, "take", code, { value: c(code).rank, taken: [c("5D")], groups: [[c("5D")]] }), { kind: "swept", hand: 1, you }];
+  const twice = speech(state([...sweep(true, "5C"), trailBy(false, "3D"), ...sweep(true, "3H")]));
+  assert.deepEqual(only(twice, ["sweep-reply", "sweep-again"]), ["them:sweep-reply", "them:sweep-again"]);
+  // A new hand starts the sweeps afresh.
+  assert.deepEqual(only(speech(state([...sweep(true, "5C"), deal(2, 1), ...sweep(true, "3H")])), ["sweep-reply", "sweep-again"]), ["them:sweep-reply", "them:sweep-reply"]);
+  const both = speech(state([pairBy(true, "TH", "TD"), trailBy(false, "4D"), pairBy(true, "2H", "2S")]));
+  assert.deepEqual(only(both, ["big-casino-gone", "little-casino-gone", "both-cassinos"]), ["them:big-casino-gone", "them:both-cassinos"]);
+  const streak = speech(state([pairBy(true, "4H", "4C"), trailBy(false, "9D"), pairBy(true, "5H", "5C"), trailBy(false, "8D"), pairBy(true, "6H", "6C")]));
+  assert.deepEqual(only(streak, ["rib-streak"]), ["them:rib-streak"]);
+  const theirs = speech(state([pairBy(false, "4H", "4C"), trailBy(true, "9D"), pairBy(false, "5H", "5C"), trailBy(true, "8D"), pairBy(false, "6H", "6C")]));
+  assert.deepEqual(only(theirs, ["own-streak", "take-pair"]).filter((l) => l.startsWith("them")), ["them:take-pair", "them:take-pair", "them:own-streak"]);
+});
+
+test("your clinch is answered: your opponent sees you counting", () => {
+  const lines = speech(state([pairBy(true, "4H", "4S"), { kind: "clinched", hand: 1, you: true, what: "spades" }]));
+  assert.deepEqual(only(lines, ["clinch-spades", "counting-you"]), ["you:clinch-spades", "them:counting-you"]);
+  assert.deepEqual(only(speech(state([pairBy(false, "4H", "4S"), { kind: "clinched", hand: 1, you: false, what: "cards" }])), ["counting-you"]), []);
+});
+
+test("kept waiting a while, your opponent follows up on your move: a capture, or anything else", () => {
+  const events = [trailBy(false, "3C"), pairBy(true, "3H", "3C"), trailBy(false, "5D")];
+  const followed = speech(state(events), 1, { waited: true });
+  assert.deepEqual(only(followed, (p) => p.startsWith("waited")), ["them:waited-take"]);
+  // Said with their move, before its own words, so a call there carries it.
+  const theirs = followed.filter((l) => l.at === 2).map((l) => l.phrase);
+  assert.equal(theirs[0], "waited-take");
+  assert.deepEqual(only(speech(state([trailBy(true, "8H")]), 0, { waited: true }), (p) => p.startsWith("waited")), ["them:waited-other"]);
+  assert.deepEqual(only(speech(state(events), 1), (p) => p.startsWith("waited")), [], "only when kept waiting");
+  // In place of your own remark on that move, so it has the room (your
+  // calls stay).
+  assert.deepEqual(chat(speech(state(events), 1, { waited: true })).filter((l) => l.startsWith("you")), []);
+  const build = speech(state([play(true, "build", "3H", { value: 8, build_kind: "new", loose: [c("5D")] })]), 0, { waited: true });
+  assert.deepEqual(said(build).filter((l) => l.startsWith("you")), ["you:build-8"]);
+});
+
+test("now and then your opponent remarks on its own talk", () => {
+  const events = Array.from({ length: 26 }, (_, i) => trailBy(i % 2 === 1, "23456789TJQK"[i % 12] + "SHDC"[i % 4]));
+  const lines = speech(state(events));
+  const talk = lines.filter((l) => l.phrase === "talkative");
+  assert.ok(talk.length >= 1 && talk.length <= 3, `${talk.length} remarks on the talk in 26 moves`);
+  for (const l of talk) assert.equal(l.who, "them");
+});
+
+test("the new remarks are said in several ways, kindly, each from the period books or the table's own", () => {
+  for (const group of ["rib-no-builds", "rib-trails", "own-dry-spell", "score-ahead", "score-behind", "score-close", "score-comeback-you", "score-comeback-them", "score-long", "game-start", "take-offered", "take-back-raised", "sweep-again", "both-cassinos", "rib-streak", "own-streak", "counting-you", "waited-take", "waited-other", "talkative"]) {
+    assert.ok((WORDS.groups[group] ?? []).length >= 4, `${group}: ${(WORDS.groups[group] ?? []).length} ways`);
   }
 });

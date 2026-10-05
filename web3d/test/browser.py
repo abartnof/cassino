@@ -618,6 +618,15 @@ def check_talk(browser, failures):
         failures.append(f"the moves were not remarked: {sorted(heard)}")
     if not heard & wordings("idle"):
         failures.append(f"your opponent, kept waiting, said nothing: {sorted(heard)}")
+    # Kept waiting, then your move: your opponent follows it up (the seventh
+    # play-testing: "i said X, then Y, so I'll follow up on X").
+    if play_by_clicking(page, failures, 600):
+        settle(page)
+        page.wait_for_timeout(2500)
+        heard = set(page.evaluate("[...window.heardAll]"))
+        # Said with their move's own words, in one box.
+        if not any(w in h for h in heard for w in wordings("waited-take", "waited-other")):
+            failures.append(f"your move, after the wait remarked, was not followed up: {sorted(heard)}")
     if page.errors:
         failures.append(f"console errors with everything said: {page.errors[:5]}")
     page.context.close()

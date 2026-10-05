@@ -250,7 +250,36 @@ the third trail running and the capture that ends it ("Still nothing for
 me.", "At last!"), and a trail onto a table swept clean, the one trail
 that can truly say "Nothing to take." Each of these takes the place of a
 plainer remark, so the table says no more than before; and a build is
-always answered with what it tells, never an empty "Noted.". Chatter fills
+always answered with what it tells, never an empty "Noted.".
+
+**The run of the game, and what was said, followed up** (the seventh
+play-testing: "add even more IF X then Y triggers. in addition to
+textual if X then Y (i said X, then Y, so I'll follow up on X), think
+about metatextual ones- you've been playing for a while with no builds,
+so the opponent gently ribs you", from the period books on card play,
+PG; `research/13-table-banter.md`). The talk is there to bring back how
+the game was talked over, and to keep the player from quietly counting
+the cards; the period manuals knew the talker who talks "for a purpose"
+(1883). Your opponent ribs a long while without a build of yours (at your
+tenth move without one, and again at the twenty-second: "Playing, or
+only playing at playing?", Lamb), your fourth trail running ("Trumps may
+turn up yet.", Grose), your third capture running ("That's a beefy run of
+luck!", Hotten), a second sweep in a hand ("Never was such luck!",
+Pickwick), both Cassinos to one player, and your clinch ("Counting all
+your suits, are you?", Trollope); grumbles its own dry spell ("Shall I
+walk three times round my chair?", Foster) and enjoys its own run ("My
+usual luck!", Austen); opens the game ("A clean table, and the rigour of
+the game.", Lamb); remarks on the score as each new hand is dealt (far
+ahead, "Sorry. I think I've won too many.", Austen; far behind; a
+comeback either way; close near the end, "Never lost till it's won!",
+Crabbe; a long game), nothing being said while a hand is scored; and now
+and then on its own talk ("Am I talking too much? On purpose?"). What was
+said is followed up: a Cassino trailed as "a point, if you take it" and
+taken ("You did say if I could take it!"), a build raised from under its
+builder and taken back ("Mine again, I think."), and, kept waiting, your
+move answered as your opponent makes theirs ("Worth the wait! Building
+eight."). Each is chatter and takes a plainer line's place where they
+meet (`talk.js` `followPlay`, `scoreSaid`). Chatter fills
 the gaps and yields to the calls: the
 dialogue leaves a remark out if it would make a call of a later moment
 late, or come long after its own (`dialogue.js` `SLACK`, `LATE`), so a

@@ -70,6 +70,8 @@ export function followBuilds() {
         }
         const raised = { who: onto.who, value: onto.value };
         for (const c of cards) onto.cards.add(c);
+        // Taken over from its builder: whose it was, for a capture back.
+        if (onto.who !== who) onto.from = onto.who;
         onto.who = who;
         onto.value = e.value;
         return { raised };
@@ -89,28 +91,68 @@ export function followBuilds() {
 // in its context (the sixth play-testing: the talk felt "staccato", each
 // line about its own move alone). `see(e)` returns, for a move: `prev`, the
 // move before it; `run`, how many times running its maker has only
-// trailed; and `empty`, whether a sweep has left the table bare.
+// trailed; `takes`, how many times running they have captured; `empty`,
+// whether a sweep has left the table bare; `sinceBuild`, for a move of
+// yours, how many of your moves this game since your last build; and
+// `cassinos`, the Cassinos its maker has taken this hand. For a sweep,
+// `sweeps`: how many its maker has made this hand, this one included.
 export function followPlay() {
   let prev = null;
   let empty = false;
+  let sinceBuild = 0;
   const trails = { you: 0, them: 0 };
+  const takes = { you: 0, them: 0 };
+  const sweeps = { you: 0, them: 0 };
+  const cassinos = { you: [], them: [] };
   return {
     see(e) {
       if (e.kind === "dealt" && e.deal === 1) {
         prev = null;
         empty = false;
-        trails.you = trails.them = 0;
+        for (const side of ["you", "them"]) {
+          trails[side] = takes[side] = sweeps[side] = 0;
+          cassinos[side] = [];
+        }
       }
-      if (e.kind === "swept") empty = true;
+      if (e.kind === "swept") {
+        empty = true;
+        const side = e.you ? "you" : "them";
+        sweeps[side] += 1;
+        return { sweeps: sweeps[side] };
+      }
       if (e.kind !== "played") return {};
       const who = e.you ? "you" : "them";
-      const seen = { prev, run: trails[who], empty };
+      const seen = { prev, run: trails[who], takes: takes[who], empty, sinceBuild: e.you ? sinceBuild : null, cassinos: cassinos[who] };
       trails[who] = e.type === "trail" ? trails[who] + 1 : 0;
+      takes[who] = e.type === "take" ? takes[who] + 1 : 0;
+      if (e.you) sinceBuild = e.type === "build" ? 0 : sinceBuild + 1;
+      if (e.type === "take") {
+        const got = [e.card, ...(e.taken ?? [])].map((c) => c?.card).filter((c) => c === "TD" || c === "2S");
+        cassinos[who] = [...new Set([...cassinos[who], ...got])];
+      }
       prev = e;
       empty = false;
       return seen;
     },
   };
+}
+
+// The score as each hand ends, for what is said as the next is dealt (the
+// seventh play-testing: talk about the run of the game, from the period
+// books): far ahead or behind, a comeback, close near the end, a long game;
+// or nothing to remark. `e`, the hand's end: its points and the totals.
+export const SCORE = Object.freeze({ far: 7, near: 12, close: 3, behind: 3, swing: 4, long: 4 });
+export function scoreSaid(e, hand) {
+  const { you, them } = e.totals;
+  const before = { you: you - (e.yours ?? 0), them: them - (e.theirs ?? 0) };
+  const won = (e.yours ?? 0) - (e.theirs ?? 0); // your margin in the hand
+  if (Math.max(you, them) >= SCORE.near && Math.abs(you - them) <= SCORE.close) return "score-close";
+  if (before.them - before.you >= SCORE.behind && won >= SCORE.swing) return "score-comeback-you";
+  if (before.you - before.them >= SCORE.behind && -won >= SCORE.swing) return "score-comeback-them";
+  if (them - you >= SCORE.far) return "score-ahead";
+  if (you - them >= SCORE.far) return "score-behind";
+  if (hand >= SCORE.long) return "score-long";
+  return null;
 }
 
 // Numbers and cards in words, for the slots of the chatter's lines.
@@ -138,13 +180,19 @@ const takers = (value) => ({ taker: taker(value), ataker: named(value === 14 ? 1
 // Who sits across: the other player.
 const other = (who) => (who === "you" ? "them" : "you");
 
-export function speech(state, since = 0) {
+// `waited`: you were kept a while over the first move of yours since
+// `since`, and your opponent said so (main.js); it follows that up.
+export function speech(state, since = 0, { waited = false } = {}) {
   const out = [];
   const rules = state.rules ?? {};
   const follow = followBuilds();
   const run = followPlay();
+  let ended = null; // the last hand's end, for the score said at the next
+  let waiting = waited;
+  let followUp = null; // { phrase, at }: your opponent's follow-up, to come with their move
   state.events.forEach((e, at) => {
     const did = { ...follow.see(e), ...run.see(e) };
+    if (e.kind === "hand_ends") ended = e;
     if (at < since) return;
     const say = (who, phrase, extra = {}) => out.push({ who, phrase, at, kind: e.kind, ...extra });
     // A remark: chatter, heard only when everything is, and said only where
@@ -172,9 +220,17 @@ export function speech(state, since = 0) {
           say("you", rules.sweeps === false ? "sweeps-no" : "sweeps-yes");
           if (rules.game === "royal") remark("them", "royal");
           if (rules.aces14) remark("them", "aces-14");
+          // And a word to begin on (Lamb's "the rigour of the game").
+          remark("them", "game-start");
         }
-        if (e.deal === 1 && e.hand > 1) remark(dealer, "new-hand");
-        else if (e.deal > 1 && !e.last) remark(dealer, "deal-more");
+        if (e.deal === 1 && e.hand > 1) {
+          // The score, remarked by your opponent as the next hand is dealt
+          // (nothing is said while a hand is scored): in place of their own
+          // "New hand." when the deal is theirs.
+          const score = ended ? scoreSaid(ended, e.hand) : null;
+          if (!(score && dealer === "them")) remark(dealer, "new-hand");
+          if (score) remark("them", score);
+        } else if (e.deal > 1 && !e.last) remark(dealer, "deal-more");
         if (e.last) {
           say(dealer, "last");
           remark(other(dealer), "last-reply");
@@ -182,17 +238,34 @@ export function speech(state, since = 0) {
         break;
       }
       case "played":
+        // Kept waiting over your move, your opponent follows it up as they
+        // make their own, with its call, which a remark alone would have
+        // to make way for ("Worth the wait! Building eight.").
+        if (!e.you && followUp) {
+          remark("them", followUp.phrase);
+          followUp = null;
+        }
         played(e, at, who, did, state.events, since, remark, say);
+        // And in place of your own remark on it (your calls stay).
+        if (e.you && waiting) {
+          waiting = false;
+          for (let k = out.length - 1; k >= 0 && out[k].at === at; k--) if (out[k].who === "you" && out[k].chatter) out.splice(k, 1);
+          followUp = { phrase: e.type === "take" ? "waited-take" : "waited-other", at };
+        }
         break;
       case "swept":
         say(who, "sweep");
-        remark(other(who), "sweep-reply");
+        // A second sweep in a hand is felt more ("Never was such luck!").
+        remark(other(who), did.sweeps > 1 ? "sweep-again" : "sweep-reply");
         break;
       case "cash":
         say(who, "cash");
         break;
       case "clinched":
         remark(who, e.what === "cards" ? "clinch-cards" : "clinch-spades");
+        // Yours: your opponent sees you counting ("Counting all your
+        // suits, are you?").
+        if (e.you) remark("them", "counting-you");
         break;
       case "residue":
         if (e.you !== null) remark(who, "residue");
@@ -208,6 +281,8 @@ export function speech(state, since = 0) {
         break;
     }
   });
+  // No move of theirs to come with: on your move, then.
+  if (followUp) out.push({ who: "them", phrase: followUp.phrase, at: followUp.at, kind: "played", chatter: true });
   return out;
 }
 
@@ -227,9 +302,15 @@ function played(e, at, who, did, events, since, remark, say) {
   const trailed = did.prev && did.prev.you !== e.you && did.prev.type === "trail" ? did.prev.card : null;
   // Your opponent thinks aloud as your move is seen, before theirs: now and
   // then, and only about a move in this batch.
+  // Now and then, in place of that, a word on its own talk, which is
+  // there to keep the game lively and you from counting quietly ("Am I
+  // talking too much? On purpose?").
   if (!e.you && at % 3 === 0 && at - 1 >= since) {
-    remark("them", e.type === "take" ? "think-take" : "think", null, { at: at - 1 });
+    remark("them", at % 12 === 0 ? "talkative" : e.type === "take" ? "think-take" : "think", null, { at: at - 1 });
   }
+  // The run of the game: a long while without a build of yours, ribbed at
+  // your tenth move without one and again at the twenty-second.
+  if (e.you && (did.sinceBuild === 9 || did.sinceBuild === 21) && e.type !== "build") remark("them", "rib-no-builds");
   if (e.type === "build") {
     say(who, call(e));
     const value = number(e.value);
@@ -247,8 +328,12 @@ function played(e, at, who, did, events, since, remark, say) {
     else if (card.card === "TD") remark(who, "trail-big-casino");
     else if (did.empty && card.rank) remark(who, "trail-fresh", named(card.rank));
     else if (did.run === 2 && card.rank) remark(who, "trail-again", named(card.rank));
+    // Your opponent's fourth trail running: its dry spell, grumbled.
+    else if (did.run === 3 && !e.you) remark(who, "own-dry-spell");
     else if (card.rank === 1) remark(who, "trail-ace");
     else if (card.rank) remark(who, "trail", named(card.rank));
+    // Your fourth, ribbed ("Are you sandbagging me?").
+    if (did.run === 3 && e.you) remark("them", "rib-trails");
   }
   if (e.type === "take") {
     const then = following(events, at);
@@ -257,9 +342,16 @@ function played(e, at, who, did, events, since, remark, say) {
     // Every card the capture brings in, the card played among them.
     const taken = [card, ...(e.taken ?? [])].map((c) => c.card).filter(Boolean);
     const loud = then.has("swept") || then.has("cash");
+    // A Cassino the other trailed just before, "a point, if you take it".
+    const offered = trailed && ["2S", "TD"].includes(trailed.card) && taken.includes(trailed.card);
     if (!loud) {
-      if (stolen) remark(who, "take-theirs", { value: number(stolen.value), ...takers(stolen.value) });
+      // A build taken back from under the one who raised it.
+      if (stolen && stolen.from === who) remark(who, "take-back-raised");
+      else if (stolen) remark(who, "take-theirs", { value: number(stolen.value), ...takers(stolen.value) });
       else if (own) remark(who, "take-own", { value: number(own.value) });
+      else if (offered) remark(who, "take-offered");
+      // Your opponent's third capture running: its luck, enjoyed.
+      else if (did.takes === 2 && !e.you) remark(who, "own-streak");
       else {
         const big = taking(e, then);
         if (big) remark(who, big);
@@ -272,12 +364,17 @@ function played(e, at, who, did, events, since, remark, say) {
     // What the other player feels: a build lost, a Cassino or an ace gone,
     // a build taken back as called (now and then: it is the usual end of a
     // build), a haul (a sweep is felt as it is claimed).
+    // Both Cassinos to one player in a hand, felt as one.
+    const both = (did.cassinos ?? []).length < 2 && new Set([...(did.cassinos ?? []), ...taken.filter((c) => c === "TD" || c === "2S")]).size === 2;
     if (stolen) remark(them, "lost-build", { value: number(stolen.value) });
+    else if (!loud && both) remark(them, "both-cassinos");
     else if (!loud && taken.includes("TD")) remark(them, "big-casino-gone");
     else if (!loud && taken.includes("2S")) remark(them, "little-casino-gone");
     else if (!loud && own && at % 2 === 0) remark(them, "own-build-reply");
     else if (!loud && taken.some((c) => c[0] === "A")) remark(them, "ace-gone");
     else if (!loud && (e.taken?.length ?? 0) >= HAUL) remark(them, "haul-reply");
+    // Your third capture running, ribbed ("That's a beefy run of luck!").
+    if (e.you && did.takes === 2) remark("them", "rib-streak");
   }
   // What you left, pointed out (the Dominican dejado): always when it
   // holds a point card or more than one card, otherwise now and then.

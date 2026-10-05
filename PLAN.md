@@ -224,7 +224,16 @@ legal move. RULES.md now says each held card answers for one build value.
   about 106 px wide, held sideways from 100 to 110 (its own arrangement,
   the middle five wide and the piles in from the edges); on a phone in
   Safari's window from 46 to 50. A card dealt to a hand lower than the
-  pack now comes down to it (`kinematics.js` `rise`).
+  pack now comes down to it (`kinematics.js` `rise`). And the talk:
+  "add even more IF X then Y triggers", the run of the game and what was
+  said followed up, from period books on card play (a new research note,
+  `research/13-table-banter.md`: 66 sources, 1714 to 1926, from Pope,
+  Austen, Lamb and Dickens to Cavendish, Foster and Emily Post, kept
+  kind): a long while without a build of yours, trail and capture runs,
+  luck felt, your clinch seen as counting, the score as each hand is
+  dealt, a word to begin, your opponent on its own talk; a Cassino
+  offered and taken, a raised build taken back, a long wait answered with
+  your opponent's move. Twenty new groups, some thirty new sources.
 - **The South African game, researched**
   (`research/12-south-african-khasino.md`): KASA's rulebooks and its own
   online game as the canonical sources, twenty open-source engines, and
