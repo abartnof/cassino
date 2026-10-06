@@ -594,9 +594,10 @@ Each phase ends with its tests green and a commit; `PLAN.md` records it.
   moment in a real game with the table held still (`tutorial.js`:
   `pageDue`, from the moves on offer and what your opponent has just done;
   node-tested against real games, every page reached), and all of them at
-  any time from the question mark. The tutorial is on for a new player and
-  a switch in the new game's menu (in the settings until the seventh
-  play-testing); a page read already does not come again. The
+  any time from the question mark. The tutorial is a switch in the new
+  game's menu (in the settings until the seventh play-testing), off unless
+  turned on there (on for a new player until the user asked for it off by
+  default); a page read already does not come again. The
   browser test reads the introduction, meets a page of the ladder in play,
   and pages through the help.
 - **T8. Phones.** Piquet's phone framing and Large Text faces, fitted to a

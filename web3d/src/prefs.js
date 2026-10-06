@@ -9,8 +9,9 @@ const PREFS = "cassino.prefs";
 // What is kept is every setting, defaults too: the version says which
 // defaults it was kept under, so a default changed since (sweeps, version
 // 2; the trackers' panel folded, 3; Royal Cassino the game, 4; Royal's
-// aces 1 or 14, 5) is not taken for the person's choice.
-const VERSION = 5;
+// aces 1 or 14, 5; the tutorial off, 6) is not taken for the person's
+// choice.
+const VERSION = 6;
 const SITTING = "cassino.sitting";
 const SERIES = "cassino.series";
 
@@ -52,8 +53,10 @@ export const DEFAULTS = Object.freeze({
   // What is said at the table: "all", "calls" (what carries the game) or
   // "none" (talk.js heard).
   talk: "all",
-  // The tutorial: its pages open by themselves, each once (`seen`).
-  tutorial: true,
+  // The tutorial: its pages open by themselves, each once (`seen`); off
+  // unless turned on in the new game's menu (the user: "please turn off
+  // tutorial by default"), since version 6 of the kept settings.
+  tutorial: false,
   seen: Object.freeze([]),
 });
 
@@ -126,7 +129,7 @@ export function loadPrefs(store) {
     sortTable: isBool(kept.sortTable) ? kept.sortTable : DEFAULTS.sortTable,
     leftHanded: isBool(kept.leftHanded) ? kept.leftHanded : DEFAULTS.leftHanded,
     talk: ["all", "calls", "none"].includes(kept.talk) ? kept.talk : DEFAULTS.talk,
-    tutorial: isBool(kept.tutorial) ? kept.tutorial : DEFAULTS.tutorial,
+    tutorial: isBool(kept.tutorial) && kept.v >= 6 ? kept.tutorial : DEFAULTS.tutorial,
     seen: Array.isArray(kept.seen) ? kept.seen.filter((k) => typeof k === "string") : [],
   };
 }

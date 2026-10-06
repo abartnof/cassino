@@ -127,6 +127,18 @@ test("the tutorial, chosen in the new game's menu: turned on, from its first pag
   assert.equal(chooseGame(on, series, { ...game, tutorial: false }).patch.tutorial, false);
 });
 
+// The user: "please turn off tutorial by default". Off unless turned on in
+// the new game's menu; kept on under the old default (before version 6) it
+// is not taken for a choice.
+test("the tutorial off by default, and the old default kept is not a choice", () => {
+  assert.equal(DEFAULTS.tutorial, false);
+  const store = memory();
+  store.setItem("cassino.prefs", JSON.stringify({ ...DEFAULTS, tutorial: true, v: 5 }));
+  assert.equal(loadPrefs(store).tutorial, false, "the old default is not a choice");
+  savePrefs(store, { ...DEFAULTS, tutorial: true });
+  assert.equal(loadPrefs(store).tutorial, true, "chosen since, it is kept");
+});
+
 test("the table talk: everything by default, or the calls, or none", () => {
   assert.equal(DEFAULTS.talk, "all");
   const store = memory();
