@@ -12,7 +12,7 @@
 import "@material/web/button/filled-button.js";
 import "@material/web/button/filled-button.js";
 import "@material/web/iconbutton/icon-button.js";
-import { besideAt, boxRect, covers } from "./dialogue.js";
+import { besideAt, choosePlace } from "./dialogue.js";
 import { trackerTable } from "./scorebug.js";
 import { BAR, barAcross, barHoles, clipPathFor, fitLabels, mergeHoles, moveBar, pointIn } from "./selection.js";
 
@@ -403,20 +403,20 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onCardTap = () 
     if (!anchor || !words) return;
     // On a phone, the first of the speaker's places that covers none of
     // what must stay in view (`anchor.avoid`: the cards, the move bar),
-    // else the one that covers least (dialogue.js boxRect, covers).
+    // else the one that covers least, and never one beside the speaker too
+    // narrow for its words (dialogue.js choosePlace).
     if (anchor.places) {
       const node = el("div", { class: `dialogue ${who}`, role: "status" }, words);
       afloat.append(node);
       const view = { width: window.innerWidth, height: window.innerHeight };
       const keep = [...anchor.avoid, ...[".info", ".bar", ".aids-panel"].map((q) => root.ownerDocument.querySelector(q)).filter((e) => e && !e.hidden).map((e) => e.getBoundingClientRect())];
-      let best = null;
-      for (const place of anchor.places) {
+      placeBox(node, { kind: "above", x: view.width / 2, y: view.height / 2 }, view);
+      const natural = node.offsetWidth;
+      const measure = (place) => {
         placeBox(node, place, view);
-        const cost = covers(boxRect(place, node.offsetWidth, node.offsetHeight, view), keep, view);
-        if (!best || cost < best.cost) best = { place, cost };
-        if (cost === 0) break;
-      }
-      placeBox(node, best.place, view);
+        return { w: node.offsetWidth, h: node.offsetHeight, natural, spills: spills(node) };
+      };
+      placeBox(node, choosePlace(anchor.places, measure, keep, view), view);
       boxes[who] = node;
       later(LINGER, () => boxes[who] === node && takeDown(who));
       return;
@@ -428,7 +428,11 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onCardTap = () 
       const node = el("div", { class: `dialogue ${who} side`, role: "status" }, words);
       afloat.append(node);
       const place = besideAt(anchor, node.offsetWidth, window.innerWidth);
-      if (place.room !== null) node.style.maxWidth = `min(${place.room}px, 78vw, 340px)`;
+      // Its room is the whole box's, padding and all: wrapped to it, the
+      // box ends at the screen's margin, not past it.
+      const style = getComputedStyle(node);
+      const padding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+      if (place.room !== null) node.style.maxWidth = `min(${place.room - padding}px, 78vw, 340px)`;
       if (place.side === "left") {
         node.classList.add("left");
         node.style.right = `${window.innerWidth - place.at}px`;
@@ -456,6 +460,17 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onCardTap = () 
     boxes[who] = node;
     later(LINGER, () => boxes[who] === node && takeDown(who));
   }
+  // Whether a box's words run past its edge: a word wider than the room
+  // its padding leaves. Measured on the words themselves, not the box's
+  // scrolling width, which counts a tail pointing right as a spill.
+  function spills(node) {
+    const box = node.getBoundingClientRect();
+    const style = getComputedStyle(node);
+    const words = root.ownerDocument.createRange();
+    words.selectNodeContents(node);
+    const at = words.getBoundingClientRect();
+    return at.left < box.left + parseFloat(style.paddingLeft) - 1 || at.right > box.right - parseFloat(style.paddingRight) + 1;
+  }
   // A box at one of its places: beside its point (`right`, `left`, as wide
   // as the room to `limit` allows), or above or below it, centred and kept
   // on the screen (style.css).
@@ -467,7 +482,7 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onCardTap = () 
     if (place.kind === "right" || place.kind === "left") {
       node.classList.add("side");
       const room = place.kind === "right" ? (place.limit ?? view.width - 8) - place.x : place.x - (place.limit ?? 8);
-      node.style.maxWidth = `${Math.max(60, Math.min(room, 340))}px`;
+      node.style.maxWidth = `${Math.max(0, Math.min(room, 340))}px`;
       if (place.kind === "left") {
         node.classList.add("left");
         node.style.right = `${view.width - place.x}px`;

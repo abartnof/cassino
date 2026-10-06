@@ -651,14 +651,20 @@ async function main() {
   // beside it, the move bar being above it; on a phone held upright, where
   // there is no room beside it, above the move bar.
   // Where a hand lies, as a full hand of four would: the words beside it
-  // stay clear of it as it is dealt and played out.
+  // stay clear of it as it is dealt and played out. With `row`, on a
+  // phone, the speaker's whole row: the hand, the pile beside it (as one
+  // card, there from the start) and the stock when theirs to deal.
   const FULL = ["AS", "AH", "AD", "AC"];
-  function fullHand(who) {
+  function fullHand(who, row = false) {
     if (!state) return null;
     const zones = zonesNow();
-    const full = who === "you" ? { ...state, hand: FULL.map((card) => ({ card })) } : { ...state, opponent_holds: 4 };
+    const yours = who === "you";
+    const pile = { ...state.piles[who], cards: Math.max(1, state.piles[who].cards) };
+    const full = { ...state, ...(yours ? { hand: FULL.map((card) => ({ card })) } : { opponent_holds: 4 }), piles: { ...state.piles, [who]: pile } };
+    const own = yours ? ["your-hand", "your-pile"] : ["their-hand", "their-pile"];
+    const wanted = row ? [...own, ...(state.dealer === who ? ["stock"] : [])] : [own[0]];
     const points = layout(full, { zones })
-      .filter((m) => m.zone === (who === "you" ? "your-hand" : "their-hand"))
+      .filter((m) => wanted.includes(m.zone))
       .flatMap((m) => cardCorners(m.pose).map((c) => director.toScreen(c)));
     const xs = points.map((p) => p.x);
     const ys = points.map((p) => p.y);
@@ -667,18 +673,22 @@ async function main() {
   // On a phone, where a speaker's words may go, the first clear of the
   // cards and the move bar taken (overlay.js say; the sixth play-testing:
   // "in mobile mode, the dialog balloons can completely obscure the cards,
-  // so you can't play until they go away"): beside the hand, within the
-  // table's band; your opponent's below or above theirs; yours, held
-  // upright, below your hand, over the prompt (there is no room beside it,
-  // and the table and the move bar are above it), held sideways above it,
-  // between it and the table.
+  // so you can't play until they go away"): beside the speaker's row, as
+  // far as the screen's edge (what it would cover there, the score, the
+  // move bar, is counted as the cards are); your opponent's below or above
+  // their hand; yours, held upright, below your hand, over the prompt
+  // (there is no room beside the row, and the table and the move bar are
+  // above it), held sideways above it, between it and the table, or else
+  // beside the row, under the score. Beside the row, not the hand: beside
+  // the hand a box lay over the pile, squeezed into the room left there
+  // (an iPhone, the user: "when the dialogue box shows up on the left hand
+  // side of the hand, the text sometimes exceeds the text box").
   function phonePlaces(who) {
     const hand = fullHand(who);
-    const strips = stage.strips();
-    const band = strips.left === undefined ? { left: 8, right: window.innerWidth - 8 } : { left: strips.left + 8, right: window.innerWidth - strips.right - 8 };
+    const row = fullHand(who, true);
     const mid = { x: (hand.left + hand.right) / 2, y: (Math.max(hand.top, 8) + hand.bottom) / 2 };
-    const right = { kind: "right", x: hand.right + 14, y: mid.y, limit: band.right };
-    const left = { kind: "left", x: hand.left - 14, y: mid.y, limit: band.left };
+    const right = { kind: "right", x: row.right + 14, y: mid.y, limit: window.innerWidth - 8 };
+    const left = { kind: "left", x: row.left - 14, y: mid.y, limit: 8 };
     const below = { kind: "below", x: mid.x, y: hand.bottom };
     const above = { kind: "above", x: mid.x, y: hand.top };
     const places = who === "them" ? [right, left, below, above] : upright() ? [below, right, left, above] : [above, right, left, below];

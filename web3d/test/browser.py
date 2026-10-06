@@ -110,6 +110,18 @@ def check_drawn(page, failures, where=""):
 
 HEARD = set()  # every line seen in a dialogue box
 
+# Whether a dialogue box's words run past its edge, or the box past the
+# screen's: the words themselves, against the box's padding (a tail pointing
+# right is no spill, as a box's scrolling width would have it).
+SPILLS = """(d) => {
+  const r = d.getBoundingClientRect();
+  const words = document.createRange();
+  words.selectNodeContents(d);
+  const w = words.getBoundingClientRect();
+  const pad = getComputedStyle(d);
+  return w.left < r.left + parseFloat(pad.paddingLeft) - 1 || w.right > r.right - parseFloat(pad.paddingRight) + 1 || r.left < 0 || r.right > innerWidth;
+}"""
+
 
 def settle(page):
     """Wait for the cards to come to rest."""
@@ -599,7 +611,7 @@ def check_talk(browser, failures):
         elif dealt_at is not None:
             after |= boxes - before
         theirs |= {l["words"] for l in said if l["who"] == "them"}
-        spill = page.evaluate("[...document.querySelectorAll('.dialogue')].filter((d) => d.scrollWidth > d.clientWidth + 1).map((d) => d.textContent)")
+        spill = page.evaluate(f"[...document.querySelectorAll('.dialogue')].filter({SPILLS}).map((d) => d.textContent)")
         if spill:
             failures.append(f"words past their box's edge: {spill[0]}")
             break
@@ -692,6 +704,21 @@ def check_ending(browser, failures):
         failures.append("ending: a new game kept the camera pulled back")
     if page.errors:
         failures.append(f"ending: console errors {page.errors[:5]}")
+    page.context.close()
+    # On a phone, every ending's last word held in its box, on the screen:
+    # wrapped to the room beside the card, a box once ran its padding past
+    # the screen's edge.
+    page = open_page(browser, "ending&speed=2", viewport={"width": 390, "height": 664}, calm=True)
+    settle(page)
+    play_by_clicking(page, failures, 0)
+    page.wait_for_function("window.cassino3d.said().some((l) => l.who === 'them')", timeout=60_000)
+    spilt = set()
+    for _ in range(24):
+        page.wait_for_timeout(700)
+        spilt |= set(page.evaluate(f"[...document.querySelectorAll('.dialogue:not(.leaving)')].filter({SPILLS}).map((d) => d.textContent)"))
+        page.locator(".endings-step").nth(1).click()
+    if spilt:
+        failures.append(f"ending, on a phone: words past their box's edge, or the screen's: {sorted(spilt)[:4]}")
     page.context.close()
 
 
@@ -981,11 +1008,16 @@ def check_phone_talk(browser, failures):
     """On a phone, held either way, what is said never covers the cards (the
     sixth play-testing: "in mobile mode, the dialog balloons can completely
     obscure the cards, so you can't play until they go away"): no box over a
-    table card, a card in your hand, or the move bar, as each is said."""
-    for vp in ({"width": 390, "height": 844}, {"width": 844, "height": 390}):
+    table card, a card in your hand, or the move bar, as each is said. And
+    every box holds its words, on the screen (an iPhone, the user: "when the
+    dialogue box shows up on the left hand side of the hand, the text
+    sometimes exceeds the text box"): in Safari's window on an iPhone too,
+    390 by 664, where there was room beside the hand for 60 px of box."""
+    for vp in ({"width": 390, "height": 844}, {"width": 844, "height": 390}, {"width": 390, "height": 664}):
         where = f"{vp['width']}x{vp['height']}"
         page = open_page(browser, "seed=7&speed=6&skill=1", viewport=vp, calm=True)
-        page.evaluate("""() => { window.covered = []; window.boxesSeen = 0;
+        page.evaluate(f"() => {{ window.spills = {SPILLS}; }}")
+        page.evaluate("""() => { window.covered = []; window.spilt = []; window.boxesSeen = 0;
             setInterval(() => {
               const cards = [...window.cassino3d.cardRects('middle'), ...window.cassino3d.cardRects('your-hand')];
               const bar = document.querySelector('.move-bar');
@@ -995,6 +1027,7 @@ def check_phone_talk(browser, failures):
                 const r = d.getBoundingClientRect();
                 const over = (c) => r.left < c.right - 1 && r.right > c.left + 1 && r.top < c.bottom - 1 && r.bottom > c.top + 1;
                 if (cards.some(over) || keep.some(over)) window.covered.push(d.textContent);
+                if (window.spills(d)) window.spilt.push(`${d.textContent} (${Math.round(r.width)} px)`);
               }
             }, 50); }""")
         made = 0
@@ -1007,6 +1040,9 @@ def check_phone_talk(browser, failures):
         covered = page.evaluate("[...new Set(window.covered)]")
         if covered:
             failures.append(f"{where}: said over the cards or the move bar: {covered[:4]}")
+        spilt = page.evaluate("[...new Set(window.spilt)]")
+        if spilt:
+            failures.append(f"{where}: words past their box's edge, or the screen's: {spilt[:4]}")
         page.context.close()
 
 

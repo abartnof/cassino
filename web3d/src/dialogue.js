@@ -57,8 +57,9 @@ function fill(text, vars) {
 // at the right. A box is never squeezed narrower than BESIDE_MIN pixels, or
 // its words' own width if less.
 export const BESIDE_MIN = 140;
+const roomy = (room, width, least = BESIDE_MIN) => room >= Math.min(width, least);
 export function besideAt(anchor, width, viewWidth, margin = 8) {
-  const fits = (room) => room >= Math.min(width, BESIDE_MIN);
+  const fits = (room) => roomy(room, width);
   const right = viewWidth - margin - anchor.x;
   if (fits(right)) return { side: "right", at: anchor.x, room: right };
   if (anchor.left !== undefined && fits(anchor.left - margin)) return { side: "left", at: anchor.left, room: anchor.left - margin };
@@ -86,6 +87,33 @@ export function covers(rect, rects, view) {
   const whole = (rect.right - rect.left) * (rect.bottom - rect.top);
   const off = whole - area(rect, { left: 0, right: view.width, top: 0, bottom: view.height });
   return rects.reduce((sum, r) => sum + area(rect, r), 0) + 10 * off;
+}
+
+// Where a box goes, of its speaker's places in order (on a phone, overlay.js
+// say): the first that covers nothing it must not (`keep`), else the one
+// that covers least. Never beside its speaker squeezed narrower than its
+// words need (an iPhone, the user: "when the dialogue box shows up on the
+// left hand side of the hand, the text sometimes exceeds the text box"):
+// narrower than PHONE_BESIDE_MIN, or than its words' own width if less, or
+// with a word spilling past its edge, it does not go there at all; a
+// speaker's places end with one above or below, which is never squeezed.
+// A phone's minimum is a desktop's less a little: its boxes are set smaller
+// (style.css), and an iPhone leaves 133 to 139 px beside your opponent's
+// hand, where they read well.
+//   measure(place) -> { w, h, natural, spills }: the box at that place as
+//   the page lays it out, `natural` its width with room to spare.
+export const PHONE_BESIDE_MIN = 120;
+export function choosePlace(places, measure, keep, view) {
+  let best = null;
+  for (const place of places) {
+    const { w, h, natural, spills } = measure(place);
+    const beside = place.kind === "left" || place.kind === "right";
+    if (beside && (spills || !roomy(w, natural, PHONE_BESIDE_MIN))) continue;
+    const cost = covers(boxRect(place, w, h, view), keep, view);
+    if (!best || cost < best.cost) best = { place, cost };
+    if (cost === 0) break;
+  }
+  return best?.place ?? places.at(-1);
 }
 
 export function createDialogue(bank, clock = () => performance.now()) {

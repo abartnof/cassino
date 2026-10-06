@@ -327,12 +327,21 @@ opponent's to the right of theirs (just beyond it the table begins). On a
 phone a box never covers the cards or the move bar (the sixth
 play-testing: "in mobile mode, the dialog balloons can completely obscure
 the cards, so you can't play until they go away"): each speaker has
-places to try, beside the hand within the table's band, below or above
-it, and a box goes to the first that covers none of them, or else to the
-one that covers least (`dialogue.js` `boxRect`, `covers`). Held upright,
-there is no room beside your hand, and the table and the move bar are
+places to try, beside their row (the hand, the pile and the stock when
+theirs to deal) as far as the screen's edge, below or above the hand,
+and a box goes to the first that covers none of them, nor the score or
+the icons, or else to the one that covers least (`dialogue.js`
+`choosePlace`). A box beside its speaker is never squeezed narrower than
+its words: under 120 px (or its words' own width if less), or with a
+word past its edge, it does not go there (an iPhone, the user: "when the
+dialogue box shows up on the left hand side of the hand, the text
+sometimes exceeds the text box"; there was room for 60 px of box beside
+the hand, which covered nothing, so the box went there). Held upright,
+there is no room beside your row, and the table and the move bar are
 above it: your words go below it, over the prompt, for the moment they
-are said.
+are said; held sideways, left of your row, under the score. At the
+game's end a box wrapped to the room beside the court card counts its
+padding in that room, so it ends at the screen's margin.
 
 ## 8. The overlay
 

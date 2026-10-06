@@ -6,7 +6,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { LATE, TURN, besideAt, boxRect, covers, createDialogue, saying } from "../src/dialogue.js";
+import { LATE, PHONE_BESIDE_MIN, TURN, besideAt, boxRect, choosePlace, covers, createDialogue, saying } from "../src/dialogue.js";
 
 const BANK = {
   groups: { "point-5": ["point-5.0"], good: ["good.0", "good.1"], "what-make": ["what-make.0"], "value-48": ["n-48.0"] },
@@ -228,4 +228,47 @@ test("a box covers what it overlaps, and whatever of it is off the screen counts
   assert.equal(covers({ left: 100, right: 200, top: 300, bottom: 370 }, cards, view), 0, "clear of the card");
   assert.equal(covers({ left: 100, right: 200, top: 440, bottom: 480 }, cards, view), 20 * 20);
   assert.ok(covers({ left: 300, right: 420, top: 100, bottom: 140 }, [], view) > covers({ left: 100, right: 200, top: 440, bottom: 480 }, cards, view), "off the screen is worse");
+});
+
+// The places tried in order; `measure` gives the box's size at each, as the
+// page lays it out: `w` by `h`, `natural` its width with room to spare, and
+// whether its words `spill` past its edge.
+const measured = (sizes) => (place) => ({ natural: 220, spills: false, ...sizes[place.kind] });
+
+test("a box goes to the first of its places that covers nothing, else to the one that covers least", () => {
+  const view = { width: 390, height: 844 };
+  const card = { left: 100, right: 300, top: 400, bottom: 500 };
+  const below = { kind: "below", x: 200, y: 500 };
+  const above = { kind: "above", x: 200, y: 400 };
+  const sizes = measured({ below: { w: 220, h: 40 }, above: { w: 220, h: 40 } });
+  assert.equal(choosePlace([below, above], sizes, [card], view), below);
+  // Below runs off the screen: above, which covers nothing.
+  assert.equal(choosePlace([{ ...below, y: 830 }, above], sizes, [card], view), above);
+});
+
+// An iPhone (the user: "when the dialogue box shows up on the left hand
+// side of the hand, the text sometimes exceeds the text box"): beside the
+// hand there was room for 60 px of box, which covered nothing, so the box
+// went there and its words ran past its edge. Beside its speaker, a box is
+// never squeezed narrower than its words need, as besideAt has it: below
+// PHONE_BESIDE_MIN, or its words' own width if less, or so narrow that a
+// word spills, it does not go there at all.
+test("a box beside its speaker is never squeezed narrower than its words", () => {
+  const view = { width: 390, height: 664 };
+  const bar = { left: 8, right: 382, top: 620, bottom: 656 };
+  const left = { kind: "left", x: 58, y: 540 };
+  const below = { kind: "below", x: 200, y: 580 };
+  const squeezed = measured({ left: { w: 60, h: 160 }, below: { w: 220, h: 40 } });
+  assert.equal(choosePlace([left, below], squeezed, [bar], view), below, "squeezed to 60 px, though it covers nothing");
+  // Narrow, but as wide as its few words: it goes there.
+  const short = measured({ left: { w: 60, h: 40, natural: 60 }, below: { w: 60, h: 40, natural: 60 } });
+  assert.equal(choosePlace([{ ...left, x: 68 }, below], short, [bar], view).kind, "left");
+  // As wide as PHONE_BESIDE_MIN, but a long word spills: not there either.
+  const spilt = measured({ left: { w: PHONE_BESIDE_MIN, h: 80, spills: true }, below: { w: 220, h: 40 } });
+  assert.equal(choosePlace([left, below], spilt, [bar], view), below);
+  const fits = measured({ left: { w: PHONE_BESIDE_MIN, h: 80 }, below: { w: 220, h: 40 } });
+  assert.equal(choosePlace([{ ...left, x: 8 + PHONE_BESIDE_MIN }, below], fits, [bar], view).kind, "left");
+  // An iPhone's room beside your opponent's hand, 133 px: enough.
+  const iphone = measured({ left: { w: 133, h: 80 }, below: { w: 220, h: 40 } });
+  assert.equal(choosePlace([{ ...left, x: 8 + 133 }, below], iphone, [bar], view).kind, "left");
 });
