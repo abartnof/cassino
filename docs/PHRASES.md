@@ -532,7 +532,18 @@ Sources:
 |  | Great battling, little bloodshed. | Lm |
 |  | Congratulations! I'll get you next time. | Lc |
 |  | Cheerful in defeat, as they say. | Ps |
-| `quite-normal` | You are quite normal. | Pt |
+| `you-lost` | You are quite normal. | Pt |
+|  | The cards lay lucky for me. | Cv |
+|  | Never was such luck. | Dc |
+|  | Luck is bound to change. Another? | Bh |
+|  | One run of luck, that's all. | Tr |
+|  | Win without triumph, they say. Thank you. | Gs |
+|  | A quiet winner, me. Good game. | Ps |
+|  | Mine, this time. Thank you for the game. | T |
+|  | We cards stick together. | T |
+|  | I have been in many hands. Yours were fine. | T |
+|  | Fifty-two of us, and one of you. | T |
+|  | You hold a card very nicely. | T |
 | `new-hand` | New hand. | T |
 |  | Fresh cards. | T |
 |  | Here we go again. | T |

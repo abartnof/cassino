@@ -278,8 +278,15 @@ def phrase_groups():
         ("A good fight. Cut and thrust.", "Lm"), ("Great battling, little bloodshed.", "Lm"),
         ("Congratulations! I'll get you next time.", "Lc"), ("Cheerful in defeat, as they say.", "Ps"))
     # The court card's last word, when you lose: the game's end shows that
-    # your opponent was a playing card all along.
-    add("quite-normal", ("You are quite normal.", "Pt"))
+    # your opponent was a playing card all along. "You are quite normal." was
+    # asked for word for word, and is one of many (the user: "have diverse
+    # ending dialogues"): a quiet winner, and now and then a card's view.
+    add("you-lost", ("You are quite normal.", "Pt"), ("The cards lay lucky for me.", "Cv"),
+        ("Never was such luck.", "Dc"), ("Luck is bound to change. Another?", "Bh"),
+        ("One run of luck, that's all.", "Tr"), ("Win without triumph, they say. Thank you.", "Gs"),
+        ("A quiet winner, me. Good game.", "Ps"), ("Mine, this time. Thank you for the game.", "T"),
+        ("We cards stick together.", "T"), ("I have been in many hands. Yours were fine.", "T"),
+        ("Fifty-two of us, and one of you.", "T"), ("You hold a card very nicely.", "T"))
 
     # The chatter (play-testing: the talk "VERY verbose", the conversation a
     # part of the game, as where Cuarenta is played loud and full of sayings).

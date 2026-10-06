@@ -239,7 +239,9 @@ legal move. RULES.md now says each held card answers for one build value.
   prompt at a hand's end: the score has it. No line said mentions a trump (the
   user). The helper text under the cards (what to do, why a card cannot
   join) only with the explanations on. The tutorial off by default (the
-  user), turned on in the new game's menu.
+  user), turned on in the new game's menu. Losing, your opponent's last
+  word one of a dozen, "You are quite normal." among them (the user:
+  "have diverse ending dialogues").
   On a phone or a tablet your hand is a row spaced wide, not a fan, lying
   just off the table so that its cards are the table's size, and the
   field closes in: on an iPad held upright the table's cards from 100 to

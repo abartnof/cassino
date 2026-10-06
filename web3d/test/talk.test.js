@@ -5,6 +5,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { chunk, followBuilds, heard, speech } from "../src/talk.js";
 import { loadEngine } from "../src/engine.js";
+import { createDialogue } from "../src/dialogue.js";
 
 const WORDS = JSON.parse(readFileSync(new URL("../words.json", import.meta.url)));
 const card = (code, rank) => ({ card: code, rank });
@@ -37,9 +38,7 @@ test("nothing in the bank is unkind", () => {
 // can choose from at any event"): everything is said at least three ways,
 // and what comes up again and again (the build calls, the captures and
 // clears, the count, the deal, "Last.") at least five, none twice in one
-// group and none too long for a balloon. A line play-testing gave word for
-// word, said at most once a game, is said only its own way.
-const VERBATIM = new Set(["quite-normal"]);
+// group and none too long for a balloon.
 const FREQUENT = /^(build|builds|raise|left)-\d+$|^take-|^(sweep|cash|clinch-cards|clinch-spades|residue|last|low-deals|my-deal|your-deal|left-more)$/;
 
 test("everything is said in several ways, the frequent moments in many", () => {
@@ -47,7 +46,7 @@ test("everything is said in several ways, the frequent moments in many", () => {
   for (const [group, keys] of Object.entries(WORDS.groups)) {
     const texts = keys.map((k) => WORDS.texts[k]);
     assert.equal(new Set(texts).size, texts.length, `${group} says something twice`);
-    if (!VERBATIM.has(group) && texts.length < (FREQUENT.test(group) ? 5 : 3)) few.push(`${group}: ${texts.length}`);
+    if (texts.length < (FREQUENT.test(group) ? 5 : 3)) few.push(`${group}: ${texts.length}`);
     for (const text of texts) assert.ok(text.length <= 44, `too long for a balloon: "${text}"`);
   }
   assert.deepEqual(few, []);
@@ -176,7 +175,7 @@ test("nothing is said while a hand is scored: the score's popups tell it", () =>
   assert.deepEqual(said(speech(state([scored, ends]))), []);
   // The game's end has its word still.
   const over = speech(state([scored, { ...ends, totals: { you: 12, them: 21 } }, { kind: "game_ends", hand: 1, you_won: false }]));
-  assert.deepEqual(said(over), ["them:quite-normal"]);
+  assert.deepEqual(said(over), ["them:you-lost"]);
 });
 
 // The seventh play-testing: "when the game concludes, the opponent should
@@ -184,22 +183,31 @@ test("nothing is said while a hand is scored: the score's popups tell it", () =>
 // things to me: just one will suffice." One line, your opponent's, from
 // beside the court card, heard whenever the calls are; nothing from you.
 test("the game's end: your opponent says one thing, no more", () => {
-  for (const [won, line] of [[false, "them:quite-normal"], [true, "them:good-game"]]) {
+  for (const [won, line] of [[false, "them:you-lost"], [true, "them:good-game"]]) {
     const lines = speech(state([{ kind: "game_ends", hand: 1, you_won: won }]));
     assert.deepEqual(said(lines), [line], won ? "you won" : "you lost");
     assert.deepEqual(said(heard(lines, "calls")), [line]);
   }
 });
 
-// The game lost (play-testing): your opponent, revealed a court card, "says
-// 'You are quite normal.'" -- its last word, heard whenever the calls are.
-test("losing, your opponent's last word is that you are quite normal", () => {
+// The game lost (play-testing): your opponent, revealed a court card, has
+// the last word, heard whenever the calls are. "You are quite normal." was
+// asked for word for word; heard game after game, it is now one of many
+// (the user: "remember to have diverse ending dialogues- i've gotten 'you
+// are very normal' a few times already"), as the gracious words are when
+// you win: eight games in a sitting end eight ways.
+test("losing, your opponent's last word: 'You are quite normal.' or another, none twice in eight games", () => {
   const lines = speech(state([{ kind: "game_ends", hand: 1, you_won: false }]));
-  assert.equal(said(lines).at(-1), "them:quite-normal");
-  assert.deepEqual(said(heard(lines, "calls")), ["them:quite-normal"]);
+  assert.equal(said(lines).at(-1), "them:you-lost");
+  assert.deepEqual(said(heard(lines, "calls")), ["them:you-lost"]);
   assert.deepEqual(heard(lines, "none"), []);
-  assert.deepEqual(WORDS.groups["quite-normal"].map((k) => WORDS.texts[k]), ["You are quite normal."]);
-  assert.ok(!said(speech(state([{ kind: "game_ends", hand: 1, you_won: true }]))).includes("them:quite-normal"), "not when you win");
+  assert.ok(WORDS.groups["you-lost"].map((k) => WORDS.texts[k]).includes("You are quite normal."));
+  assert.ok(!said(speech(state([{ kind: "game_ends", hand: 1, you_won: true }]))).includes("them:you-lost"), "not when you win");
+  const dialogue = createDialogue(WORDS, () => 0);
+  for (const phrase of ["you-lost", "good-game"]) {
+    const endings = Array.from({ length: 8 }, () => dialogue.words([{ who: "them", phrase }])[0].words);
+    assert.equal(new Set(endings).size, 8, `${phrase}: ${endings.join(" / ")}`);
+  }
 });
 
 test("only the events since the last state are said", () => {
@@ -270,7 +278,7 @@ test("lines one speaker says at one moment are said as one, so nobody waits thro
 });
 
 test("the talk at three levels: none, the calls that carry the game, or everything", () => {
-  const lines = ["sweeps-ask", "build-8", "last", "sweep", "cash", "quite-normal"].map((phrase) => ({ who: "them", phrase }));
+  const lines = ["sweeps-ask", "build-8", "last", "sweep", "cash", "you-lost"].map((phrase) => ({ who: "them", phrase }));
   const chatter = ["left-7", "take-many", "take-big-casino", "clinch-cards", "residue", "haul-reply", "trail"].map((phrase) => ({ who: "them", phrase, chatter: true }));
   assert.deepEqual(heard([...lines, ...chatter], "none"), []);
   assert.deepEqual(heard([...lines, ...chatter], "all"), [...lines, ...chatter]);

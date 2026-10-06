@@ -194,8 +194,10 @@ just behind your seat, and the air clears: your opponent was a court card
 all along, standing on the far side of the table, cel-shaded and inked like
 the cards, and it says the game's last word from there: one line, no more
 (the seventh play-testing: "the opponent should say 1 thing to me, no
-more"), "You are quite normal." when you have lost, a gracious "Well
-played." when you have won, in a balloon beside the
+more"), "You are quite normal." or another of a dozen when you have lost
+(the user, hearing that one game after game: "have diverse ending
+dialogues"), a gracious "Well played." or the like when you have won,
+each said in turn, none again until all have been, in a balloon beside the
 card, three quarters up it, by the face, its tail pointing at the card (to
 its left where there is no room on its right). The figure is made as each
 game begins, so it stands the moment the game ends. The table has edges (`reveal.js`

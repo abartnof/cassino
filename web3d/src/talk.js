@@ -274,8 +274,8 @@ export function speech(state, since = 0, { waited = false } = {}) {
         // One line, your opponent's, from beside the court card it turns
         // out to have been all along (the seventh play-testing: "the
         // opponent should say 1 thing to me, no more"): winning, its last
-        // word (play-testing); losing, a gracious one.
-        say("them", e.you_won ? "good-game" : "quite-normal");
+        // word, said in many ways (play-testing); losing, a gracious one.
+        say("them", e.you_won ? "good-game" : "you-lost");
         break;
       default:
         break;
