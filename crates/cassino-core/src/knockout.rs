@@ -43,9 +43,13 @@
 //!   trail, trail any legal card, uniformly at random. (With Valuables also
 //!   out, this is the whole of it.)
 //! - SafeBuilds: blind to whether a build survives. When the move chosen is
-//!   a build, play the largest build among the legal ones (most cards,
-//!   then the highest value; ties to the first) rather than the one that
-//!   best survives to be taken.
+//!   a build of the player's own (a new one, or an addition to one's own;
+//!   not a raise of the opponent's), build any allowed build of one's own,
+//!   uniformly at random (seeded).
+//!
+//! The Trailing knockout (any trail at random) subsumes Valuables, which
+//! trails that card or a valuable one, and partly NoSweep: a random trail
+//! may leave a sweep as often as any other.
 //!
 //! Every choice is a function of the seed and the views seen, as for the
 //! other agents. With no skill knocked out the agent *is* the searcher, move
@@ -58,21 +62,6 @@ use crate::review::leaves_sweep;
 use crate::rng::Rng;
 use crate::search::SearchAgent;
 use crate::tutor::{shows, valuable, Skill};
-
-/// How big a build is: the cards it holds once made.
-fn build_size(view: &View, mv: &Move) -> (u32, u8) {
-    match *mv {
-        Move::Build {
-            value, onto, loose, ..
-        } => {
-            let target = onto
-                .and_then(|o| view.table.build_of(o))
-                .map_or(0, |b| b.cards.len());
-            (1 + loose.len() + target, value)
-        }
-        _ => (0, 0),
-    }
-}
 
 /// The searcher with `knocked` skills out.
 pub struct Knockout {
@@ -214,18 +203,17 @@ impl Agent for Knockout {
                 .expect("a candidate")
                 .0;
         }
-        if matches!(m, Move::Build { .. }) && self.is_out(Skill::SafeBuilds) {
-            m = view
+        if self.is_out(Skill::SafeBuilds) && shows(view, &m) == [Skill::Building] {
+            // Blind to which survives: any allowed build of one's own, as
+            // likely as any other.
+            let builds: Vec<Move> = view
                 .candidates()
                 .into_iter()
-                .filter(|x| matches!(x, Move::Build { .. }) && !self.withheld(view, x))
-                .fold(m, |best, x| {
-                    if build_size(view, &x) > build_size(view, &best) {
-                        x
-                    } else {
-                        best
-                    }
-                });
+                .filter(|x| shows(view, x) == [Skill::Building] && !self.withheld(view, x))
+                .collect();
+            if builds.len() > 1 {
+                m = builds[self.rng.below(builds.len() as u64) as usize];
+            }
         }
         if matches!(m, Move::Trail { .. }) {
             let trails: Vec<Move> = view
@@ -271,6 +259,19 @@ mod tests {
     use crate::hand::Hand;
     use crate::rules::Rules;
     use crate::table::Seat;
+
+    /// The cards a build holds once made.
+    fn build_size(view: &View, mv: &Move) -> usize {
+        match *mv {
+            Move::Build { loose, onto, .. } => {
+                let target = onto
+                    .and_then(|o| view.table.build_of(o))
+                    .map_or(0, |b| b.cards.len() as usize);
+                1 + loose.len() as usize + target
+            }
+            _ => 0,
+        }
+    }
 
     #[test]
     fn names_parse_and_read_back_in_one_order() {
@@ -476,6 +477,7 @@ mod tests {
     #[test]
     fn restraint_knockouts_differ_only_where_they_should() {
         let mut found = [0usize; 4];
+        let mut smaller = 0;
         for seed in 1..=6u64 {
             for rules in [Rules::CLASSIC, Rules::ROYAL] {
                 let d = differences(&[Skill::Trailing], rules, seed);
@@ -492,7 +494,11 @@ mod tests {
                 let d = differences(&[Skill::SafeBuilds], rules, seed);
                 for (s, k, v) in &d {
                     assert!(matches!(s, Move::Build { .. }) && matches!(k, Move::Build { .. }));
-                    assert!(build_size(v, k) >= build_size(v, s));
+                    assert!(
+                        shows(v, k) == [Skill::Building],
+                        "{k}: not a build of one's own"
+                    );
+                    smaller += usize::from(build_size(v, k) < build_size(v, s));
                 }
                 found[2] += d.len();
                 let d = differences(&[Skill::NoSweep], rules, seed);
@@ -505,5 +511,10 @@ mod tests {
         }
         // Each does bear somewhere in these games.
         assert!(found.iter().all(|&n| n > 0), "{found:?}");
+        // The build is not the largest: a blind choice, not an adversarial one.
+        assert!(
+            smaller > 0,
+            "never chose a smaller build than the searcher's"
+        );
     }
 }
