@@ -179,6 +179,16 @@ your place, in words ("take 10♦ with 10♣"), its value in points, and the
 notes on it. It is computed from your view only. The advisor is seeded by the
 position, so asking twice gives the same answer, and asking changes nothing.
 
+## The review
+
+Once the game is over, the `review` query gives the review of the person's
+game (`null` before, and in a watched game): `{summary, strengths, tries:
+[{title, text}], closing, method}`, all in words ready to show. It is about
+habits, never a single move (`docs/DESIGN.md` §12.4): at most two strengths
+and two habits to work on, either list possibly empty. It is worked out when
+asked, every move of the person's rated again by the advisor: about half a
+second for a whole game in Node.
+
 ## The replay
 
 Once the game is over, and never before, the `reveal` query gives what was
@@ -207,6 +217,7 @@ The module exports, with no `wasm-bindgen`:
 | `cassino_step() -> 0/1` | One step of a watched game; renders the state |
 | `cassino_offer(len)` | Renders the offer for the selection just written |
 | `cassino_hint()` | Renders the hint |
+| `cassino_review()` | Renders the review once the game is over (`null` before; see "The review") |
 | `cassino_reveal()` | Renders every hand's deals once the game is over (`null` before; see "The replay") |
 | `cassino_restore(len) -> 0/1` | Restores the sitting from the saved text just written; on refusal the old sitting stays and the rendered JSON is `{"error": ...}` |
 | `cassino_render()` | Renders the state again |

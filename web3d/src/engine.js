@@ -60,6 +60,13 @@ export async function loadEngine(bytes) {
       ex.cassino_hint();
       return out();
     },
+    // The review of your game once it is over (null before, and when
+    // watching): { summary, strengths, tries: [{ title, text }], closing,
+    // method }. Worked out when asked: every move of yours rated again.
+    review() {
+      ex.cassino_review();
+      return out();
+    },
     // Every hand's deals once the game is over (null before). The table no
     // longer uses it (its replay with both hands face up went in the
     // seventh play-testing); the protocol keeps it.

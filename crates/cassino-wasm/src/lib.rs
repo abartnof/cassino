@@ -642,6 +642,31 @@ pub fn hint(session: &Session) -> String {
     ])
 }
 
+/// The review of the person's game, in words, once it is over (`null`
+/// before, and in a watched game): `{summary, strengths, tries: [{title,
+/// text}], closing, method}`.
+pub fn review(session: &Session) -> String {
+    let Some(r) = session.review() else {
+        return "null".into();
+    };
+    let aids = session.aids();
+    let told = r.told(aids.hints || aids.explain);
+    object(&[
+        ("summary", text(&told.summary)),
+        ("strengths", list(told.strengths.iter().map(|s| text(s)))),
+        (
+            "tries",
+            list(
+                told.tries
+                    .iter()
+                    .map(|(title, body)| object(&[("title", text(title)), ("text", text(body))])),
+            ),
+        ),
+        ("closing", text(&told.closing)),
+        ("method", text(&told.method)),
+    ])
+}
+
 // ---------------------------------------------------------------------------
 // Scripted games, for checking that every build plays alike.
 // ---------------------------------------------------------------------------
@@ -685,7 +710,7 @@ pub fn scripted(game: u32, aces_fourteen: u32, sweeps: u32, skill_milli: u32, se
 // ---------------------------------------------------------------------------
 
 pub mod ffi {
-    use super::{hint, offer, reveal, sit_down, state, watch, Session};
+    use super::{hint, offer, reveal, review, sit_down, state, watch, Session};
     use std::cell::RefCell;
 
     thread_local! {
@@ -801,6 +826,18 @@ pub mod ffi {
     #[no_mangle]
     pub extern "C" fn cassino_hint() {
         let json = SESSION.with(|s| s.borrow().as_ref().map_or_else(|| "null".to_string(), hint));
+        OUT.with(|out| *out.borrow_mut() = json.into_bytes());
+    }
+
+    /// Renders the review of the person's game, once it is over (`null`
+    /// before).
+    #[no_mangle]
+    pub extern "C" fn cassino_review() {
+        let json = SESSION.with(|s| {
+            s.borrow()
+                .as_ref()
+                .map_or_else(|| "null".to_string(), review)
+        });
         OUT.with(|out| *out.borrow_mut() = json.into_bytes());
     }
 
@@ -1204,6 +1241,44 @@ mod tests {
         assert!(s.candidates().contains(&m));
         assert!(v["advice"].as_str().unwrap().len() > 3);
         assert!(v["notes"].as_array().is_some());
+    }
+
+    #[test]
+    fn a_review_once_the_game_is_over_in_words() {
+        let mut s = sit_down(1, 1, 0, 1, 3000, 12);
+        assert_eq!(review(&s), "null", "not while it is played");
+        for _ in 0..2_000 {
+            match s.prompt() {
+                Prompt::Play => {
+                    let m = s.candidates()[0];
+                    assert!(s.send(&m.to_string()));
+                }
+                Prompt::NextHand => assert!(s.send("next")),
+                Prompt::Over => break,
+            }
+        }
+        let v = parse(&review(&s));
+        assert!(v["summary"].as_str().unwrap().starts_with("You made "));
+        assert!(v["strengths"].as_array().unwrap().len() <= 2);
+        let tries = v["tries"].as_array().unwrap();
+        assert!(
+            !tries.is_empty() && tries.len() <= 2,
+            "always the first candidate: something to work on"
+        );
+        for t in tries {
+            assert!(t["title"].as_str().unwrap().len() > 3);
+            assert!(t["text"].as_str().unwrap().len() > 20);
+        }
+        assert!(
+            v["closing"].as_str().unwrap().contains("Hints"),
+            "no aids on: they are offered"
+        );
+        assert!(v["method"]
+            .as_str()
+            .unwrap()
+            .contains("knowing only what you knew"));
+        let w = watch(1, 0, 1, 1, 2000, 2000, 3);
+        assert_eq!(review(&w), "null");
     }
 
     #[test]
