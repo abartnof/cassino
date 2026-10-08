@@ -40,6 +40,8 @@ the same record of commands always replays into the same game.
 | `next` | `prompt == "next_hand"` | Deal the next hand, once the count has been seen |
 | `undo` | `can_undo` | Take back the last decision, with the opponent's replies and anything the table did for the person after it; refused (`deal_seen`) once a deal has come since it, whose cards the person has seen |
 | `set <aid> on` / `off` | any time | `hints`, `explain`, `play_forced` |
+| `hint` | `prompt == "play"` | Record that the hint was shown; no change to the game. The decision pending then counts as assisted (the tutor does not take it as evidence). The `hint` query sends it itself when it answers |
+| `nudged <skill>` | `prompt == "play"` | Record that the tutor's nudge for that skill (its slug: `pairs`, `sums`, `building`, `safe-builds`, `answering-builds`, `sweeps`, `valuables`, `trailing`) was shown; the decision pending counts as assisted |
 
 A refused command leaves the game as it was, and `state.error` says why in a
 sentence a person can read ("To build 9 you must hold another card that can
@@ -177,7 +179,10 @@ The `hint` query answers `null` unless hints are on and it is your turn.
 Otherwise it gives `{move, advice, value, notes}`: the top rung's move in
 your place, in words ("take 10♦ with 10♣"), its value in points, and the
 notes on it. It is computed from your view only. The advisor is seeded by the
-position, so asking twice gives the same answer, and asking changes nothing.
+position, so asking twice gives the same answer, and asking changes nothing
+in the game. An answer is recorded as a `hint` command (see Commands), so a
+saved game knows which decisions were helped; records from before it replay
+as they did.
 
 ## The review
 

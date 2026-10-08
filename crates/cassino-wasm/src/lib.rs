@@ -10,6 +10,7 @@
 //! next                   deal the next hand, once the count has been seen
 //! undo                   take back the last decision
 //! set hints on           switch an aid: hints, explain, play_forced
+//! (the hint query, when it answers, also records a `hint` command)
 //! ```
 //!
 //! Two queries return JSON of their own: the **offer** for a selection
@@ -621,10 +622,13 @@ pub fn reveal(session: &Session) -> String {
 
 /// The hint, as JSON, or `null` when hints are off or it is not the
 /// person's turn.
-pub fn hint(session: &Session) -> String {
+pub fn hint(session: &mut Session) -> String {
     let Some(h) = session.hint() else {
         return "null".into();
     };
+    // The hint is shown: the decision it was for is no evidence of what the
+    // person knows. A recorded command, not a change to the game.
+    session.send("hint");
     let view = session.view();
     let rules = view.rules;
     object(&[
@@ -825,7 +829,11 @@ pub mod ffi {
     /// Renders the hint.
     #[no_mangle]
     pub extern "C" fn cassino_hint() {
-        let json = SESSION.with(|s| s.borrow().as_ref().map_or_else(|| "null".to_string(), hint));
+        let json = SESSION.with(|s| {
+            s.borrow_mut()
+                .as_mut()
+                .map_or_else(|| "null".to_string(), hint)
+        });
         OUT.with(|out| *out.borrow_mut() = json.into_bytes());
     }
 
@@ -1234,13 +1242,15 @@ mod tests {
     #[test]
     fn a_hint_only_when_hints_are_on() {
         let mut s = sit_down(0, 0, 1, 1, 3000, 7);
-        assert_eq!(hint(&s), "null");
+        assert_eq!(hint(&mut s), "null");
         assert!(s.send("set hints on"));
-        let v = parse(&hint(&s));
+        let v = parse(&hint(&mut s));
         let m = Move::parse(v["move"].as_str().unwrap()).unwrap();
         assert!(s.candidates().contains(&m));
         assert!(v["advice"].as_str().unwrap().len() > 3);
         assert!(v["notes"].as_array().is_some());
+        // Showing it is recorded, so that the decision is not evidence.
+        assert_eq!(s.record().last().map(String::as_str), Some("hint"));
     }
 
     #[test]
