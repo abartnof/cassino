@@ -146,22 +146,22 @@ pub struct Review {
     pub sweeps_score: bool,
 }
 
-fn is_capture(m: &Move) -> bool {
+pub(crate) fn is_capture(m: &Move) -> bool {
     matches!(m, Move::Capture { .. })
 }
-fn is_build(m: &Move) -> bool {
+pub(crate) fn is_build(m: &Move) -> bool {
     matches!(m, Move::Build { .. })
 }
-fn is_trail(m: &Move) -> bool {
+pub(crate) fn is_trail(m: &Move) -> bool {
     matches!(m, Move::Trail { .. })
 }
-fn valuable(card: Card) -> bool {
+pub(crate) fn valuable(card: Card) -> bool {
     card.rank() == ACE || card == Card::BIG_CASINO || card == Card::LITTLE_CASINO
 }
 
 /// Whether `mv` leaves a table one card could clear for the opponent, by a
 /// card they might hold.
-fn leaves_sweep(view: &View, mv: &Move) -> bool {
+pub(crate) fn leaves_sweep(view: &View, mv: &Move) -> bool {
     advice::notes(view, view.me, mv)
         .iter()
         .any(|n| matches!(n, Note::SweepOpen { next, .. } if *next != view.me))
