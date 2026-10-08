@@ -130,7 +130,9 @@ pub fn by_level(level: u8, rng: Rng) -> Box<dyn Agent> {
 
 /// An agent by name, for experiments: the levels' agents, the searcher's
 /// playout policies (`search-greedy`, `search-counter`), and erratic
-/// opponents as `<level>e<erraticism>` (`4e0.5`).
+/// opponents as `<level>e<erraticism>` (`4e0.5`), and the searcher with
+/// skills knocked out as `searcher-no-<skill>[+<skill>...]` (`knockout.rs`;
+/// `searcher-no-sums+building`).
 pub fn by_name(name: &str, rng: Rng) -> Option<Box<dyn Agent>> {
     use crate::search::{Policy, SearchAgent};
     let agent: Box<dyn Agent> = match name {
@@ -151,6 +153,10 @@ pub fn by_name(name: &str, rng: Rng) -> Option<Box<dyn Agent>> {
                 erraticism,
                 rng.next_u64(),
             ))
+        }
+        other if other.starts_with("searcher-no-") => {
+            let skills = crate::knockout::parse_knocked(&other["searcher-no-".len()..])?;
+            Box::new(crate::knockout::Knockout::new(rng, &skills))
         }
         other => {
             let mut s = SearchAgent::new(rng);

@@ -34,6 +34,25 @@ impl Skill {
         Skill::Trailing,
     ];
 
+    /// The name used on the command line (`searcher-no-<slug>`).
+    pub fn slug(self) -> &'static str {
+        match self {
+            Skill::Pairs => "pairs",
+            Skill::Sums => "sums",
+            Skill::Building => "building",
+            Skill::SafeBuilds => "safe-builds",
+            Skill::AnsweringBuilds => "answering-builds",
+            Skill::NoSweep => "sweeps",
+            Skill::Valuables => "valuables",
+            Skill::Trailing => "trailing",
+        }
+    }
+
+    /// The skill whose [`slug`](Skill::slug) this is.
+    pub fn from_slug(slug: &str) -> Option<Skill> {
+        Skill::ALL.into_iter().find(|s| s.slug() == slug)
+    }
+
     /// The skills this one needs first: the logical ones only.
     pub fn needs(self) -> &'static [Skill] {
         match self {
@@ -67,6 +86,14 @@ mod tests {
                 assert!(j < i, "{s:?} needs {n:?}, listed after it");
             }
         }
+    }
+
+    #[test]
+    fn slugs_name_each_skill_once_and_read_back() {
+        for s in Skill::ALL {
+            assert_eq!(Skill::from_slug(s.slug()), Some(s));
+        }
+        assert_eq!(Skill::from_slug("nothing"), None);
     }
 
     #[test]

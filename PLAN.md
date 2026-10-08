@@ -342,7 +342,9 @@ legal move. RULES.md now says each held card answers for one build value.
   - [ ] 11.1 The skills and clear chances (`tutor.rs`); the advisor's
     noise measured, the margin set.
   - [ ] 11.2 Knockouts of each skill in the strongest rung; what each
-    skill is worth, and the prerequisites, measured.
+    skill is worth, and the prerequisites, measured. The knockout agent
+    is in (`knockout.rs`, `measure searcher-no-<skill>[+<skill>] searcher`);
+    the runs are not yet made.
   - [ ] 11.3 Candidate rules and their precision measured; one rule a
     skill shipped, or none.
   - [ ] 11.4 The learner model from stored records, the next skill by

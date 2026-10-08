@@ -6,6 +6,13 @@
 //!             [--batch N] [--looks K] [--seed S] [--out FILE.tsv]
 //! ```
 //!
+//! A and B are a level (1 to 4) or an agent's name: `legal`, `greedy`,
+//! `counter`, `searcher`, `search-greedy`, `search-counter`, `4e0.5` (a level
+//! with erraticism), or the searcher with skills knocked out,
+//! `searcher-no-<skill>[+<skill>...]`, the skills being `pairs`, `sums`,
+//! `building`, `safe-builds`, `answering-builds`, `sweeps`, `valuables` and
+//! `trailing` (`knockout.rs`): `searcher-no-sums+building`.
+//!
 //! The plan (batch and looks) is printed before the first batch, and the
 //! run stops as soon as the boundary is crossed. With `--unit hand` each
 //! observation is A's points less B's over one mirrored pair of hands; with

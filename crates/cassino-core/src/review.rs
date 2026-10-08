@@ -161,7 +161,7 @@ fn valuable(card: Card) -> bool {
 
 /// Whether `mv` leaves a table one card could clear for the opponent, by a
 /// card they might hold.
-fn leaves_sweep(view: &View, mv: &Move) -> bool {
+pub(crate) fn leaves_sweep(view: &View, mv: &Move) -> bool {
     advice::notes(view, view.me, mv)
         .iter()
         .any(|n| matches!(n, Note::SweepOpen { next, .. } if *next != view.me))
