@@ -1352,6 +1352,23 @@ html.sideways .aid-toggles {
   font-size: 13px;
   margin-top: 14px;
 }
+.review-page .review-method summary {
+  cursor: pointer;
+}
+.review-page .review-method p {
+  margin: 8px 0 0;
+}
+/* ---- the progress kept for the tutor, in the settings */
+.progress-line {
+  margin: 0 0 8px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 13px;
+}
+.progress-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 
 /* ---- a window held upright (a phone, a tablet) -----------------------------
    The HUD across the top, as its design intends, with the aids' panel under

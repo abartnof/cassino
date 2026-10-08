@@ -750,7 +750,7 @@ def check_review(browser, failures, viewport=None):
         failures.append(f"{where}: the buttons are not both on the screen: {box}, {again}")
     button.click()
     try:
-        page.wait_for_function("document.querySelector('.review-dialog')?.open && /^You made /.test(document.querySelector('.review-page p')?.textContent ?? '')", timeout=20_000)
+        page.wait_for_function("document.querySelector('.review-dialog')?.open && document.querySelector('.review-bullets li')", timeout=30_000)
     except Exception:
         shown = page.evaluate("document.querySelector('.review-page')?.textContent")
         failures.append(f"{where}: no review in its dialog: {shown}")
@@ -761,8 +761,20 @@ def check_review(browser, failures, viewport=None):
     text = page.evaluate("document.querySelector('.review-page').textContent")
     if any(suit in text for suit in "♠♥♦♣"):
         failures.append(f"{where}: a card named in the review: {text[:200]}")
-    if "Something to try" not in text and "Nothing stood out" not in text and "short game" not in text:
-        failures.append(f"{where}: neither a habit nor its absence told: {text[:300]}")
+    bullets = page.locator(".review-page .review-bullets li").count()
+    if not 1 <= bullets <= 3:
+        failures.append(f"{where}: {bullets} bullets in the brief, not one to three: {text[:300]}")
+    if page.locator(".review-page details.review-method summary").inner_text().strip() != "How is this worked out?":
+        failures.append(f"{where}: no 'How is this worked out?' disclosure")
+    if page.locator(".review-page details.review-method").get_attribute("open") is not None:
+        failures.append(f"{where}: the method is open before it is asked for")
+    # The game is kept for the tutor, with its summary once the ending has
+    # settled; a reload keeps the history.
+    try:
+        page.wait_for_function("window.cassino3d.progress().length >= 1 && window.cassino3d.progress().every((g) => g.summary)", timeout=30_000)
+    except Exception:
+        failures.append(f"{where}: the finished game was not kept with its summary: {page.evaluate('window.cassino3d.progress()')}")
+    kept = page.evaluate("window.cassino3d.progress().map((g) => g.summary)")
     page.locator(".review-dialog .review-close").click()
     page.wait_for_function("!document.querySelector('.review-dialog').open", timeout=5_000)
     if button.is_hidden() or page.locator(".controls md-filled-button.again").is_hidden():
@@ -780,9 +792,83 @@ def check_review(browser, failures, viewport=None):
     settle(page)
     if not button.is_hidden():
         failures.append(f"{where}: still offered once a new game is dealt")
+    # The stored history survives a reload.
+    page.reload()
+    page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
+    if page.evaluate("window.cassino3d.progress().map((g) => g.summary)") != kept:
+        failures.append(f"{where}: the stored history did not survive a reload")
     if page.errors:
         failures.append(f"{where}: console errors {page.errors[:5]}")
     page.context.close()
+
+
+def check_tutor(browser, failures):
+    """The tutor's nudge (docs/DESIGN.md section 12.8): with a history that
+    points at taking pairs, a quiet tip appears on a turn that holds the
+    chance, once, in the engine's words, and is recorded as shown; with the
+    tips off there is none. The settings hold the switch and the progress
+    buttons."""
+    rows = [("pairs", 8, 1, 7.0)] + [(slug, 0, 0, 0) for slug in ("sums", "building", "safe-builds", "answering-builds", "sweeps", "valuables", "trailing")]
+    for tips in (True, False):
+        where = "tutor" + ("" if tips else " (tips off)")
+        page = open_page(browser, "seed=12&game=royal&aces14&skill=3&speed=8")
+        settle(page)
+        # The version of the evidence the engine makes now: from a game it
+        # sums up (the page is reloaded after, whatever this leaves).
+        header = page.evaluate(
+            "(() => { const e = window.cassino3d.engine; let s = e.start({ game: 'royal', seed: 3 }); "
+            "for (let n = 0; s.prompt !== 'over' && n < 600; n++) s = e.send(s.prompt === 'play' ? s.moves[0] : 'next').state; "
+            "return e.evidence().split('\\n')[0]; })()"
+        )
+        summary = header + "\n" + "\n".join(f"{slug} {c} {m} {x}" for slug, c, m, x in rows)
+        games = [{"record": f"cassino record fake {n}", "summary": summary} for n in range(5)]
+        got = page.evaluate("(h) => window.cassino3d.engine.learner(h)", [g["summary"] for g in games])
+        if got["focus"] != "pairs" or got["games"] != 5:
+            failures.append(f"{where}: a history of missed pairs gave {got}")
+        page.evaluate(
+            "([games, tips]) => { localStorage.setItem('cassino.progress', JSON.stringify({ v: 1, games })); "
+            "localStorage.setItem('cassino.prefs', JSON.stringify({ tutor: tips, v: 6 })); }",
+            [games, tips],
+        )
+        page.reload()
+        page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
+        settle(page)
+        if page.locator('md-switch[data-pref="tutor"]').count() != 1:
+            failures.append(f"{where}: no 'Tips from the tutor' switch in the settings")
+        for cls in ("progress-export", "progress-import", "progress-clear"):
+            if page.locator(f".settings-dialog .{cls}").count() != 1:
+                failures.append(f"{where}: no {cls} button in the settings")
+        seen = []
+        for made in range(14):
+            tip = page.evaluate("window.cassino3d.nudge()")
+            if tip:
+                seen.append((made, tip))
+                if tips and len(seen) == 1:
+                    settle(page)
+                    try:
+                        page.wait_for_function("document.querySelector('.aid-line') && !document.querySelector('.aid-line').hidden", timeout=10_000)
+                    except Exception:
+                        failures.append(f"{where}: the tip is not on the screen")
+                    line = page.evaluate("document.querySelector('.aid-line').textContent")
+                    if line != "Tip: " + tip["words"]:
+                        failures.append(f"{where}: the line says {line!r}, not the engine's words {tip['words']!r}")
+                    if len(tip["words"].split()) > 10:
+                        failures.append(f"{where}: a long tip: {tip['words']!r}")
+                    kept = page.evaluate("window.cassino3d.engine.state().saved")
+                    if f"nudged {tip['skill']}" not in kept:
+                        failures.append(f"{where}: the tip shown was not recorded in the sitting")
+                    shot(page, "t12-nudge")
+            if not play_by_clicking(page, failures, made):
+                break
+        if tips and not seen:
+            failures.append(f"{where}: no tip in 14 decisions")
+        if tips and len({m for m, _ in seen}) > 1:
+            failures.append(f"{where}: the tip came on more than one decision: {seen}")
+        if not tips and seen:
+            failures.append(f"{where}: a tip with the tips off: {seen}")
+        if page.errors:
+            failures.append(f"{where}: console errors {page.errors[:5]}")
+        page.context.close()
 
 
 def check_move_bar(browser, failures):
@@ -1694,6 +1780,7 @@ def main() -> int:
         check_ending(browser, failures)
         check_review(browser, failures)
         check_review(browser, failures, viewport={"width": 390, "height": 664})
+        check_tutor(browser, failures)
         check_tutorial(browser, failures)
         check_phone(browser, failures)
         check_tablet_faces(browser, failures)

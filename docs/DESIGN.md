@@ -777,7 +777,11 @@ skill holds a Beta posterior over clear chances, recent games weighing
 more; a skill is mastered when its lower bound passes a threshold, and
 lost again only well below it (hysteresis, so progress does not flicker).
 Without storage (a private window), the review is the one game's, as
-before. Records can be exported and imported.
+before. Records can be exported and imported. On the page each stored game
+is its record and its evidence summary (text, versioned), the last thirty
+kept; the summary is worked out once the ending has settled and recomputed
+from the record when the engine calls it stale, so a change to the evidence
+never drops a game.
 
 **The next skill** is the unmastered skill with the largest gain among
 those *eligible*. A skill's cost is the points a game its missed chances

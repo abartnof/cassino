@@ -44,6 +44,9 @@ export const DEFAULTS = Object.freeze({
   buildValues: false,
   unseen: false,
   sweepWarning: false,
+  // The tutor's tips: a quiet word, once a game, on the skill the person's
+  // recent games say to work on; on unless turned off.
+  tutor: true,
   // The table's cards and builds in descending order, left to right, on
   // unless turned off (the user).
   sortTable: true,
@@ -126,6 +129,7 @@ export function loadPrefs(store) {
     buildValues: isBool(kept.buildValues) ? kept.buildValues : DEFAULTS.buildValues,
     unseen: isBool(kept.unseen) ? kept.unseen : DEFAULTS.unseen,
     sweepWarning: isBool(kept.sweepWarning) ? kept.sweepWarning : DEFAULTS.sweepWarning,
+    tutor: isBool(kept.tutor) ? kept.tutor : DEFAULTS.tutor,
     sortTable: isBool(kept.sortTable) ? kept.sortTable : DEFAULTS.sortTable,
     leftHanded: isBool(kept.leftHanded) ? kept.leftHanded : DEFAULTS.leftHanded,
     talk: ["all", "calls", "none"].includes(kept.talk) ? kept.talk : DEFAULTS.talk,

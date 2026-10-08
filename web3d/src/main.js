@@ -38,6 +38,7 @@ import TUTORIAL_TEXT from "../tutorial.md";
 import { CARD, PORTRAIT_BELOW, ZONES, ZONES_PORTRAIT, ZONES_TOUCH } from "./units.js";
 import { cardCorners } from "./kinematics.js";
 import { decisionKey } from "./decision.js";
+import { addGame, clearProgress, exportProgress, historyOf, importProgress, loadProgress, progressSaid, refreshOne, setSummary } from "./progress.js";
 
 /* global WASM_BASE64, ART, COURTS, WORDS */
 
@@ -75,6 +76,9 @@ async function main() {
   let message = null;
   let hint = null; // the hint for this turn, if hints are on
   let hintKey = null; // the position it is for
+  let nudge = null; // the tutor's nudge for this turn, if the engine names one
+  let nudgeKey = null; // the position it was asked for (once a turn, not per frame)
+  let nudgeSent = false; // whether `nudged` is recorded for it
   let logOpen = false;
   let badgeFrom = null; // the state the cards are moving from (badges.js)
 
@@ -221,7 +225,25 @@ async function main() {
       if (name === "surface") stage.setSurface(chooseSurface({ chosen: value, saved: null }));
       if (name === "faces") showFaces(value);
       if (name === "buildValues" || name === "tutorial") placeBadges();
+      if (name === "tutor") tutorFocus();
       refresh();
+    },
+    progress: {
+      exportFile: () => download("cassino-progress.json", exportProgress(loadProgress(store))),
+      importText: (text) => {
+        const got = importProgress(store, text);
+        if (got.ok) {
+          tutorFocus();
+          staleSoon();
+        }
+        return got.ok ? progressSaid(loadProgress(store).length) : got.error;
+      },
+      clear: () => {
+        clearProgress(store);
+        summaries.clear();
+        tutorFocus();
+        return progressSaid(0);
+      },
     },
     copy: async (button) => {
       try {
@@ -272,6 +294,7 @@ async function main() {
       : engine.start({ ...prefs.rules, skill: prefs.skill, seed });
     figureFor(courtFor(state.seed));
     if (!watch) for (const [aid, on] of Object.entries(prefs.aids)) if (on) state = engine.send(`set ${aid} on`).state;
+    tutorFocus();
     sel = EMPTY;
     offer = null;
     message = null;
@@ -398,16 +421,90 @@ async function main() {
       if (!calm()) heardAt = { ...timing, beats: { ...timing.beats, [end]: at + REVEAL_MS } };
     } else if (state.prompt !== "over") hideOpponent();
     talk(state, before.events.length, heardAt, said);
-    if (state.prompt === "over") countGame();
+    if (state.prompt === "over") {
+      countGame();
+      keepGame();
+    }
     persist();
     refresh();
   }
 
-  // The review of the game just played, worked out once (every move of
-  // yours rated again) however often it is opened.
+  // ---- the tutor (docs/DESIGN.md §12.8): what the page keeps and asks -------
+
+  // Work for when the page is idle: the evidence of a game is the engine's
+  // advisor over every decision (about half a second), so it never runs
+  // while a game's ending plays.
+  const idle = (fn, ms = 0) => setTimeout(() => (window.requestIdleCallback ? window.requestIdleCallback(fn, { timeout: 4000 }) : fn()), ms);
+  const ENDING_SETTLES = 4500; // ms after the game's end before its evidence is worked out
+
+  // The summaries worked out this sitting, by record: the stored ones are
+  // read from storage, so with none the brief still rests on this game.
+  const summaries = new Map();
+  function summaryOf(record) {
+    let summary = summaries.get(record);
+    if (!summary) {
+      summary = engine.evidenceOf(record);
+      if (summary) {
+        summaries.set(record, summary);
+        setSummary(store, record, summary);
+      }
+    }
+    return summary;
+  }
+  const sayProgress = () => chrome.progressSaid(progressSaid(loadProgress(store).length));
+
+  // A finished game of yours is kept at once with its record, and its
+  // summary follows when the ending has settled (a game left before then
+  // is summed up at the next opening: the stale ones are recomputed).
+  function keepGame() {
+    if (state.watching) return;
+    const record = state.saved;
+    addGame(store, { record, summary: summaries.get(record) ?? null });
+    idle(() => {
+      summaryOf(record);
+      sayProgress();
+    }, ENDING_SETTLES);
+  }
+
+  // Summaries made by another version of the evidence are recomputed from
+  // their records, one at a time, when idle (learner::stale).
+  const tried = new Set();
+  function staleSoon(ms = 1500) {
+    idle(() => {
+      if (refreshOne(store, engine, tried)) staleSoon(2500);
+      else sayProgress();
+    }, ms);
+  }
+
+  // The skill to work on, from the games kept, handed to the sitting at a
+  // new game (and a game restored: the record does not hold it); none with
+  // the tips off.
+  function tutorFocus() {
+    nudge = null;
+    nudgeKey = null;
+    if (state.watching) return;
+    const focus = prefs.tutor ? engine.learner(historyOf(loadProgress(store))).focus : null;
+    engine.setFocus(focus);
+  }
+
+  function download(name, text) {
+    const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+    const link = Object.assign(document.createElement("a"), { href: url, download: name });
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  // The brief of the game just played, worked out once however often it is
+  // opened: the game's summary (made already, or now) and the earlier games'.
   let review = { of: null, words: null };
   function reviewed() {
-    if (review.of !== state.saved) review = { of: state.saved, words: engine.review() };
+    if (review.of !== state.saved) {
+      const record = state.saved;
+      const earlier = loadProgress(store).filter((g) => g.record !== record);
+      review = { of: record, words: engine.brief(summaryOf(record), historyOf(earlier)) };
+    }
     return review.words;
   }
 
@@ -921,6 +1018,7 @@ async function main() {
   function aidLine() {
     if (state.watching || state.prompt !== "play") return null;
     if (hint) return `Hint: ${hint.advice}.`;
+    if (nudge) return `Tip: ${nudge.words}`;
     if (!prefs.sweepWarning) return null;
     const warning = sweepWarning(chipsOf(offer));
     if (warning) return warning;
@@ -937,7 +1035,15 @@ async function main() {
     // speaks there is on; and for the prompt and the note, while the
     // explanations are (style.css).
     const explain = Boolean(state.watching ? prefs.aids.explain : state.aids?.explain);
-    document.documentElement.classList.toggle("aid-line-on", !state.watching && Boolean(state.aids?.hints || prefs.sweepWarning));
+    document.documentElement.classList.toggle("aid-line-on", !state.watching && Boolean(state.aids?.hints || prefs.sweepWarning || nudge));
+    // The nudge is shown once the cards are still: that is the command that
+    // records it (an assisted decision is no evidence), and it keeps the
+    // sitting saved to match, so a reload does not show it twice.
+    if (nudge && !nudgeSent && !busy && state.prompt === "play" && !hint) {
+      nudgeSent = true;
+      const sent = engine.send(`nudged ${nudge.skill}`);
+      if (sent.ok && !fixedSeed && !STAGING) saveSitting(store, sent.state.saved);
+    }
     document.documentElement.classList.toggle("explain-on", explain);
     const after = prefs.match === "best-of-7" && !state.watching ? seriesLine(series) : null;
     overlay.show({ state, chips: busy ? [] : chipsOf(offer), message, busy, aid: aidLine(), after, leftHanded: prefs.leftHanded, explain });
@@ -971,6 +1077,14 @@ async function main() {
       hintKey = hintFor;
       hint = hintFor ? engine.hint() : null;
       if (!hint?.move) hint = null;
+    }
+    // The tutor's nudge, once a turn as the hint is (the engine remembers
+    // its answer for the position; it costs an advisor run until it fires).
+    const nudgeFor = prefs.tutor && !state.watching && state.prompt === "play" ? decisionKey(state.saved) : null;
+    if (nudgeFor !== nudgeKey) {
+      nudgeKey = nudgeFor;
+      nudgeSent = false;
+      nudge = nudgeFor ? engine.nudge() : null;
     }
     director.rearrange();
     show();
@@ -1071,6 +1185,7 @@ async function main() {
     // The person's aids, as they set them, over the record's (T14).
     for (const [aid, on] of Object.entries(prefs.aids)) if (Boolean(state.aids[aid]) !== on) state = engine.send(`set ${aid} ${on ? "on" : "off"}`).state;
     tutorialSince = state.events.length; // the history restored is not news (review T8)
+    tutorFocus();
     director.restart(state);
     badgeFrom = state;
     scoreShown();
@@ -1091,6 +1206,8 @@ async function main() {
   }
   figureFor(courtFor(state.seed));
   document.getElementById("loading").remove();
+  sayProgress();
+  staleSoon(4000);
 
   // For the browser test: where a card is on the screen, the chips, the
   // sheet and the talk, and the clock (with ?manual, the test moves it).
@@ -1105,6 +1222,8 @@ async function main() {
     cheers: () => overlay.cheers(),
     hud: () => ({ shown: hud.shown(), totals: hud.totals(), hands: hud.hands(), idle: hud.idle() }),
     hint: () => hint,
+    nudge: () => nudge,
+    progress: () => loadProgress(store),
     // The game's end: who your opponent turned out to be, whether the figure
     // stands, and how far the camera has pulled back (null in play).
     opponent: () => ({ court: standing, revealed: stage.revealed(), ending: endingsBar.hidden ? null : endingWords.textContent }),

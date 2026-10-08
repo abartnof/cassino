@@ -18,7 +18,7 @@ import "@material/web/labs/segmentedbutton/outlined-segmented-button.js";
 import "@material/web/labs/segmentedbuttonset/outlined-segmented-button-set.js";
 import { DEFAULTS, SKILLS, SPEEDS, badgesOn, gameSaid } from "./prefs.js";
 import { PATTERNS } from "./surfaces.js";
-import { reviewBlocks } from "./review.js";
+import { briefBlocks } from "./review.js";
 
 // Simple stroked icons, piquet's, drawn for its page.
 const ICONS = {
@@ -87,11 +87,13 @@ const PAGE_AIDS = [
   ["buildValues", "Build values", "A badge with each build's value, always in view. Always on while the tutorial is"],
   ["unseen", "Cards still out", "Which aces and Cassinos, and how many spades, you have not seen"],
   ["sweepWarning", "Sweep warning", "Say when a single card would clear the table"],
+  ["tutor", "Tips from the tutor", "Now and then, a quiet word on what to look for in a hand, chosen from how your recent games went"],
   ["sortTable", "Sort the cards", "The cards and builds on the table, and your hand, in descending order, left to right, as they change"],
 ];
 
 // `on`: { newGame(), aid(name, on), pref(name, value), copy(button),
-// hint(), again(), log(open), help() }; newGame() is the plus pressed (the
+// hint(), again(), log(open), help(), progress: { exportFile(),
+// importText(text) -> sentence, clear() -> sentence } }; newGame() is the plus pressed (the
 // page opens the new game's menu, `showNewGame`).
 export function createChrome(root, on) {
   // ---- the top bar ---------------------------------------------------------
@@ -290,6 +292,30 @@ export function createChrome(root, on) {
   // Fairness you can check (DESIGN.md §12.3): the seed deals the cards.
   const seedLine = el("p", { class: "seed-line" });
   const copy = el("md-text-button", { class: "copy", onclick: () => on.copy(copy) }, "Copy game record");
+  // What the tutor keeps of your last games, in this browser only (the
+  // page's progress.js): to take to another browser, or to forget.
+  const progressLine = el("p", { class: "progress-line" });
+  const picker = el("input", { type: "file", accept: ".json,application/json,text/plain", hidden: true, class: "progress-file" });
+  picker.addEventListener("change", async () => {
+    const file = picker.files?.[0];
+    picker.value = "";
+    if (!file) return;
+    let text = "";
+    try {
+      text = await file.text();
+    } catch {
+      // Unreadable: refused below, politely.
+    }
+    progressLine.textContent = on.progress.importText(text);
+  });
+  const progressButtons = el(
+    "div",
+    { class: "progress-buttons" },
+    el("md-text-button", { class: "progress-export", onclick: () => on.progress.exportFile() }, "Export progress"),
+    el("md-text-button", { class: "progress-import", onclick: () => picker.click() }, "Import progress"),
+    el("md-text-button", { class: "progress-clear", onclick: () => (progressLine.textContent = on.progress.clear()) }, "Clear progress"),
+    picker,
+  );
   const creditsOpen = el("md-text-button", { onclick: () => (settings.close(), credits.show()) }, "Credits");
   const settings = el(
     "md-dialog",
@@ -307,6 +333,9 @@ export function createChrome(root, on) {
       el("div", { class: "setting talk-row" }, el("span", { class: "setting-text" }, el("span", { class: "setting-title" }, "Table talk"), el("span", { class: "setting-words" }, "What the players say aloud: everything, the chat of a lively table included (every move remarked, builds answered, the score said); only the calls that carry the game (the house rules, builds, \u201cLast.\u201d, sweeps, the count); or nothing")), talkSet),
       row("Left-handed", "The move bar the other way round: Trail, the move made most, at the left, under your left thumb", sw({ "data-pref": "leftHanded" }, (v) => on.pref("leftHanded", v))),
       el("div", { class: "selects" }, speed, surface, faces),
+      el("h3", {}, "Your progress"),
+      progressLine,
+      progressButtons,
     ),
     el("div", { slot: "actions" }, copy, creditsOpen, el("md-filled-tonal-button", { onclick: () => settings.close() }, "Done")),
   );
@@ -386,7 +415,7 @@ export function createChrome(root, on) {
   // follows once that has been drawn.
   const reviewDialog = el("md-dialog", { class: "review-dialog" });
   function showReview(get) {
-    const content = el("div", { slot: "content", class: "review-page tutorial-page" }, el("p", { class: "review-waiting" }, "Looking back over your game…"));
+    const content = el("div", { slot: "content", class: "review-page tutorial-page" }, el("p", { class: "review-waiting" }, "Thinking back over your game…"));
     const close = el("md-icon-button", { class: "review-close", title: "Close", "aria-label": "Close", onclick: () => reviewDialog.close() }, symbol("close"));
     reviewDialog.replaceChildren(
       el("div", { slot: "headline", class: "tutorial-head" }, el("span", {}, "How you played"), close),
@@ -396,11 +425,13 @@ export function createChrome(root, on) {
     reviewDialog.show();
     requestAnimationFrame(() =>
       setTimeout(() => {
-        const review = get();
-        if (!review) return reviewDialog.close();
+        const brief = get();
+        if (!brief) return reviewDialog.close();
         const block = (b) =>
-          b.type === "h" ? el("h3", {}, b.text) : b.type === "ul" ? el("ul", {}, b.items.map((t) => el("li", {}, t))) : el(b.type === "small" ? "p" : b.type, { class: b.type === "small" ? "review-method" : "" }, b.text);
-        content.replaceChildren(...reviewBlocks(review).map(block));
+          b.type === "bullets"
+            ? el("ul", { class: "review-bullets" }, b.items.map((it) => el("li", {}, it.lead ? [el("strong", {}, it.lead), " "] : null, it.text)))
+            : el("details", { class: "review-method" }, el("summary", {}, b.title), el("p", {}, b.text));
+        content.replaceChildren(...briefBlocks(brief).map(block));
       }, 0),
     );
   }
@@ -448,6 +479,10 @@ export function createChrome(root, on) {
     sync(prefs, state, { busy = false, canAgain = false } = {}) {
       last = { prefs, state, busy, canAgain };
       draw();
+    },
+    // What the settings say of the progress kept (a sentence).
+    progressSaid(text) {
+      progressLine.textContent = text;
     },
     logOpen(open) {
       log.selected = open;

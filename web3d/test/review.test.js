@@ -1,46 +1,40 @@
-// The review at the game's end, laid out for its dialog (the user: "when
-// the game is over, put a button on-screen that says something like
-// 'Review how you did?' ... the reviews should be gentle, and focused on
-// trends"). The words are the engine's; the page only lays them out.
+// The brief at the game's end, laid out for its dialog (the user: "when the
+// game is over, put a button on-screen that says something like 'Review how
+// you did?' ... the reviews should be gentle, and focused on trends"). The
+// words are the engine's; the page only lays them out: at most three
+// bullets, and how it was worked out folded away.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { reviewBlocks } from "../src/review.js";
+import { METHOD_TITLE, briefBlocks } from "../src/review.js";
 
-const full = {
-  summary: "You made 52 choices this game.",
-  strengths: ["You never let a capture go by.", "You took 4 of the 6 Cassinos dealt."],
-  tries: [
-    { title: "Building for a bigger capture", text: "Building was the strongest play 11 times." },
-    { title: "The last deal", text: "Your moves in the last deal gave up more." },
+const brief = {
+  bullets: [
+    { lead: "Going well:", text: "you took every pair that mattered." },
+    { lead: "Next: building.", text: "A build keeps a card safe for your next turn." },
+    { lead: "", text: "Nothing else stood out." },
   ],
-  closing: "Explanations comment on each move.",
-  method: "Each of your moves was compared afterwards.",
+  method: "Your moves were compared afterwards.",
 };
 
-test("the review laid out: the summary, what went well, what to try, the closing, how it was worked out", () => {
-  const blocks = reviewBlocks(full);
-  assert.deepEqual(
-    blocks.map((b) => [b.type, b.text ?? b.items?.length]),
-    [
-      ["p", full.summary],
-      ["h", "Going well"],
-      ["ul", 2],
-      ["h", "Something to try"],
-      ["h4", "Building for a bigger capture"],
-      ["p", "Building was the strongest play 11 times."],
-      ["h4", "The last deal"],
-      ["p", "Your moves in the last deal gave up more."],
-      ["p", full.closing],
-      ["small", full.method],
-    ],
-  );
+test("the brief laid out: the bullets with their leads, then how it was worked out", () => {
+  const blocks = briefBlocks(brief);
+  assert.deepEqual(blocks, [
+    { type: "bullets", items: brief.bullets },
+    { type: "method", title: METHOD_TITLE, text: brief.method },
+  ]);
+  assert.equal(METHOD_TITLE, "How is this worked out?");
 });
 
-test("a section with nothing in it is left out", () => {
-  const blocks = reviewBlocks({ ...full, strengths: [], tries: [] });
+test("never more than three bullets, and an empty one is left out", () => {
+  const many = { ...brief, bullets: [...brief.bullets, { lead: "More:", text: "a fourth." }, { lead: "x", text: "" }] };
+  assert.equal(briefBlocks(many)[0].items.length, 3);
+  assert.equal(briefBlocks({ ...brief, bullets: [{ lead: "a", text: "" }, { lead: "b", text: "kept" }] })[0].items.length, 1);
+});
+
+test("with no method there is no disclosure, and nothing at all is no bullets", () => {
   assert.deepEqual(
-    blocks.map((b) => b.type),
-    ["p", "p", "small"],
+    briefBlocks({ ...brief, method: "" }).map((b) => b.type),
+    ["bullets"],
   );
-  assert.ok(!blocks.some((b) => b.text === "Going well" || b.text === "Something to try"));
+  assert.deepEqual(briefBlocks(null), [{ type: "bullets", items: [] }]);
 });

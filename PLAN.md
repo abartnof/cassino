@@ -337,7 +337,7 @@ legal move. RULES.md now says each held card answers for one build value.
 - [x] 10. **Teaching**: tutorial pages at each idea's first moment, and all
   of them from the question mark (T7).
 
-- [ ] 11. **The tutor** (`docs/DESIGN.md` §12.8): the review narrowed to
+- [x] 11. **The tutor** (`docs/DESIGN.md` §12.8): the review narrowed to
   the one skill the player is ready for, carried from game to game.
   - [x] 11.1 The skills and clear chances (`tutor::chances`); the
     advisor's noise measured (`bin/noise.rs`), the margin set at 0.4
@@ -381,11 +381,24 @@ legal move. RULES.md now says each held card answers for one build value.
     this game's figure; or "nothing stood out" / "a game or two more") and
     a separate method text. The terminal prints it from this game alone.
     `Review::told` stays until the page switches over (11.6).
-  - [ ] 11.6 The page: records kept in storage, the protocol's queries,
-    the review dialog, the next game's nudge; export and import. Evidence
-    costs about 0.8 s a game and the review's advisor pass duplicates it:
-    run it off the game-end path (lazily, or in a worker) and persist the
-    summary with the record; recompute only what `learner::stale` lists.
+  - [x] 11.6 The page: records kept in storage, the tutor's queries, the
+    review dialog, the next game's nudge; export and import.
+    Wasm exports `evidence`, `evidence_of`, `learner`, `brief`,
+    `set_focus`, `nudge` (`docs/PROTOCOL.md` "The tutor"); the words of a
+    nudge are the engine's (`tutor::nudge_words`); `Session::brief_with`
+    takes a summary already made. `web3d/src/progress.js` keeps the last 30
+    games (record and summary) under `cassino.progress`; the summary is
+    worked out after the ending has settled, off the critical path (about
+    0.5 s in the module, the brief another 0.45 s, the nudge 3 ms a decision
+    on average and 50 ms at most); stale summaries are recomputed lazily,
+    one at a time. The dialog shows the brief's bullets and a folded
+    method; the nudge shows once a game on the aid line, "Tips from the
+    tutor" is a switch (on), and the settings export, import and clear the
+    progress. The review's advisor pass still duplicates the evidence's
+    (the brief rates the game again for its review); sharing it would
+    halve the work at the review, left for later. The long review
+    (`Review::told`, `cassino_review`) is no longer shown by the page and
+    may go.
 
 ## Working conventions
 

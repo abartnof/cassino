@@ -1,16 +1,15 @@
-// The review at the game's end, laid out for its dialog (chrome.js
-// showReview): the engine's words (docs/PROTOCOL.md, "The review") in
-// blocks, a section left out when it has nothing in it. The page adds no
-// judgement of its own.
+// The brief at the game's end, laid out for its dialog (chrome.js
+// showReview): the engine's words (docs/PROTOCOL.md, "The tutor") as at
+// most three bullets, each with a lead to set in bold, and a disclosure for
+// how it was worked out. The page adds no judgement of its own.
 //
-// Blocks: { type: "p" | "h" | "h4" | "small", text } and { type: "ul", items }.
-export function reviewBlocks(review) {
-  const blocks = [{ type: "p", text: review.summary }];
-  if (review.strengths.length) blocks.push({ type: "h", text: "Going well" }, { type: "ul", items: review.strengths });
-  if (review.tries.length) {
-    blocks.push({ type: "h", text: "Something to try" });
-    for (const t of review.tries) blocks.push({ type: "h4", text: t.title }, { type: "p", text: t.text });
-  }
-  blocks.push({ type: "p", text: review.closing }, { type: "small", text: review.method });
+// Blocks: { type: "bullets", items: [{ lead, text }] } and
+// { type: "method", title, text }.
+export const METHOD_TITLE = "How is this worked out?";
+
+export function briefBlocks(brief) {
+  const items = (brief?.bullets ?? []).filter((b) => b && b.text).slice(0, 3).map((b) => ({ lead: b.lead ?? "", text: b.text }));
+  const blocks = [{ type: "bullets", items }];
+  if (brief?.method) blocks.push({ type: "method", title: METHOD_TITLE, text: brief.method });
   return blocks;
 }

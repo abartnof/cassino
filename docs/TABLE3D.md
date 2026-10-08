@@ -218,12 +218,30 @@ losing); nothing of it is kept.
 that says something like 'Review how you did?' ... the reviews should be
 gentle, and focused on trends- not specific mistakes"). Beside New game at
 the game's end, a tonal "Review how you did?" (never in a watched game)
-opens a dialog, "How you played": the engine's words (`DESIGN.md` §12.4,
-`PROTOCOL.md` "The review") laid out by `review.js`, the summary, "Going
-well", "Something to try" with each habit under its heading, a closing
-line and, small, how it was worked out. The engine rates every move again
-when asked (about half a second), so the dialog opens first, "Looking back
-over your game…", and the review follows; it is worked out once a game.
+opens a dialog, "How you played": the engine's brief (`DESIGN.md` §12.8,
+`PROTOCOL.md` "The tutor") laid out by `review.js`: one to three bullets,
+each with its lead in bold, and a folded "How is this worked out?" with the
+method. The engine rates every move again when asked, and works out the
+game's evidence if that has not been done yet (together about a second in
+the module), so the dialog opens first, "Thinking back over your game...",
+and the brief follows; it is worked out once a game.
+
+**The tutor** (`DESIGN.md` §12.8). `progress.js` keeps the last 30
+finished games in the browser's storage (key `cassino.progress`, version 1:
+`{v, games: [{record, summary}]}`, the engine's saved text and the
+engine's evidence summary text), every access in a try/catch; with no
+storage everything works as one game. A finished game is kept at once with
+its record; its summary is worked out when the ending has settled (4.5 s
+on, when idle: about 0.5 s in the module) and stored with it. Summaries
+the engine calls stale (`learner` lists them) are recomputed from their
+records one at a time when idle. At a new game (and on a restored one) the
+page asks the engine's learner over the stored summaries for the focus and
+hands it to the sitting (`set_focus`); on your turn it asks the engine for
+the nudge once per position (`refresh`, keyed like the hint), shows its
+words once the cards are still on the aid line under the prompt ("Tip: ..."),
+and sends `nudged <skill>`. Settings: "Tips from the tutor" (on by default;
+off sets no focus), and "Your progress": Export (a JSON file), Import (a file
+chosen; a bad one is refused in a sentence and changes nothing) and Clear.
 
 ## 7. Table talk
 
@@ -509,8 +527,9 @@ Material Design 3, from piquet's shell.
   chosen is kept as the settings (`chooseGame`), and another match begins
   its series afresh.
 - **Settings**: what the game under way is (`gameSaid`) and where the next
-  is chosen; the aids, Large Text, the table talk, the animation, the
-  table top; copy the game record (`state.saved`).
+  is chosen; the aids, the tutor's tips, Large Text, the table talk, the
+  animation, the table top; the progress kept for the tutor (export,
+  import, clear); copy the game record (`state.saved`).
 - **Fairness**: the game's seed in the settings, shown once the game is
   over, so the same deal can be played again; and the last move seen again
   from the top bar. The replay after the game with both hands face up was
