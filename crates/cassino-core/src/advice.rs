@@ -299,7 +299,7 @@ pub fn advisor_seed(view: &View) -> u64 {
 /// The advisor's values: the counter's shortlist (as the top rung would
 /// consider), and `extra` if given (a move to rate). Not every candidate: a
 /// busy table can offer hundreds (the engine review's F3).
-fn assessed(view: &View, extra: Option<Move>) -> Vec<(Move, f64)> {
+pub(crate) fn assessed(view: &View, extra: Option<Move>) -> Vec<(Move, f64)> {
     let mut advisor = SearchAgent::new(Rng::seeded(advisor_seed(view)));
     let mut moves = advisor.shortlist(view);
     if let Some(m) = extra {

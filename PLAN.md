@@ -340,7 +340,9 @@ legal move. RULES.md now says each held card answers for one build value.
 - [ ] 11. **The tutor** (`docs/DESIGN.md` §12.8): the review narrowed to
   the one skill the player is ready for, carried from game to game.
   - [ ] 11.1 The skills and clear chances (`tutor.rs`); the advisor's
-    noise measured, the margin set.
+    noise measured, the margin set. Done: `tutor::chances` (each skill's
+    clear chance, met or missed, for a given margin) and `bin/noise.rs`
+    (the gap's spread across advisor seeds; run it, then set the margin).
   - [ ] 11.2 Knockouts of each skill in the strongest rung; what each
     skill is worth, and the prerequisites, measured. The knockout agent
     is in (`knockout.rs`, `measure searcher-no-<skill>[+<skill>] searcher`);

@@ -146,16 +146,16 @@ pub struct Review {
     pub sweeps_score: bool,
 }
 
-fn is_capture(m: &Move) -> bool {
+pub(crate) fn is_capture(m: &Move) -> bool {
     matches!(m, Move::Capture { .. })
 }
-fn is_build(m: &Move) -> bool {
+pub(crate) fn is_build(m: &Move) -> bool {
     matches!(m, Move::Build { .. })
 }
-fn is_trail(m: &Move) -> bool {
+pub(crate) fn is_trail(m: &Move) -> bool {
     matches!(m, Move::Trail { .. })
 }
-fn valuable(card: Card) -> bool {
+pub(crate) fn valuable(card: Card) -> bool {
     card.rank() == ACE || card == Card::BIG_CASINO || card == Card::LITTLE_CASINO
 }
 
