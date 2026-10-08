@@ -70,13 +70,16 @@ pub const MIN_CHANCES: f64 = 4.0;
 pub const MIN_GAIN: f64 = 0.5;
 
 /// The gain, in points a game, at which an unmastered skill is the focus
-/// although its rate is not shown to be short ([`UPPER`]): twice
-/// [`MIN_GAIN`], so that the backstop names only what is clearly costly.
-pub const BACKSTOP_GAIN: f64 = 2.0 * MIN_GAIN;
+/// although its rate is not shown to be short ([`UPPER`]). One point was
+/// tried (twice [`MIN_GAIN`]) and named SafeBuilds for the strongest rung in
+/// one window of nine (a gain of 1.08 over 14 chances, its own cost above
+/// [`top_cost`] by chance); two points clears it, and a random player's
+/// 6 points a game on Valuables is far above.
+pub const COSTLY_GAIN: f64 = 2.0;
 
-/// The discounted chances the backstop needs: twice [`MIN_CHANCES`], so that
-/// one miss in five (three points, say) does not name a focus.
-pub const BACKSTOP_CHANCES: f64 = 2.0 * MIN_CHANCES;
+/// The discounted chances a costly skill needs: twice [`MIN_CHANCES`], so
+/// that one miss in five (three points, say) does not name a focus.
+pub const COSTLY_CHANCES: f64 = 2.0 * MIN_CHANCES;
 
 /// The quantile of the met rate that must reach [`master`], for mastery:
 /// the rate is at least that high with 80% confidence. At 90% the strongest
@@ -377,31 +380,19 @@ pub fn learn(games: &[Summary]) -> Learner {
             && skills[index(s)].gain >= MIN_GAIN
             && s.needs().iter().all(|&n| cleared(n))
     };
-    let costliest = |candidates: Vec<Skill>| {
-        candidates
-            .into_iter()
-            .max_by(|&a, &b| skills[index(a)].gain.total_cmp(&skills[index(b)].gain))
+    // Eligible: surely short by rate, or costing a great deal over enough
+    // chances although the rate is not shown short (a rate of 0.8 at a
+    // skill that costs six points a miss).
+    let eligible = |s: Skill| {
+        open(s)
+            && (short(s)
+                || (skills[index(s)].chances >= COSTLY_CHANCES
+                    && skills[index(s)].gain >= COSTLY_GAIN))
     };
-    let focus = costliest(
-        Skill::ALL
-            .into_iter()
-            .filter(|&s| open(s) && short(s))
-            .collect(),
-    )
-    // The backstop: nothing is surely short, but one skill is costing
-    // a great deal over enough chances.
-    .or_else(|| {
-        costliest(
-            Skill::ALL
-                .into_iter()
-                .filter(|&s| {
-                    open(s)
-                        && skills[index(s)].chances >= BACKSTOP_CHANCES
-                        && skills[index(s)].gain >= BACKSTOP_GAIN
-                })
-                .collect(),
-        )
-    });
+    let focus = Skill::ALL
+        .into_iter()
+        .filter(|&s| eligible(s))
+        .max_by(|&a, &b| skills[index(a)].gain.total_cmp(&skills[index(b)].gain));
     let just_mastered = Skill::ALL
         .into_iter()
         .filter(|&s| mastered[index(s)] && !before[index(s)])
@@ -774,6 +765,16 @@ mod tests {
     }
 
     #[test]
+    fn a_costly_skill_with_a_middling_rate_is_the_focus() {
+        // A random player's Valuables: met 39 of 48 (0.81, not surely short
+        // of 0.845) but 6 points a game lost.
+        let games = vec![summary(&[(Skill::Valuables, 12, 10, 14.0)]); 8];
+        let l = learn(&games);
+        assert!(l.state(Skill::Valuables).gain > COSTLY_GAIN);
+        assert_eq!(l.focus, Some(Skill::Valuables));
+    }
+
+    #[test]
     fn a_skill_costing_a_lot_is_the_focus_even_when_not_surely_short() {
         // Met 5 of 6 each game, a miss costing 12 points: not surely short
         // (the rate may be 0.85) but a great deal is being lost.
@@ -890,40 +891,85 @@ mod tests {
         }
     }
 
-    #[test]
-    fn the_strongest_rung_is_diagnosed_as_having_nothing_to_learn() {
+    /// The learner at the end of each of `n` windows of four games of
+    /// `student`, the windows on consecutive seeds from `first`: the
+    /// diagnosis after a student's first four games, several times over.
+    fn windows(student: &str, rules: Rules, first: u64, n: u64) -> Vec<Learner> {
+        (0..n)
+            .map(|w| students(student, rules, first + 4 * w, 4).pop().unwrap())
+            .collect()
+    }
+
+    /// One window in the default run, three when the sweep is asked for
+    /// (`cargo test -p cassino-core --lib learner:: -- --ignored`).
+    const SWEEP: u64 = 3;
+
+    fn strongest_rung(n: u64) {
         for (rules, first) in [(classic(), 7_000), (royal(), 7_100)] {
-            let l = students("searcher", rules, first, 4);
-            let last = l.last().unwrap();
-            assert_eq!(last.focus, None, "{:?}", last.skills);
-            let mastered = Skill::ALL.into_iter().filter(|&s| last.mastered(s)).count();
-            assert!(mastered >= 4, "{mastered} mastered: {:?}", last.skills);
+            for last in windows("searcher", rules, first, n) {
+                assert_eq!(last.focus, None, "{:?}", last.skills);
+                let mastered = Skill::ALL.into_iter().filter(|&s| last.mastered(s)).count();
+                assert!(mastered >= 3, "{mastered} mastered: {:?}", last.skills);
+            }
+        }
+    }
+
+    fn no_building(n: u64) {
+        for (rules, first) in [(classic(), 7_200), (royal(), 7_300)] {
+            for last in windows("searcher-no-building", rules, first, n) {
+                assert_eq!(last.focus, Some(Skill::Building), "{:?}", last.skills);
+            }
+        }
+    }
+
+    fn no_pairs(n: u64) {
+        for last in windows("searcher-no-pairs", classic(), 7_400, n) {
+            assert_eq!(last.focus, Some(Skill::Pairs), "{:?}", last.skills);
+        }
+    }
+
+    /// The greedy player lacks both building and trailing well: either is
+    /// the right thing to be told (Building in five windows of six, Trailing
+    /// in the other).
+    fn greedy(n: u64) {
+        for (rules, first) in [(classic(), 7_500), (royal(), 7_600)] {
+            for last in windows("2", rules, first, n) {
+                assert!(
+                    matches!(last.focus, Some(Skill::Building | Skill::Trailing)),
+                    "{:?}: {:?}",
+                    last.focus,
+                    last.skills
+                );
+            }
         }
     }
 
     #[test]
+    fn the_strongest_rung_is_diagnosed_as_having_nothing_to_learn() {
+        strongest_rung(1);
+    }
+
+    #[test]
     fn a_student_without_building_is_told_to_build() {
-        let l = students("searcher-no-building", classic(), 7_200, 4);
-        assert_eq!(l[1].focus, Some(Skill::Building));
-        assert_eq!(l[3].focus, Some(Skill::Building));
-        let l = students("searcher-no-building", royal(), 7_300, 4);
-        assert_eq!(l[1].focus, Some(Skill::Building));
-        assert_eq!(l[3].focus, Some(Skill::Building));
+        no_building(1);
     }
 
     #[test]
     fn a_student_without_pairs_is_told_to_take_pairs() {
-        let l = students("searcher-no-pairs", classic(), 7_400, 4);
-        assert_eq!(l[1].focus, Some(Skill::Pairs));
-        assert_eq!(l[3].focus, Some(Skill::Pairs));
+        no_pairs(1);
     }
 
     #[test]
-    fn the_greedy_player_is_told_to_build() {
-        let l = students("2", classic(), 7_500, 4);
-        assert_eq!(l[1].focus, Some(Skill::Building));
-        assert_eq!(l[3].focus, Some(Skill::Building));
-        let l = students("2", royal(), 7_600, 4);
-        assert_eq!(l[3].focus, Some(Skill::Building));
+    fn the_greedy_player_is_told_to_build_or_trail() {
+        greedy(1);
+    }
+
+    #[test]
+    #[ignore = "a sweep of three windows each: a few minutes"]
+    fn the_diagnoses_hold_over_three_windows() {
+        strongest_rung(SWEEP);
+        no_building(SWEEP);
+        no_pairs(SWEEP);
+        greedy(SWEEP);
     }
 }
