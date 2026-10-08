@@ -194,6 +194,15 @@ fn spread(values: &[(Move, f64)], kind: fn(&Move) -> bool) -> Option<f64> {
     Some(best_where(values, kind)? - worst_where(values, kind)?)
 }
 
+/// A clear chance a decision held, and whether the person met it.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct Chance {
+    pub skill: Skill,
+    pub met: bool,
+    /// The chance's size in points: the advisor's [`gap`] for the skill.
+    pub gap: f64,
+}
+
 /// The clear chances a decision held, given the advisor's `values` (which
 /// include the move `chosen`), and whether the person met each. A chance
 /// is clear when the advisor's values differ by more than `margin`, its
@@ -222,7 +231,7 @@ pub fn chances_with(
     chosen: &Move,
     margin: f64,
     values: &[(Move, f64)],
-) -> Vec<(Skill, bool)> {
+) -> Vec<Chance> {
     let Some(&(_, mine)) = values.iter().find(|(m, _)| m == chosen) else {
         return Vec::new();
     };
@@ -236,26 +245,42 @@ pub fn chances_with(
                 let Some(best_trail) = best_where(values, is_trail) else {
                     continue;
                 };
-                if is_trail(chosen)
-                    && best_trail >= best
-                    && gap(skill, view, values).is_some_and(|g| g > margin)
-                {
-                    out.push((skill, mine >= best_trail - margin));
+                if let Some(g) = gap(skill, view, values).filter(|&g| g > margin) {
+                    if is_trail(chosen) && best_trail >= best {
+                        out.push(Chance {
+                            skill,
+                            met: mine >= best_trail - margin,
+                            gap: g,
+                        });
+                    }
                 }
             }
             Skill::SafeBuilds => {
                 if !is_build(chosen) {
                     continue;
                 }
+                let size = gap(skill, view, values).unwrap_or(0.0);
                 if best - mine > margin {
-                    out.push((skill, false));
+                    out.push(Chance {
+                        skill,
+                        met: false,
+                        gap: size,
+                    });
                 } else if worst_where(values, is_build).is_some_and(|w| best - w > margin) {
-                    out.push((skill, true));
+                    out.push(Chance {
+                        skill,
+                        met: true,
+                        gap: size,
+                    });
                 }
             }
             _ => {
-                if gap(skill, view, values).is_some_and(|g| g > margin) {
-                    out.push((skill, good(skill, view, chosen)));
+                if let Some(g) = gap(skill, view, values).filter(|&g| g > margin) {
+                    out.push(Chance {
+                        skill,
+                        met: good(skill, view, chosen),
+                        gap: g,
+                    });
                 }
             }
         }
@@ -284,7 +309,7 @@ pub fn margin(view: &View) -> f64 {
 /// The clear chances in the person's decision to play `mv` in `view`,
 /// with the advisor's values (deterministic, seeded from the view; see
 /// [`chances_with`]). Empty unless it is the viewer's turn.
-pub fn chances(view: &View, mv: &Move, margin: f64) -> Vec<(Skill, bool)> {
+pub fn chances(view: &View, mv: &Move, margin: f64) -> Vec<Chance> {
     if view.to_move != Some(view.me) {
         return Vec::new();
     }
@@ -345,8 +370,25 @@ mod tests {
 
     /// The chances in `v` for the move `chosen`, with these values.
     fn with(v: &View, chosen: &str, values: &[(&str, f64)]) -> Vec<(Skill, bool)> {
+        full(v, chosen, values)
+            .into_iter()
+            .map(|c| (c.skill, c.met))
+            .collect()
+    }
+
+    fn full(v: &View, chosen: &str, values: &[(&str, f64)]) -> Vec<Chance> {
         let values: Vec<(Move, f64)> = values.iter().map(|&(m, x)| (mv(m), x)).collect();
         chances_with(v, &mv(chosen), 0.1, &values)
+    }
+
+    #[test]
+    fn a_chance_carries_its_size_in_points() {
+        let v = view(C, "4D 6H", "4C 9S 2H 3H");
+        let vals = [("take 4C 4D", 1.0), ("trail 9S", 0.25)];
+        let got = full(&v, "trail 9S", &vals);
+        assert_eq!(got.len(), 1);
+        assert_eq!((got[0].skill, got[0].met), (Skill::Pairs, false));
+        assert!((got[0].gap - 0.75).abs() < 1e-12, "{}", got[0].gap);
     }
 
     const C: Rules = Rules::CLASSIC;
@@ -604,7 +646,7 @@ mod tests {
     }
 
     /// The chances over the games' decisions.
-    fn tally(rules: Rules, skill: f64, seeds: std::ops::Range<u64>) -> Vec<(Skill, bool)> {
+    fn tally(rules: Rules, skill: f64, seeds: std::ops::Range<u64>) -> Vec<Chance> {
         let mut all = Vec::new();
         for seed in seeds {
             for (v, m) in decisions(rules, skill, seed) {
@@ -618,7 +660,7 @@ mod tests {
     fn the_top_rung_meets_nearly_all_its_chances_and_greedy_never_builds() {
         let top = tally(C, 4.0, 0..2);
         assert!(top.len() >= 10, "{} chances", top.len());
-        let met = top.iter().filter(|c| c.1).count();
+        let met = top.iter().filter(|c| c.met).count();
         assert!(
             met as f64 >= 0.8 * top.len() as f64,
             "{met} of {} met",
@@ -626,9 +668,9 @@ mod tests {
         );
         let greedy = tally(C, 2.0, 0..2);
         assert!(
-            greedy.iter().any(|c| c.0 == Skill::Building),
+            greedy.iter().any(|c| c.skill == Skill::Building),
             "greedy had no building chance"
         );
-        assert!(!greedy.contains(&(Skill::Building, true)));
+        assert!(!greedy.iter().any(|c| c.skill == Skill::Building && c.met));
     }
 }
