@@ -38,7 +38,7 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReview = () =
     <aside class="game-log" hidden aria-label="The game log"><h2>Game log</h2><ol></ol></aside>
     <section class="controls">
       <p class="prompt" aria-live="polite"></p>
-      <p class="announce focus-told" aria-live="polite" tabindex="-1"></p>
+      <p class="announce" aria-live="polite" tabindex="-1"></p>
       <p class="note" aria-live="polite"></p>
       <p class="aid-line" hidden></p>
       <div class="move-bar" hidden><div class="chips" role="group" aria-label="Your move"></div></div>

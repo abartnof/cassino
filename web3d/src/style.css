@@ -1503,7 +1503,8 @@ html.sideways .game-log {
 }
 
 /* Told to a screen reader, not shown: what the keyboard's focus is on. */
-.focus-told {
+.focus-told,
+.announce {
   position: absolute;
   width: 1px;
   height: 1px;

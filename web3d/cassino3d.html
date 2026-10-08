@@ -1512,7 +1512,8 @@ html.sideways .game-log {
 }
 
 /* Told to a screen reader, not shown: what the keyboard's focus is on. */
-.focus-told {
+.focus-told,
+.announce {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -6272,7 +6273,7 @@ ${Cv(h)}`)),o()},setFocus(d){return n.cassino_set_focus(l(d??""))===1},nudge(){r
     <aside class="game-log" hidden aria-label="The game log"><h2>Game log</h2><ol></ol></aside>
     <section class="controls">
       <p class="prompt" aria-live="polite"></p>
-      <p class="announce focus-told" aria-live="polite" tabindex="-1"></p>
+      <p class="announce" aria-live="polite" tabindex="-1"></p>
       <p class="note" aria-live="polite"></p>
       <p class="aid-line" hidden></p>
       <div class="move-bar" hidden><div class="chips" role="group" aria-label="Your move"></div></div>
