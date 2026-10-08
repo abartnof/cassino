@@ -39,6 +39,10 @@ use crate::tutor::valuable;
 pub struct Turn {
     pub view: View,
     pub mv: Move,
+    /// The person was helped with this decision: a hint was asked for, or
+    /// the tutor's nudge was shown. It is no evidence of what they know
+    /// ([`crate::learner`]).
+    pub assisted: bool,
 }
 
 /// What a slip is put down to.

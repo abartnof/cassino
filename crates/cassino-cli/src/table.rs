@@ -336,6 +336,7 @@ impl<R: BufRead, W: Write> Table<R, W> {
                 "u" | "undo" => "undo".to_string(),
                 "hint" => {
                     if let Some(hint) = session.hint() {
+                        session.send("hint");
                         let n = moves
                             .iter()
                             .position(|m| *m == hint.mv)

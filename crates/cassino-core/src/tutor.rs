@@ -291,6 +291,22 @@ pub fn chances_with(
     out
 }
 
+/// Whether the decision holds a clear chance at `skill`, whatever the
+/// person plays: the same test as [`chances_with`] with no move chosen
+/// (Trailing needs the best move to be a trail, as there; SafeBuilds two
+/// builds that differ by more than the margin). What the tutor's nudge is
+/// shown on.
+pub fn open(skill: Skill, view: &View, margin: f64, values: &[(Move, f64)]) -> bool {
+    let Some(best) = best_where(values, |_| true) else {
+        return false;
+    };
+    let clear = gap(skill, view, values).is_some_and(|g| g > margin);
+    match skill {
+        Skill::Trailing => clear && best_where(values, is_trail).is_some_and(|t| t >= best),
+        _ => clear,
+    }
+}
+
 /// The margin a clear chance must pass before the last deal, in points:
 /// about twice the advisor's typical noise in a skill's gap (its standard
 /// deviation across advisor seeds had a median of 0.18 in Classic and 0.22
@@ -453,6 +469,26 @@ mod tests {
     }
 
     const C: Rules = Rules::CLASSIC;
+
+    #[test]
+    fn a_chance_is_open_whatever_is_chosen() {
+        let v = view(C, "4D 6H", "4C 9S 2H 3H");
+        let pairs = |list: &[(&str, f64)]| -> Vec<(Move, f64)> {
+            list.iter().map(|&(m, x)| (mv(m), x)).collect()
+        };
+        let vals = pairs(&[("take 4C 4D", 1.0), ("trail 9S", 0.25), ("trail 3H", 0.2)]);
+        assert!(open(Skill::Pairs, &v, 0.1, &vals));
+        assert!(!open(Skill::Pairs, &v, 0.8, &vals), "within the margin");
+        assert!(
+            !open(Skill::Building, &v, 0.1, &vals),
+            "no build to compare"
+        );
+        // Trailing is a chance only where the best move is a trail.
+        assert!(!open(Skill::Trailing, &v, 0.01, &vals));
+        let trails = pairs(&[("take 4C 4D", 0.1), ("trail 9S", 0.25), ("trail 3H", 0.2)]);
+        assert!(open(Skill::Trailing, &v, 0.01, &trails));
+        assert!(!open(Skill::Trailing, &v, 0.1, &trails));
+    }
 
     fn shown(rules: Rules, table: &str, hand: &str, m: &str) -> Vec<Skill> {
         let v = view(rules, table, hand);

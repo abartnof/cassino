@@ -189,3 +189,43 @@ skills stand in for one another (a player who cannot take pairs leans on
 sums, and one who cannot take sums leans on building), so worth cannot show
 which skill must be learnt first. The prerequisites stay the logical ones:
 a build is a sum, and so is the capture of most builds.
+
+## What the strongest rung meets, for the learner's thresholds
+
+For `learner::master`, `top_rate` and `top_cost` (`docs/DESIGN.md` §12.8):
+the share of its clear chances the strongest rung meets, and the points a
+game it loses to each skill, judged by the tutor's own advisor
+(`learn searcher 30 --rules classic|royal --first 1000|2000`, the counter
+opposite, sweeps not scored, builds raised). Descriptive, a fixed count of
+30 games of each. The two games pooled give the constants:
+
+| Skill | Chances a game (Classic, Royal) | Met | Points lost a game | Mastery asks (0.85 of met) |
+|---|---|---|---|---|
+| Taking pairs | 7.7, 6.3 | 0.974 (410 of 421) | 0.10 | 0.83 |
+| Taking sums | 3.2, 3.5 | 0.965 (193 of 200) | 0.07 | 0.82 |
+| Building | 3.8, 7.0 | 0.938 (304 of 324) | 0.22 | 0.80 |
+| Choosing safe builds | 2.2, 3.6 | 0.966 (169 of 175) | 0.10 | 0.82 |
+| Answering builds | 1.5, 2.1 | 1.000 (107 of 107) | 0.00 | 0.85 |
+| Leaving no sweep | 1.4, 5.4 | 0.956 (196 of 205) | 0.09 | 0.81 |
+| Keeping aces and Cassinos | 13.3, 13.5 | 0.994 (799 of 804) | 0.04 | 0.85 |
+| Choosing what to trail | 9.2, 10.3 | 0.949 (553 of 583) | 0.46 | 0.81 |
+
+Not perfect: the strongest rung is itself short of its advisor's every
+choice, which samples other worlds. Lesioned students, one game each of
+Classic from seed 1 (the `learn` binary, descriptive): the searcher with
+building out met 0 of 34 chances at building (7.5 points a game); with
+pairs out, 0 of 99 (17.5 a game); greedy, 0 of 31 at building (6.2 a game)
+and 35 of 57 at trailing (5.7 a game). The counter (rung 3) met 77% of its
+building chances and 72% of its trailing chances (2.2 points a game):
+trailing is where it is weakest.
+
+The learner's constants (`learner.rs`) were set against these numbers by
+replaying the strongest rung's 54 four-game windows: with the lower bound
+at the 10th percentile and mastery at 0.9 of the strongest rung's rate it
+mastered 2.5 skills of 8 on average in four games, and named a focus (a single miss
+in a rare skill) in 10 of 54; at the 20th percentile and 0.85, with a focus
+asked to be surely short of mastery (90th percentile below the bar), it
+masters 3 to 7 and names none. The rarest skills (answering builds, two
+chances a game or fewer) cannot be certified in four games from their
+chances alone, which is as it should be. The lesioned students are in
+`cargo test` (`learner::tests`).
