@@ -264,6 +264,10 @@ impl Saved {
             },
         };
         let skill: f64 = header("skill ")?.parse().map_err(|_| "not a skill")?;
+        if !(1.0..=f64::from(crate::agents::TOP)).contains(&skill) {
+            // Also false for NaN.
+            return Err("skill outside the dial".into());
+        }
         let aids_line = header("aids ")?;
         let a: Vec<&str> = aids_line.split_whitespace().collect();
         let aids = Aids {
@@ -342,9 +346,17 @@ impl Session {
     }
 
     fn start(seed: u64, settings: Settings, watched: Option<Opponent>) -> Session {
+        // A skill that is not a number is the top of the dial, as in
+        // `Skill::setting`; one off the dial is put back on it.
+        let top = f64::from(crate::agents::TOP);
+        let skill = if settings.skill.is_finite() {
+            settings.skill.clamp(1.0, top)
+        } else {
+            top
+        };
         let settings = Settings {
             rules: settings.rules.normalized(),
-            ..settings
+            skill,
         };
         let (game, opening) = Game::new(settings.rules, seed);
         let opponent_seed = Rng::stream(seed, purpose::agent(Seat::North.index())).next_u64();
@@ -554,10 +566,16 @@ impl Session {
     /// Carries out one command. A command the rules forbid is refused, the
     /// sitting is left as it was, and `error` says why.
     pub fn send(&mut self, command: &str) -> bool {
-        self.error = None;
-        self.error_code = None;
+        // A hint is shown beside an error not yet read, and changes
+        // nothing the error was about: the error stands.
+        let pending = (self.error.take(), self.error_code.take());
         match self.execute(command.trim()) {
-            Ok(()) => true,
+            Ok(()) => {
+                if command.trim() == "hint" {
+                    (self.error, self.error_code) = pending;
+                }
+                true
+            }
             Err((code, why)) => {
                 self.error = Some(why);
                 self.error_code = Some(code);
@@ -639,7 +657,8 @@ impl Session {
                 "play_forced" => self.aids.play_forced = on,
                 _ => return refuse("bad_setting", &format!("No aid is called {aid}.")),
             }
-            if on && aid == "play_forced" {
+            // At a watched table nobody is to be played for.
+            if on && aid == "play_forced" && !self.watching() {
                 self.advance();
             }
             return Ok(());
@@ -1918,6 +1937,70 @@ mod tests {
             "a person's game is not stepped"
         );
         assert!(!s.send("trail 7H"), "nobody sits at a watched table");
+    }
+
+    #[test]
+    fn the_aids_do_not_play_moves_at_a_watched_table() {
+        let played = |s: &Session| {
+            s.events()
+                .iter()
+                .filter(|e| matches!(e.kind, EventKind::Played { .. }))
+                .count()
+        };
+        let mut s = Session::watch(8, Rules::CLASSIC, [2.0, 4.0]);
+        for _ in 0..40 {
+            let before = played(&s);
+            assert!(s.send("set play_forced off"));
+            assert!(s.send("set play_forced on"));
+            assert_eq!(played(&s), before, "setting an aid plays nothing");
+            assert!(s.step());
+        }
+    }
+
+    #[test]
+    fn a_hint_leaves_a_pending_error_to_be_read() {
+        let mut s = Session::new(1, settings());
+        s.send("set hints on");
+        assert!(!s.send("trail ZZ"));
+        let (error, code) = (s.error().map(String::from), s.error_code());
+        assert!(code.is_some());
+        assert!(s.send("hint"));
+        assert_eq!(s.error().map(String::from), error);
+        assert_eq!(s.error_code(), code);
+        assert!(s.send("set hints off"), "any other command clears it");
+        assert_eq!(s.error_code(), None);
+    }
+
+    #[test]
+    fn a_saved_skill_must_be_on_the_dial() {
+        let text = Session::new(1, settings()).saved().to_text();
+        let with = |skill: &str| text.replacen("skill 3", &format!("skill {skill}"), 1);
+        assert!(Saved::parse(&with("3")).is_ok());
+        assert!(Saved::parse(&with("1.5")).is_ok());
+        for bad in ["NaN", "inf", "-inf", "0", "0.5", "5", "-2", "1e9"] {
+            assert!(Saved::parse(&with(bad)).is_err(), "skill {bad}");
+        }
+    }
+
+    #[test]
+    fn a_skill_off_the_dial_is_put_back_on_it() {
+        for (given, want) in [
+            (f64::NAN, 4.0),
+            (f64::INFINITY, 4.0),
+            (f64::NEG_INFINITY, 4.0),
+            (-3.0, 1.0),
+            (9.0, 4.0),
+            (2.5, 2.5),
+        ] {
+            let s = Session::new(
+                1,
+                Settings {
+                    skill: given,
+                    ..settings()
+                },
+            );
+            assert_eq!(s.settings().skill, want, "{given}");
+        }
     }
 
     #[test]
