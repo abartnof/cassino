@@ -533,6 +533,15 @@ six deals, a build that belongs to whoever built on it last), the
 interface named as it is (Take, Build, Trail), and no history that does not
 help play. A test keeps a list of jargon out of the pages.
 
+Each page is read in the few seconds before playing on (the user: "a new
+player is about to be dropped into a whole new world. for the next few
+seconds, what do they need to know? what's in front of them, and what are
+they expected to do?"), so each is in labelled sections of one-line
+bullets, no preamble: the first page your goal, what is in front of you,
+your turn, how, your opponent and how a game goes; each move's page what it
+is, how, its rules and what it means for your opponent. A test holds every
+page to sections, and every line to 25 words.
+
 ## 10. Phases
 
 Each phase ends with its tests green and a commit; `PLAN.md` records it.

@@ -99,9 +99,45 @@ test("the ace's 1 or 14 is told on Royal's page, and has no page of its own", ()
 
 // Play-testing: raising "could it be turned off in the config, and noted as
 // such in the tutorial?"
-test("the page on raising says it can be turned off in the settings", () => {
+// The game's own settings moved to the new game's menu in the seventh
+// play-testing: the page sends you there.
+test("the page on raising says it can be turned off in the new game's menu", () => {
   const raising = parseTutorial(TEXT).find((p) => p.key === "raising");
   const words = raising.blocks.flatMap((b) => (b.spans ? [b.spans] : b.items)).map((spans) => spans.map((x) => x.text).join("")).join(" ");
   assert.match(words, /Raise builds/);
-  assert.match(words, /settings/);
+  assert.match(words, /new game's menu/);
+  assert.doesNotMatch(words, /settings/, "not sent to the settings, where it no longer is");
+});
+
+// The user: "a new player is about to be dropped into a whole new world.
+// for the next few seconds, what do they need to know? what's in front of
+// them, and what are they expected to do? people don't want to read huge
+// chunks of text. try to have categories of text (eg your goal, how to do
+// it, what the opponent is doing, etc). try to make these one-liners, or
+// bullet points." Every page in labelled sections, each line short; the
+// first page says what is in front of you, what to do, how, and what your
+// opponent is doing.
+test("each page in labelled sections of short lines", () => {
+  const text = (spans) => spans.map((x) => x.text).join("");
+  const words = (s) => s.split(/\s+/).filter(Boolean).length;
+  for (const page of parseTutorial(TEXT)) {
+    const headings = page.blocks.filter((b) => b.type === "h").map((b) => text(b.spans));
+    assert.ok(headings.length >= 2, `${page.key}: in sections (${headings})`);
+    assert.equal(page.blocks[0].type, "h", `${page.key}: a section first, no preamble`);
+    for (const b of page.blocks) {
+      for (const line of b.spans ? [text(b.spans)] : b.items.map(text)) {
+        assert.ok(words(line) <= 25, `${page.key}: ${words(line)} words: ${line}`);
+      }
+    }
+  }
+  const intro = parseTutorial(TEXT)[0].blocks.filter((b) => b.type === "h").map((b) => text(b.spans).toLowerCase());
+  for (const part of ["goal", "in front of you", "your turn", "how", "opponent"]) {
+    assert.ok(intro.some((h) => h.includes(part)), `the first page has a section for ${part}: ${intro}`);
+  }
+});
+
+// Seen in the seventh play-testing's move bar: the running sum's place is
+// gone, so no page may promise it.
+test("no page promises a running sum beside the buttons", () => {
+  assert.doesNotMatch(TEXT, /sum shows/i);
 });

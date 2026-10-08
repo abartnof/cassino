@@ -900,7 +900,7 @@ def check_tutorial(browser, failures):
     page.wait_for_timeout(1200)
     shot(page, "t7-intro")
     title = page.locator(".tutorial-title").inner_text()
-    if title != "Cassino":
+    if title != "Welcome to Cassino":
         failures.append(f"tutorial: the first page is {title!r}")
     page.locator(".tutorial-close").click()
     page.wait_for_timeout(800)

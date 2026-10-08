@@ -256,7 +256,15 @@ legal move. RULES.md now says each held card answers for one build value.
   of your row, under the score; and a box at the game's end no longer
   runs its padding past the screen's edge. A sorted hand's ace stays
   where the rules put it while a move plays out (the user had seen it
-  swap ends: the animation's stages had dropped the rules).
+  swap ends: the animation's stages had dropped the rules). The tutorial
+  rewritten for a player's first seconds (the user: "people don't want to
+  read huge chunks of text. try to have categories of text"): each page
+  in labelled sections of one-line bullets (your goal, what's in front of
+  you, your turn, how, your opponent; each move's what, how and rules),
+  then reviewed by a separate agent for concision and helpfulness. Found
+  on the way: a match is not compulsory ("It can take every match"), the
+  running sum it promised is gone from the move bar, and raising and the
+  ace's 14 are turned on in the new game's menu, not the settings.
   On a phone or a tablet your hand is a row spaced wide, not a fan, lying
   just off the table so that its cards are the table's size, and the
   field closes in: on an iPad held upright the table's cards from 100 to
