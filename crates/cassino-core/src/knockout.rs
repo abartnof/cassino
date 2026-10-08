@@ -168,30 +168,33 @@ impl Agent for Knockout {
         if self.knocked.is_empty() || self.quiet(view, &choice) {
             return choice;
         }
-        // The action skills: the best allowed alternative.
-        let mut m = choice;
-        if self.withheld(view, &choice) {
-            pool.retain(|(x, _)| !self.withheld(view, x));
-            if pool.is_empty() {
-                // Nothing allowed in the pool: the allowed moves that bank
-                // most at once, valued by the searcher.
-                let mut allowed: Vec<Move> = view
-                    .candidates()
-                    .into_iter()
-                    .filter(|x| !self.withheld(view, x))
-                    .collect();
-                if allowed.is_empty() {
-                    return choice;
-                }
-                allowed.sort_by(|a, b| {
-                    let key = |x: &Move| immediate_worth(&view.rules, &view.table, x).total();
-                    key(b).total_cmp(&key(a))
-                });
-                allowed.truncate(self.search.width);
-                pool = self.search.evaluate(view, &allowed);
+        // The allowed pool, once: every later stage (the danger not seen,
+        // the build, the trail) draws on it and on nothing withheld.
+        pool.retain(|(x, _)| !self.withheld(view, x));
+        if pool.is_empty() {
+            // Nothing allowed in the pool: the allowed moves that bank
+            // most at once, valued by the searcher.
+            let mut allowed: Vec<Move> = view
+                .candidates()
+                .into_iter()
+                .filter(|x| !self.withheld(view, x))
+                .collect();
+            if allowed.is_empty() {
+                return choice;
             }
-            m = Knockout::best(&pool).0;
+            allowed.sort_by(|a, b| {
+                let key = |x: &Move| immediate_worth(&view.rules, &view.table, x).total();
+                key(b).total_cmp(&key(a))
+            });
+            allowed.truncate(self.search.width);
+            pool = self.search.evaluate(view, &allowed);
         }
+        // The action skills: the best allowed alternative.
+        let mut m = if self.withheld(view, &choice) {
+            Knockout::best(&pool).0
+        } else {
+            choice
+        };
         // Restraint: the danger is not seen.
         if self.is_out(Skill::NoSweep)
             && !leaves_sweep(view, &m)
@@ -355,6 +358,35 @@ mod tests {
             }
             assert!(seen > 50);
         }
+    }
+
+    #[test]
+    fn a_withheld_move_is_not_played_for_the_sake_of_a_restraint_knockout_either() {
+        let mut seen = 0;
+        for out in [
+            Skill::NoSweep,
+            Skill::SafeBuilds,
+            Skill::Trailing,
+            Skill::Valuables,
+        ] {
+            for skill in [Skill::Pairs, Skill::Sums, Skill::Building] {
+                for (seed, rules) in [(1, Rules::CLASSIC), (2, Rules::ROYAL), (5, Rules::CLASSIC)] {
+                    let mut k = Knockout::new(Rng::seeded(seed), &[skill, out]);
+                    quick(&mut k);
+                    let mut b = crate::agents::GreedyAgent;
+                    play(rules, seed, &mut k, &mut b, |v, m| {
+                        if shows(v, &m).contains(&skill) {
+                            assert!(
+                                v.candidates().iter().all(|x| shows(v, x).contains(&skill)),
+                                "{skill:?} and {out:?}: played {m}"
+                            );
+                        }
+                        seen += 1;
+                    });
+                }
+            }
+        }
+        assert!(seen > 500);
     }
 
     #[test]
