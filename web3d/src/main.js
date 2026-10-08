@@ -519,7 +519,7 @@ async function main() {
 
   // A game finished counts in the series, once.
   function countGame() {
-    const ends = state.events.findLast((e) => e.kind === "game_ends");
+    const ends = [...state.events].reverse().find((e) => e.kind === "game_ends");
     if (!ends || state.watching || STAGING || prefs.match !== "best-of-7") return;
     // Each game counted once, by its record (a seed can deal more than one
     // game: a seeded link, today's deal twice; the second review, S8); a
@@ -611,7 +611,7 @@ async function main() {
       at(ms, () => (e.end ? hud.endHand(e.hand) : hud.score(e)));
       // A sweep scored, celebrated on its card once it is held up.
       if (e.cat === "sweeps") {
-        const card = state.events.slice(0, e.at).findLast((p) => p.kind === "played")?.card.card;
+        const card = state.events.slice(0, e.at).reverse().find((p) => p.kind === "played")?.card.card;
         at(ms + 380 / prefs.speed, () => cheer({ label: "Sweep", pts: e.pts, card, pile: null }, true));
       }
     }
@@ -889,7 +889,7 @@ async function main() {
     // The record without its last decision of yours (a "*" line is a move
     // the table made for you, so it goes too).
     const lines = s.saved.trimEnd().split("\n");
-    const last = lines.findLastIndex((l) => /^(take|build|trail) /.test(l));
+    const last = lines.length - 1 - [...lines].reverse().findIndex((l) => /^(take|build|trail) /.test(l));
     const taken = engine.restore(lines.slice(0, last).join("\n") + "\n");
     state = taken.ok ? taken.state : engine.start({ ...prefs.rules, skill: prefs.skill, seed: fixedSeed ?? 31 });
     director.restart(state);
@@ -915,7 +915,7 @@ async function main() {
   endingsBar.append(stepper("The ending before", -1), endingWords, stepper("The next ending", 1));
   document.getElementById("overlay").append(endingsBar);
   function showEndings() {
-    const theyWon = !state.events.findLast((e) => e.kind === "game_ends")?.you_won;
+    const theyWon = ![...state.events].reverse().find((e) => e.kind === "game_ends")?.you_won;
     ending = ENDINGS.findIndex((e) => e.court === standing && e.theyWon === theyWon);
     endingsBar.hidden = false;
     endingWords.textContent = endingLabel(ENDINGS[ending]);
