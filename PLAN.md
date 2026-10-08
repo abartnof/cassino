@@ -401,7 +401,11 @@ legal move. RULES.md now says each held card answers for one build value.
     (`Session::restore_quietly`: 1.7 s to 0.04 s for a 96-decision game with
     explanations on, native release). The long prose review is gone
     (`Review::told`, `cassino_review`, `engine.review`); `review.rs` keeps the
-    strengths the brief praises, from unassisted decisions only. A sweep
+    strengths the brief praises, from unassisted decisions only. The
+    shipped rules were confirmed under the other settings (sweeps scored,
+    aces 14, raising off; `measurements/README.md` "Other settings");
+    `lessons::taught` takes the rules, and Classic with sweeps scored is
+    told building as a fact (B3 0.796). A sweep
     warning is recorded as `warned` (assisted, like a hint); the nudge is
     once a game even across undo.
 

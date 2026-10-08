@@ -216,9 +216,7 @@ pub fn brief(
     }
     match after.focus {
         Some(skill) => {
-            let said = match lessons::taught(skill, rules.game) {
-                // A raise is not on offer where raising is off.
-                Some(_) if skill == Skill::AnsweringBuilds && !rules.raising => fact(skill),
+            let said = match lessons::taught(skill, rules) {
                 Some(rule) => rule.text,
                 None => fact(skill),
             };
@@ -277,12 +275,19 @@ mod tests {
         }
     }
 
+    /// The game's defaults: sweeps not scored.
     fn classic() -> Rules {
-        Rules::CLASSIC
+        Rules {
+            sweeps: false,
+            ..Rules::CLASSIC
+        }
     }
 
     fn royal() -> Rules {
-        Rules::ROYAL
+        Rules {
+            sweeps: false,
+            ..Rules::ROYAL
+        }
     }
 
     /// The brief of a game whose summary is `game`, after `history`.
@@ -524,6 +529,24 @@ mod tests {
     }
 
     #[test]
+    fn a_rule_not_confirmed_under_the_setting_is_told_as_a_fact() {
+        // Classic with sweeps scored: building is not confirmed.
+        let sweeps = Rules {
+            sweeps: true,
+            ..classic()
+        };
+        let game = summary(&[(Skill::Building, 8, 1, 8.0)]);
+        let b = made(&review(40, vec![]), &game, &[], &sweeps, 3.0);
+        assert!(
+            b.bullets[0].text.starts_with(fact(Skill::Building)),
+            "{:?}",
+            b.bullets
+        );
+        let b = made(&review(40, vec![]), &game, &[], &classic(), 3.0);
+        assert!(b.bullets[0].text.starts_with("With nothing to take"));
+    }
+
+    #[test]
     fn every_skill_with_a_rule_is_told_it_in_both_games() {
         for rules in [classic(), royal()] {
             for skill in Skill::ALL {
@@ -534,7 +557,7 @@ mod tests {
                 // prerequisites are not cleared; here they have no chances.
                 assert_eq!(b.bullets[0].lead, lead, "{skill:?}");
                 within_budget(&b);
-                if let Some(rule) = lessons::taught(skill, rules.game) {
+                if let Some(rule) = lessons::taught(skill, &rules) {
                     assert!(b.bullets[0].text.starts_with(rule.text));
                 }
             }

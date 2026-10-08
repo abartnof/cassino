@@ -816,8 +816,12 @@ the trigger fires in the decisions holding a clear chance at the skill
 (`tutor::chances`), the evidence the learner model counts. A rule ships
 only when its clustered lower bound is at least 0.80, and the rules chosen
 from a selection run are confirmed on fresh seeds (`rules --confirm --only`;
-§11.4, the maximum of noisy estimates). Sweeps are measured off, as the game
-is by default. A skill with no rule that passes is not taught by a rule.
+§11.4, the maximum of noisy estimates). The selection is at the game's
+defaults (sweeps off, aces 1, raising on); the shipped rules were then
+confirmed again under each other setting, one at a time, and a rule is told
+under a setting only where it is confirmed (`lessons::taught` takes the
+rules; `measurements/README.md`, "Other settings"). A skill with no rule that
+passes is not taught by a rule.
 
 **Measurements, each planned before its first batch:**
 

@@ -1,0 +1,15 @@
+Plan: 200 games of the strongest rung (skill 4.0, in the person's seat) against skill 3.0, seeds 6000000..6000200, for each of ["Classic"] (sweeps scored, aces at 14 off, raising on); 5 candidate rules, each held against every decision. Fixed count, descriptive; fresh seeds: this confirms rules chosen in a selection run. A rule ships if its game-clustered precision's 95% lower bound is at least 0.8.
+
+Classic: 200 games, 16728 decisions, 616.0 s (3.08 s a game)
+id   skill               fired   hits    prec clustered 95%  n_eff   cover  prec if acting  verdict
+B3   Building             1023    840   0.821  0.796-0.843    1023   0.470   1.000 (1.00-1.00) n=806  not confirmed
+SB1  SafeBuilds           1092   1073   0.983  0.973-0.989    1092   0.685   0.983 (0.97-0.99) n=1092  confirmed
+A3   AnsweringBuilds        79     75   0.949  0.877-0.980      79   0.265   1.000 (0.95-1.00) n=75  confirmed
+V1   Valuables            3851   3550   0.922  0.913-0.930    3678   0.964   0.922 (0.91-0.93) n=3851  confirmed
+P3   Pairs                7000   5940   0.849  0.840-0.857    6911   1.000   1.000 (1.00-1.00) n=4586  confirmed
+Texts:
+  B3   With nothing to take, build rather than trail, if you can.
+  SB1  Build a value that at most one card you cannot see can take.
+  A3   If you cannot take their build, raise it, if you can.
+  V1   Never trail an ace or Cassino while you have another card to trail.
+  P3   Take a pair, unless you can build or take more cards instead.

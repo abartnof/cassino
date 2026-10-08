@@ -57,14 +57,20 @@ fn always(_: &View, _: &Move) -> bool {
 /// table there): pairs P3, building B3, safe builds SB1 and valuables V1 in
 /// both games, answering builds A3 in Classic only. Sums, leaving no sweep
 /// and trailing have none, and are told as a fact instead.
-pub fn taught(skill: Skill, game: crate::rules::Game) -> Option<&'static Rule> {
+///
+/// A rule is also told only under the settings it was confirmed under (the
+/// README's "Other settings"; a test pins this): building B3 is not
+/// confirmed in Classic with sweeps scored, and answering builds A3 asks
+/// for a raise, so it is not told with raising off.
+pub fn taught(skill: Skill, rules: &crate::rules::Rules) -> Option<&'static Rule> {
     use crate::rules::Game;
-    let id = match (skill, game) {
+    let id = match (skill, rules.game) {
         (Skill::Pairs, _) => "P3",
+        (Skill::Building, Game::Classic) if rules.sweeps => return None,
         (Skill::Building, _) => "B3",
         (Skill::SafeBuilds, _) => "SB1",
         (Skill::Valuables, _) => "V1",
-        (Skill::AnsweringBuilds, Game::Classic) => "A3",
+        (Skill::AnsweringBuilds, Game::Classic) if rules.raising => "A3",
         _ => return None,
     };
     CANDIDATES.iter().find(|r| r.id == id)
@@ -1076,7 +1082,6 @@ mod tests {
 
     #[test]
     fn the_taught_rules_are_the_ones_the_readme_ships() {
-        use crate::rules::Game;
         let readme = include_str!("../../../measurements/README.md");
         let from = readme.find("## The tutor's rules").expect("the section");
         let section = &readme[from..];
@@ -1092,9 +1097,14 @@ mod tests {
         ];
         let mut rows = 0;
         for (heading, next, game) in [
-            ("### Classic", "### Royal", Game::Classic),
-            ("### Royal", "Read with care", Game::Royal),
+            ("### Classic", "### Royal", Rules::CLASSIC),
+            ("### Royal", "Read with care", Rules::ROYAL),
         ] {
+            // The tables are for the defaults: sweeps not scored.
+            let rules = Rules {
+                sweeps: false,
+                ..game
+            };
             let at = section.find(heading).expect(heading);
             let end = at + section[at..].find(next).expect(next);
             for line in section[at..end].lines() {
@@ -1103,7 +1113,7 @@ mod tests {
                     continue;
                 };
                 rows += 1;
-                match taught(*skill, game) {
+                match taught(*skill, &rules) {
                     Some(rule) => {
                         assert_eq!(cells[7], "shipped", "{game:?} {skill:?}");
                         assert_eq!((cells[2], cells[3]), (rule.id, rule.text), "{game:?}");
@@ -1116,6 +1126,67 @@ mod tests {
         }
         assert_eq!(rows, 16);
     }
+    #[test]
+    fn a_rule_is_taught_only_where_the_readme_confirmed_it() {
+        let readme = include_str!("../../../measurements/README.md");
+        let from = readme.find("### Other settings").expect("the table");
+        let mut rows = 0;
+        for line in readme[from..].lines() {
+            let cells: Vec<&str> = line.split('|').map(str::trim).collect();
+            let rules = match cells.get(1).copied() {
+                Some("Classic, sweeps scored") => Rules {
+                    sweeps: true,
+                    ..Rules::CLASSIC
+                },
+                Some("Royal, sweeps scored") => Rules {
+                    sweeps: true,
+                    ..Rules::ROYAL
+                },
+                Some("Royal, aces count 1 or 14") => Rules {
+                    sweeps: false,
+                    aces_fourteen: true,
+                    ..Rules::ROYAL
+                },
+                Some("Classic, raising off") => Rules {
+                    sweeps: false,
+                    raising: false,
+                    ..Rules::CLASSIC
+                },
+                Some("Royal, raising off") => Rules {
+                    sweeps: false,
+                    raising: false,
+                    ..Rules::ROYAL
+                },
+                _ => continue,
+            };
+            rows += 1;
+            for (cell, skill) in cells[2..7].iter().zip([
+                Skill::Pairs,
+                Skill::Building,
+                Skill::SafeBuilds,
+                Skill::Valuables,
+                Skill::AnsweringBuilds,
+            ]) {
+                // "n/a": no rule was shipped, or none can be asked here.
+                let confirmed = cell.ends_with(" confirmed") && !cell.ends_with("not confirmed");
+                assert_eq!(
+                    taught(skill, &rules).is_some(),
+                    confirmed,
+                    "{line}: {skill:?}"
+                );
+            }
+        }
+        assert_eq!(rows, 5);
+        // The defaults, as the tables above have them.
+        for rules in [Rules::CLASSIC, Rules::ROYAL] {
+            let rules = Rules {
+                sweeps: false,
+                ..rules
+            };
+            assert!(taught(Skill::Building, &rules).is_some());
+        }
+    }
+
     use crate::hand::Hand;
     use crate::rules::Rules;
     use crate::table::Table;
