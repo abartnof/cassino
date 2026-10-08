@@ -68,13 +68,6 @@ export async function loadEngine(bytes) {
       ex.cassino_hint();
       return out();
     },
-    // The review of your game once it is over (null before, and when
-    // watching): { summary, strengths, tries: [{ title, text }], closing,
-    // method }. Worked out when asked: every move of yours rated again.
-    review() {
-      ex.cassino_review();
-      return out();
-    },
     // The tutor (docs/PROTOCOL.md, "The tutor"). The summaries are text the
     // engine made; a missing one (null) counts as stale. The advisor runs
     // over a whole game for the evidence: call it off the game-end path.

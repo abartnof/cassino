@@ -17,11 +17,12 @@
 //!
 //! - Pairs: a capture that takes a loose card of its own value (a pairing
 //!   group; in Classic a court card's only capture).
-//! - Sums: a capture that takes a loose card of less than its value (a
-//!   summing group). A capture can use both.
-//! - Building: a build that is new or added to one's own.
-//! - AnsweringBuilds: a capture that takes, or a build that raises, a build
-//!   the opponent controls.
+//! - Sums: a capture that takes two or more loose cards that are not
+//!   pairs (they add to the value). A double pair (4C takes 4D 4H) is
+//!   Pairs only; a pair and a sum together are both.
+//! - Building: a new build of one's own, or an addition to one's own build.
+//! - AnsweringBuilds: a capture that takes a build the opponent controls,
+//!   or a build that adds to or raises one.
 //!
 //! **Skills of restraint** (NoSweep, Valuables, Trailing, SafeBuilds) cannot
 //! be withheld, only not seen: the knockout chooses as a player blind to the

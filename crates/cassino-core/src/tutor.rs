@@ -5,7 +5,7 @@ use crate::advice;
 use crate::cards::{Card, ACE};
 use crate::moves::Move;
 use crate::observation::View;
-use crate::review::{is_build, is_trail, leaves_sweep};
+use crate::review::{is_build, is_trail, leaves_sweep, Turn};
 use crate::rng::Rng;
 use crate::search::SearchAgent;
 
@@ -403,6 +403,22 @@ pub fn assessed(view: &View, chosen: Option<Move>) -> Vec<(Move, f64)> {
     let mut advisor = SearchAgent::new(Rng::seeded(advice::advisor_seed(view)));
     let moves = rated_moves(view, chosen, &mut advisor);
     advisor.evaluate(view, &moves)
+}
+
+/// The advisor's values at each of a game's decisions ([`assessed`], with
+/// the person's move among them), `None` where there was no choice. One pass
+/// over the game serves the review ([`crate::review::review_with`]) and the
+/// evidence ([`crate::learner::evidence_with`]), the expensive step of both.
+pub type Pass = Vec<Option<Vec<(Move, f64)>>>;
+
+/// [`Pass`] over `turns`, those that `wanted` only (the rest `None`).
+pub fn pass_of(turns: &[Turn], wanted: impl Fn(&Turn) -> bool) -> Pass {
+    turns
+        .iter()
+        .map(|t| {
+            (t.view.candidates().len() >= 2 && wanted(t)).then(|| assessed(&t.view, Some(t.mv)))
+        })
+        .collect()
 }
 
 /// The clear chances in the person's decision to play `mv` in `view`,

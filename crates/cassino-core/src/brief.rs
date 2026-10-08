@@ -73,7 +73,7 @@ fn of_the(met: u32, chances: u32) -> String {
 }
 
 /// This game's figure for `skill`, in plain words, from its tally.
-pub fn figure(skill: Skill, t: Tally) -> String {
+pub fn figure(skill: Skill, t: Tally, rules: &Rules) -> String {
     let misses = t.chances - t.met;
     if t.chances == 0 {
         return "It did not come up this game.".into();
@@ -87,7 +87,10 @@ pub fn figure(skill: Skill, t: Tally) -> String {
         Skill::Sums => format!("You took a sum {best} times it was best."),
         Skill::Building => format!("You built {best} times it was best."),
         Skill::SafeBuilds => format!("You chose a safe build {best} times."),
-        Skill::AnsweringBuilds => format!("You took or raised their build {best} times."),
+        Skill::AnsweringBuilds if rules.raising => {
+            format!("You took or raised their build {best} times.")
+        }
+        Skill::AnsweringBuilds => format!("You took their build {best} times."),
         Skill::NoSweep => format!("{} you left a table one card could clear.", times(misses)),
         Skill::Valuables => format!("{} you trailed an ace or Cassino.", times(misses)),
         Skill::Trailing => format!("You trailed the best card {best} times."),
@@ -105,7 +108,7 @@ pub fn fact(skill: Skill) -> &'static str {
         Skill::Pairs => "A card takes any table card of its own rank.",
         Skill::Building => "A build gathers cards for a card you hold.",
         Skill::SafeBuilds => "A build is safer the fewer cards can take it.",
-        Skill::Valuables => "Aces and Cassinos are worth a point each.",
+        Skill::Valuables => "An ace is worth a point, Little Cassino a point, Big Cassino two.",
     }
 }
 
@@ -113,7 +116,8 @@ pub fn fact(skill: Skill) -> &'static str {
 /// when the same skill is the one to work on.
 fn praised(s: Strength) -> Vec<Skill> {
     match s {
-        Strength::Taking { .. } => vec![Skill::Pairs, Skill::Sums],
+        // Taking a build is taking too.
+        Strength::Taking { .. } => vec![Skill::Pairs, Skill::Sums, Skill::AnsweringBuilds],
         Strength::Building { .. } => vec![Skill::Building],
         Strength::Careful { .. } => vec![Skill::NoSweep],
         Strength::Cassinos { .. } | Strength::Aces { .. } => vec![Skill::Valuables],
@@ -220,7 +224,7 @@ pub fn brief(
             };
             bullets.push(Bullet::new(
                 &format!("Next: {}.", name(skill)),
-                &format!("{said} {}", figure(skill, game.of(skill))),
+                &format!("{said} {}", figure(skill, game.of(skill), rules)),
             ));
         }
         None => {
@@ -270,7 +274,6 @@ mod tests {
             tallies: vec![],
             tries: vec![],
             strengths,
-            sweeps_score: false,
         }
     }
 
@@ -395,7 +398,74 @@ mod tests {
                 "This game you managed it every time; earlier games count too.",
             ),
         ] {
-            assert_eq!(figure(skill, tally), want, "{skill:?}");
+            assert_eq!(figure(skill, tally, &classic()), want, "{skill:?}");
+        }
+    }
+
+    #[test]
+    fn a_figure_is_true_in_every_setting() {
+        let no_raise = Rules {
+            raising: false,
+            ..classic()
+        };
+        let t = Tally {
+            chances: 3,
+            met: 1,
+            missed: 2.0,
+        };
+        let line = figure(Skill::AnsweringBuilds, t, &no_raise);
+        assert!(!line.contains("raise"), "{line}");
+        assert_eq!(line, "You took their build 1 of the 3 times.");
+        assert!(figure(Skill::AnsweringBuilds, t, &royal()).contains("raised"));
+        // Big Cassino is two points.
+        let fact = fact(Skill::Valuables);
+        assert!(fact.contains("Big Cassino two"), "{fact}");
+        assert!(!fact.contains("a point each"), "{fact}");
+    }
+
+    #[test]
+    fn praise_never_sits_beside_the_work_on_the_same_thing() {
+        // Taking something every time cannot be set beside "Next: taking
+        // pairs", sums or answering their builds, and so on for each pair.
+        let strengths = [
+            Strength::Taking {
+                found: 9,
+                chances: 9,
+            },
+            Strength::Building {
+                found: 3,
+                chances: 4,
+            },
+            Strength::LastDeal,
+            Strength::Careful { avoided: 4 },
+            Strength::Cassinos { taken: 3, of: 4 },
+            Strength::Aces { taken: 3, of: 4 },
+        ];
+        let clash = |s: Strength, k: Skill| match s {
+            Strength::Taking { .. } => {
+                matches!(k, Skill::Pairs | Skill::Sums | Skill::AnsweringBuilds)
+            }
+            Strength::Building { .. } => k == Skill::Building,
+            Strength::LastDeal => k == Skill::Trailing,
+            Strength::Careful { .. } => k == Skill::NoSweep,
+            Strength::Cassinos { .. } | Strength::Aces { .. } => k == Skill::Valuables,
+            _ => false,
+        };
+        for s in strengths {
+            for k in Skill::ALL {
+                let game = summary(&[(k, 8, 1, 8.0)]);
+                let b = made(&review(40, vec![s]), &game, &[], &classic(), 3.0);
+                assert_eq!(
+                    b.bullets.last().unwrap().lead,
+                    format!("Next: {}.", name(k))
+                );
+                assert_eq!(
+                    b.bullets.len() == 1,
+                    clash(s, k),
+                    "{s:?} beside work on {k:?}: {:?}",
+                    plain(&b)
+                );
+            }
         }
     }
 

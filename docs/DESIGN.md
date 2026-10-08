@@ -644,24 +644,22 @@ your opponent's hand.
 **Move quality** (sound, dubious, blunder) is measured by the evaluation lost
 against the hint. It appears only when you ask.
 
-**The review at the game's end** (`review.rs`). Offered once a game is over
-("Review how you did?"), it is gentle and about habits, never a single
-move: the game is a way back into a game most people never learnt, and the
-review is advice, not a marking. Every move the person chose is rated
-afterwards against the top rung in their place, from their view, and each
-one that gave up points is put down to one theme by comparing it with the
-stronger move: a capture let go, a build not made, a build that cost, the
-wrong capture, a table left for one card to clear, an ace or a Cassino
-trailed, the choice of a trail, and the last deal against the deals before
-it. A move-by-move judge misses what spans a hand, so the review also
-compares the *mix* of moves with the strongest play's on the same
-positions (building was right eleven times, and you built in none of
-them), which is how a long-range habit shows. The hands' counts (the
-cards, the spades, the Cassinos, the aces) carry luck, so they are only
-ever praise. At most two strengths and two habits; a habit only when it
-showed at least twice and cost at least two points, above the advisor's
-own noise (with the top rung in the person's seat, no theme came to two
-points in any of 40 games; `cargo run --release --bin reviews`).
+**The review at the game's end** is the brief (§12.8): a few bullets, offered
+once a game is over, gentle and about habits, never a single move. The game
+is a way back into a game most people never learnt, and the review is
+advice, not a marking. It rests on the same afterwards-rating: every move the
+person chose without help is rated against the top rung in their place, from
+their view, and the habits are read from the mix of moves with the strongest
+play's on the same positions (building was right eleven times, and you built
+in none of them), which is how a long-range habit shows. What `review.rs`
+keeps of this is the strengths the brief may praise, each from decisions made
+unaided: taking when a capture was strongest, building when a build was,
+steering clear of a table one card could clear, the last deals played
+cleanly. The hands' counts (the cards, the spades, the Cassinos, the aces)
+carry luck, so they are only ever praise. A longer prose review, with a
+paragraph a habit, was written first and then replaced by the brief, which is
+what people read; its habit tallies remain as a measurement
+(`cargo run --release --bin reviews`).
 
 ### 12.5 Teaching
 

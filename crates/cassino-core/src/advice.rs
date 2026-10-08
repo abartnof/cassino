@@ -372,8 +372,14 @@ pub fn rate(view: &View, mv: &Move) -> Option<Rating> {
     {
         return None;
     }
-    let values = assessed(view, Some(*mv));
-    let (best, best_value) = best_of(&values);
+    Some(rating_from(&assessed(view, Some(*mv)), mv))
+}
+
+/// `mv` rated against the best of `values`, which must hold it (the
+/// advisor's values of the moves worth looking at, `mv` among them): the
+/// rating without a second advisor run, for a client that has the values.
+pub fn rating_from(values: &[(Move, f64)], mv: &Move) -> Rating {
+    let (best, best_value) = best_of(values);
     let value = values.iter().find(|(m, _)| m == mv).expect("assessed").1;
     let loss = best_value - value;
     let quality = if loss <= SOUND {
@@ -383,12 +389,12 @@ pub fn rate(view: &View, mv: &Move) -> Option<Rating> {
     } else {
         Quality::Blunder
     };
-    Some(Rating {
+    Rating {
         best,
         best_value,
         value,
         quality,
-    })
+    }
 }
 
 #[cfg(test)]

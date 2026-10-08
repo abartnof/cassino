@@ -37,27 +37,6 @@ test("the engine plays a game through the protocol", { skip: !existsSync(WASM) &
   assert.equal(engine.restore("nonsense").ok, false);
 });
 
-// The review at the game's end (the user: "when the game is over, put a
-// button on-screen that says something like 'Review how you did?'"): none
-// while it is played, then the engine's words; worked out on asking, so it
-// must be quick enough to ask for at a tap.
-test("the review comes once the game is over, quickly", { skip: !existsSync(WASM) && "build the module first" }, async () => {
-  const engine = await loadEngine(readFileSync(WASM));
-  let state = engine.start({ game: "royal", aces14: true, sweeps: false, skill: 3, seed: 21 });
-  assert.equal(engine.review(), null, "not while the game is played");
-  for (let n = 0; state.prompt !== "over"; n++) state = engine.send(state.prompt === "play" ? state.moves[(n * 5) % state.moves.length] : "next").state;
-  const started = performance.now();
-  const review = engine.review();
-  const ms = performance.now() - started;
-  assert.match(review.summary, /^You made \d+ choices/);
-  assert.ok(Array.isArray(review.strengths) && Array.isArray(review.tries));
-  for (const t of review.tries) assert.ok(t.title && t.text);
-  assert.ok(review.closing && review.method);
-  assert.ok(ms < 3000, `the review took ${ms.toFixed(0)} ms`);
-  engine.watch({ game: "classic", skills: [2, 2], seed: 4 });
-  assert.equal(engine.review(), null, "nobody to review in a watched game");
-});
-
 // "Raise builds" (play-testing asked for the choice): on, as the rules have
 // it, unless the sitting is started with it off; then no build is raised,
 // and a raise asked for is refused with its reason.
