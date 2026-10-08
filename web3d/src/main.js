@@ -159,7 +159,13 @@ async function main() {
   const overlay = createOverlay(document.getElementById("overlay"), {
     onChip: (chip) => {
       const sent = engine.send(chip.move);
-      message = sent.ok ? null : sent.state.error;
+      // A refused move changes nothing: say why, and keep the last move.
+      if (!sent.ok) {
+        message = sent.state.error;
+        show();
+        return;
+      }
+      message = null;
       advance(sent.state);
     },
     onNext: () => advance(engine.send("next").state),
@@ -288,6 +294,7 @@ async function main() {
     director.cancelTimed();
     watchStep = false; // a step pending was cancelled with the rest (review T2)
     overlay.hush();
+    overlay.clearCheers();
     dialogue.stop();
     state = watch
       ? engine.watch({ ...prefs.rules, skills: [prefs.skill, prefs.skill], seed })

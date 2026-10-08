@@ -501,6 +501,11 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReview = () =
     const half = node.offsetWidth / 2 + 8;
     node.style.left = `${Math.min(Math.max(place.x, half), view.width - half)}px`;
   }
+  // A new game drops the celebrations still up: the timer that would take
+  // each down is cancelled with the rest.
+  function clearCheers() {
+    cheers.replaceChildren();
+  }
   function hush() {
     takeDown("you", true);
     takeDown("them", true);
@@ -517,6 +522,7 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReview = () =
     placeBadges,
     say,
     hush,
+    clearCheers,
     tell,
     celebrate,
     cheers: () => [...cheers.querySelectorAll(".cheer")].map((c) => ({ label: c.querySelector(".cheer-disc").textContent, bursts: c.querySelectorAll(".cheer-burst").length })),

@@ -1549,6 +1549,83 @@ def check_big_build(browser, failures):
         context.close()
 
 
+def check_resize(browser, failures):
+    """The window turned or resized mid-game, desktop to upright to
+    sideways and back: no error in the console, and your hand and the move
+    bar still on the screen."""
+    page = open_page(browser, "seed=7&speed=100", calm=True)
+    settle(page)
+    for width, height in ((390, 780), (844, 390), (1280, 800), (390, 780)):
+        page.set_viewport_size({"width": width, "height": height})
+        page.wait_for_timeout(700)
+        settle(page)
+        where = f"{width}x{height}"
+        hand = page.evaluate("window.cassino3d.zoneBounds('your-hand')")
+        if hand is None or hand["left"] < -2 or hand["right"] > width + 2 or hand["bottom"] > height + 2 or hand["top"] < 0:
+            failures.append(f"resize {where}: your hand is off the screen: {hand}")
+        bar = page.locator(".move-bar").bounding_box()
+        if bar and (bar["y"] < 0 or bar["y"] + bar["height"] > height + 2):
+            failures.append(f"resize {where}: the move bar is off the screen: {bar}")
+        if not page.locator(".controls .prompt").count():
+            failures.append(f"resize {where}: no prompt")
+        play_by_clicking(page, failures, 0)
+    if page.errors:
+        failures.append(f"resize: console errors: {page.errors[:5]}")
+    page.context.close()
+
+
+def check_rush(browser, failures):
+    """Taps while the cards are still moving, and a new game started in the
+    middle of the count's celebration: no error, and no celebration left up
+    over the new game."""
+    page = open_page(browser, "seed=7&speed=1", calm=True)
+    page.wait_for_timeout(1500)
+    for _ in range(6):
+        page.mouse.click(640, 520)
+        page.mouse.click(300, 300)
+    page.evaluate("window.cassino3d.skip()")
+    settle(page)
+    if page.errors:
+        failures.append(f"rush: console errors after tapping in motion: {page.errors[:5]}")
+    page.context.close()
+    # At the table's own pace, so the celebration stays up long enough
+    # to be caught.
+    page = open_page(browser, "seed=7&speed=1", calm=True)
+    made = 0
+    while True:
+        settle(page)
+        s = page.evaluate("window.cassino3d.state()")
+        if s["prompt"] != "play":
+            failures.append("rush: no count reached to celebrate")
+            page.context.close()
+            return
+        last = len(s["hand"]) == 1 and any(e["kind"] == "dealt" and e.get("last") for e in s["events"] if e["hand"] == s["hand_number"])
+        play_by_clicking(page, failures, made)
+        made += 1
+        if last:
+            break
+    # The new game's menu opened as the count begins; Deal chosen with a
+    # celebration up.
+    page.locator("md-icon-button.new-game").click()
+    deal = page.locator(".new-game-dialog md-filled-button.deal")
+    deal.wait_for(state="visible", timeout=10_000)
+    try:
+        page.wait_for_function("window.cassino3d.cheers().length > 0", timeout=20_000)
+    except Exception:
+        failures.append("rush: no celebration came up")
+        page.context.close()
+        return
+    deal.click()
+    page.wait_for_timeout(300)
+    settle(page)
+    page.wait_for_timeout(2500)
+    if page.evaluate("window.cassino3d.cheers().length") or page.evaluate("document.querySelectorAll('.cheer').length"):
+        failures.append("rush: a celebration was left up over the new game")
+    if page.errors:
+        failures.append(f"rush: console errors: {page.errors[:5]}")
+    page.context.close()
+
+
 def check_settings(browser, failures):
     """The settings: hints turned on in the dialog; a hint shown, lit and
     chosen and played; no undo (the seventh play-testing: "remove undo");
