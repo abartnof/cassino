@@ -225,6 +225,24 @@ pub fn chances_with(
     out
 }
 
+/// The margin a clear chance must pass before the last deal, in points:
+/// about twice the advisor's typical noise in a skill's gap (its standard
+/// deviation across advisor seeds had a median of 0.18 in Classic and 0.22
+/// in Royal, a 90th percentile of 0.38 and 0.43; `bin/noise.rs`,
+/// `measurements/README.md`).
+pub const MARGIN: f64 = 0.4;
+
+/// The margin for `view`: [`MARGIN`] while the advisor samples, and in the
+/// last deal, where its values are exact, the least loss the review counts
+/// ([`advice::SOUND`]).
+pub fn margin(view: &View) -> f64 {
+    if view.perfect_information() {
+        advice::SOUND
+    } else {
+        MARGIN
+    }
+}
+
 /// The clear chances in the person's decision to play `mv` in `view`,
 /// with the advisor's values (deterministic, seeded from the view; see
 /// [`chances_with`]). Empty unless it is the viewer's turn.
@@ -238,6 +256,30 @@ pub fn chances(view: &View, mv: &Move, margin: f64) -> Vec<(Skill, bool)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_margin_is_the_noise_before_the_last_deal_and_sound_in_it() {
+        use crate::session::{Prompt, Session, Settings};
+        let mut s = Session::new(3, Settings::default());
+        let (mut early, mut last) = (false, false);
+        while s.prompt() != Prompt::Over {
+            if s.prompt() == Prompt::NextHand {
+                assert!(s.send("next"));
+                continue;
+            }
+            let view = s.view();
+            if view.perfect_information() {
+                assert_eq!(margin(&view), advice::SOUND);
+                last = true;
+            } else {
+                assert_eq!(margin(&view), MARGIN);
+                early = true;
+            }
+            let mv = s.candidates()[0];
+            assert!(s.send(&mv.to_string()));
+        }
+        assert!(early && last);
+    }
     use crate::cards::pack;
     use crate::hand::Hand;
     use crate::rules::Rules;

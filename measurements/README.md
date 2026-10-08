@@ -131,3 +131,22 @@ The move bar runs Build, Take, Trail, left to right (`selection.js`
 rung never builds, which is why the competent rungs decide; skill 4 was
 run for 50 games of each, at about 3 s a game, its shares already well
 apart.
+
+## The advisor's noise, for the tutor's clear chances
+
+For `tutor::MARGIN` (`docs/DESIGN.md` §12.8): how much a skill's gap (the
+best move using it less the best not) moves when the advisor samples other
+worlds. `noise 600 8 --rules classic|royal`: every fifth eligible decision
+of the strongest rung's games against the counter, before the last deal,
+each gap re-evaluated under 8 advisor seeds. Descriptive, a fixed count.
+The standard deviation of the gap across seeds, in points:
+
+| Date | Rules | Gaps | Median | 90th percentile | 95th percentile |
+|---|---|---|---|---|---|
+| 2026-10-08 | Classic | 1,347 (600 positions, 61 games) | 0.18 | 0.38 | 0.44 |
+| 2026-10-08 | Royal | 1,526 (600 positions, 64 games) | 0.22 | 0.43 | 0.48 |
+
+By skill the medians run from 0.14 (choosing builds, trailing) to 0.32
+(aces and Cassinos in Royal). The margin is set at **0.4 points**, about
+twice the typical spread; in the last deal, where the values are exact, it
+is `advice::SOUND` (0.15).
