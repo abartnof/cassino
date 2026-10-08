@@ -1626,6 +1626,25 @@ def check_rush(browser, failures):
     page.context.close()
 
 
+def check_lost_sitting(browser, failures):
+    """A sitting kept that will not restore is not dropped silently: a new
+    game is dealt, and the table says so."""
+    page = open_page(browser, "speed=8")
+    page.evaluate("localStorage.setItem('cassino.sitting', 'not a record')")
+    page.reload()
+    page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
+    settle(page)
+    page.wait_for_timeout(800)
+    text = page.locator(".notice-dialog").inner_text()
+    if not page.evaluate("document.querySelector('.notice-dialog').open") or "could not be carried on" not in text:
+        failures.append(f"lost sitting: no word of it: {text!r}")
+    if page.evaluate("window.cassino3d.state().prompt") != "play":
+        failures.append("lost sitting: no new game was dealt")
+    if page.errors:
+        failures.append(f"lost sitting: console errors: {page.errors[:5]}")
+    page.context.close()
+
+
 def check_settings(browser, failures):
     """The settings: hints turned on in the dialog; a hint shown, lit and
     chosen and played; no undo (the seventh play-testing: "remove undo");
@@ -1636,6 +1655,8 @@ def check_settings(browser, failures):
     page.locator("md-icon-button.settings-open").click()
     page.wait_for_timeout(1500)
     shot(page, "t6-settings")
+    if page.locator(".settings-dialog md-text-button.copy").is_visible():
+        failures.append("settings: Copy game record (it names the seed) is offered during the game")
     page.locator('md-switch[data-aid="hints"]').click()
     if page.locator('md-switch[data-pref="undo"]').count() or page.locator("md-icon-button.undo").count():
         failures.append("settings: undo is still offered")

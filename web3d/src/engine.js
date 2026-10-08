@@ -10,7 +10,42 @@ export function joinSummaries(list) {
   return list.map((s) => s || "stale").join(`\n${SEPARATOR}\n`);
 }
 
-export async function loadEngine(bytes) {
+// A fault in the module (a panic aborts; a borrow left held makes every
+// later call fail): the first is told to `onTrap` and the engine is then
+// still, taking nothing and answering what is harmless, so the page can
+// offer a reload of the saved sitting rather than go on over a broken engine.
+export function guard(api, onTrap) {
+  let dead = false;
+  let last = null;
+  const note = (r) => {
+    const s = r && typeof r === "object" ? (r.state ?? r) : null;
+    if (s && s.prompt !== undefined) last = s;
+    return r;
+  };
+  const stilled = (name) => {
+    const state = { ...(last ?? {}), error: "The table has stopped.", error_code: "stopped" };
+    if (name === "send") return { ok: false, state };
+    if (name === "step") return { stepped: false, state };
+    if (name === "restore") return { ok: false, error: state.error };
+    return name === "state" ? last : null;
+  };
+  const out = {};
+  for (const [name, fn] of Object.entries(api)) {
+    out[name] = (...args) => {
+      if (dead) return stilled(name);
+      try {
+        return note(fn(...args));
+      } catch (error) {
+        dead = true;
+        onTrap(error);
+        return stilled(name);
+      }
+    };
+  }
+  return out;
+}
+
+export async function loadEngine(bytes, onTrap = () => {}) {
   const { instance } = await WebAssembly.instantiate(bytes, {});
   const ex = instance.exports;
   const enc = new TextEncoder();
@@ -30,7 +65,7 @@ export async function loadEngine(bytes) {
     sweeps ? 1 : 0,
     raising ? 1 : 0,
   ];
-  return {
+  const api = {
     // A new sitting: { game: "classic" | "royal", aces14, sweeps, raising,
     // skill, seed }.
     start(settings) {
@@ -128,6 +163,7 @@ export async function loadEngine(bytes) {
       return ok ? { ok, state: value } : { ok, error: value.error };
     },
   };
+  return guard(api, onTrap);
 }
 
 export function decodeBase64(text) {

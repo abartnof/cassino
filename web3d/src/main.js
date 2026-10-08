@@ -59,7 +59,14 @@ function storage() {
 }
 
 async function main() {
-  const engine = await loadEngine(decodeBase64(WASM_BASE64));
+  // A fault in the module (a panic aborts; every later call then fails):
+  // the table says so calmly and offers to reload, the saved sitting kept;
+  // the engine, meanwhile, is still (engine.js `guard`).
+  let stopped = () => {};
+  const engine = await loadEngine(decodeBase64(WASM_BASE64), (error) => {
+    console.error(error);
+    stopped();
+  });
   const store = params.has("fresh") ? null : storage();
   // What is saved is the person's own settings; the URL's say (for tests and
   // links) is laid over them but never saved (the table review's T16).
@@ -1185,6 +1192,11 @@ async function main() {
 
   // The sitting under way when the page was last open, if there is one and
   // no game was asked for; else a new one.
+  stopped = () =>
+    chrome.showNotice("The table has stopped", "Something went wrong in the table. Your game is kept as of your last move: reload the table to carry on from there.", {
+      action: { label: "Reload the table", run: () => location.reload() },
+      stay: true,
+    });
   const kept = fixedSeed || params.has("watch") || STAGING ? null : loadSitting(store);
   const restored = kept ? engine.restore(kept) : null;
   if (restored?.ok && restored.state.prompt !== "over") {
@@ -1215,6 +1227,9 @@ async function main() {
   document.getElementById("loading").remove();
   sayProgress();
   staleSoon(4000);
+  // A sitting kept that would not restore (from an older table, or damaged)
+  // is not carried on: said briefly, rather than dropped without a word.
+  if (kept && restored && !restored.ok) chrome.showNotice("A new game", "The game kept from your last visit could not be carried on, so a new one has been dealt.");
 
   // For the browser test: where a card is on the screen, the chips, the
   // sheet and the talk, and the clock (with ?manual, the test moves it).
