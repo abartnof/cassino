@@ -42,9 +42,15 @@ if [ -d web3d/node_modules ]; then
     echo "gate: FAILED: the built page is stale" >&2
     exit 1
   fi
-  # Built but not staged: the commit would leave it behind (a warning only:
-  # the gate runs before staging).
+  # Built but not staged. The gate usually runs before staging, so on its
+  # own that is a note. But when the sources of the page are staged and the
+  # rebuilt page is not, `git commit` would leave the page behind, stale:
+  # that fails.
   if ! git diff --quiet -- web3d/cassino3d.html; then
+    if ! git diff --cached --quiet -- web3d/src web3d/build.py crates; then
+      echo "gate: FAILED: web3d/cassino3d.html is rebuilt but not staged, and the sources it is built from are (git add web3d/cassino3d.html)" >&2
+      exit 1
+    fi
     echo "gate: note: web3d/cassino3d.html is rebuilt but not staged" >&2
   fi
   passed="$passed + $node_passed in Node"

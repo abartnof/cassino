@@ -76,6 +76,8 @@
 }
 
 html, body {
+  /* No double-tap zoom on quick taps (iOS Safari), on the canvas and the controls. */
+  touch-action: manipulation;
   margin: 0;
   height: 100%;
   overflow: hidden;

@@ -1665,6 +1665,52 @@ def check_lost_sitting(browser, failures):
     page.context.close()
 
 
+def check_access(browser, failures):
+    """The basics for a screen reader and a keyboard: a build's badge is a
+    button with a name, reached by Tab and worked by Enter; the turn and the
+    last move told in a live region; and focus kept in the controls after a
+    move rather than dropped to the page."""
+    page = open_page(browser, "seed=1&skill=1&values", calm=True)
+    settle(page)
+    told = page.evaluate("document.querySelector('.announce').textContent")
+    if "Your turn." not in told or page.evaluate("document.querySelector('.announce').getAttribute('aria-live')") != "polite":
+        failures.append(f"access: the turn is not told: {told!r}")
+    for _ in range(30):
+        settle(page)
+        s = page.evaluate("window.cassino3d.state()")
+        if s["prompt"] != "play":
+            continue
+        if page.locator(".badge").count():
+            break
+        play_by_clicking(page, failures, 0)
+    badge = page.locator(".badge").first
+    if badge.count():
+        if badge.get_attribute("role") != "button" or badge.get_attribute("tabindex") != "0" or not badge.get_attribute("aria-label"):
+            failures.append("access: a badge is not a named button")
+        badge.focus()
+        page.keyboard.press("Enter")
+        settle(page)
+    else:
+        failures.append("access: no build came up to give a badge")
+    s = page.evaluate("window.cassino3d.state()")
+    if s["prompt"] == "play":
+        move = s["moves"][0]
+        click_card(page, move.split()[1].split("=")[0] if move.split()[0] != "build" else move.split()[2])
+        settle(page)
+        for code in table_cards(move):
+            click_card(page, code)
+            settle(page)
+        chip = page.locator(f'.move-bar [data-move="{move}"]')
+        if chip.count():
+            chip.click()
+            page.wait_for_timeout(400)
+            if page.evaluate("document.activeElement === document.body"):
+                failures.append("access: after a move the focus fell to the page")
+    if page.errors:
+        failures.append(f"access: console errors {page.errors[:5]}")
+    page.context.close()
+
+
 def check_settings(browser, failures):
     """The settings: hints turned on in the dialog; a hint shown, lit and
     chosen and played; no undo (the seventh play-testing: "remove undo");
