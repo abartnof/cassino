@@ -53,7 +53,7 @@ fn always(_: &View, _: &Move) -> bool {
 }
 
 /// The candidate rules, written before any was measured.
-pub const CANDIDATES: [Rule; 22] = [
+pub const CANDIDATES: [Rule; 34] = [
     Rule {
         id: "P1",
         skill: Skill::Pairs,
@@ -229,6 +229,105 @@ pub const CANDIDATES: [Rule; 22] = [
         trigger: played_out_to_trail,
         prescription: trails_played_out,
         given: always,
+    },
+    // The second round, for the skills whose first candidates fell short
+    // (pairs, building, safe builds, leaving no sweep, trailing), written
+    // before any was measured. The first round stays in the selection.
+    Rule {
+        id: "P3",
+        skill: Skill::Pairs,
+        text: "Take a pair, unless you can build or take more cards instead.",
+        trigger: pair_open,
+        prescription: pair_or_better,
+        given: always,
+    },
+    Rule {
+        id: "P4",
+        skill: Skill::Pairs,
+        text: "With no build open to you, take a pair.",
+        trigger: pair_and_no_build,
+        prescription: takes_pair,
+        given: always,
+    },
+    Rule {
+        id: "B4",
+        skill: Skill::Building,
+        text: "Build when the build would gather three cards or more.",
+        trigger: big_build_open,
+        prescription: is_build,
+        given: always,
+    },
+    Rule {
+        id: "B5",
+        skill: Skill::Building,
+        text: "With nothing to take, build a value that at most one unseen card can take.",
+        trigger: safe_build_not_trail,
+        prescription: is_build,
+        given: always,
+    },
+    Rule {
+        id: "B6",
+        skill: Skill::Building,
+        text: "Add to your own build when you can.",
+        trigger: own_build_addable,
+        prescription: adds_to_own,
+        given: always,
+    },
+    Rule {
+        id: "SB4",
+        skill: Skill::SafeBuilds,
+        text: "Never build a value that three or more unseen cards can take.",
+        trigger: any_build_open,
+        prescription: builds_not_exposed,
+        given: is_build,
+    },
+    Rule {
+        id: "SB5",
+        skill: Skill::SafeBuilds,
+        text: "Of the builds you could make, make the highest value.",
+        trigger: builds_differ_in_value,
+        prescription: builds_highest,
+        given: is_build,
+    },
+    Rule {
+        id: "N3",
+        skill: Skill::NoSweep,
+        text: "Do not leave a table that two or more unseen cards could sweep.",
+        trigger: two_sweep_avoidable,
+        prescription: leaves_no_two_sweep,
+        given: always,
+    },
+    Rule {
+        id: "N4",
+        skill: Skill::NoSweep,
+        text: "Do not leave four or more cards on a table one card could sweep.",
+        trigger: big_sweep_avoidable,
+        prescription: leaves_no_big_sweep,
+        given: always,
+    },
+    Rule {
+        id: "T4",
+        skill: Skill::Trailing,
+        text: "Trail a card nothing adds up with, of which at most two copies are unseen.",
+        trigger: isolated_scarce_to_trail,
+        prescription: trails_isolated_scarce,
+        given: always,
+    },
+    Rule {
+        id: "T5",
+        skill: Skill::Trailing,
+        text: "When you trail, trail the card the fewest unseen cards can take.",
+        trigger: scarce_choice_to_trail,
+        prescription: trails_scarcest,
+        given: is_trail,
+    },
+    Rule {
+        id: "T6",
+        skill: Skill::Trailing,
+        text: "When you trail, trail your lowest card that adds up with nothing.",
+        trigger: isolated_choice_to_trail,
+        prescription: trails_lowest_isolated,
+        given: is_trail,
     },
 ];
 
@@ -592,6 +691,164 @@ fn trails_played_out(v: &View, m: &Move) -> bool {
     trailed(m).is_some_and(|c| rank_unseen(v, c) <= 1)
 }
 
+// ---- The second round ----
+
+fn is_trail(_: &View, m: &Move) -> bool {
+    matches!(m, Move::Trail { .. })
+}
+
+/// Takes a pair, or builds, or takes more cards than any pair-taking
+/// capture on offer does.
+fn pair_or_better(v: &View, m: &Move) -> bool {
+    let best_pair = v
+        .candidates()
+        .iter()
+        .filter(|c| takes_pair(v, c))
+        .map(|c| taken(c).len())
+        .max()
+        .unwrap_or(0);
+    takes_pair(v, m) || is_build(v, m) || taken(m).len() > best_pair
+}
+
+fn pair_and_no_build(v: &View) -> bool {
+    pair_open(v) && builds(v).is_empty()
+}
+
+/// Cards a build move gathers: the card played, the loose cards it uses and
+/// the cards of a build it is added to.
+fn gathers(v: &View, m: &Move) -> u32 {
+    match *m {
+        Move::Build { onto, loose, .. } => {
+            let base = onto
+                .and_then(|o| v.table.build_of(o))
+                .map_or(0, |b| b.cards.len());
+            base + loose.len() + 1
+        }
+        _ => 0,
+    }
+}
+
+fn big_build_open(v: &View) -> bool {
+    builds(v).iter().any(|m| gathers(v, m) >= 3)
+}
+
+fn safe_build_not_trail(v: &View) -> bool {
+    !has_capture(v) && build_nearly_safe(v)
+}
+
+/// The move adds to a build the player controls.
+fn adds_to_own(v: &View, m: &Move) -> bool {
+    match *m {
+        Move::Build { onto: Some(o), .. } => {
+            v.table.build_of(o).is_some_and(|b| b.controller == v.me)
+        }
+        _ => false,
+    }
+}
+
+fn own_build_addable(v: &View) -> bool {
+    builds(v).iter().any(|m| adds_to_own(v, m))
+}
+
+fn any_build_open(v: &View) -> bool {
+    !builds(v).is_empty()
+}
+
+fn builds_not_exposed(v: &View, m: &Move) -> bool {
+    build_value(m).is_some_and(|x| hidden_takers(v, x) <= 2)
+}
+
+fn builds_differ_in_value(v: &View) -> bool {
+    let values: Vec<u8> = builds(v).iter().filter_map(build_value).collect();
+    values.iter().any(|&x| x != values[0])
+}
+
+fn builds_highest(v: &View, m: &Move) -> bool {
+    build_value(m).is_some_and(|x| builds(v).iter().filter_map(build_value).all(|y| y <= x))
+}
+
+/// Risk counted only when `m` leaves at least `cards` cards on the table.
+fn sweep_risk_of_size(v: &View, m: &Move, cards: u32) -> u32 {
+    if left_on_table(v, m) >= cards {
+        sweep_risk(v, m)
+    } else {
+        0
+    }
+}
+
+/// Cards on the table after `m` (a build's cards stay, the card played joins).
+fn left_on_table(v: &View, m: &Move) -> u32 {
+    let on = v.table.cards().len();
+    match *m {
+        Move::Capture { taken, .. } => on - (taken & v.table.cards()).len(),
+        _ => on + 1,
+    }
+}
+
+fn two_sweep_avoidable(v: &View) -> bool {
+    sweep_choice(v, 2)
+}
+
+fn leaves_no_two_sweep(v: &View, m: &Move) -> bool {
+    sweep_risk(v, m) < 2
+}
+
+/// The table a sweep would clear is this many cards or more.
+const BIG_TABLE: u32 = 4;
+
+fn big_sweep_avoidable(v: &View) -> bool {
+    let risks: Vec<u32> = v
+        .candidates()
+        .iter()
+        .map(|m| sweep_risk_of_size(v, m, BIG_TABLE))
+        .collect();
+    risks.iter().any(|&r| r >= 1) && risks.iter().any(|&r| r < 1)
+}
+
+fn leaves_no_big_sweep(v: &View, m: &Move) -> bool {
+    sweep_risk_of_size(v, m, BIG_TABLE) == 0
+}
+
+fn isolated_scarce(v: &View, c: Card) -> bool {
+    isolated(v, c) && rank_unseen(v, c) <= 2
+}
+
+fn isolated_scarce_to_trail(v: &View) -> bool {
+    !has_capture(v) && v.hand.iter().any(|c| isolated_scarce(v, c))
+}
+
+fn trails_isolated_scarce(v: &View, m: &Move) -> bool {
+    trailed(m).is_some_and(|c| isolated_scarce(v, c))
+}
+
+fn fewest_unseen(v: &View) -> Option<u32> {
+    plain_cards(v).iter().map(|c| rank_unseen(v, c)).min()
+}
+
+fn scarce_choice_to_trail(v: &View) -> bool {
+    let counts: Vec<u32> = plain_cards(v).iter().map(|c| rank_unseen(v, c)).collect();
+    !has_capture(v) && counts.iter().any(|&n| Some(n) != fewest_unseen(v))
+}
+
+fn trails_scarcest(v: &View, m: &Move) -> bool {
+    trailed(m).is_some_and(|c| !valuable(c) && Some(rank_unseen(v, c)) == fewest_unseen(v))
+}
+
+fn isolated_plain(v: &View) -> CardSet {
+    plain_cards(v).iter().filter(|&c| isolated(v, c)).collect()
+}
+
+fn isolated_choice_to_trail(v: &View) -> bool {
+    let ranks: std::collections::BTreeSet<u8> = isolated_plain(v).iter().map(Card::rank).collect();
+    !has_capture(v) && ranks.len() >= 2
+}
+
+fn trails_lowest_isolated(v: &View, m: &Move) -> bool {
+    let iso = isolated_plain(v);
+    trailed(m)
+        .is_some_and(|c| iso.contains(c) && iso.iter().map(|x| x.rank()).min() == Some(c.rank()))
+}
+
 // ---- Where a skill matters ----
 
 /// Whether the move exercises the skill: for the skills of action, it is
@@ -852,10 +1109,10 @@ mod tests {
     }
 
     #[test]
-    fn each_skill_has_two_to_four_candidates_and_ids_are_unique() {
+    fn each_skill_has_two_to_six_candidates_and_ids_are_unique() {
         for s in Skill::ALL {
             let n = CANDIDATES.iter().filter(|r| r.skill == s).count();
-            assert!((2..=4).contains(&n), "{s:?} has {n}");
+            assert!((2..=6).contains(&n), "{s:?} has {n}");
         }
         let mut ids: Vec<_> = CANDIDATES.iter().map(|r| r.id).collect();
         ids.sort_unstable();
@@ -1117,6 +1374,83 @@ mod tests {
         assert!(!says("V3", &v, "build 6 AS 5C"));
         let v = classic("5C 6H", "AS 7D");
         assert!(says("V3", &v, "take 7D 6H AS"));
+    }
+
+    #[test]
+    fn the_second_round_of_candidates() {
+        // P3: a pair, or a build, or a capture of more cards than the pair.
+        let v = classic("4H 2D 3C", "4S 9D");
+        assert!(fires("P3", &v));
+        assert!(says("P3", &v, "take 4S 4H"));
+        assert!(says("P3", &v, "take 9D 4H 2D 3C"));
+        assert!(!says("P3", &v, "trail 9D"));
+        let v = classic("4H 5C", "4S 9D");
+        assert!(says("P3", &v, "build 9 4S 5C"));
+        assert!(!fires("P3", &classic("5H 5C", "4S 9D")));
+        // P4: no build open to you.
+        assert!(fires("P4", &classic("4H 3D", "4S KC")));
+        assert!(!fires("P4", &classic("4H 3D", "4S 7C")));
+        assert!(says("P4", &classic("4H 3D", "4S KC"), "take 4S 4H"));
+        // B4: a build that gathers three cards or more.
+        let v = classic("2H 3D", "AS 6C");
+        assert!(fires("B4", &v));
+        assert!(says("B4", &v, "build 6 AS 2H 3D"));
+        assert!(!fires("B4", &classic("5C", "3D 8S")));
+        // B5: nothing to take, a build at most one unseen card can take.
+        let safe = view(Rules::CLASSIC, "5C", "3D 8S", "8D 8C 8H");
+        assert!(fires("B5", &safe));
+        assert!(!fires("B5", &classic("5C", "3D 8S")));
+        assert!(says("B5", &safe, "build 8 3D 5C"));
+        assert!(!says("B5", &safe, "trail 3D"));
+        // B6: add to your own build.
+        let v = classic("[4 @S: 3S AH] 9C", "2D 6S");
+        assert!(fires("B6", &v));
+        assert!(says("B6", &v, "build 6 2D on 3S"));
+        assert!(!says("B6", &v, "trail 2D"));
+        assert!(!fires("B6", &classic("[4: 3S AH] 9C", "2D 6S")));
+        // SB4 and SB5: builds of 7 (none unseen), 8 (three) and 5 (two).
+        let v = view(Rules::CLASSIC, "5C 3H", "2D 7S 8C 5D", "7H 7D 7C");
+        assert!(fires("SB4", &v));
+        assert!(says("SB4", &v, "build 7 2D 5C"));
+        assert!(!says("SB4", &v, "build 8 5D 3H"));
+        assert!(fires("SB5", &v));
+        assert!(says("SB5", &v, "build 8 5D 3H"));
+        assert!(!says("SB5", &v, "build 7 2D 5C"));
+        assert!(!fires("SB5", &classic("5C", "3D 8S")));
+        // N3: two or more unseen cards could sweep.
+        let v = classic("4H 3D", "2C 5S");
+        assert!(fires("N3", &v));
+        assert!(says("N3", &v, "trail 5S"));
+        assert!(!says("N3", &v, "trail 2C"));
+        let one = view(Rules::CLASSIC, "4H 3D", "2C 5S", "9S 9H 9D");
+        assert!(!fires("N3", &one));
+        // N4: four cards or more left for one card to sweep.
+        let v = classic("AH 2D 3C", "4S KC");
+        assert!(fires("N4", &v));
+        assert!(says("N4", &v, "trail KC"));
+        assert!(!says("N4", &v, "trail 4S"));
+        assert!(!fires("N4", &classic("4H 3D", "2C 5S")));
+        // T4: adds up with nothing, at most two copies unseen.
+        let v = view(Rules::CLASSIC, "9H", "2C 8D", "2D 2H");
+        assert!(fires("T4", &v));
+        assert!(says("T4", &v, "trail 2C"));
+        assert!(!says("T4", &v, "trail 8D"));
+        assert!(!fires("T4", &classic("9H", "2C 8D")));
+        // T5: the card the fewest unseen cards can take.
+        let v = view(Rules::CLASSIC, "2H", "6S 9D", "6H 6D 6C");
+        assert!(fires("T5", &v));
+        assert!(says("T5", &v, "trail 6S"));
+        assert!(!says("T5", &v, "trail 9D"));
+        assert!(!fires("T5", &classic("2H", "6S 9D")));
+        // T6: the lowest card that adds up with nothing.
+        let v = classic("9H", "2C 8D 3S");
+        assert!(fires("T6", &v));
+        assert!(says("T6", &v, "trail 2C"));
+        assert!(!says("T6", &v, "trail 8D"));
+        assert!(!fires("T6", &classic("9H", "2C 2D")));
+        // T5 and T6 speak of trails and are measured where the rung trails.
+        assert!(!(rule("T5").given)(&v, &mv("build 5 2C 3S")));
+        assert!((rule("T5").given)(&v, &mv("trail 2C")));
     }
 
     #[test]
