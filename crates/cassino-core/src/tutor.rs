@@ -313,6 +313,22 @@ pub fn open(skill: Skill, view: &View, margin: f64, values: &[(Move, f64)]) -> b
     }
 }
 
+/// What the page says when it nudges on `skill` (a short, kind line, true
+/// of a decision where [`open`] fires): the engine holds the words, the
+/// page only shows them.
+pub fn nudge_words(skill: Skill) -> &'static str {
+    match skill {
+        Skill::Pairs => "There is a pair to take.",
+        Skill::Sums => "Some cards here add up to your card.",
+        Skill::Building => "A build is on here.",
+        Skill::SafeBuilds => "Some builds here are safer than others.",
+        Skill::AnsweringBuilds => "Their build is worth answering.",
+        Skill::NoSweep => "Mind what the table is left with.",
+        Skill::Valuables => "Mind your aces and Cassinos here.",
+        Skill::Trailing => "Which card you trail matters here.",
+    }
+}
+
 /// The margin a clear chance must pass before the last deal, in points:
 /// about twice the advisor's typical noise in a skill's gap (its standard
 /// deviation across advisor seeds had a median of 0.18 in Classic and 0.22
@@ -402,6 +418,15 @@ pub fn chances(view: &View, mv: &Move, margin: f64) -> Vec<Chance> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn every_skill_has_a_short_nudge() {
+        for skill in Skill::ALL {
+            let words = nudge_words(skill);
+            assert!(words.split_whitespace().count() <= 10, "{words}");
+            assert!(words.ends_with('.'), "{words}");
+        }
+    }
 
     #[test]
     fn the_margin_is_the_noise_before_the_last_deal_and_sound_in_it() {

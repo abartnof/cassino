@@ -194,6 +194,44 @@ and two habits to work on, either list possibly empty. It is worked out when
 asked, every move of the person's rated again by the advisor: about half a
 second for a whole game in Node.
 
+## The tutor
+
+Four queries and a command let a client carry the tutor from game to game
+(`docs/DESIGN.md` §12.8). The client stores, per finished game, the record
+(`state.saved`) and the game's **summary**, the text of what the game showed
+of each skill (`learner::Summary`, versioned: `cassino evidence v<n>`, then a
+line a skill). The engine holds the words and the judgement; the client holds
+only the text. Where a query takes summaries it takes them oldest first with a
+line of `--` between; an entry that is missing or no summary counts as stale.
+
+- **`evidence`**: once the game is over (`null` before, and when watching),
+  `{summary}` for this game. The advisor runs over every decision: about
+  0.5 s in the module (0.8 s native), so a client asks for it after the
+  ending has settled, not during it.
+- **`evidence_of(record)`**: the same for a stored record (a finished game's
+  saved text), the sitting left alone; `{summary}` or `{error}`. For the
+  summaries `learner` lists as stale (made by another evidence version).
+- **`learner(history)`**: `{games, focus, mastered, stale}`: the number of
+  current summaries, the skill to work on next (a slug or `null`), the
+  slugs mastered, and the indexes to recompute with `evidence_of`.
+- **`brief(game, history)`**: `{bullets: [{lead, text}], method}`, one to
+  three bullets and the sentences that say how they were worked out
+  (`null` before the game is over). The input is this game's summary (empty
+  to have it worked out here), a `--` line, then the earlier games'
+  summaries (empty with no stored games: the brief then rests on this game).
+  It rates the game again for its review, about 0.45 s.
+- **`set_focus(slug)`**: tells the sitting which skill to work on (empty for
+  none; 1 if it was a skill). Not in the record: say it again after a
+  restore. With a focus set, the person's decisions at it may be nudged.
+- **`nudge`**: `{skill, words}` for the current decision, or `null`: a
+  focus is set, it is the person's turn, a clear chance at the focus is on
+  the table, and no nudge has been shown this game nor a hint at this
+  decision. The words are the engine's (`tutor::nudge_words`). The answer
+  is kept for the decision, so asking again is free; the first ask costs
+  one advisor run (3 ms on average, 50 ms at most in Node). Showing the
+  nudge is the recorded command `nudged <skill>`; until then it is still on
+  offer.
+
 ## The replay
 
 Once the game is over, and never before, the `reveal` query gives what was
@@ -223,6 +261,12 @@ The module exports, with no `wasm-bindgen`:
 | `cassino_offer(len)` | Renders the offer for the selection just written |
 | `cassino_hint()` | Renders the hint |
 | `cassino_review()` | Renders the review once the game is over (`null` before; see "The review") |
+| `cassino_evidence()` | Renders this game's summary once it is over (`null` before; see "The tutor") |
+| `cassino_evidence_of(len)` | Renders the summary of the stored record just written |
+| `cassino_learner(len)` | Renders the learner over the summaries just written |
+| `cassino_brief(len)` | Renders the brief; the input is this game's summary, `--`, the history |
+| `cassino_set_focus(len) -> 0/1` | Sets the tutor's focus from the slug just written (empty: none) |
+| `cassino_nudge()` | Renders the nudge for the current decision (`null` for none) |
 | `cassino_reveal()` | Renders every hand's deals once the game is over (`null` before; see "The replay") |
 | `cassino_restore(len) -> 0/1` | Restores the sitting from the saved text just written; on refusal the old sitting stays and the rendered JSON is `{"error": ...}` |
 | `cassino_render()` | Renders the state again |

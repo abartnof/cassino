@@ -79,3 +79,77 @@ test("with raising off, no build is raised in a whole game, and the state says s
   }
   assert.ok(raisesOn > 0, "with it on, the same games raise");
 });
+
+// The tutor (docs/PROTOCOL.md, "The tutor"): a game's evidence once over, the
+// summary of a stored record, the learner and the brief over a history, the
+// focus and the nudge. The timings are printed: the page keeps the evidence
+// off the game-end path because it is the slow one.
+function playOut(engine, options) {
+  let s = engine.start(options);
+  for (let n = 0; s.prompt !== "over" && n < 600; n++) {
+    s = engine.send(s.prompt === "play" ? s.moves[0] : "next").state;
+  }
+  return s;
+}
+
+test("the tutor's queries: evidence, stored records, learner, brief", { skip: !existsSync(WASM) && "build the module first" }, async () => {
+  const engine = await loadEngine(readFileSync(WASM));
+  const opts = { game: "royal", aces14: true, skill: 3, seed: 12 };
+  engine.start(opts);
+  assert.equal(engine.evidence(), null, "not while it is played");
+  assert.equal(engine.brief(null, []), null);
+  const over = playOut(engine, opts);
+  let t = performance.now();
+  const summary = engine.evidence();
+  console.log(`# evidence: ${(performance.now() - t).toFixed(0)} ms`);
+  assert.match(summary, /^cassino evidence v\d+\npairs /);
+  t = performance.now();
+  assert.equal(engine.evidenceOf(over.saved), summary, "the stored record gives the same summary");
+  console.log(`# evidence of a stored record: ${(performance.now() - t).toFixed(0)} ms`);
+  assert.equal(engine.evidenceOf("nonsense"), null);
+  assert.equal(engine.evidence(), summary, "the sitting is as it was");
+  assert.deepEqual(engine.learner([]), { games: 0, focus: null, mastered: [], stale: [] });
+  const learner = engine.learner([summary, null, summary]);
+  assert.equal(learner.games, 2);
+  assert.deepEqual(learner.stale, [1]);
+  t = performance.now();
+  const brief = engine.brief(summary, [summary, summary]);
+  console.log(`# brief with the summary in hand: ${(performance.now() - t).toFixed(0)} ms`);
+  assert.ok(brief.bullets.length >= 1 && brief.bullets.length <= 3);
+  assert.ok(brief.bullets.every((b) => typeof b.lead === "string" && b.text));
+  assert.ok(brief.method.length > 40);
+  assert.ok(engine.brief(null, []).bullets.length >= 1, "with no history, and the summary worked out");
+});
+
+test("the focus and the nudge: words from the engine, once a game", { skip: !existsSync(WASM) && "build the module first" }, async () => {
+  const engine = await loadEngine(readFileSync(WASM));
+  let s = engine.start({ game: "royal", aces14: true, skill: 3, seed: 12 });
+  assert.equal(engine.nudge(), null, "no focus, no nudge");
+  assert.equal(engine.setFocus("juggling"), false);
+  assert.equal(engine.setFocus("pairs"), true);
+  let nudged = null;
+  let slowest = 0;
+  let total = 0;
+  let asked = 0;
+  for (let n = 0; s.prompt !== "over" && n < 600; n++) {
+    if (s.prompt === "play") {
+      const t = performance.now();
+      const nudge = engine.nudge();
+      const ms = performance.now() - t;
+      slowest = Math.max(slowest, ms);
+      total += ms;
+      asked++;
+      if (nudge && !nudged) {
+        nudged = nudge;
+        assert.equal(nudge.skill, "pairs");
+        assert.ok(nudge.words.split(" ").length <= 10);
+        assert.ok(engine.send(`nudged ${nudge.skill}`).ok);
+        assert.equal(engine.nudge(), null, "once a game");
+      }
+    }
+    s = engine.send(s.prompt === "play" ? s.moves[0] : "next").state;
+  }
+  console.log(`# nudge: ${(total / asked).toFixed(0)} ms a decision on average, ${slowest.toFixed(0)} ms at most, ${asked} decisions`);
+  assert.ok(nudged, "a game of pairs holds a chance");
+  assert.equal(engine.setFocus(null), true);
+});

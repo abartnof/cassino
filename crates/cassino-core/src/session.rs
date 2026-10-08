@@ -1138,15 +1138,25 @@ impl Session {
     /// alone). Runs the advisor over the game ([`learner::evidence`]), so
     /// call it once.
     pub fn brief(&self, history: &[learner::Summary]) -> Option<brief::Brief> {
+        self.brief_with(&learner::evidence(&self.turns), history)
+    }
+
+    /// [`Session::brief`] with this game's summary already in hand
+    /// ([`learner::evidence`] of [`Session::turns`]), so a client that has
+    /// stored it does not pay for the advisor twice.
+    pub fn brief_with(
+        &self,
+        game: &learner::Summary,
+        history: &[learner::Summary],
+    ) -> Option<brief::Brief> {
         let review = self.review()?;
-        let game = learner::evidence(&self.turns);
         let before = learner::learn(history);
         let mut all = history.to_vec();
         all.push(game.clone());
         let after = learner::learn(&all);
         Some(brief::brief(
             &review,
-            &game,
+            game,
             &before,
             &after,
             &self.settings.rules,

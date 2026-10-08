@@ -25,12 +25,14 @@
 use cassino_core::advice::{self, Quality};
 use cassino_core::cards::{Card, CardSet};
 use cassino_core::hand::Clinch;
+use cassino_core::learner::{self, Summary};
 use cassino_core::moves::{BuildKind, Move};
 use cassino_core::rules::{Game, Rules};
 use cassino_core::scoring::{Breakdown, Item as Line};
 use cassino_core::select;
 use cassino_core::session::{Event, EventKind, Prompt, Session, Settings};
 use cassino_core::table::Seat;
+use cassino_core::tutor::{self, Skill};
 use cassino_core::words;
 
 /// Bumped whenever the state changes shape in a way a client would notice.
@@ -672,6 +674,147 @@ pub fn review(session: &Session) -> String {
 }
 
 // ---------------------------------------------------------------------------
+// The tutor: evidence, the brief, the learner, the nudge (`docs/PROTOCOL.md`).
+// ---------------------------------------------------------------------------
+
+/// The line that separates summaries in the text a client passes in.
+pub const SUMMARY_SEPARATOR: &str = "--";
+
+/// Summaries from their text, oldest first, separated by lines of `--`. An
+/// entry that is empty, or does not parse, is `None`: it counts as stale
+/// (the client recomputes it from its record).
+pub fn summaries(text: &str) -> Vec<Option<Summary>> {
+    if text.trim().is_empty() {
+        return Vec::new();
+    }
+    let mut out = vec![String::new()];
+    for line in text.lines() {
+        if line.trim() == SUMMARY_SEPARATOR {
+            out.push(String::new());
+        } else if let Some(last) = out.last_mut() {
+            last.push_str(line);
+            last.push('\n');
+        }
+    }
+    out.iter().map(|t| Summary::parse(t).ok()).collect()
+}
+
+/// This game's evidence summary as `{"summary": text}` once the game is
+/// over; `null` before and in a watched game. Runs the advisor over the
+/// game (about 0.8 s natively): the client calls it off the game-end path.
+pub fn evidence(session: &Session) -> String {
+    if session.prompt() != Prompt::Over || session.watching() {
+        return "null".into();
+    }
+    object(&[(
+        "summary",
+        text(&learner::evidence(session.turns()).to_text()),
+    )])
+}
+
+/// The summary of a stored record (a saved text of a finished game), as
+/// [`evidence`] gives it: `{"summary": text}`, or `{"error": …}` when the
+/// text does not restore or the game was not over.
+pub fn evidence_of(record: &str) -> String {
+    match restore(record) {
+        Ok(session) if session.prompt() == Prompt::Over && !session.watching() => {
+            evidence(&session)
+        }
+        Ok(_) => error("that game was not finished"),
+        Err(why) => error(&why),
+    }
+}
+
+/// The learner over the summaries in `history` (oldest first, separated
+/// by `--`): `{games, focus, mastered, stale}`. `focus` is a skill's slug
+/// or `null`; `mastered` the slugs; `stale` the indexes of entries the
+/// client must recompute from their records before they count.
+pub fn learner_of(history: &str) -> String {
+    let all = summaries(history);
+    let stale = all
+        .iter()
+        .enumerate()
+        .filter(|(_, s)| s.as_ref().is_none_or(|s| !s.is_current()))
+        .map(|(i, _)| i.to_string());
+    let stale = list(stale);
+    let kept: Vec<Summary> = all.into_iter().flatten().collect();
+    let learnt = learner::learn(&kept);
+    object(&[
+        ("games", learnt.games.to_string()),
+        ("focus", or_null(learnt.focus.map(|s| text(s.slug())))),
+        (
+            "mastered",
+            list(
+                Skill::ALL
+                    .into_iter()
+                    .filter(|&s| learnt.mastered(s))
+                    .map(|s| text(s.slug())),
+            ),
+        ),
+        ("stale", stale),
+    ])
+}
+
+/// The brief of a finished game, in bullets and a method: `{bullets:
+/// [{lead, text}], method}`; `null` before the game is over. `input` is
+/// this game's summary (empty to have it worked out here), then, after a
+/// `--` line, the earlier games' summaries, oldest first.
+pub fn brief_of(session: &Session, input: &str) -> String {
+    let (game, history) = match input.split_once(&format!("\n{SUMMARY_SEPARATOR}\n")) {
+        Some((game, rest)) => (game, rest),
+        None if input.trim() == SUMMARY_SEPARATOR => ("", ""),
+        None => (input, ""),
+    };
+    let game = Summary::parse(game).unwrap_or_else(|_| learner::evidence(session.turns()));
+    let history: Vec<Summary> = summaries(history).into_iter().flatten().collect();
+    let Some(brief) = session.brief_with(&game, &history) else {
+        return "null".into();
+    };
+    object(&[
+        (
+            "bullets",
+            list(
+                brief
+                    .bullets
+                    .iter()
+                    .map(|b| object(&[("lead", text(&b.lead)), ("text", text(&b.text))])),
+            ),
+        ),
+        ("method", text(&brief.method)),
+    ])
+}
+
+/// Sets the tutor's focus (a skill's slug, or empty for none); false if the
+/// slug is not a skill.
+pub fn set_focus(session: &mut Session, slug: &str) -> bool {
+    let slug = slug.trim();
+    if slug.is_empty() {
+        session.set_focus(None);
+        return true;
+    }
+    match Skill::from_slug(slug) {
+        Some(skill) => {
+            session.set_focus(Some(skill));
+            true
+        }
+        None => false,
+    }
+}
+
+/// The nudge for the current decision: `{skill, words}` or `null`. One
+/// advisor run per decision until it fires (the session remembers the
+/// answer). Showing it is the recorded command `nudged <skill>`.
+pub fn nudge(session: &Session) -> String {
+    let Some(skill) = session.nudge() else {
+        return "null".into();
+    };
+    object(&[
+        ("skill", text(skill.slug())),
+        ("words", text(tutor::nudge_words(skill))),
+    ])
+}
+
+// ---------------------------------------------------------------------------
 // Scripted games, for checking that every build plays alike.
 // ---------------------------------------------------------------------------
 
@@ -714,7 +857,10 @@ pub fn scripted(game: u32, aces_fourteen: u32, sweeps: u32, skill_milli: u32, se
 // ---------------------------------------------------------------------------
 
 pub mod ffi {
-    use super::{hint, offer, reveal, review, sit_down, state, watch, Session};
+    use super::{
+        brief_of, evidence, evidence_of, hint, learner_of, nudge, offer, reveal, review, set_focus,
+        sit_down, state, watch, Session,
+    };
     use std::cell::RefCell;
 
     thread_local! {
@@ -847,6 +993,70 @@ pub mod ffi {
                 .map_or_else(|| "null".to_string(), review)
         });
         OUT.with(|out| *out.borrow_mut() = json.into_bytes());
+    }
+
+    fn give(json: String) {
+        OUT.with(|out| *out.borrow_mut() = json.into_bytes());
+    }
+
+    /// Renders this game's evidence summary, once it is over (`null`
+    /// before). The advisor runs over the whole game: call it off the
+    /// game-end path.
+    #[no_mangle]
+    pub extern "C" fn cassino_evidence() {
+        give(SESSION.with(|s| {
+            s.borrow()
+                .as_ref()
+                .map_or_else(|| "null".to_string(), evidence)
+        }));
+    }
+
+    /// Renders the summary of the stored record in the `len` bytes just
+    /// written, without touching the sitting.
+    #[no_mangle]
+    pub extern "C" fn cassino_evidence_of(len: usize) {
+        give(evidence_of(&input(len)));
+    }
+
+    /// Renders the learner over the summaries in the `len` bytes just
+    /// written (separated by `--` lines, oldest first).
+    #[no_mangle]
+    pub extern "C" fn cassino_learner(len: usize) {
+        give(learner_of(&input(len)));
+    }
+
+    /// Renders the brief of the finished game, from the summaries in the
+    /// `len` bytes just written (this game's, `--`, then the history).
+    #[no_mangle]
+    pub extern "C" fn cassino_brief(len: usize) {
+        let history = input(len);
+        give(SESSION.with(|s| {
+            s.borrow()
+                .as_ref()
+                .map_or_else(|| "null".to_string(), |session| brief_of(session, &history))
+        }));
+    }
+
+    /// Sets the tutor's focus from the skill slug in the `len` bytes just
+    /// written (empty: none); 1 if it was a skill.
+    #[no_mangle]
+    pub extern "C" fn cassino_set_focus(len: usize) -> u32 {
+        let slug = input(len);
+        u32::from(SESSION.with(|s| {
+            s.borrow_mut()
+                .as_mut()
+                .is_some_and(|session| set_focus(session, &slug))
+        }))
+    }
+
+    /// Renders the nudge for the current decision, if any.
+    #[no_mangle]
+    pub extern "C" fn cassino_nudge() {
+        give(SESSION.with(|s| {
+            s.borrow()
+                .as_ref()
+                .map_or_else(|| "null".to_string(), nudge)
+        }));
     }
 
     /// Renders every hand's deals, once the game is over (`null` before).
@@ -1289,6 +1499,148 @@ mod tests {
             .contains("knowing only what you knew"));
         let w = watch(1, 0, 1, 1, 2000, 2000, 3);
         assert_eq!(review(&w), "null");
+    }
+
+    /// A game played to its end by the first candidate each time.
+    fn played_out(seed: u32) -> Session {
+        let mut s = sit_down(1, 1, 0, 1, 3000, seed);
+        for _ in 0..2_000 {
+            match s.prompt() {
+                Prompt::Play => {
+                    let m = s.candidates()[0];
+                    assert!(s.send(&m.to_string()));
+                }
+                Prompt::NextHand => assert!(s.send("next")),
+                Prompt::Over => break,
+            }
+        }
+        s
+    }
+
+    #[test]
+    fn evidence_is_the_summary_of_a_finished_game_and_of_a_stored_record() {
+        let live = sit_down(1, 1, 0, 1, 3000, 12);
+        assert_eq!(evidence(&live), "null", "not while it is played");
+        let s = played_out(12);
+        let v = parse(&evidence(&s));
+        let summary = v["summary"].as_str().unwrap();
+        assert!(summary.starts_with("cassino evidence v"));
+        assert!(Summary::parse(summary).unwrap().is_current());
+        // The same from the stored record, the sitting left alone.
+        let record = parse(&state(&s))["saved"].as_str().unwrap().to_string();
+        assert_eq!(parse(&evidence_of(&record))["summary"], v["summary"]);
+        assert!(parse(&evidence_of("nonsense"))["error"].is_string());
+        let unfinished = parse(&state(&live))["saved"].as_str().unwrap().to_string();
+        assert!(parse(&evidence_of(&unfinished))["error"].is_string());
+        let w = watch(1, 0, 1, 1, 2000, 2000, 3);
+        assert_eq!(evidence(&w), "null");
+    }
+
+    #[test]
+    fn the_learner_over_a_history_names_a_focus_and_the_stale_entries() {
+        let empty = parse(&learner_of(""));
+        assert_eq!(empty["games"], 0);
+        assert!(empty["focus"].is_null());
+        assert_eq!(empty["stale"].as_array().unwrap().len(), 0);
+        let good = parse(&evidence(&played_out(12)))["summary"]
+            .as_str()
+            .unwrap()
+            .to_string();
+        let old = good.replacen(
+            &format!("v{}", Summary::parse(&good).unwrap().version),
+            "v0",
+            1,
+        );
+        let history = format!("{good}\n--\n{old}\n--\n\n--\n{good}\n");
+        let v = parse(&learner_of(&history));
+        assert_eq!(v["games"], 2, "the stale and the empty are skipped");
+        assert_eq!(v["stale"], serde_json::json!([1, 2]));
+        assert!(v["mastered"].is_array());
+        if let Some(slug) = v["focus"].as_str() {
+            assert!(Skill::from_slug(slug).is_some());
+        }
+    }
+
+    #[test]
+    fn the_brief_comes_in_bullets_with_a_method_and_works_with_no_history() {
+        let live = sit_down(1, 1, 0, 1, 3000, 12);
+        assert_eq!(brief_of(&live, ""), "null");
+        let s = played_out(12);
+        let v = parse(&brief_of(&s, ""));
+        let bullets = v["bullets"].as_array().unwrap();
+        assert!((1..=3).contains(&bullets.len()));
+        for b in bullets {
+            assert!(b["lead"].is_string() && b["text"].is_string());
+        }
+        assert!(v["method"].as_str().unwrap().len() > 40);
+        // With the game's own summary passed in, and a history, the same
+        // game gives a brief all the same.
+        let game = parse(&evidence(&s))["summary"]
+            .as_str()
+            .unwrap()
+            .to_string();
+        let again = parse(&brief_of(&s, &format!("{game}\n--\n{game}\n--\n{game}")));
+        assert!(!again["bullets"].as_array().unwrap().is_empty());
+        let alone = parse(&brief_of(&s, &format!("{game}\n--\n")));
+        assert_eq!(alone["bullets"], v["bullets"], "an empty history is none");
+    }
+
+    #[test]
+    fn a_focus_is_set_by_slug_and_a_nudge_comes_with_its_words() {
+        let mut s = sit_down(1, 1, 0, 1, 3000, 12);
+        assert_eq!(nudge(&s), "null", "no focus, no nudge");
+        assert!(!set_focus(&mut s, "juggling"));
+        assert!(set_focus(&mut s, "pairs"));
+        let mut seen = None;
+        for _ in 0..2_000 {
+            match s.prompt() {
+                Prompt::Play => {
+                    let v = parse(&nudge(&s));
+                    if !v.is_null() && seen.is_none() {
+                        assert_eq!(v["skill"], "pairs");
+                        assert_eq!(v["words"], tutor::nudge_words(Skill::Pairs));
+                        assert!(s.send("nudged pairs"));
+                        assert_eq!(nudge(&s), "null", "once a game");
+                        seen = Some(());
+                    }
+                    let m = s.candidates()[0];
+                    assert!(s.send(&m.to_string()));
+                }
+                Prompt::NextHand => assert!(s.send("next")),
+                Prompt::Over => break,
+            }
+        }
+        assert!(seen.is_some(), "a game of pairs holds a chance");
+        assert!(set_focus(&mut s, ""));
+    }
+
+    #[test]
+    fn the_tutor_exports_round_trip() {
+        ffi::cassino_new(1, 1, 0, 1, 3000, 12);
+        let put = |text: &str| {
+            let buf = ffi::cassino_alloc(text.len());
+            unsafe { std::ptr::copy_nonoverlapping(text.as_ptr(), buf, text.len()) };
+            text.len()
+        };
+        let read = || {
+            let bytes =
+                unsafe { std::slice::from_raw_parts(ffi::cassino_out(), ffi::cassino_out_len()) };
+            parse(std::str::from_utf8(bytes).unwrap())
+        };
+        ffi::cassino_evidence();
+        assert!(read().is_null());
+        let n = put("");
+        ffi::cassino_learner(n);
+        assert_eq!(read()["games"], 0);
+        let n = put("pairs");
+        assert_eq!(ffi::cassino_set_focus(n), 1);
+        let n = put("nonsense");
+        assert_eq!(ffi::cassino_set_focus(n), 0);
+        ffi::cassino_nudge();
+        let _ = read();
+        let n = put("");
+        ffi::cassino_brief(n);
+        assert!(read().is_null());
     }
 
     #[test]

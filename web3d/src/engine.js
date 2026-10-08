@@ -2,6 +2,14 @@
 // (docs/PROTOCOL.md). This is the only way the page learns anything about the
 // game, and it knows nothing about the scene.
 
+const SEPARATOR = "--";
+
+// Summaries as the engine takes them: one after another, a line of `--`
+// between; a missing one stands as text that is no summary (stale).
+export function joinSummaries(list) {
+  return list.map((s) => s || "stale").join(`\n${SEPARATOR}\n`);
+}
+
 export async function loadEngine(bytes) {
   const { instance } = await WebAssembly.instantiate(bytes, {});
   const ex = instance.exports;
@@ -65,6 +73,45 @@ export async function loadEngine(bytes) {
     // method }. Worked out when asked: every move of yours rated again.
     review() {
       ex.cassino_review();
+      return out();
+    },
+    // The tutor (docs/PROTOCOL.md, "The tutor"). The summaries are text the
+    // engine made; a missing one (null) counts as stale. The advisor runs
+    // over a whole game for the evidence: call it off the game-end path.
+    //
+    // This game's evidence summary once it is over (null before).
+    evidence() {
+      ex.cassino_evidence();
+      return out()?.summary ?? null;
+    },
+    // The summary of a stored record of a finished game, the sitting left
+    // alone; null if the record does not restore or was not finished.
+    evidenceOf(record) {
+      ex.cassino_evidence_of(write(record));
+      return out()?.summary ?? null;
+    },
+    // What the games say, oldest first: { games, focus, mastered, stale }
+    // (focus a skill's slug or null; stale the indexes to recompute).
+    learner(history) {
+      ex.cassino_learner(write(joinSummaries(history)));
+      return out();
+    },
+    // The brief of the game just finished: { bullets: [{ lead, text }],
+    // method }, or null before it is over. `game` is its summary (null to
+    // have it worked out here), `history` the earlier games', oldest first.
+    brief(game, history) {
+      ex.cassino_brief(write(`${game ?? ""}\n${SEPARATOR}\n${joinSummaries(history)}`));
+      return out();
+    },
+    // Tells the sitting which skill the tutor is on (a slug; null for none).
+    // Not part of the record: say it again after a restore.
+    setFocus(slug) {
+      return ex.cassino_set_focus(write(slug ?? "")) === 1;
+    },
+    // The nudge for this decision: { skill, words } or null. Showing it is
+    // send(`nudged ${skill}`).
+    nudge() {
+      ex.cassino_nudge();
       return out();
     },
     // Every hand's deals once the game is over (null before). The table no
