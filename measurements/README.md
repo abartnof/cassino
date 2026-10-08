@@ -230,6 +230,18 @@ chances a game or fewer) cannot be certified in four games from their
 chances alone, which is as it should be. The lesioned students are in
 `cargo test` (`learner::tests`).
 
+The claim that the strongest rung names no focus was tuned in-sample: the
+constants were chosen on those 54 windows. A fresh-window check on seeds
+9000-9031 (eight four-game windows, both rule sets): no focus in 8 of 8
+windows, 3 to 6 skills mastered. The acceptance tests use mastered >= 3,
+and the focus rule gained, after the review of the learner, the "costly"
+route (a gain of two points a game over eight chances): one point named a
+focus for the strongest rung in one window of nine. A three-window sweep of
+each lesioned student and the strongest rung is behind `--ignored`
+(`cargo test -p cassino-core --lib learner:: -- --ignored`, about 1.5
+minutes in a debug build); the greedy player is told Building or Trailing
+(it lacks both; Building in five windows of six).
+
 ## The tutor's rules: precision and coverage
 
 For §12.8 (`docs/DESIGN.md`): `rules 200 --rules classic|royal`, then

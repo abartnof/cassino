@@ -366,7 +366,13 @@ legal move. RULES.md now says each held card answers for one build value.
     `nudge` choose the once-a-game nudge. Constants set on the strongest
     rung's 60 games (`measurements/README.md`); the `learn` binary shows a
     student. The wasm exports for the focus and nudge, and the page's
-    storage, are 11.6.
+    storage, are 11.6. After review: no focus on one chance; a
+    half-proven prerequisite does not block; costly skills are eligible;
+    help is recorded once a decision and survives undo (the session keeps
+    the positions at which help was shown); the nudge is memoised per
+    position; `learner::stale`; a SafeBuilds nudge needs a build among the
+    best moves. The three-window acceptance sweep is behind `--ignored`:
+    `cargo test -p cassino-core --lib learner:: -- --ignored`.
   - [x] 11.5 The review in three bullets, in the engine and the terminal.
     `brief.rs`: `brief(review, game summary, before, after, rules,
     opponent)` and `Session::brief(history)` give at most three bullets
@@ -376,7 +382,10 @@ legal move. RULES.md now says each held card answers for one build value.
     a separate method text. The terminal prints it from this game alone.
     `Review::told` stays until the page switches over (11.6).
   - [ ] 11.6 The page: records kept in storage, the protocol's queries,
-    the review dialog, the next game's nudge; export and import.
+    the review dialog, the next game's nudge; export and import. Evidence
+    costs about 0.8 s a game and the review's advisor pass duplicates it:
+    run it off the game-end path (lazily, or in a worker) and persist the
+    summary with the record; recompute only what `learner::stale` lists.
 
 ## Working conventions
 

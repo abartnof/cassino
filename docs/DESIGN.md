@@ -779,11 +779,22 @@ lost again only well below it (hysteresis, so progress does not flicker).
 Without storage (a private window), the review is the one game's, as
 before. Records can be exported and imported.
 
-**The next skill** is the unmastered skill whose prerequisites are
-mastered with the largest expected gain: its clear chances a game, times
-the points a miss costs, times one less the mastery. The points come from
-measuring the strongest rung with the skill knocked out (below). With every
-skill mastered, the tutor says so and suggests the next opponent up.
+**The next skill** is the unmastered skill with the largest gain among
+those *eligible*. A skill's cost is the points a game its missed chances
+cost (discounted over recent games); its gain is that cost less what the
+strongest rung itself loses to the skill (`top_cost`, measured with the
+skill knocked out, below), which is what mastering it would win. A skill is
+eligible when it has at least four discounted chances, a gain of at least
+`MIN_GAIN` (half a point a game), and cleared prerequisites: a prerequisite
+is cleared if mastered, or its gain is under `MIN_GAIN` (its chances rarely
+come up), or it is not *shown* to be short (the upper quantile of its met
+rate reaches the mastery bar), so a half-proven prerequisite does not hold
+back what is surely missed. And it is either *surely short* by rate (the 90th
+percentile of the met rate below the bar, so a few misses among few chances
+prove nothing), or *costly*: a gain of two points a game over at least eight
+chances, which catches a middling rate at a skill that costs a great deal.
+With no skill eligible, the tutor says so and, if every skill it has seen
+is mastered, suggests the next opponent up.
 
 **Teaching is two touches.** The rule in the review; and in the next game,
 one nudge at the first clear chance at the skill ("a build is on here"),
