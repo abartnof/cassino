@@ -42,6 +42,7 @@ the same record of commands always replays into the same game.
 | `set <aid> on` / `off` | any time | `hints`, `explain`, `play_forced` |
 | `hint` | `prompt == "play"` | Record that the hint was shown; no change to the game. The decision pending then counts as assisted (the tutor does not take it as evidence). The `hint` query sends it itself when it answers |
 | `nudged <skill>` | `prompt == "play"` | Record that the tutor's nudge for that skill (its slug: `pairs`, `sums`, `building`, `safe-builds`, `answering-builds`, `sweeps`, `valuables`, `trailing`) was shown; the decision pending counts as assisted |
+| `warned` | `prompt == "play"` | Record that a warning about the move (the page's sweep warning) was shown. Like `hint`: once a decision, the decision pending counts as assisted, and a position at which one was shown stays assisted across `undo`. The page sends it when it shows a sweep warning |
 
 A refused command leaves the game as it was, and `state.error` says why in a
 sentence a person can read ("To build 9 you must hold another card that can

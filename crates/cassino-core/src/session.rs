@@ -20,7 +20,10 @@
 //!   at which help was shown stays helped across `undo` (the session
 //!   remembers it, and records the `hint` again on reaching it);
 //! - `nudged <skill>`: the client showed the tutor's nudge at this decision
-//!   (the skill's slug); recorded, and the decision marked assisted.
+//!   (the skill's slug); recorded, and the decision marked assisted;
+//! - `warned`: the client showed a warning about the move (the sweep
+//!   warning); handled like `hint`: recorded once a decision, and the
+//!   decision is assisted.
 
 use crate::advice::{self, Quality};
 use crate::agents::Agent;
@@ -306,7 +309,8 @@ pub struct Session {
     /// The person's decisions, for the review at the game's end.
     turns: Vec<Turn>,
     /// The person has been helped with the decision now pending: a hint
-    /// asked for or a nudge shown (the recorded `hint` and `nudged`).
+    /// asked for, a nudge or a warning shown (the recorded `hint`,
+    /// `nudged` and `warned`).
     assisted: bool,
     /// The skill the tutor is working on with this person, if the client
     /// has said (`set_focus`). Not part of the record.
@@ -318,6 +322,9 @@ pub struct Session {
     /// nudge was shown. Kept across undo, so that a hint seen, taken back
     /// and then reached again by the same moves still counts as help.
     helped_at: HashSet<u64>,
+    /// A nudge has been shown this game. Kept across undo, like
+    /// `helped_at`: taking the nudge back does not earn a second one.
+    nudged: bool,
 }
 
 /// A nudge query's key (position hash, focus) and its answer.
@@ -367,6 +374,7 @@ impl Session {
             focus: None,
             nudge_cache: RefCell::new(None),
             helped_at: HashSet::new(),
+            nudged: false,
         };
         let cuts = session.game.cuts().to_vec();
         for (i, cut) in cuts.iter().enumerate() {
@@ -594,28 +602,31 @@ impl Session {
             self.assisted = snap.assisted;
             return Ok(());
         }
-        if command == "hint" || command.starts_with("nudged") {
+        if command == "hint" || command == "warned" || command.starts_with("nudged") {
             if self.prompt() != Prompt::Play {
                 return refuse("not_your_turn", "There is no decision to be helped with.");
             }
-            if command != "hint" {
+            if command.starts_with("nudged") {
                 let slug = command.strip_prefix("nudged ").map(str::trim);
                 if !slug.is_some_and(|s| tutor::Skill::from_slug(s).is_some()) {
                     return refuse("bad_nudge", "nudged <skill>");
                 }
             }
             self.helped_at.insert(advice::advisor_seed(&self.view()));
+            if command.starts_with("nudged") {
+                self.nudged = true;
+            }
             // Once a decision: asking again records nothing more.
             let already = self
                 .record
                 .iter()
                 .rev()
-                .take_while(|l| *l == "hint" || l.starts_with("nudged"))
+                .take_while(|l| *l == "hint" || *l == "warned" || l.starts_with("nudged"))
                 .any(|l| {
-                    if command == "hint" {
-                        l == "hint"
-                    } else {
+                    if command.starts_with("nudged") {
                         l.starts_with("nudged")
+                    } else {
+                        l == command
                     }
                 });
             if !already {
@@ -1094,11 +1105,7 @@ impl Session {
     /// decision does not count towards the person's evidence.
     pub fn nudge(&self) -> Option<tutor::Skill> {
         let focus = self.focus?;
-        if self.watching()
-            || self.prompt() != Prompt::Play
-            || self.assisted
-            || self.record.iter().any(|l| l.starts_with("nudged"))
-        {
+        if self.watching() || self.prompt() != Prompt::Play || self.assisted || self.nudged {
             return None;
         }
         let view = self.view();
@@ -1604,6 +1611,83 @@ mod tests {
         }
         assert!(s.send("hint"));
         assert_eq!(s.nudge(), None);
+    }
+
+    #[test]
+    fn a_warning_is_recorded_once_marks_the_decision_assisted_and_survives_undo() {
+        let mut s = Session::new(6, settings());
+        assert!(s.send("warned"));
+        assert!(s.send("warned"), "not an error");
+        assert_eq!(s.record(), ["warned"]);
+        let mv = s.candidates()[0];
+        assert!(s.send(&mv.to_string()));
+        assert!(s.turns()[0].assisted);
+        // Replays, assisted as before.
+        let again = Session::restore(&s.saved()).unwrap();
+        assert_eq!(again.record(), s.record());
+        assert!(again.turns()[0].assisted);
+        // Only on the person's turn.
+        let mut watched = Session::watch(1, Rules::CLASSIC, [1.0, 1.0]);
+        assert!(!watched.send("warned"));
+        // A warning seen at a later position, taken back and reached again.
+        let mut s = Session::new(6, settings());
+        let first = s.candidates()[0];
+        assert!(s.send(&first.to_string()));
+        assert!(s.send("warned"));
+        assert!(s.send("undo"));
+        assert!(s.record().is_empty());
+        assert!(s.send(&first.to_string()));
+        let mv = s.candidates()[0];
+        assert!(s.send(&mv.to_string()));
+        assert!(s.turns()[1].assisted);
+        assert!(!s.turns()[0].assisted);
+        let again = Session::restore(&s.saved()).unwrap();
+        assert!(again.turns()[1].assisted);
+    }
+
+    #[test]
+    fn the_nudge_is_once_a_game_even_after_undo() {
+        let mut probed = 0;
+        for seed in 1..8 {
+            let mut s = Session::new(seed, settings());
+            s.set_focus(Some(tutor::Skill::Pairs));
+            let (mut nudged, mut other) = (0, false);
+            for _ in 0..120 {
+                match s.prompt() {
+                    Prompt::Play => {
+                        if let Some(skill) = s.nudge() {
+                            assert!(s.send(&format!("nudged {}", skill.slug())));
+                            nudged += 1;
+                            if nudged == 1 {
+                                let mv = s.candidates()[0];
+                                assert!(s.send(&mv.to_string()));
+                                // Take it back, past the nudge, and play on
+                                // differently.
+                                while s.record().iter().any(|l| l.starts_with("nudged")) {
+                                    if !s.send("undo") {
+                                        break;
+                                    }
+                                }
+                                other = !s.record().iter().any(|l| l.starts_with("nudged"));
+                                continue;
+                            }
+                        }
+                        let moves = s.candidates();
+                        let mv = if other {
+                            moves[moves.len() - 1]
+                        } else {
+                            moves[0]
+                        };
+                        assert!(s.send(&mv.to_string()));
+                    }
+                    Prompt::NextHand => assert!(s.send("next")),
+                    Prompt::Over => break,
+                }
+            }
+            assert!(nudged <= 1, "seed {seed}: once a game, undo or not");
+            probed += u32::from(other);
+        }
+        assert!(probed > 0, "some game took the nudge back");
     }
 
     #[test]

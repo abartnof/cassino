@@ -51,7 +51,7 @@ pub struct Brief {
     pub method: String,
 }
 
-const METHOD: &str = "Your moves were compared afterwards with what the strongest computer player would have done in your place, knowing only what you knew; only clear differences count, and moves made after a hint do not. Each skill is judged over your recent games, the newest counting most, and the one to work on is the one costing you the most. Each rule shown was measured against that player's own play before it was added.";
+const METHOD: &str = "Your moves were compared afterwards with what the strongest computer player would have done in your place, knowing only what you knew; only clear differences count, and moves made after a hint, a tip or a warning do not. Each skill is judged over your recent games, the newest counting most, and the one to work on is the one costing you the most. Each rule shown was measured against that player's own play before it was added.";
 
 /// The skill as the focus names it ("Next: building.").
 pub fn name(skill: Skill) -> &'static str {
