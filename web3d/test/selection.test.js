@@ -101,12 +101,12 @@ test("the sweep warning, before the move: which chip leaves a sweep, and what wo
   assert.equal(valuesSaid([12]), "a queen", "a court by its name (second review, S10)");
   const offer = {
     moves: [
-      { move: "trail 5C", chip: { kind: "trail", label: "Trail" }, leaves_sweep: { values: [9], unseen: 2 } },
+      { move: "trail 5C", chip: { kind: "trail", label: "Trail" }, leaves_sweep: { values: [9], unseen: 2, words: "leaves a sweep: a 9 would clear the table, and 2 you have not seen." } },
       { move: "build 9 5C 4D", chip: { kind: "build", label: "Build 9", value: 9 }, leaves_sweep: null },
     ],
   };
   const chips = chipsOf(offer);
-  assert.deepEqual(chips.find((c) => c.kind === "trail").leaves, { values: [9], unseen: 2 });
+  assert.deepEqual(chips.find((c) => c.kind === "trail").leaves.values, [9]);
   assert.equal(sweepWarning(chips), "Trail leaves a sweep: a 9 would clear the table, and 2 you have not seen.");
   assert.equal(sweepWarning(chips.filter((c) => c.kind !== "trail")), null);
 });

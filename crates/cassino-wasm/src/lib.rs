@@ -114,6 +114,15 @@ fn text(s: &str) -> String {
     out
 }
 
+/// A number as JSON, which has no NaN or infinity: those are `null`.
+fn number(x: f64) -> String {
+    if x.is_finite() {
+        x.to_string()
+    } else {
+        "null".into()
+    }
+}
+
 fn object(fields: &[(&str, String)]) -> String {
     let body: Vec<String> = fields
         .iter()
@@ -410,7 +419,7 @@ pub fn state(session: &Session) -> String {
                 ("raising", boolean(rules.raising)),
             ]),
         ),
-        ("skill", session.settings().skill.to_string()),
+        ("skill", number(session.settings().skill)),
         ("watching", boolean(session.watching())),
         ("prompt", text(prompt)),
         ("hand", cards(view.hand)),
@@ -590,6 +599,14 @@ fn leaves_sweep(view: &cassino_core::observation::View, mv: &Move) -> String {
             } => Some(object(&[
                 ("values", list(values.iter().map(|v| v.to_string()))),
                 ("unseen", unseen.to_string()),
+                (
+                    "words",
+                    text(&cassino_core::words::sweep_warning(
+                        &view.rules,
+                        &values,
+                        unseen,
+                    )),
+                ),
             ])),
             _ => None,
         })
@@ -1141,6 +1158,9 @@ mod tests {
         assert_eq!(v["rules"]["game"], "classic");
         assert_eq!(v["rules"]["sweeps"], true);
         assert_eq!(v["skill"], 3.0);
+        assert_eq!(number(f64::NAN), "null");
+        assert_eq!(number(f64::INFINITY), "null");
+        assert_eq!(number(2.5), "2.5");
         assert_eq!(v["prompt"], "play");
         assert_eq!(v["watching"], false);
         assert_eq!(cards_of(&v["hand"]).len(), 4);
@@ -1359,13 +1379,19 @@ mod tests {
 
     #[test]
     fn an_offer_warns_of_a_sweep_left_open() {
+        for sweeps in [1, 0] {
+            warns_of_a_sweep(sweeps);
+        }
+    }
+
+    fn warns_of_a_sweep(sweeps: u32) {
         // Over a game, every offered move says whether it leaves a sweep,
         // and some do: the values that would clear the table, and how many
         // cards of them the person has not seen. The person captures when
         // they can, which keeps the table small enough to be swept.
         let mut warned = 0;
         for seed in [11, 12, 13] {
-            let mut s = sit_down(1, 0, 1, 1, 1000, seed);
+            let mut s = sit_down(1, 0, sweeps, 1, 1000, seed);
             while s.prompt() != Prompt::Over {
                 if s.prompt() == Prompt::NextHand {
                     assert!(s.send("next"));
@@ -1381,6 +1407,13 @@ mod tests {
                         warned += 1;
                         assert!(!w["values"].as_array().unwrap().is_empty());
                         assert!(w["unseen"].as_u64().unwrap() >= 1);
+                        let words = w["words"].as_str().unwrap();
+                        if sweeps == 1 {
+                            assert!(words.starts_with("leaves a sweep: "), "{words}");
+                        } else {
+                            assert!(!words.contains("sweep"), "no point promised: {words}");
+                            assert!(words.contains("every card"), "{words}");
+                        }
                     }
                 }
                 let moves = s.candidates();

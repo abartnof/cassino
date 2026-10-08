@@ -146,6 +146,29 @@ pub fn card_for(v: u8) -> String {
     }
 }
 
+/// The sweep warning on a move, before it is made, for a move that leaves the
+/// opponent a table one card could clear: `values` are the capture values
+/// that would, `unseen` how many such cards the person cannot see. With
+/// sweeps off nothing is scored, but the cards on the table still change
+/// hands, and the words promise no point.
+pub fn sweep_warning(rules: &Rules, values: &[u8], unseen: u8) -> String {
+    let any = values
+        .iter()
+        .map(|&v| card_for(v))
+        .collect::<Vec<_>>()
+        .join(" or ");
+    let seen = if unseen == 1 {
+        "1 you have not seen".to_string()
+    } else {
+        format!("{unseen} you have not seen")
+    };
+    if rules.sweeps {
+        format!("leaves a sweep: {any} would clear the table, and {seen}.")
+    } else {
+        format!("leaves the table to {any}, which would take every card on it, and {seen}.")
+    }
+}
+
 /// A note in English, as `observer` hears it ("you" and "your opponent").
 pub fn note_text(rules: &Rules, note: &Note, observer: Seat) -> String {
     let who = |seat: Seat| {
@@ -249,10 +272,16 @@ pub fn note_text(rules: &Rules, note: &Note, observer: Seat) -> String {
                 })
                 .collect();
             if *next == observer && *held {
-                format!("You can sweep the table with your {}.", any.join(" or "))
-            } else {
+                let verb = if rules.sweeps { "sweep" } else { "clear" };
+                format!("You can {verb} the table with your {}.", any.join(" or "))
+            } else if rules.sweeps {
                 format!(
                     "That leaves a sweep for any {} ({unseen} unseen).",
+                    any.join(" or ")
+                )
+            } else {
+                format!(
+                    "That leaves every card on the table to any {} ({unseen} unseen).",
                     any.join(" or ")
                 )
             }
@@ -469,6 +498,39 @@ mod tests {
                 unseen: 3
             }),
             "That leaves a sweep for any ace or 2 (3 unseen)."
+        );
+        // With sweeps off, the same warning promises no point.
+        assert_eq!(
+            note_text(
+                &Rules { sweeps: false, ..r },
+                &Note::SweepOpen {
+                    next: me,
+                    values: vec![9],
+                    held: true,
+                    unseen: 0
+                },
+                me
+            ),
+            "You can clear the table with your 9."
+        );
+        let off = Rules { sweeps: false, ..r };
+        let open = Note::SweepOpen {
+            next: them,
+            values: vec![9],
+            held: false,
+            unseen: 4,
+        };
+        assert_eq!(
+            note_text(&off, &open, me),
+            "That leaves every card on the table to any 9 (4 unseen)."
+        );
+        assert_eq!(
+            sweep_warning(&r, &[9], 2),
+            "leaves a sweep: a 9 would clear the table, and 2 you have not seen."
+        );
+        assert_eq!(
+            sweep_warning(&off, &[9, 7], 1),
+            "leaves the table to a 9 or a 7, which would take every card on it, and 1 you have not seen."
         );
         assert_eq!(
             text(Note::LeftBehind {

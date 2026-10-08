@@ -187,12 +187,12 @@ export function valuesSaid(values) {
 
 // The sweep warning before a move (DESIGN.md §12.3): the first chip whose
 // move would leave your opponent a table to sweep, what would clear it, and
-// how many such cards you have not seen; or null.
+// how many such cards you have not seen; or null. The engine words it
+// (with sweeps off it promises no point).
 export function sweepWarning(chips) {
   const c = chips.find((x) => x.leaves);
   if (!c) return null;
-  const unseen = c.leaves.unseen === 1 ? "1 you have not seen" : `${c.leaves.unseen} you have not seen`;
-  return `${c.label} leaves a sweep: ${valuesSaid(c.leaves.values)} would clear the table, and ${unseen}.`;
+  return `${c.label} ${c.leaves.words}`;
 }
 
 // The move bar under the cards (the user: "put the action buttons ... on a
