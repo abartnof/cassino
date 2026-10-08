@@ -294,7 +294,8 @@ pub fn chances_with(
 /// Whether the decision holds a clear chance at `skill`, whatever the
 /// person plays: the same test as [`chances_with`] with no move chosen
 /// (Trailing needs the best move to be a trail, as there; SafeBuilds two
-/// builds that differ by more than the margin). What the tutor's nudge is
+/// builds that differ by more than the margin, the best of them within the
+/// margin of the best move). What the tutor's nudge is
 /// shown on.
 pub fn open(skill: Skill, view: &View, margin: f64, values: &[(Move, f64)]) -> bool {
     let Some(best) = best_where(values, |_| true) else {
@@ -303,6 +304,11 @@ pub fn open(skill: Skill, view: &View, margin: f64, values: &[(Move, f64)]) -> b
     let clear = gap(skill, view, values).is_some_and(|g| g > margin);
     match skill {
         Skill::Trailing => clear && best_where(values, is_trail).is_some_and(|t| t >= best),
+        // The question is which build, so a build must be among the best
+        // moves: else the nudge would point away from the best play.
+        Skill::SafeBuilds => {
+            clear && best_where(values, is_build).is_some_and(|b| b >= best - margin)
+        }
         _ => clear,
     }
 }
@@ -488,6 +494,29 @@ mod tests {
         let trails = pairs(&[("take 4C 4D", 0.1), ("trail 9S", 0.25), ("trail 3H", 0.2)]);
         assert!(open(Skill::Trailing, &v, 0.01, &trails));
         assert!(!open(Skill::Trailing, &v, 0.1, &trails));
+    }
+
+    #[test]
+    fn a_safe_builds_nudge_needs_a_build_among_the_best() {
+        let v = view(C, "5C KD 2D 6H", "3D 8S 2C 9H");
+        let pairs = |list: &[(&str, f64)]| -> Vec<(Move, f64)> {
+            list.iter().map(|&(m, x)| (mv(m), x)).collect()
+        };
+        // Two builds far apart, but a trail far better than either: a nudge
+        // to choose the safer build would send the person off the best move.
+        let vals = pairs(&[
+            ("build 8 3D 5C", 0.0),
+            ("trail 2C", 1.0),
+            ("build 8 2C 6H", 0.8),
+        ]);
+        assert!(!open(Skill::SafeBuilds, &v, 0.1, &vals));
+        // The best build within the margin of the best move: a chance.
+        let vals = pairs(&[
+            ("build 8 3D 5C", 0.0),
+            ("trail 2C", 0.85),
+            ("build 8 2C 6H", 0.8),
+        ]);
+        assert!(open(Skill::SafeBuilds, &v, 0.1, &vals));
     }
 
     fn shown(rules: Rules, table: &str, hand: &str, m: &str) -> Vec<Skill> {

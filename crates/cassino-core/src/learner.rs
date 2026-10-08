@@ -307,6 +307,18 @@ impl Learner {
     }
 }
 
+/// The indexes of the summaries that [`learn`] would skip as stale (made by
+/// another [`EVIDENCE_VERSION`]): a client recomputes those from their
+/// records before asking, so that no game is silently dropped.
+pub fn stale(games: &[Summary]) -> Vec<usize> {
+    games
+        .iter()
+        .enumerate()
+        .filter(|(_, g)| !g.is_current())
+        .map(|(i, _)| i)
+        .collect()
+}
+
 /// The learner after `games`, oldest first. Summaries of another
 /// [`EVIDENCE_VERSION`] are skipped: a client recomputes them first.
 pub fn learn(games: &[Summary]) -> Learner {
@@ -649,9 +661,12 @@ mod tests {
     fn a_stale_summary_is_not_counted() {
         let mut old = summary(&[(Skill::Pairs, 20, 0, 40.0)]);
         old.version = EVIDENCE_VERSION + 1;
-        let l = learn(&[old]);
+        let l = learn(&[old.clone()]);
         assert_eq!(l.focus, None);
         assert!(!l.mastered(Skill::Pairs));
+        let fresh = summary(&[]);
+        assert_eq!(stale(&[fresh.clone(), old, fresh]), [1]);
+        assert!(stale(&[]).is_empty());
     }
 
     /// A game of `chances` at `skill`, `met` of them met, each miss costing
