@@ -390,7 +390,7 @@ pub struct Told {
     pub method: String,
 }
 
-fn times(n: u32) -> String {
+pub(crate) fn times(n: u32) -> String {
     match n {
         1 => "Once".into(),
         2 => "Twice".into(),
@@ -399,7 +399,7 @@ fn times(n: u32) -> String {
 }
 
 /// Small numbers in words, as a sentence's first word wants them.
-fn number(n: u32) -> String {
+pub(crate) fn number(n: u32) -> String {
     const WORDS: [&str; 11] = [
         "No", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
     ];

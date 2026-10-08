@@ -367,7 +367,14 @@ legal move. RULES.md now says each held card answers for one build value.
     rung's 60 games (`measurements/README.md`); the `learn` binary shows a
     student. The wasm exports for the focus and nudge, and the page's
     storage, are 11.6.
-  - [ ] 11.5 The review in three bullets, in the engine and the terminal.
+  - [x] 11.5 The review in three bullets, in the engine and the terminal.
+    `brief.rs`: `brief(review, game summary, before, after, rules,
+    opponent)` and `Session::brief(history)` give at most three bullets
+    (what went well or a skill just mastered; the focus with its shipped
+    rule, `lessons::taught`, or a one-line fact where none shipped, and
+    this game's figure; or "nothing stood out" / "a game or two more") and
+    a separate method text. The terminal prints it from this game alone.
+    `Review::told` stays until the page switches over (11.6).
   - [ ] 11.6 The page: records kept in storage, the protocol's queries,
     the review dialog, the next game's nudge; export and import.
 

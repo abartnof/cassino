@@ -5,6 +5,7 @@
 
 pub mod advice;
 pub mod agents;
+pub mod brief;
 pub mod cards;
 pub mod counter;
 pub mod game;
