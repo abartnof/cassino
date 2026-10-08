@@ -722,6 +722,56 @@ def check_ending(browser, failures):
     page.context.close()
 
 
+def check_review(browser, failures, viewport=None):
+    """The review at the game's end (the user: "when the game is over, put
+    a button on-screen that says something like 'Review how you did?'"):
+    the button beside New game once the game is over, never before; its
+    dialog with the engine's words, gentle and about habits, no card named;
+    closed, the game's end as it was."""
+    where = "review" + (" on a phone" if viewport else "")
+    page = open_page(browser, "ending&speed=2", viewport=viewport, calm=True)
+    settle(page)
+    button = page.locator(".controls .review")
+    if not button.is_hidden():
+        failures.append(f"{where}: offered before the game is over")
+    play_by_clicking(page, failures, 0)
+    try:
+        page.wait_for_function("window.cassino3d.state().prompt === 'over' && !window.cassino3d.busy()", timeout=60_000)
+        button.wait_for(state="visible", timeout=20_000)
+    except Exception:
+        failures.append(f"{where}: no button at the game's end")
+        page.context.close()
+        return
+    if button.inner_text().strip() != "Review how you did?":
+        failures.append(f"{where}: the button says {button.inner_text()!r}")
+    box, again = button.bounding_box(), page.locator(".controls md-filled-button.again").bounding_box()
+    width = page.viewport_size["width"]
+    if not box or not again or box["x"] < 0 or box["x"] + box["width"] > width or again["x"] + again["width"] > width:
+        failures.append(f"{where}: the buttons are not both on the screen: {box}, {again}")
+    button.click()
+    try:
+        page.wait_for_function("document.querySelector('.review-dialog')?.open && /^You made /.test(document.querySelector('.review-page p')?.textContent ?? '')", timeout=20_000)
+    except Exception:
+        shown = page.evaluate("document.querySelector('.review-page')?.textContent")
+        failures.append(f"{where}: no review in its dialog: {shown}")
+        page.context.close()
+        return
+    page.wait_for_timeout(600)
+    shot(page, "t12-review" + ("-phone" if viewport else ""))
+    text = page.evaluate("document.querySelector('.review-page').textContent")
+    if any(suit in text for suit in "♠♥♦♣"):
+        failures.append(f"{where}: a card named in the review: {text[:200]}")
+    if "Something to try" not in text and "Nothing stood out" not in text and "short game" not in text:
+        failures.append(f"{where}: neither a habit nor its absence told: {text[:300]}")
+    page.locator(".review-dialog .review-close").click()
+    page.wait_for_function("!document.querySelector('.review-dialog').open", timeout=5_000)
+    if button.is_hidden() or page.locator(".controls md-filled-button.again").is_hidden():
+        failures.append(f"{where}: closed, the game's end lost its buttons")
+    if page.errors:
+        failures.append(f"{where}: console errors {page.errors[:5]}")
+    page.context.close()
+
+
 def check_move_bar(browser, failures):
     """The move bar, always there on your turn: Take, Build and Trail dimmed
     with nothing chosen, lit by a choice, and between the table and your
@@ -1629,6 +1679,8 @@ def main() -> int:
         check_talk(browser, failures)
         check_move_bar(browser, failures)
         check_ending(browser, failures)
+        check_review(browser, failures)
+        check_review(browser, failures, viewport={"width": 390, "height": 664})
         check_tutorial(browser, failures)
         check_phone(browser, failures)
         check_tablet_faces(browser, failures)

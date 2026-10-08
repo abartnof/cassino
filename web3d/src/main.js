@@ -159,6 +159,7 @@ async function main() {
     },
     onNext: () => advance(engine.send("next").state),
     onNewGame: () => askNewGame(),
+    onReview: () => chrome.showReview(reviewed),
     // A tap on a card over the move bar is the card's.
     onCardTap: (x, y) => tapped(director.pick(x, y)),
     // A badge tapped is its build tapped.
@@ -399,6 +400,14 @@ async function main() {
     if (state.prompt === "over") countGame();
     persist();
     refresh();
+  }
+
+  // The review of the game just played, worked out once (every move of
+  // yours rated again) however often it is opened.
+  let review = { of: null, words: null };
+  function reviewed() {
+    if (review.of !== state.saved) review = { of: state.saved, words: engine.review() };
+    return review.words;
   }
 
   // The sitting kept across a reload; a watched game, or one that is over,

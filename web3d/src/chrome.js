@@ -18,6 +18,7 @@ import "@material/web/labs/segmentedbutton/outlined-segmented-button.js";
 import "@material/web/labs/segmentedbuttonset/outlined-segmented-button-set.js";
 import { DEFAULTS, SKILLS, SPEEDS, badgesOn, gameSaid } from "./prefs.js";
 import { PATTERNS } from "./surfaces.js";
+import { reviewBlocks } from "./review.js";
 
 // Simple stroked icons, piquet's, drawn for its page.
 const ICONS = {
@@ -377,7 +378,34 @@ export function createChrome(root, on) {
     tutorial.show();
   }
 
-  root.append(bar, settings, newGameDialog, credits, tutorial);
+  // ---- the review at the game's end ---------------------------------------------
+
+  // The review of the game just played (review.js lays out the engine's
+  // words). `get()` works it out, every move of yours rated again: half a
+  // second or more, so the dialog opens first, saying so, and the review
+  // follows once that has been drawn.
+  const reviewDialog = el("md-dialog", { class: "review-dialog" });
+  function showReview(get) {
+    const content = el("div", { slot: "content", class: "review-page tutorial-page" }, el("p", { class: "review-waiting" }, "Looking back over your game…"));
+    const close = el("md-icon-button", { class: "review-close", title: "Close", "aria-label": "Close", onclick: () => reviewDialog.close() }, symbol("close"));
+    reviewDialog.replaceChildren(
+      el("div", { slot: "headline", class: "tutorial-head" }, el("span", {}, "How you played"), close),
+      content,
+      el("div", { slot: "actions" }, el("md-text-button", { onclick: () => reviewDialog.close() }, "Close")),
+    );
+    reviewDialog.show();
+    requestAnimationFrame(() =>
+      setTimeout(() => {
+        const review = get();
+        if (!review) return reviewDialog.close();
+        const block = (b) =>
+          b.type === "h" ? el("h3", {}, b.text) : b.type === "ul" ? el("ul", {}, b.items.map((t) => el("li", {}, t))) : el(b.type === "small" ? "p" : b.type, { class: b.type === "small" ? "review-method" : "" }, b.text);
+        content.replaceChildren(...reviewBlocks(review).map(block));
+      }, 0),
+    );
+  }
+
+  root.append(bar, settings, newGameDialog, credits, tutorial, reviewDialog);
 
   // Everything drawn from the person's settings and the state.
   let last = { prefs: null, state: null, busy: false };
@@ -428,6 +456,7 @@ export function createChrome(root, on) {
     credits,
     showTutorial,
     showNewGame,
+    showReview,
     // A dialog is up that the table waits on: a tutorial page, the new
     // game's menu.
     tutorialOpen: () => tutorial.open || newGameOpen,

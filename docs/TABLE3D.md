@@ -214,6 +214,17 @@ dull script to its end, taken back to your last decision; play the last
 card, and arrows then step through all 24 endings (each court winning and
 losing); nothing of it is kept.
 
+**The review** (the user: "when the game is over, put a button on-screen
+that says something like 'Review how you did?' ... the reviews should be
+gentle, and focused on trends- not specific mistakes"). Beside New game at
+the game's end, a tonal "Review how you did?" (never in a watched game)
+opens a dialog, "How you played": the engine's words (`DESIGN.md` §12.4,
+`PROTOCOL.md` "The review") laid out by `review.js`, the summary, "Going
+well", "Something to try" with each habit under its heading, a closing
+line and, small, how it was worked out. The engine rates every move again
+when asked (about half a second), so the dialog opens first, "Looking back
+over your game…", and the review follows; it is worked out once a game.
+
 ## 7. Table talk
 
 The dialogue boxes say what Cassino players say (`DESIGN.md` §12.1): the

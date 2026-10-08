@@ -90,8 +90,11 @@ pub enum Strength {
     },
     /// The last deals played as the strongest play would.
     LastDeal,
-    /// No table left for one card to clear when a safer move was there.
-    Careful,
+    /// No table left for one card to clear when a safer move was there,
+    /// and this many turns on which some move would have left one.
+    Careful {
+        avoided: u32,
+    },
     /// The most cards in this many hands of these.
     Cards {
         won: u32,
@@ -190,6 +193,12 @@ pub fn review(rules: &Rules, turns: &[Turn], history: &[Breakdown]) -> Review {
     let mut tallies: BTreeMap<Theme, Tally> = BTreeMap::new();
     let (mut decisions, mut sound, mut loss) = (0u32, 0u32, 0.0f64);
     let (mut last, mut last_loss, mut last_slips) = (0u32, 0.0f64, 0u32);
+    // Tables left for one card to clear when the stronger move left none,
+    // whatever theme their slip was put down to.
+    let mut left_to_clear = 0u32;
+    // Turns on which some move would have left such a table, and the
+    // person's did not: the danger was there, and seen to.
+    let mut avoided = 0u32;
     for turn in turns {
         let view = &turn.view;
         if view.candidates().len() < 2 {
@@ -205,6 +214,13 @@ pub fn review(rules: &Rules, turns: &[Turn], history: &[Breakdown]) -> Review {
         let slipped = lost > SOUND;
         if !slipped {
             sound += 1;
+        }
+        if leaves_sweep(view, mine) {
+            if !leaves_sweep(view, best) {
+                left_to_clear += 1;
+            }
+        } else if view.candidates().iter().any(|m| leaves_sweep(view, m)) {
+            avoided += 1;
         }
         if view.deal == 6 {
             last += 1;
@@ -301,8 +317,8 @@ pub fn review(rules: &Rules, turns: &[Turn], history: &[Breakdown]) -> Review {
     if last >= 6 && last_rate <= 0.1 {
         strengths.push(Strength::LastDeal);
     }
-    if decisions >= FEW && tally(Theme::Sweeps).slips == 0 {
-        strengths.push(Strength::Careful);
+    if decisions >= FEW && left_to_clear == 0 && avoided >= 3 {
+        strengths.push(Strength::Careful { avoided });
     }
     let hands = history.len() as u32;
     let me = Seat::South;
@@ -340,7 +356,7 @@ pub fn review(rules: &Rules, turns: &[Turn], history: &[Breakdown]) -> Review {
             Strength::Taking { .. } => Some(Theme::Taking),
             Strength::Building { .. } => Some(Theme::Building),
             Strength::LastDeal => Some(Theme::LastDeal),
-            Strength::Careful => Some(Theme::Sweeps),
+            Strength::Careful { .. } => Some(Theme::Sweeps),
             _ => None,
         };
         theme.is_none_or(|t| !tries.contains(&t))
@@ -426,14 +442,13 @@ impl Review {
             .map(|s| self.strength_text(*s))
             .collect();
         let tries = self.tries.iter().map(|t| self.try_text(*t)).collect();
-        let closing = if !aided && !self.tries.is_empty() {
-            "If you would like help while you play, Explanations comment on each move as it happens, and Hints show the strongest move whenever you ask.".to_string()
-        } else if self.tries.is_empty() && self.decisions >= FEW {
-            "Nothing stood out to work on. Keep playing the way you did.".to_string()
-        } else {
-            "Every game teaches something, and these habits come quickly with a few more."
-                .to_string()
-        };
+        let closing = match (self.tries.is_empty(), aided) {
+            (false, false) => "If you would like help while you play, Explanations comment on each move as it happens, and Hints show the strongest move whenever you ask.",
+            (false, true) => "Habits like these come quickly with a few more games.",
+            (true, _) if self.decisions >= FEW => "Nothing stood out to work on. Keep playing the way you did.",
+            (true, _) => "A game or two more, and there will be more to say.",
+        }
+        .to_string();
         Told {
             summary,
             strengths,
@@ -455,7 +470,10 @@ impl Review {
                 "You found your builds: of the {chances} times building was the strongest play, you built {found}."
             ),
             Strength::LastDeal => "You played the last deals cleanly, which is where counting the cards pays off.".into(),
-            Strength::Careful => "You were careful about what you left on the table: no move of yours left a table one card could clear when a safer one was there.".into(),
+            Strength::Careful { avoided } => format!(
+                "You were careful about what you left on the table: {} a move was there that would have left a table one card could clear, and you steered clear of it every time a safer one was there.",
+                times(avoided).to_lowercase()
+            ),
             Strength::Cards { won, hands } => format!(
                 "You took the most cards in {won} of {hands} hands, the biggest prize in the count."
             ),
@@ -476,8 +494,12 @@ impl Review {
             Theme::Taking => (
                 "Taking what the table offers".into(),
                 format!(
-                    "When a capture was the strongest play, you took something {found} times out of {}. Cards left lying are there for your opponent too, and a capture banks them now. Before you trail, it is worth a slow look at each card in your hand: does it match a card on the table, or add up with two or three of them?",
-                    x.chances
+                    "{} Cards left lying are there for your opponent too, and a capture banks them now. Before you trail, it is worth a slow look at each card in your hand: does it match a card on the table, or add up with two or three of them?",
+                    if found == 0 {
+                        format!("A capture was the strongest play {} times this game, and each time you trailed or built instead.", x.chances)
+                    } else {
+                        format!("When a capture was the strongest play, you took something {found} times out of {}.", x.chances)
+                    }
                 ),
             ),
             Theme::Building => (
@@ -643,11 +665,89 @@ mod tests {
         }
     }
 
+    /// A game with the person always playing the first move offered: a
+    /// player who trails whatever the table holds.
+    fn first_offered(rules: Rules, seed: u64) -> Session {
+        let mut s = Session::new(seed, Settings { rules, skill: 3.0 });
+        for _ in 0..2_000 {
+            match s.prompt() {
+                Prompt::Play => {
+                    let mv = s.candidates()[0];
+                    assert!(s.send(&mv.to_string()));
+                }
+                Prompt::NextHand => assert!(s.send("next")),
+                Prompt::Over => return s,
+            }
+        }
+        panic!("the game did not end")
+    }
+
+    #[test]
+    fn careful_only_when_no_table_was_left_to_clear() {
+        // Seen at the table: a player who trailed every time, their slips
+        // put down to the captures let go, was praised as careful.
+        for seed in 0..6 {
+            let s = first_offered(Rules::ROYAL, seed);
+            let r = s.review().unwrap();
+            let Some(&Strength::Careful { avoided }) = r
+                .strengths
+                .iter()
+                .find(|x| matches!(x, Strength::Careful { .. }))
+            else {
+                continue;
+            };
+            assert!(
+                avoided >= 3,
+                "seed {seed}: careful, with no table to clear in view"
+            );
+            for turn in s.turns() {
+                if turn.view.candidates().len() < 2 {
+                    continue;
+                }
+                let best = advice::rate(&turn.view, &turn.mv).unwrap().best;
+                assert!(
+                    !(leaves_sweep(&turn.view, &turn.mv) && !leaves_sweep(&turn.view, &best)),
+                    "seed {seed}: praised as careful, yet {} left a table to clear",
+                    turn.mv
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn no_capture_at_all_is_said_plainly() {
+        let r = Review {
+            decisions: 20,
+            sound: 5,
+            loss: 12.0,
+            tallies: vec![(
+                Theme::Taking,
+                Tally {
+                    chances: 9,
+                    matched: 0,
+                    slips: 9,
+                    loss: 12.0,
+                },
+            )],
+            tries: vec![Theme::Taking],
+            strengths: vec![],
+            sweeps_score: false,
+        };
+        let (_, text) = &r.told(true).tries[0];
+        assert!(text.starts_with("A capture was the strongest play 9 times this game, and each time you trailed or built instead."), "{text}");
+    }
+
     #[test]
     fn nothing_to_go_on_says_so() {
         let r = review(&Rules::CLASSIC, &[], &[]);
         assert_eq!((r.decisions, r.tries.len(), r.strengths.len()), (0, 0, 0));
-        assert!(r.told(false).summary.contains("nothing to review"));
+        let told = r.told(false);
+        assert!(told.summary.contains("nothing to review"));
+        assert!(
+            !told.closing.contains("habit"),
+            "no habits were told: {}",
+            told.closing
+        );
     }
 
     #[test]

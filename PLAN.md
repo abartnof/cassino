@@ -50,7 +50,8 @@ legal move. RULES.md now says each held card answers for one build value.
   mix of moves compared with the strongest play's on the same positions;
   at most two strengths and two habits, each habit above the advisor's
   noise as measured with every rung in the person's seat
-  (`cargo run --release --bin reviews`).
+  (`cargo run --release --bin reviews`). On the table, "Review how you
+  did?" beside New game at the game's end opens it in a dialog.
 - **The selection interface** (`select.rs`): pick a card, tap the table,
   and get the chips, the addable cards, the running sum and the reasons.
 - **The session and protocol** (`session.rs`, `crates/cassino-wasm`,

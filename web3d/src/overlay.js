@@ -1,16 +1,17 @@
 // The overlay: the 2D surfaces floating over the table, in Material Design 3
 // (docs/TABLE3D.md section 8): the prompt, the move bar that offers what a
 // selection makes, the "why not?" line, the next hand and the end of the
-// game; the badges over the builds; at the top left, a slot
-// for the score HUD (hud.js); at the foot of the left, the aids' panel (each
-// player's captures, the cards still out); under the top bar, the game log;
+// game (a new game, and the review of the one just played); the badges
+// over the builds; at the top left, a slot for the score HUD (hud.js); at
+// the foot of the left, the aids' panel (each player's captures, the cards
+// still out); under the top bar, the game log;
 // and what is said at the table, in boxes by each speaker's hand. Each sits
 // clear of the table's corners: the HUD ends above your opponent's pile.
 //
 // It draws what it is given and reports what is pressed; it holds no rules.
 
 import "@material/web/button/filled-button.js";
-import "@material/web/button/filled-button.js";
+import "@material/web/button/filled-tonal-button.js";
 import "@material/web/iconbutton/icon-button.js";
 import { besideAt, choosePlace } from "./dialogue.js";
 import { trackerTable } from "./scorebug.js";
@@ -18,7 +19,7 @@ import { BAR, barAcross, barHoles, clipPathFor, fitLabels, mergeHoles, moveBar, 
 
 // `later(ms, fn)` runs `fn` after `ms` on the table's clock (director.at),
 // so a box lingers as long as the table runs, and holds when it is held.
-export function createOverlay(root, { onChip, onNext, onNewGame, onCardTap = () => {}, onBadge = () => {}, onFold = () => {}, later = (ms, fn) => setTimeout(fn, ms) }) {
+export function createOverlay(root, { onChip, onNext, onNewGame, onReview = () => {}, onCardTap = () => {}, onBadge = () => {}, onFold = () => {}, later = (ms, fn) => setTimeout(fn, ms) }) {
   root.innerHTML = `
     <div class="badges"></div>
     <div class="cheers" aria-hidden="true"></div>
@@ -40,6 +41,7 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onCardTap = () 
       <p class="aid-line" hidden></p>
       <div class="move-bar" hidden><div class="chips" role="group" aria-label="Your move"></div></div>
       <md-filled-button class="next" hidden>Next hand</md-filled-button>
+      <md-filled-tonal-button class="review" hidden>Review how you did?</md-filled-tonal-button>
       <md-filled-button class="again" hidden>New game</md-filled-button>
     </section>`;
   const $ = (s) => root.querySelector(s);
@@ -48,10 +50,12 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onCardTap = () 
   const chipSet = $(".chips");
   const next = $(".next");
   const again = $(".again");
+  const review = $(".review");
   const badges = $(".badges");
   const aidLine = $(".aid-line");
   next.addEventListener("click", () => onNext());
   again.addEventListener("click", () => onNewGame());
+  review.addEventListener("click", () => onReview());
 
   // The prompt, the chips and the buttons, for a state and the offer for the
   // person's selection (null if nothing is chosen).
@@ -139,6 +143,10 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onCardTap = () 
     }
     next.hidden = busy || state.prompt !== "next_hand";
     again.hidden = busy || state.prompt !== "over";
+    // The review of your game beside it (the user: "when the game is over,
+    // put a button on-screen that says something like 'Review how you
+    // did?'"); a watched game has nobody to review.
+    review.hidden = again.hidden || state.watching;
   }
 
   // Each place's words fitted to its width, as laid out, at the bar's height

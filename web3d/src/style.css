@@ -1337,6 +1337,22 @@ html.sideways .aid-toggles {
   font-weight: 600;
 }
 
+/* ---- the review at the game's end: the tutorial's page, its habits each
+   under a heading of its own. */
+.review-page h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 12px 0 4px;
+}
+.review-page .review-waiting,
+.review-page .review-method {
+  color: var(--md-sys-color-on-surface-variant);
+}
+.review-page .review-method {
+  font-size: 13px;
+  margin-top: 14px;
+}
+
 /* ---- a window held upright (a phone, a tablet) -----------------------------
    The HUD across the top, as its design intends, with the aids' panel under
    it (its top set by the page); the controls above a bar of icons at the
