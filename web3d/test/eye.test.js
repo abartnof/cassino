@@ -277,3 +277,22 @@ test("the tablet's reach is what its table truly reaches", () => {
   const across = Math.max(...corners(null, 2 * ZONES_TOUCH.middle.columns).map((t) => Math.abs(t.x)));
   assert.ok(CAMERA_TOUCH.widthTan >= across + 0.01 && CAMERA_TOUCH.widthTan - across < 0.025, `widthTan ${CAMERA_TOUCH.widthTan} against ${across.toFixed(3)}`);
 });
+
+// A big build pushes the table's rows back (layout.js middleDepth), and
+// your opponent's hand with them; the hand's top stays on the window (the
+// table review: it rose off it with a six or eight-card build).
+test("a big build does not raise your opponent's hand off the window", () => {
+  const withBuild = (size) => {
+    const s = dealt(4);
+    const cards = ["2H", "3H", "4H", "5H", "6H", "7H", "8H", "9H"].slice(0, size).map(card);
+    s.table[0] = { id: 1, cards, build: { value: 9 } };
+    return s;
+  };
+  for (const w of [DESKTOP, { width: 1024, height: 768, zones: ZONES_TOUCH, eye: CAMERA_TOUCH, across: CAMERA_TOUCH }]) {
+    const at = screen(w, camera(w));
+    for (const size of [3, 5, 6, 8]) {
+      const top = Math.min(...layout(withBuild(size), { zones: w.zones }).filter((x) => x.zone === "their-hand").flatMap((s) => cardCorners(s.pose).map(at).map((p) => p.y)));
+      assert.ok(top >= 0, `${w.width}, a ${size}-card build: their hand's top is at ${top.toFixed(0)} px`);
+    }
+  }
+});

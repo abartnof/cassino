@@ -1505,7 +1505,7 @@ BIG_BUILD_JS = """() => {
   for (let seed = 1; seed < 400; seed++) {
     let s = e.start({ game: "classic", aces14: false, sweeps: false, raising: true, skill: 2, seed });
     for (let n = 0; n < 400 && s.prompt !== "over"; n++) {
-      if (s.prompt === "play" && s.table.some((i) => i.build && i.cards.length >= 5)) {
+      if (s.prompt === "play" && s.opponent_holds >= 3 && s.table.some((i) => i.build && i.cards.length >= 5)) {
         localStorage.setItem("cassino.sitting", s.saved);
         return seed;
       }
@@ -1541,6 +1541,10 @@ def check_big_build(browser, failures):
         cut = page.evaluate("[document.querySelector('.move-bar'), ...document.querySelectorAll('.move-bar .chips, .move-bar .place')].some((e) => e.style.clipPath.includes('path'))")
         if cut:
             failures.append(f"big build {where}: at rest, a card crosses the move bar")
+        # Across the table, your opponent's hand stays on the window.
+        hand = page.evaluate("window.cassino3d.zoneBounds('their-hand')")
+        if device is None and (hand is None or hand["top"] < 0):
+            failures.append(f"big build {where}: their hand rises off the window: {hand}")
         shot(page, f"t2-big-build-{where}")
         context.close()
 
@@ -1715,6 +1719,21 @@ def quick() -> int:
     return 1 if failures else 0
 
 
+def only(names) -> int:
+    """--only=check_a,check_b: run just these checks (each takes the browser
+    and the failures; see main for the full list), for a change to one."""
+    failures = []
+    with sync_playwright() as p:
+        browser = p.chromium.launch(executable_path="/usr/bin/chromium", args=["--use-angle=swiftshader", "--disable-gpu-compositing"])
+        for name in names:
+            globals()[name](browser, failures)
+        browser.close()
+    for f in failures:
+        print("FAIL:", f)
+    print("browser (only): ok" if not failures else f"browser (only): {len(failures)} failures")
+    return 1 if failures else 0
+
+
 def main() -> int:
     failures = []
     with sync_playwright() as p:
@@ -1831,4 +1850,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(quick() if "--quick" in sys.argv else main())
+    chosen = next((a.split("=", 1)[1].split(",") for a in sys.argv[1:] if a.startswith("--only=")), None)
+    sys.exit(only(chosen) if chosen else quick() if "--quick" in sys.argv else main())
