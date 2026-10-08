@@ -216,10 +216,10 @@ pub struct Chance {
 /// - **NoSweep, Valuables** (restraint): a chance when the best move that
 ///   avoids the error beats the best that commits it; met if the move
 ///   chosen avoids it.
-/// - **SafeBuilds**: asked only when the person built. If another move
-///   was better by more than the margin, a chance, not met. Otherwise,
-///   if some other build was worse than the best move by more than the
-///   margin, a chance, met: the build chosen was among the safe ones.
+/// - **SafeBuilds**: asked only when the person built, and builds are
+///   compared with builds only. A chance when the best build beats the
+///   worst by more than the margin (two builds needed); met if the build
+///   chosen is within the margin of the best build.
 /// - **Trailing**: asked only when the person trailed and the best move
 ///   was a trail. A chance when the best trail beats the worst by more
 ///   than the margin; met if the person's trail is within the margin of
@@ -256,21 +256,19 @@ pub fn chances_with(
                 }
             }
             Skill::SafeBuilds => {
+                // Builds against builds only: a trail that was better says
+                // nothing of whether the build was a safe one.
+                let Some(best_build) = best_where(values, is_build) else {
+                    continue;
+                };
                 if !is_build(chosen) {
                     continue;
                 }
-                let size = gap(skill, view, values).unwrap_or(0.0);
-                if best - mine > margin {
+                if let Some(g) = gap(skill, view, values).filter(|&g| g > margin) {
                     out.push(Chance {
                         skill,
-                        met: false,
-                        gap: size,
-                    });
-                } else if worst_where(values, is_build).is_some_and(|w| best - w > margin) {
-                    out.push(Chance {
-                        skill,
-                        met: true,
-                        gap: size,
+                        met: mine >= best_build - margin,
+                        gap: g,
                     });
                 }
             }
@@ -572,24 +570,49 @@ mod tests {
     }
 
     #[test]
-    fn safe_builds_a_build_that_cost_is_missed_and_a_sound_one_met() {
+    fn safe_builds_compare_builds_with_builds_only() {
         let v = view(C, "5C KD 2D 6H", "3D 8S 2C 9H");
-        // The build is much worse than the best: a miss.
+        let safe = |got: Vec<(Skill, bool)>| -> Vec<(Skill, bool)> {
+            got.into_iter()
+                .filter(|(s, _)| *s == Skill::SafeBuilds)
+                .collect()
+        };
+        // A build much worse than another build: a miss.
         let vals = [
             ("build 8 3D 5C", 0.0),
             ("trail 2C", 1.0),
-            ("build 8 2C 6H", 0.0),
+            ("build 8 2C 6H", 0.8),
         ];
-        let got = with(&v, "build 8 3D 5C", &vals);
-        assert!(got.contains(&(Skill::SafeBuilds, false)), "{got:?}");
-        // The build is the best, another build is worse: a hit.
-        let vals = [("build 8 3D 5C", 1.0), ("build 8 2C 6H", 0.0)];
-        let got = with(&v, "build 8 3D 5C", &vals);
-        assert!(got.contains(&(Skill::SafeBuilds, true)), "{got:?}");
-        // The only build, and best: no chance.
-        let vals = [("build 8 3D 5C", 1.0), ("trail 2C", 0.95)];
-        let got = with(&v, "build 8 3D 5C", &vals);
-        assert!(!got.iter().any(|(s, _)| *s == Skill::SafeBuilds));
+        assert_eq!(
+            safe(with(&v, "build 8 3D 5C", &vals)),
+            vec![(Skill::SafeBuilds, false)]
+        );
+        // The better of two builds, far from the worse: a hit, even though
+        // a trail was better still.
+        assert_eq!(
+            safe(with(&v, "build 8 2C 6H", &vals)),
+            vec![(Skill::SafeBuilds, true)]
+        );
+        // Builds alike, a trail far better: not the question of safety.
+        let vals = [
+            ("build 8 3D 5C", 0.0),
+            ("trail 2C", 1.0),
+            ("build 8 2C 6H", 0.05),
+        ];
+        assert_eq!(safe(with(&v, "build 8 3D 5C", &vals)), vec![]);
+        // The only build: no chance.
+        let vals = [("build 8 3D 5C", 1.0), ("trail 2C", 0.0)];
+        assert_eq!(safe(with(&v, "build 8 3D 5C", &vals)), vec![]);
+        // The gap is the best build less the worst.
+        let vals: Vec<(Move, f64)> = [
+            ("build 8 3D 5C", 0.0),
+            ("trail 2C", 1.0),
+            ("build 8 2C 6H", 0.8),
+        ]
+        .iter()
+        .map(|&(m, x)| (mv(m), x))
+        .collect();
+        assert_eq!(gap(Skill::SafeBuilds, &v, &vals), Some(0.8));
     }
 
     #[test]
@@ -654,6 +677,18 @@ mod tests {
             }
         }
         all
+    }
+
+    #[test]
+    fn the_top_rung_meets_its_safe_build_chances_as_it_does_the_others() {
+        let top = tally(C, 4.0, 0..3);
+        let rate = |keep: &dyn Fn(Skill) -> bool| {
+            let xs: Vec<&Chance> = top.iter().filter(|c| keep(c.skill)).collect();
+            (xs.iter().filter(|c| c.met).count(), xs.len())
+        };
+        let (met, n) = rate(&|s| s == Skill::SafeBuilds);
+        assert!(n >= 3, "{n} safe-build chances");
+        assert!(met as f64 >= 0.7 * n as f64, "{met} of {n} met");
     }
 
     #[test]
