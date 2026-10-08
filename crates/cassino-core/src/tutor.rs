@@ -2,10 +2,10 @@
 //! which each needs first.
 
 use crate::advice;
-use crate::cards::CardSet;
+use crate::cards::{Card, ACE};
 use crate::moves::Move;
 use crate::observation::View;
-use crate::review::{is_build, is_trail, leaves_sweep, valuable};
+use crate::review::{is_build, is_trail, leaves_sweep};
 
 /// A skill a decision can show.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -71,45 +71,83 @@ impl Skill {
     }
 }
 
+/// An ace or a Cassino (the ten of diamonds, the two of spades): the cards
+/// that score on their own, and so are not to be left on the table.
+pub fn valuable(card: Card) -> bool {
+    card.rank() == ACE || card == Card::BIG_CASINO || card == Card::LITTLE_CASINO
+}
+
+/// The skills of action `mv` shows, in [`Skill::ALL`] order. The one
+/// classifier of what a move does, used by the chances, the knockouts
+/// ([`crate::knockout`]) and the lessons ([`crate::lessons`]).
+///
+/// - **Pairs**: a capture that takes a loose card *of the value it
+///   captures as*: the loose card's value under the rules
+///   ([`Rules::build_value`]) is the capture's value, or the card played is
+///   a Classic court card, which captures only its own rank. An ace
+///   captures as 1 or, if the rules allow, 14, so an ace at 14 pairs with
+///   no ace; taking an ace and a king as 14 is a sum.
+/// - **Sums**: a capture that takes two or more loose cards that are not
+///   pairs (they add to the value). A double pair (4C takes 4D 4H) is
+///   Pairs only; a pair and a sum together are both.
+/// - **Building**: a new build of one's own, or an addition to one's own
+///   build.
+/// - **AnsweringBuilds**: taking a build the opponent controls, or adding
+///   to or raising one.
+pub fn shows(view: &View, mv: &Move) -> Vec<Skill> {
+    let rules = &view.rules;
+    let table = &view.table;
+    let mut out = Vec::new();
+    match *mv {
+        Move::Trail { .. } => {}
+        Move::Capture { value, taken, .. } => {
+            let is_pair = |c: Card| rules.pairs_only(c) || rules.build_value(c) == Some(value);
+            let loose = taken & table.loose;
+            if loose.iter().any(is_pair) {
+                out.push(Skill::Pairs);
+            }
+            if loose.iter().filter(|&c| !is_pair(c)).count() >= 2 {
+                out.push(Skill::Sums);
+            }
+            if table
+                .builds
+                .iter()
+                .any(|b| b.controller != view.me && !(taken & b.cards).is_empty())
+            {
+                out.push(Skill::AnsweringBuilds);
+            }
+        }
+        Move::Build { onto, .. } => {
+            let theirs = onto
+                .and_then(|o| table.build_of(o))
+                .is_some_and(|b| b.controller != view.me);
+            out.push(if theirs {
+                Skill::AnsweringBuilds
+            } else {
+                Skill::Building
+            });
+        }
+    }
+    out
+}
+
 /// Whether `m` is the kind of move `skill` asks for, for the six skills a
 /// single move can show or fail to show (not Trailing, which compares
-/// trails, or SafeBuilds, which compares builds):
+/// trails, or SafeBuilds, which compares builds): the four skills of
+/// action, as [`shows`] has them, and the two of restraint:
 ///
-/// - **Pairs**: a capture taking a loose card of the rank played.
-/// - **Sums**: a capture taking two or more loose cards of other ranks (a
-///   group that adds up to the card played).
-/// - **Building**: a new build of one's own (not an addition or a raise).
-/// - **AnsweringBuilds**: taking the opponent's build, or adding to or
-///   raising it.
-/// - **NoSweep** (restraint): a move that leaves no table one card could
-///   clear for the opponent.
-/// - **Valuables** (restraint): not trailing an ace or a Cassino.
+/// - **NoSweep**: a move that leaves no table one card could clear for the
+///   opponent ([`leaves_sweep`]; whether or not sweeps are scored, since
+///   clearing the table takes every card on it).
+/// - **Valuables**: not trailing an ace or a Cassino.
 fn good(skill: Skill, view: &View, m: &Move) -> bool {
-    let loose = view.table.loose;
-    match (skill, m) {
-        (Skill::Pairs, Move::Capture { card, taken, .. }) => {
-            !(*taken & loose & CardSet::of_rank(card.rank())).is_empty()
+    match skill {
+        Skill::NoSweep => !leaves_sweep(view, m),
+        Skill::Valuables => !(is_trail(m) && valuable(m.card())),
+        Skill::Pairs | Skill::Sums | Skill::Building | Skill::AnsweringBuilds => {
+            shows(view, m).contains(&skill)
         }
-        (Skill::Sums, Move::Capture { card, taken, .. }) => {
-            (*taken & loose)
-                .iter()
-                .filter(|c| c.rank() != card.rank())
-                .count()
-                >= 2
-        }
-        (Skill::Building, Move::Build { onto: None, .. }) => true,
-        (Skill::AnsweringBuilds, Move::Capture { taken, .. }) => view
-            .table
-            .builds
-            .iter()
-            .any(|b| b.controller != view.me && !b.cards.is_disjoint(*taken)),
-        (Skill::AnsweringBuilds, Move::Build { onto: Some(o), .. }) => view
-            .table
-            .build_of(*o)
-            .is_some_and(|b| b.controller != view.me),
-        (Skill::NoSweep, _) => !leaves_sweep(view, m),
-        (Skill::Valuables, _) => !(is_trail(m) && valuable(m.card())),
-        _ => false,
+        Skill::SafeBuilds | Skill::Trailing => false,
     }
 }
 
@@ -165,7 +203,7 @@ fn spread(values: &[(Move, f64)], kind: fn(&Move) -> bool) -> Option<f64> {
 /// - **Pairs, Sums, Building, AnsweringBuilds** (action): a chance when
 ///   the best move that shows the skill beats the best that does not;
 ///   met if the move chosen shows it. The skills are described at
-///   [`good`]'s definition.
+///   [`shows`].
 /// - **NoSweep, Valuables** (restraint): a chance when the best move that
 ///   avoids the error beats the best that commits it; met if the move
 ///   chosen avoids it.
@@ -280,7 +318,7 @@ mod tests {
         }
         assert!(early && last);
     }
-    use crate::cards::pack;
+    use crate::cards::{pack, CardSet};
     use crate::hand::Hand;
     use crate::rules::Rules;
     use crate::table::{Seat, Table};
@@ -312,6 +350,66 @@ mod tests {
     }
 
     const C: Rules = Rules::CLASSIC;
+
+    fn shown(rules: Rules, table: &str, hand: &str, m: &str) -> Vec<Skill> {
+        let v = view(rules, table, hand);
+        let m = mv(m);
+        assert!(v.candidates().contains(&m), "{m} is not a candidate");
+        shows(&v, &m)
+    }
+
+    #[test]
+    fn what_a_move_shows() {
+        let r14 = Rules {
+            aces_fourteen: true,
+            ..Rules::ROYAL
+        };
+        // A double pair is Pairs only; a pair and a sum are both.
+        assert_eq!(shown(C, "4D 4H", "4C 9S", "take 4C 4D 4H"), [Skill::Pairs]);
+        assert_eq!(
+            shown(C, "5D 3H 2S", "5C 9S", "take 5C 5D 3H 2S"),
+            [Skill::Pairs, Skill::Sums]
+        );
+        assert_eq!(shown(C, "3D 2S", "5C 9S", "take 5C 3D 2S"), [Skill::Sums]);
+        // A Classic court pair; a Royal king pairs too.
+        assert_eq!(shown(C, "KD 2S", "KC 9S", "take KC KD"), [Skill::Pairs]);
+        assert_eq!(
+            shown(Rules::ROYAL, "KD 2S", "KC 9S", "take KC KD"),
+            [Skill::Pairs]
+        );
+        // An ace at 1 pairs with an ace; at 14 it takes A+K as a sum.
+        assert_eq!(shown(r14, "AD 2S", "AC 9S", "take AC AD"), [Skill::Pairs]);
+        assert_eq!(
+            shown(r14, "AD KD", "AC 9S", "take AC=14 AD KD"),
+            [Skill::Sums]
+        );
+        // Building: one's own, new or added to; the opponent's is answering.
+        assert_eq!(
+            shown(C, "4D 9C", "3H 7S", "build 7 3H 4D"),
+            [Skill::Building]
+        );
+        assert_eq!(
+            shown(C, "[5 @S: 3H 2S] 2D", "3C 8D 5H", "build 8 3C on 2S"),
+            [Skill::Building]
+        );
+        assert_eq!(
+            shown(C, "[5 @N: 3H 2S]", "3C 8D", "build 8 3C on 2S"),
+            [Skill::AnsweringBuilds]
+        );
+        assert_eq!(
+            shown(C, "[5 @N: 3H 2S]", "5C 9D", "take 5C 3H 2S"),
+            [Skill::AnsweringBuilds]
+        );
+        assert_eq!(shown(C, "[5 @S: 3H 2S]", "5C 9D", "take 5C 3H 2S"), []);
+        assert_eq!(shown(C, "5C 2D", "9H 3S", "trail 9H"), []);
+    }
+
+    #[test]
+    fn valuables_are_aces_and_the_two_cassinos() {
+        for (c, yes) in [("AS", true), ("TD", true), ("2S", true), ("TS", false)] {
+            assert_eq!(valuable(c.parse().unwrap()), yes, "{c}");
+        }
+    }
 
     #[test]
     fn pairs_met_missed_and_a_near_tie() {

@@ -21,7 +21,7 @@ use crate::cards::{Card, CardSet, ACE};
 use crate::moves::Move;
 use crate::observation::View;
 use crate::table::Seat;
-use crate::tutor::Skill;
+use crate::tutor::{shows, valuable, Skill};
 
 /// The most words a rule may use.
 pub const MAX_WORDS: usize = 15;
@@ -202,13 +202,8 @@ pub const CANDIDATES: [Rule; 22] = [
 
 // ---- The position and the move, in the terms the rules use ----
 
-/// An ace or a Cassino: the cards that score on their own.
-fn is_prize(card: Card) -> bool {
-    card.rank() == ACE || card == Card::BIG_CASINO || card == Card::LITTLE_CASINO
-}
-
 fn prizes_in(set: CardSet) -> CardSet {
-    set.iter().filter(|&c| is_prize(c)).collect()
+    set.iter().filter(|&c| valuable(c)).collect()
 }
 
 fn opponent_builds(v: &View) -> impl Iterator<Item = &crate::table::Build> {
@@ -344,7 +339,7 @@ fn pair_with_prize(v: &View) -> bool {
     v.hand.iter().any(|c| {
         (v.table.loose & CardSet::of_rank(c.rank()))
             .iter()
-            .any(|t| is_prize(t) || t.suit() == crate::cards::Suit::Spades)
+            .any(|t| valuable(t) || t.suit() == crate::cards::Suit::Spades)
     })
 }
 
@@ -497,7 +492,7 @@ fn prize_and_spare(v: &View) -> bool {
 }
 
 fn keeps_prizes(_: &View, m: &Move) -> bool {
-    !trailed(m).is_some_and(is_prize)
+    !trailed(m).is_some_and(valuable)
 }
 
 fn prize_takeable(v: &View) -> bool {
@@ -528,7 +523,7 @@ fn trails_isolated(v: &View, m: &Move) -> bool {
 }
 
 fn plain_cards(v: &View) -> CardSet {
-    v.hand.iter().filter(|&c| !is_prize(c)).collect()
+    v.hand.iter().filter(|&c| !valuable(c)).collect()
 }
 
 fn lowest_rank(v: &View) -> Option<u8> {
@@ -541,7 +536,7 @@ fn lowest_to_trail(v: &View) -> bool {
 }
 
 fn trails_lowest(v: &View, m: &Move) -> bool {
-    trailed(m).is_some_and(|c| !is_prize(c) && Some(c.rank()) == lowest_rank(v))
+    trailed(m).is_some_and(|c| !valuable(c) && Some(c.rank()) == lowest_rank(v))
 }
 
 fn rank_unseen(v: &View, card: Card) -> u32 {
@@ -564,17 +559,10 @@ fn trails_played_out(v: &View, m: &Move) -> bool {
 /// show it, so this is [`matters`].
 pub fn exercises(skill: Skill, v: &View, m: &Move) -> bool {
     match skill {
-        Skill::Pairs => match *m {
-            Move::Capture { card, taken, .. } => {
-                taken.len() == 1
-                    && !(taken & v.table.loose & CardSet::of_rank(card.rank())).is_empty()
-            }
-            _ => false,
-        },
-        Skill::Sums => (taken(m) & v.table.loose).len() >= 2,
-        Skill::Building => is_build(v, m) && !onto_theirs(v, m),
+        Skill::Pairs | Skill::Sums | Skill::Building | Skill::AnsweringBuilds => {
+            shows(v, m).contains(&skill)
+        }
         Skill::SafeBuilds => is_build(v, m),
-        Skill::AnsweringBuilds => takes_theirs(v, m, 1) || onto_theirs(v, m),
         Skill::Trailing => trailed(m).is_some(),
         Skill::NoSweep | Skill::Valuables => available(skill, v),
     }

@@ -27,12 +27,12 @@
 //! counter's choice of trails about 2.
 
 use crate::advice::{self, Note};
-use crate::cards::{Card, ACE};
 use crate::moves::Move;
 use crate::observation::View;
 use crate::rules::Rules;
 use crate::scoring::Breakdown;
 use crate::table::Seat;
+use crate::tutor::valuable;
 
 /// One of the person's decisions: what they could see, and what they played.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -154,9 +154,6 @@ pub(crate) fn is_build(m: &Move) -> bool {
 }
 pub(crate) fn is_trail(m: &Move) -> bool {
     matches!(m, Move::Trail { .. })
-}
-pub(crate) fn valuable(card: Card) -> bool {
-    card.rank() == ACE || card == Card::BIG_CASINO || card == Card::LITTLE_CASINO
 }
 
 /// Whether `mv` leaves a table one card could clear for the opponent, by a

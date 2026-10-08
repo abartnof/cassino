@@ -13,7 +13,7 @@
 //! when the shortlist holds none, over the allowed moves banking the most at
 //! once (as many as the shortlist is wide). In the last deal the values are
 //! exact. When every move uses a withheld skill, the searcher's move is
-//! played. What a move uses is [`uses`]:
+//! played. What a move uses is [`shows`] (the one classifier of the tutor):
 //!
 //! - Pairs: a capture that takes a loose card of its own value (a pairing
 //!   group; in Classic a court card's only capture).
@@ -52,60 +52,12 @@
 //! for move.
 
 use crate::agents::{immediate_worth, Agent};
-use crate::cards::{Card, ACE};
 use crate::moves::Move;
 use crate::observation::View;
 use crate::review::leaves_sweep;
 use crate::rng::Rng;
 use crate::search::SearchAgent;
-use crate::tutor::Skill;
-
-/// The skills of action `mv` uses, in [`Skill::ALL`] order.
-pub fn uses(view: &View, mv: &Move) -> Vec<Skill> {
-    let rules = &view.rules;
-    let table = &view.table;
-    let mut out = Vec::new();
-    match *mv {
-        Move::Trail { .. } => {}
-        Move::Capture { value, taken, .. } => {
-            let loose = taken & table.loose;
-            if loose
-                .iter()
-                .any(|c| rules.pairs_only(c) || rules.build_value(c) == Some(value))
-            {
-                out.push(Skill::Pairs);
-            }
-            if loose
-                .iter()
-                .any(|c| matches!(rules.build_value(c), Some(v) if v != value))
-            {
-                out.push(Skill::Sums);
-            }
-            if table
-                .builds
-                .iter()
-                .any(|b| b.controller != view.me && !(taken & b.cards).is_empty())
-            {
-                out.push(Skill::AnsweringBuilds);
-            }
-        }
-        Move::Build { onto, .. } => {
-            let theirs = onto
-                .and_then(|o| table.build_of(o))
-                .is_some_and(|b| b.controller != view.me);
-            out.push(if theirs {
-                Skill::AnsweringBuilds
-            } else {
-                Skill::Building
-            });
-        }
-    }
-    out
-}
-
-fn is_valuable(card: Card) -> bool {
-    card.rank() == ACE || card == Card::BIG_CASINO || card == Card::LITTLE_CASINO
-}
+use crate::tutor::{shows, valuable, Skill};
 
 /// How big a build is: the cards it holds once made.
 fn build_size(view: &View, mv: &Move) -> (u32, u8) {
@@ -155,7 +107,7 @@ impl Knockout {
 
     /// Whether `mv` uses a skill of action that is out.
     fn withheld(&self, view: &View, mv: &Move) -> bool {
-        uses(view, mv).iter().any(|s| self.is_out(*s))
+        shows(view, mv).iter().any(|s| self.is_out(*s))
     }
 
     /// The best of `moves` by value, the first of equals.
@@ -282,11 +234,7 @@ impl Agent for Knockout {
                 trails
             } else if self.is_out(Skill::Valuables) {
                 let mut o = vec![m];
-                o.extend(
-                    trails
-                        .into_iter()
-                        .filter(|x| is_valuable(x.card()) && *x != m),
-                );
+                o.extend(trails.into_iter().filter(|x| valuable(x.card()) && *x != m));
                 o
             } else {
                 vec![m]
@@ -316,60 +264,10 @@ pub fn parse_knocked(text: &str) -> Option<Vec<Skill>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cards::{pack, CardSet};
+    use crate::cards::pack;
     use crate::hand::Hand;
     use crate::rules::Rules;
-    use crate::table::{Seat, Table};
-
-    fn mv(s: &str) -> Move {
-        Move::parse(s).unwrap()
-    }
-
-    /// A view for South to move, holding `hand`, with `table` before them.
-    fn view(rules: Rules, table: &str, hand: &str) -> View {
-        let (h, _) = Hand::deal(rules, Seat::North, pack());
-        let mut v = h.view(Seat::South, [0, 0]);
-        v.table = Table::parse(&rules, table).unwrap();
-        v.hand = CardSet::parse(hand).unwrap();
-        v
-    }
-
-    #[test]
-    fn what_a_move_uses() {
-        let c = Rules::CLASSIC;
-        let used = |t: &str, h: &str, m: &str| {
-            let v = view(c, t, h);
-            let m = mv(m);
-            assert!(
-                v.candidates().contains(&m),
-                "{m} is not a candidate: {:?}",
-                v.candidates()
-                    .iter()
-                    .map(|x| x.to_string())
-                    .collect::<Vec<_>>()
-            );
-            uses(&v, &m)
-        };
-        assert_eq!(used("5C 2D", "5D 9H", "take 5D 5C"), [Skill::Pairs]);
-        assert_eq!(used("3C 2D", "5D 9H", "take 5D 3C 2D"), [Skill::Sums]);
-        assert_eq!(
-            used("5C 3H 2D", "5D 9H", "take 5D 5C 3H 2D"),
-            [Skill::Pairs, Skill::Sums]
-        );
-        assert_eq!(used("KC 2D", "KD 9H", "take KD KC"), [Skill::Pairs]);
-        assert_eq!(used("4D 9C", "3H 7S", "build 7 3H 4D"), [Skill::Building]);
-        assert_eq!(used("5C 2D", "9H 3S", "trail 9H"), []);
-        // The opponent's build, taken or raised; one's own, taken.
-        assert_eq!(
-            used("[5 @N: 3H 2S]", "5C 9D", "take 5C 3H 2S"),
-            [Skill::AnsweringBuilds]
-        );
-        assert_eq!(
-            used("[5 @N: 3H 2S]", "3C 8D", "build 8 3C on 2S"),
-            [Skill::AnsweringBuilds]
-        );
-        assert_eq!(used("[5 @S: 3H 2S]", "5C 9D", "take 5C 3H 2S"), []);
-    }
+    use crate::table::Seat;
 
     #[test]
     fn names_parse_and_read_back_in_one_order() {
@@ -446,9 +344,9 @@ mod tests {
                 quick(&mut k);
                 let mut b = crate::agents::GreedyAgent;
                 play(rules, seed, &mut k, &mut b, |v, m| {
-                    if uses(v, &m).contains(&skill) {
+                    if shows(v, &m).contains(&skill) {
                         assert!(
-                            v.candidates().iter().all(|x| uses(v, x).contains(&skill)),
+                            v.candidates().iter().all(|x| shows(v, x).contains(&skill)),
                             "{skill:?}: played {m}"
                         );
                     }
@@ -466,12 +364,12 @@ mod tests {
         quick(&mut k);
         let mut b = crate::agents::GreedyAgent;
         play(Rules::CLASSIC, 4, &mut k, &mut b, |v, m| {
-            let u = uses(v, &m);
+            let u = shows(v, &m);
             if u.iter().any(|s| both.contains(s)) {
                 assert!(v
                     .candidates()
                     .iter()
-                    .all(|x| uses(v, x).iter().any(|s| both.contains(s))));
+                    .all(|x| shows(v, x).iter().any(|s| both.contains(s))));
             }
         });
     }
@@ -556,7 +454,7 @@ mod tests {
                 let d = differences(&[Skill::Valuables], rules, seed);
                 for (s, k, _) in &d {
                     assert!(matches!(s, Move::Trail { .. }), "{s} {k}");
-                    assert!(matches!(k, Move::Trail { .. }) && is_valuable(k.card()));
+                    assert!(matches!(k, Move::Trail { .. }) && valuable(k.card()));
                 }
                 found[1] += d.len();
                 let d = differences(&[Skill::SafeBuilds], rules, seed);
