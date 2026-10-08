@@ -780,13 +780,22 @@ skill mastered, the tutor says so and suggests the next opponent up.
 one nudge at the first clear chance at the skill ("a build is on here"),
 that decision then not counting.
 
-**Every rule is a measured claim.** A rule is a trigger and a prescription.
-Its precision is how often the strongest rung does what it prescribes when
-the trigger fires; its coverage, how often it fires when the skill
-matters. A rule ships only when its precision's 95% lower bound is at
-least 0.80, the chosen rule confirmed on fresh positions (§11.4, the
-maximum of noisy estimates). A skill with no rule that passes is not
-taught by a rule.
+**Every rule is a measured claim.** A rule is a trigger and a prescription,
+each matching its text: "take a sum" means the move takes a sum group
+(`tutor::shows`), not any capture. Its precision is how often the strongest
+rung does what it prescribes when the trigger fires; the rules about which
+build to make (safe builds) are measured only where the rung built, so
+their precision is P(prescription | trigger, the rung built) and does not
+mix in the skill of building. Decisions within a game are correlated, so the
+interval is clustered by game: the ratio estimator over per-game tallies
+gives a variance, from which an effective sample (n_eff = p(1-p)/variance,
+at most the firings) and a Wilson interval follow. Coverage is how often
+the trigger fires in the decisions holding a clear chance at the skill
+(`tutor::chances`), the evidence the learner model counts. A rule ships
+only when its clustered lower bound is at least 0.80, and the rules chosen
+from a selection run are confirmed on fresh seeds (`rules --confirm --only`;
+§11.4, the maximum of noisy estimates). Sweeps are measured off, as the game
+is by default. A skill with no rule that passes is not taught by a rule.
 
 **Measurements, each planned before its first batch:**
 

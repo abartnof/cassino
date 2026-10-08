@@ -1,0 +1,73 @@
+Plan: 200 games of the strongest rung (skill 4.0, in the person's seat) against skill 3.0, seeds 1000..1200, for each of ["Royal"] (sweeps not scored); 34 candidate rules, each held against every decision. Fixed count, descriptive; selection run: the best here must be confirmed on fresh seeds. A rule ships if its game-clustered precision's 95% lower bound is at least 0.8.
+
+Royal: 200 games, 16896 decisions, 394.4 s (1.97 s a game)
+id   skill               fired   hits    prec clustered 95%  n_eff   cover  prec if acting  verdict
+P1   Pairs                4839   2866   0.592  0.578-0.606    4839   1.000   1.000 (1.00-1.00) n=2866  no
+P2   Pairs                1517    867   0.572  0.546-0.596    1517   0.352   0.936 (0.92-0.95) n=926  no
+S1   Sums                 1600   1135   0.709  0.687-0.731    1584   1.000   1.000 (1.00-1.00) n=1135  no
+S2   Sums                 1482    858   0.579  0.554-0.604    1482   0.503   0.853 (0.82-0.88) n=624  no
+S3   Sums                 1878   1428   0.760  0.741-0.779    1878   0.406   0.834 (0.80-0.87) n=458  no
+B1   Building              333    182   0.547  0.493-0.599     333   0.061   1.000 (0.98-1.00) n=179  no
+B2   Building             2583   1619   0.627  0.608-0.645    2583   0.611   1.000 (1.00-1.00) n=1606  no
+B3   Building             1634   1442   0.882  0.866-0.897    1634   0.518   1.000 (1.00-1.00) n=1355  ships
+SB1  SafeBuilds           1748   1710   0.978  0.970-0.984    1627   0.648   0.978 (0.97-0.98) n=1748  ships
+SB2  SafeBuilds            400    308   0.770  0.724-0.810     365   0.452   0.770 (0.73-0.81) n=400  no
+SB3  SafeBuilds            194    158   0.814  0.750-0.866     171   0.125   0.814 (0.75-0.86) n=194  no
+A1   AnsweringBuilds       298    278   0.933  0.899-0.956     298   0.649   0.986 (0.96-0.99) n=282  ships
+A2   AnsweringBuilds        77     75   0.974  0.910-0.993      77   0.175   1.000 (0.95-1.00) n=75  ships
+A3   AnsweringBuilds       159    151   0.950  0.904-0.974     159   0.351   1.000 (0.98-1.00) n=151  ships
+N1   NoSweep              3478   1890   0.543  0.526-0.561    3149   1.000   0.543 (0.53-0.56) n=3478  no
+N2   NoSweep              1632    976   0.598  0.574-0.622    1624   0.373   0.593 (0.57-0.62) n=1409  no
+V1   Valuables            3571   3296   0.923  0.913-0.932    3345   0.964   0.923 (0.91-0.93) n=3571  ships
+V2   Valuables            1947   1667   0.856  0.840-0.871    1947   0.107   0.772 (0.73-0.81) n=377  ships
+V3   Valuables            2429   1590   0.655  0.635-0.673    2429   0.666   0.657 (0.64-0.68) n=2402  no
+T1   Trailing             6000   4061   0.677  0.665-0.689    6000   0.710   0.816 (0.80-0.83) n=4978  no
+T2   Trailing             5289   2068   0.391  0.376-0.406    4245   0.741   0.518 (0.50-0.53) n=3996  no
+T3   Trailing             5827   4190   0.719  0.707-0.730    5827   0.667   0.882 (0.87-0.89) n=4753  no
+P3   Pairs                4839   4344   0.898  0.889-0.906    4839   1.000   1.000 (1.00-1.00) n=2866  ships
+P4   Pairs                2612   2113   0.809  0.793-0.824    2612   0.811   1.000 (1.00-1.00) n=2113  no
+B4   Building             2325   1326   0.570  0.550-0.590    2325   0.513   1.000 (1.00-1.00) n=1171  no
+B5   Building              922    812   0.881  0.858-0.900     922   0.295   1.000 (1.00-1.00) n=807  ships
+B6   Building              438    118   0.269  0.230-0.313     438   0.093   0.480 (0.42-0.54) n=246  no
+SB4  SafeBuilds           2845   2368   0.832  0.818-0.846    2796   1.000   0.832 (0.82-0.85) n=2845  ships
+SB5  SafeBuilds            667    391   0.586  0.548-0.623     667   0.727   0.586 (0.55-0.62) n=667  no
+N3   NoSweep              2597   1487   0.573  0.553-0.591    2597   0.665   0.567 (0.55-0.59) n=2408  no
+N4   NoSweep               599    496   0.828  0.793-0.858     523   0.261   0.854 (0.82-0.88) n=555  no
+T4   Trailing             5004   3255   0.650  0.637-0.664    5004   0.627   0.782 (0.77-0.79) n=4165  no
+T5   Trailing             2637   1560   0.592  0.571-0.612    2298   0.538   0.592 (0.57-0.61) n=2637  no
+T6   Trailing             2330   1301   0.558  0.537-0.579    2164   0.453   0.558 (0.54-0.58) n=2330  no
+Texts:
+  P1   If a card in your hand matches a table card, take it.
+  P2   If a card of yours matches an ace, a Cassino or a spade, take it.
+  S1   If table cards add up to a card in your hand, take them.
+  S2   Of the captures open to you, take the one that gathers the most cards.
+  S3   A sum that takes three cards or more is worth taking.
+  B1   Build when you hold two cards of the build's value.
+  B2   Build a value that at most one card you cannot see can take.
+  B3   With nothing to take, build rather than trail, if you can.
+  SB1  Build a value that at most one card you cannot see can take.
+  SB2  Of the builds you could make, make the one fewest hidden cards can take.
+  SB3  Build the value you hold twice, so that one card is spare.
+  A1   If you can take your opponent's build, take it.
+  A2   Take your opponent's build when it holds three cards or more.
+  A3   If you cannot take their build, raise it, if you can.
+  N1   Do not leave a table that adds up to one value: one card sweeps it.
+  N2   Do not leave a table that three or more hidden cards could sweep.
+  V1   Never trail an ace or Cassino while you have another card to trail.
+  V2   When you can take an ace or Cassino, take it.
+  V3   Play an ace only to take something.
+  T1   Trail a card that adds up with nothing on the table, if you have one.
+  T2   When you must trail, trail your lowest card that is not an ace or Cassino.
+  T3   Trail a card of which at most one copy is unseen.
+  P3   Take a pair, unless you can build or take more cards instead.
+  P4   With no build open to you, take a pair.
+  B4   Build when the build would gather three cards or more.
+  B5   With nothing to take, build a value that at most one unseen card can take.
+  B6   Add to your own build when you can.
+  SB4  Never build a value that three or more unseen cards can take.
+  SB5  Of the builds you could make, make the highest value.
+  N3   Do not leave a table that two or more unseen cards could sweep.
+  N4   Do not leave four or more cards on a table one card could sweep.
+  T4   Trail a card nothing adds up with, of which at most two copies are unseen.
+  T5   When you trail, trail the card the fewest unseen cards can take.
+  T6   When you trail, trail your lowest card that adds up with nothing.

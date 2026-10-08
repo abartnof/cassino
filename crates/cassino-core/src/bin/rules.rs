@@ -2,28 +2,34 @@
 //! §12.8): the strongest rung (skill 4) plays the person's seat against skill
 //! 3, and each decision it makes, the position and its move, is held against
 //! every candidate rule. A rule's precision is how often the rung did as the
-//! rule says when its trigger fired, with the Wilson 95% interval; its
-//! coverage, how often the trigger fired where the skill mattered. A rule
-//! ships only when the interval's lower bound reaches 0.80, and the winner
-//! among the candidates is confirmed on fresh positions (`--confirm`).
+//! rule says when its trigger fired, with a 95% interval clustered by game
+//! (decisions within a game are correlated: `lessons::clustered`). Its
+//! coverage is how often the trigger fired in decisions holding a clear
+//! chance at the skill (`tutor::chances` with `tutor::margin`). The
+//! safe-build rules are measured only where the rung built. A rule ships only
+//! when the interval's lower bound reaches 0.80; the chosen rules are then
+//! confirmed on fresh seeds with `--confirm --only ID[,ID...]`, which
+//! measures only those rules and prints "confirmed" or "not confirmed".
 //!
 //! ```text
-//! rules [GAMES] [--rules classic|royal] [--seed S] [--confirm]
+//! rules [GAMES] [--rules classic|royal] [--sweeps] [--seed S] [--confirm] [--only ID,ID]
 //! ```
 //!
-//! A fixed count, descriptive and not sequential (`docs/DESIGN.md` §11.4).
-//! Games are seeded `S .. S + GAMES`; selection starts at [`SELECT_SEED`] and
-//! `--confirm` at [`CONFIRM_SEED`], which no selection run reaches, unless
-//! `--seed` says otherwise. Decisions within a game are not independent, so
-//! the intervals are a little narrower than the truth.
+//! The game's default rules: sweeps not scored (`--sweeps` scores them),
+//! "Aces count 1 or 14" off, builds raised. A fixed count, descriptive and
+//! not sequential (`docs/DESIGN.md` §11.4). Games are seeded `S .. S +
+//! GAMES`; selection starts at [`SELECT_SEED`] and `--confirm` at
+//! [`CONFIRM_SEED`], which no selection run reaches, unless `--seed` says
+//! otherwise.
 
 use std::time::Instant;
 
 use cassino_core::agents::Agent;
-use cassino_core::lessons::{Measure, CANDIDATES, SHIP_BOUND};
+use cassino_core::lessons::{Measure, Rule, CANDIDATES, SHIP_BOUND};
 use cassino_core::opponent::Skill;
 use cassino_core::rules::Rules;
 use cassino_core::session::{Prompt, Session, Settings};
+use cassino_core::tutor;
 
 /// The first seed of a selection run, and of a confirmation run.
 const SELECT_SEED: u64 = 1_000;
@@ -31,9 +37,12 @@ const CONFIRM_SEED: u64 = 5_000_000;
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    let usage = "rules [GAMES] [--rules classic|royal] [--seed S] [--confirm]";
+    let usage =
+        "rules [GAMES] [--rules classic|royal] [--sweeps] [--seed S] [--confirm] [--only ID,ID]";
     let mut games: u64 = 20;
     let mut which = vec![("Classic", Rules::CLASSIC), ("Royal", Rules::ROYAL)];
+    let mut sweeps = false;
+    let mut only: Option<Vec<String>> = None;
     let mut seed: Option<u64> = None;
     let mut confirm = false;
     let mut i = 0;
@@ -56,29 +65,57 @@ fn main() {
                 );
             }
             "--confirm" => confirm = true,
+            "--sweeps" => sweeps = true,
+            "--only" => {
+                i += 1;
+                only = Some(
+                    args.get(i)
+                        .unwrap_or_else(|| panic!("{usage}"))
+                        .split(',')
+                        .map(str::to_string)
+                        .collect(),
+                );
+            }
             a => games = a.parse().unwrap_or_else(|_| panic!("{usage}")),
         }
         i += 1;
     }
+    if let Some(ids) = &only {
+        for id in ids {
+            assert!(
+                CANDIDATES.iter().any(|r| r.id == id),
+                "no rule {id}; {usage}"
+            );
+        }
+    }
+    let candidates: Vec<&Rule> = CANDIDATES
+        .iter()
+        .filter(|r| {
+            only.as_ref()
+                .is_none_or(|ids| ids.iter().any(|i| i == r.id))
+        })
+        .collect();
     let first = seed.unwrap_or(if confirm { CONFIRM_SEED } else { SELECT_SEED });
     println!(
         "Plan: {} games of the strongest rung (skill 4.0, in the person's seat) against skill 3.0, \
-         seeds {first}..{}, for each of {:?}; {} candidate rules, each held against every decision. \
-         Fixed count, descriptive; {}. A rule ships if its precision's 95% Wilson lower bound is at \
-         least {SHIP_BOUND}.",
+         seeds {first}..{}, for each of {:?} (sweeps {}); {} candidate rules, each held against every \
+         decision. Fixed count, descriptive; {}. A rule ships if its game-clustered precision's 95% \
+         lower bound is at least {SHIP_BOUND}.",
         games,
         first + games,
         which.iter().map(|w| w.0).collect::<Vec<_>>(),
-        CANDIDATES.len(),
+        if sweeps { "scored" } else { "not scored" },
+        candidates.len(),
         if confirm {
-            "fresh positions: this confirms the winner of a selection run"
+            "fresh seeds: this confirms rules chosen in a selection run"
         } else {
             "selection run: the best here must be confirmed on fresh seeds"
         },
     );
-    for (name, rules) in which {
+    for (name, mut rules) in which {
+        rules.sweeps = sweeps;
         let started = Instant::now();
-        let mut measures = vec![Measure::default(); CANDIDATES.len()];
+        let mut measures = vec![Measure::default(); candidates.len()];
         let mut decisions = 0u64;
         for seed in first..first + games {
             let mut s = Session::new(seed, Settings { rules, skill: 3.0 });
@@ -91,12 +128,16 @@ fn main() {
                         let view = s.view();
                         let mv = me.choose(&view);
                         decisions += 1;
-                        for (m, rule) in measures.iter_mut().zip(CANDIDATES.iter()) {
-                            m.record(rule, &view, &mv);
+                        let chances = tutor::chances(&view, &mv, tutor::margin(&view));
+                        for (m, rule) in measures.iter_mut().zip(&candidates) {
+                            m.record(rule, &view, &mv, &chances);
                         }
                         assert!(s.send(&mv.to_string()));
                     }
                 }
+            }
+            for m in &mut measures {
+                m.end_game();
             }
         }
         let secs = started.elapsed().as_secs_f64();
@@ -105,31 +146,45 @@ fn main() {
             secs / games as f64
         );
         println!(
-            "{:<4} {:<18} {:>6} {:>6}  {:>6} {:>13}  {:>6}  {:>13}  ships",
-            "id", "skill", "fired", "hits", "prec", "95% interval", "cover", "prec if acting"
+            "{:<4} {:<18} {:>6} {:>6}  {:>6} {:>13} {:>6}  {:>6}  {:>13}  verdict",
+            "id",
+            "skill",
+            "fired",
+            "hits",
+            "prec",
+            "clustered 95%",
+            "n_eff",
+            "cover",
+            "prec if acting"
         );
-        for (m, rule) in measures.iter().zip(CANDIDATES.iter()) {
-            let (p, lo, hi) = m.precision();
+        for (m, rule) in measures.iter().zip(&candidates) {
+            let c = m.clustered();
             let (ap, alo, ahi) = m.acting_precision();
             println!(
-                "{:<4} {:<18} {:>6} {:>6}  {:>6.3} {:>6.3}-{:<6.3}  {:>6.3}  {:>6.3} ({:.2}-{:.2}) n={}  {}",
+                "{:<4} {:<18} {:>6} {:>6}  {:>6.3} {:>6.3}-{:<6.3} {:>6.0}  {:>6.3}  {:>6.3} ({:.2}-{:.2}) n={}  {}",
                 rule.id,
                 format!("{:?}", rule.skill),
                 m.triggered,
                 m.hits,
-                p,
-                lo,
-                hi,
+                c.p,
+                c.lo,
+                c.hi,
+                c.n_eff,
                 m.coverage(),
                 ap,
                 alo,
                 ahi,
                 m.acting,
-                if m.ships() { "yes" } else { "no" },
+                match (confirm, m.ships()) {
+                    (true, true) => "confirmed",
+                    (true, false) => "not confirmed",
+                    (false, true) => "ships",
+                    (false, false) => "no",
+                },
             );
         }
         println!("Texts:");
-        for rule in &CANDIDATES {
+        for rule in &candidates {
             println!("  {:<4} {}", rule.id, rule.text);
         }
     }

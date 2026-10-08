@@ -229,3 +229,80 @@ masters 3 to 7 and names none. The rarest skills (answering builds, two
 chances a game or fewer) cannot be certified in four games from their
 chances alone, which is as it should be. The lesioned students are in
 `cargo test` (`learner::tests`).
+
+## The tutor's rules: precision and coverage
+
+For §12.8 (`docs/DESIGN.md`): `rules 200 --rules classic|royal`, then
+`rules 200 --confirm --only IDS --rules classic|royal`. The strongest rung
+(skill 4) in the person's seat against skill 3, 200 games each, sweeps not
+scored (the game's default). A fixed count, descriptive. Selection seeds
+1000..1200; confirmation seeds 5,000,000..5,000,200. Raw output:
+`rules-<rules>-selection.txt` and `rules-<rules>-confirmation.txt`. Date
+2026-10-08.
+
+How it is measured:
+
+- **Precision**: of the decisions where the rule's trigger fires, the share
+  where the rung's move satisfies the prescription. The trigger and the
+  prescription are what the rule's text says (a sum rule asks for a sum
+  group, a pair rule for the pair). The interval is clustered by game
+  (ratio estimator over per-game tallies, an effective sample, then a
+  Wilson interval), since a game's decisions are correlated. In these runs
+  the effective sample came out near the number of firings, so the
+  clustering widened the intervals little.
+- **Safe-build rules** (SB1 to SB5) are measured only where the rung built,
+  so precision is P(safe build | trigger, the rung built) and does not mix
+  in whether to build at all. Rules about trailing that begin "When you
+  trail" (T5, T6) are measured the same way.
+- **Coverage**: of the decisions holding a clear chance at the skill
+  (`tutor::chances`, margin 0.4 before the last deal), the share where the
+  trigger fires.
+- **Ships**: the clustered lower bound is at least 0.80. Per skill the
+  candidate with the best lower bound among those is chosen (34 candidates
+  were written before the runs; the second round, P3 P4 B4 B5 B6 SB4 SB5 N3
+  N4 T4 T5 T6, for the skills whose first candidates fell short) and then
+  confirmed on fresh seeds.
+
+### Classic
+
+| Skill | Rule | Text | Selection | Confirmation | Coverage | Verdict |
+|---|---|---|---|---|---|---|
+| Pairs | P3 | Take a pair, unless you can build or take more cards instead. | 0.887 [0.879, 0.895] | 0.890 [0.882, 0.897] | 1.00 | shipped |
+| Sums | none | best S3 0.782 [0.758, 0.805] | | | | no rule |
+| Building | B3 | With nothing to take, build rather than trail, if you can. | 0.851 [0.828, 0.872] | 0.843 [0.819, 0.864] | 0.48 | shipped |
+| Safe builds | SB1 | Build a value that at most one card you cannot see can take. | 0.979 [0.969, 0.986] | 0.978 [0.968, 0.985] | 0.72 | shipped |
+| Answering builds | A3 | If you cannot take their build, raise it, if you can. | 0.989 [0.942, 0.998] | 0.920 [0.850, 0.959] | 0.32 | shipped |
+| No sweep | none | best N4 0.832 [0.759, 0.886] | | | | no rule |
+| Valuables | V1 | Never trail an ace or Cassino while you have another card to trail. | 0.927 [0.918, 0.935] | 0.926 [0.917, 0.934] | 0.96 | shipped |
+| Trailing | none | best T3 0.793 [0.782, 0.804] | | | | no rule |
+
+### Royal
+
+| Skill | Rule | Text | Selection | Confirmation | Coverage | Verdict |
+|---|---|---|---|---|---|---|
+| Pairs | P3 | Take a pair, unless you can build or take more cards instead. | 0.898 [0.889, 0.906] | 0.899 [0.889, 0.908] | 1.00 | shipped |
+| Sums | none | best S3 0.760 [0.741, 0.779] | | | | no rule |
+| Building | B3 | With nothing to take, build rather than trail, if you can. | 0.882 [0.866, 0.897] | 0.877 [0.861, 0.892] | 0.52 | shipped |
+| Safe builds | SB1 | Build a value that at most one card you cannot see can take. | 0.978 [0.970, 0.984] | 0.977 [0.969, 0.983] | 0.65 | shipped |
+| Answering builds | A2 | Take your opponent's build when it holds three cards or more. | 0.974 [0.910, 0.993] | 0.873 [0.781, 0.930] | 0.18 | not confirmed: no rule |
+| No sweep | none | best N4 0.828 [0.793, 0.858] | | | | no rule |
+| Valuables | V1 | Never trail an ace or Cassino while you have another card to trail. | 0.923 [0.913, 0.932] | 0.918 [0.908, 0.927] | 0.96 | shipped |
+| Trailing | none | best T3 0.719 [0.707, 0.730] | | | | no rule |
+
+Read with care:
+
+- P3 is the loosest rule to ship: it counts a pair, a build, or a capture
+  of more cards than any pair on offer as obeying it. It says to take the
+  pair unless something better is on, and the rung does the same.
+- Royal's answering-builds choice was the winner's curse at work: the
+  selection's best lower bound (A2, 0.910, only 77 firings) fell to 0.781
+  on fresh seeds. A1 (0.899) and A3 (0.904) cleared 0.80 in selection but
+  were not confirmed, since only the chosen rule is; Royal teaches
+  answering builds by no rule until one is.
+- Taking sums, leaving no sweep with sweeps off, and trailing have no
+  rule. The rung leaves a sweepable table about half the time with sweeps
+  off (N1 0.43 Classic, 0.54 Royal), so there is no rule of restraint to
+  state; the best, N4 (do not leave four or more cards for one card to
+  sweep), fires rarely (coverage 0.17 and 0.26).
+- SB1 and B2 share a trigger and differ in the prescription: asked of the
+  rung's builds SB1 holds 0.98, but as a reason to build (B2) it is 0.56.
