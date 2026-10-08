@@ -52,6 +52,24 @@ fn always(_: &View, _: &Move) -> bool {
     true
 }
 
+/// The rule shipped for `skill` in `game`, if one passed
+/// (`measurements/README.md`, "The tutor's rules"; a test pins this to the
+/// table there): pairs P3, building B3, safe builds SB1 and valuables V1 in
+/// both games, answering builds A3 in Classic only. Sums, leaving no sweep
+/// and trailing have none, and are told as a fact instead.
+pub fn taught(skill: Skill, game: crate::rules::Game) -> Option<&'static Rule> {
+    use crate::rules::Game;
+    let id = match (skill, game) {
+        (Skill::Pairs, _) => "P3",
+        (Skill::Building, _) => "B3",
+        (Skill::SafeBuilds, _) => "SB1",
+        (Skill::Valuables, _) => "V1",
+        (Skill::AnsweringBuilds, Game::Classic) => "A3",
+        _ => return None,
+    };
+    CANDIDATES.iter().find(|r| r.id == id)
+}
+
 /// The candidate rules, written before any was measured.
 pub const CANDIDATES: [Rule; 34] = [
     Rule {
@@ -1055,6 +1073,49 @@ impl Measure {
 mod tests {
     use super::*;
     use crate::cards::pack;
+
+    #[test]
+    fn the_taught_rules_are_the_ones_the_readme_ships() {
+        use crate::rules::Game;
+        let readme = include_str!("../../../measurements/README.md");
+        let from = readme.find("## The tutor's rules").expect("the section");
+        let section = &readme[from..];
+        let names = [
+            ("Pairs", Skill::Pairs),
+            ("Sums", Skill::Sums),
+            ("Building", Skill::Building),
+            ("Safe builds", Skill::SafeBuilds),
+            ("Answering builds", Skill::AnsweringBuilds),
+            ("No sweep", Skill::NoSweep),
+            ("Valuables", Skill::Valuables),
+            ("Trailing", Skill::Trailing),
+        ];
+        let mut rows = 0;
+        for (heading, next, game) in [
+            ("### Classic", "### Royal", Game::Classic),
+            ("### Royal", "Read with care", Game::Royal),
+        ] {
+            let at = section.find(heading).expect(heading);
+            let end = at + section[at..].find(next).expect(next);
+            for line in section[at..end].lines() {
+                let cells: Vec<&str> = line.split('|').map(str::trim).collect();
+                let Some((_, skill)) = names.iter().find(|(n, _)| cells.get(1) == Some(n)) else {
+                    continue;
+                };
+                rows += 1;
+                match taught(*skill, game) {
+                    Some(rule) => {
+                        assert_eq!(cells[7], "shipped", "{game:?} {skill:?}");
+                        assert_eq!((cells[2], cells[3]), (rule.id, rule.text), "{game:?}");
+                        assert!(rule.text.split_whitespace().count() <= MAX_WORDS);
+                        assert_eq!(rule.skill, *skill);
+                    }
+                    None => assert_ne!(cells[7], "shipped", "{game:?} {skill:?}"),
+                }
+            }
+        }
+        assert_eq!(rows, 16);
+    }
     use crate::hand::Hand;
     use crate::rules::Rules;
     use crate::table::Table;
