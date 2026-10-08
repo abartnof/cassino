@@ -318,3 +318,33 @@ Read with care:
   sweep), fires rarely (coverage 0.17 and 0.26).
 - SB1 and B2 share a trigger and differ in the prescription: asked of the
   rung's builds SB1 holds 0.98, but as a reason to build (B2) it is 0.56.
+
+### Other settings
+
+The tables above are the game's defaults: sweeps not scored, aces 1, builds
+raised. The shipped rules were then measured under each other setting, one
+at a time, with `rules 200 --confirm --seed 6000000 --only P3,B3,SB1,V1[,A3]
+--rules classic|royal` and `--sweeps`, `--aces14` (Royal) or `--no-raise`:
+200 games on seeds 6,000,000..6,000,200 (fresh: neither the selection nor
+the confirmation seeds), the strongest rung against skill 3. A fixed count,
+descriptive. A rule is told under a setting only if it is confirmed there
+(the clustered lower bound is at least 0.80); otherwise the skill is told as
+a plain fact. Raw output: `rules-<rules>-<setting>.txt`. Date 2026-10-08.
+
+| Setting | P3 Pairs | B3 Building | SB1 Safe builds | V1 Valuables | A3 Answering |
+|---|---|---|---|---|---|
+| Classic, sweeps scored | 0.849 [0.840, 0.857] confirmed | 0.821 [0.796, 0.843] not confirmed | 0.983 [0.973, 0.989] confirmed | 0.922 [0.913, 0.930] confirmed | 0.949 [0.877, 0.980] confirmed |
+| Royal, sweeps scored | 0.852 [0.842, 0.863] confirmed | 0.824 [0.804, 0.842] confirmed | 0.974 [0.965, 0.981] confirmed | 0.921 [0.912, 0.930] confirmed | n/a |
+| Royal, aces count 1 or 14 | 0.914 [0.905, 0.921] confirmed | 0.876 [0.859, 0.890] confirmed | 0.965 [0.956, 0.973] confirmed | 0.959 [0.952, 0.965] confirmed | n/a |
+| Classic, raising off | 0.892 [0.884, 0.900] confirmed | 0.887 [0.864, 0.906] confirmed | 0.994 [0.987, 0.997] confirmed | 0.926 [0.918, 0.934] confirmed | n/a |
+| Royal, raising off | 0.913 [0.905, 0.921] confirmed | 0.917 [0.902, 0.930] confirmed | 0.976 [0.968, 0.982] confirmed | 0.925 [0.916, 0.933] confirmed | n/a |
+
+- Only one rule fails: B3 (build rather than trail) in Classic with sweeps
+  scored, whose lower bound is 0.796. Classic with sweeps scored is told
+  building as the fact instead.
+- A3 is not offered in Royal (no rule ships there) nor with raising off
+  (it asks for a raise); both are told as the fact.
+- Settings were measured one at a time. A combination (for instance Royal
+  with sweeps scored and aces at 14) is told what each of its settings
+  confirms, which is not itself measured.
+- The runs took 4 to 16 minutes each on a loaded machine.

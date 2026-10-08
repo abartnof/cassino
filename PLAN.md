@@ -394,11 +394,20 @@ legal move. RULES.md now says each held card answers for one build value.
     one at a time. The dialog shows the brief's bullets and a folded
     method; the nudge shows once a game on the aid line, "Tips from the
     tutor" is a switch (on), and the settings export, import and clear the
-    progress. The review's advisor pass still duplicates the evidence's
-    (the brief rates the game again for its review); sharing it would
-    halve the work at the review, left for later. The long review
-    (`Review::told`, `cassino_review`) is no longer shown by the page and
-    may go.
+    progress. Review pass: the review and the evidence share one advisor
+    pass over the game, kept in the sitting (`tutor::pass_of`,
+    `Session::evidence`); with the evidence asked first the brief costs
+    nothing more, and a stored record is restored with the explanations off
+    (`Session::restore_quietly`: 1.7 s to 0.04 s for a 96-decision game with
+    explanations on, native release). The long prose review is gone
+    (`Review::told`, `cassino_review`, `engine.review`); `review.rs` keeps the
+    strengths the brief praises, from unassisted decisions only. The
+    shipped rules were confirmed under the other settings (sweeps scored,
+    aces 14, raising off; `measurements/README.md` "Other settings");
+    `lessons::taught` takes the rules, and Classic with sweeps scored is
+    told building as a fact (B3 0.796). A sweep
+    warning is recorded as `warned` (assisted, like a hint); the nudge is
+    once a game even across undo.
 
 ## Working conventions
 

@@ -1,0 +1,13 @@
+Plan: 200 games of the strongest rung (skill 4.0, in the person's seat) against skill 3.0, seeds 6000000..6000200, for each of ["Royal"] (sweeps not scored, aces at 14 on (Royal only), raising on); 4 candidate rules, each held against every decision. Fixed count, descriptive; fresh seeds: this confirms rules chosen in a selection run. A rule ships if its game-clustered precision's 95% lower bound is at least 0.8.
+
+Royal: 200 games, 17328 decisions, 633.5 s (3.17 s a game)
+id   skill               fired   hits    prec clustered 95%  n_eff   cover  prec if acting  verdict
+B3   Building             1793   1570   0.876  0.859-0.890    1695   0.569   1.000 (1.00-1.00) n=1471  confirmed
+SB1  SafeBuilds           1814   1751   0.965  0.956-0.973    1814   0.680   0.965 (0.96-0.97) n=1814  confirmed
+V1   Valuables            4004   3839   0.959  0.952-0.965    4004   0.959   0.959 (0.95-0.96) n=4004  confirmed
+P3   Pairs                4741   4331   0.914  0.905-0.921    4741   1.000   1.000 (1.00-1.00) n=2845  confirmed
+Texts:
+  B3   With nothing to take, build rather than trail, if you can.
+  SB1  Build a value that at most one card you cannot see can take.
+  V1   Never trail an ace or Cassino while you have another card to trail.
+  P3   Take a pair, unless you can build or take more cards instead.

@@ -29,18 +29,17 @@
 use crate::advice::{self, Note};
 use crate::moves::Move;
 use crate::observation::View;
-use crate::rules::Rules;
 use crate::scoring::Breakdown;
 use crate::table::Seat;
-use crate::tutor::valuable;
+use crate::tutor::{self, valuable};
 
 /// One of the person's decisions: what they could see, and what they played.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Turn {
     pub view: View,
     pub mv: Move,
-    /// The person was helped with this decision: a hint was asked for, or
-    /// the tutor's nudge was shown. It is no evidence of what they know
+    /// The person was helped with this decision: a hint was asked for, the
+    /// tutor's nudge was shown, or a warning. It is no evidence of what they know
     /// ([`crate::learner`]).
     pub assisted: bool,
 }
@@ -146,8 +145,6 @@ pub struct Review {
     /// The habits to work on, the costliest first.
     pub tries: Vec<Theme>,
     pub strengths: Vec<Strength>,
-    /// Whether sweeps scored.
-    pub sweeps_score: bool,
 }
 
 pub(crate) fn is_capture(m: &Move) -> bool {
@@ -190,10 +187,20 @@ fn theme_of(view: &View, mine: &Move, best: &Move) -> Theme {
 }
 
 /// The review of a game from the person's decisions and the hands' counts.
-pub fn review(rules: &Rules, turns: &[Turn], history: &[Breakdown]) -> Review {
+pub fn review(turns: &[Turn], history: &[Breakdown]) -> Review {
+    review_with(turns, history, &tutor::pass_of(turns, |_| true))
+}
+
+/// [`review`] from the advisor's values already worked out
+/// ([`tutor::pass_of`] over every decision), which the evidence shares.
+pub fn review_with(turns: &[Turn], history: &[Breakdown], pass: &tutor::Pass) -> Review {
     use std::collections::BTreeMap;
     let mut tallies: BTreeMap<Theme, Tally> = BTreeMap::new();
     let (mut decisions, mut sound, mut loss) = (0u32, 0u32, 0.0f64);
+    // The same, for the decisions made without help: only they are
+    // evidence of what the person knows, so only they make habits and
+    // strengths.
+    let (mut unaided, mut unaided_loss) = (0u32, 0.0f64);
     let (mut last, mut last_loss, mut last_slips) = (0u32, 0.0f64, 0u32);
     // Tables left for one card to clear when the stronger move left none,
     // whatever theme their slip was put down to.
@@ -201,14 +208,13 @@ pub fn review(rules: &Rules, turns: &[Turn], history: &[Breakdown]) -> Review {
     // Turns on which some move would have left such a table, and the
     // person's did not: the danger was there, and seen to.
     let mut avoided = 0u32;
-    for turn in turns {
+    for (turn, values) in turns.iter().zip(pass) {
         let view = &turn.view;
         if view.candidates().len() < 2 {
             continue;
         }
-        let Some(rating) = advice::rate(view, &turn.mv) else {
-            continue;
-        };
+        let Some(values) = values else { continue };
+        let rating = advice::rating_from(values, &turn.mv);
         let lost = (rating.best_value - rating.value).max(0.0);
         let (mine, best) = (&turn.mv, &rating.best);
         decisions += 1;
@@ -217,6 +223,11 @@ pub fn review(rules: &Rules, turns: &[Turn], history: &[Breakdown]) -> Review {
         if !slipped {
             sound += 1;
         }
+        if turn.assisted {
+            continue;
+        }
+        unaided += 1;
+        unaided_loss += lost;
         if leaves_sweep(view, mine) {
             if !leaves_sweep(view, best) {
                 left_to_clear += 1;
@@ -263,9 +274,9 @@ pub fn review(rules: &Rules, turns: &[Turn], history: &[Breakdown]) -> Review {
     }
     // The last deal, against the deals before it: what it cost beyond their
     // rate.
-    let early = decisions - last;
+    let early = unaided - last;
     let early_rate = if early > 0 {
-        (loss - last_loss) / f64::from(early)
+        (unaided_loss - last_loss) / f64::from(early)
     } else {
         0.0
     };
@@ -321,7 +332,7 @@ pub fn review(rules: &Rules, turns: &[Turn], history: &[Breakdown]) -> Review {
     if last >= 6 && last_rate <= 0.1 && early_rate <= 0.3 {
         strengths.push(Strength::LastDeal);
     }
-    if decisions >= FEW && left_to_clear == 0 && avoided >= 3 {
+    if unaided >= FEW && left_to_clear == 0 && avoided >= 3 {
         strengths.push(Strength::Careful { avoided });
     }
     let hands = history.len() as u32;
@@ -374,20 +385,7 @@ pub fn review(rules: &Rules, turns: &[Turn], history: &[Breakdown]) -> Review {
         tallies: tallies.into_iter().collect(),
         tries,
         strengths,
-        sweeps_score: rules.sweeps,
     }
-}
-
-/// The review in words.
-#[derive(Clone, Debug, PartialEq)]
-pub struct Told {
-    pub summary: String,
-    pub strengths: Vec<String>,
-    /// Each habit to work on: a heading and a few sentences.
-    pub tries: Vec<(String, String)>,
-    pub closing: String,
-    /// How it was worked out.
-    pub method: String,
 }
 
 pub(crate) fn times(n: u32) -> String {
@@ -416,150 +414,6 @@ impl Review {
             .map(|x| x.1)
             .unwrap_or_default()
     }
-
-    /// In words. `aided`: hints or explanations were on at the game's end
-    /// (if not, the closing mentions them).
-    pub fn told(&self, aided: bool) -> Told {
-        let summary = if self.decisions == 0 {
-            "This game gave you no real choices to make, so there is nothing to review yet.".into()
-        } else {
-            let mean = self.loss / f64::from(self.decisions);
-            let verdict = if self.decisions < FEW {
-                "It was a short game, so there is not much to go on yet."
-            } else if mean <= 0.07 {
-                "That is very strong play."
-            } else if mean <= 0.15 {
-                "That is strong, careful play."
-            } else if mean <= 0.3 {
-                "That is solid play, with a habit or two worth a look."
-            } else {
-                "Cassino rewards a handful of habits, and the ones below are the quickest to pick up."
-            };
-            format!(
-                "You made {} choices this game, and in {} of them you played as well as the strongest computer player would have in your place. {verdict}",
-                self.decisions, self.sound
-            )
-        };
-        let strengths = self
-            .strengths
-            .iter()
-            .map(|s| self.strength_text(*s))
-            .collect();
-        let tries = self.tries.iter().map(|t| self.try_text(*t)).collect();
-        let closing = match (self.tries.is_empty(), aided) {
-            (false, false) => "If you would like help while you play, Explanations comment on each move as it happens, and Hints show the strongest move whenever you ask.",
-            (false, true) => "Habits like these come quickly with a few more games.",
-            (true, _) if self.decisions >= FEW => "Nothing stood out to work on. Keep playing the way you did.",
-            (true, _) => "A game or two more, and there will be more to say.",
-        }
-        .to_string();
-        Told {
-            summary,
-            strengths,
-            tries,
-            closing,
-            method: "Each of your moves was compared afterwards with what the strongest computer player would have done in your place, knowing only what you knew. Before the last deal of a hand that is an estimate; in the last deal, when every card can be counted, it is exact. Only habits that showed more than once are mentioned.".into(),
-        }
-    }
-
-    fn strength_text(&self, s: Strength) -> String {
-        match s {
-            Strength::Taking { found, chances } if found == chances => format!(
-                "You never let a capture go by: you took something every one of the {chances} times taking was the strongest play."
-            ),
-            Strength::Taking { found, chances } => format!(
-                "You rarely let a capture go by: when taking was the strongest play, you took something {found} times out of {chances}."
-            ),
-            Strength::Building { found, chances } => format!(
-                "You found your builds: of the {chances} times building was the strongest play, you built {found}."
-            ),
-            Strength::LastDeal => "You played the last deals cleanly, which is where counting the cards pays off.".into(),
-            Strength::Careful { avoided } => format!(
-                "You were careful about what you left on the table: {} a move was there that would have left a table one card could clear, and you steered clear of it every time a safer one was there.",
-                times(avoided).to_lowercase()
-            ),
-            Strength::Cards { won, hands } => format!(
-                "You took the most cards in {won} of {hands} hands, the biggest prize in the count."
-            ),
-            Strength::Spades { won, hands } => {
-                format!("You won the spades in {won} of {hands} hands.")
-            }
-            Strength::Cassinos { taken, of } => {
-                format!("You took {taken} of the {of} Cassinos dealt.")
-            }
-            Strength::Aces { taken, of } => format!("You took {taken} of the {of} aces dealt."),
-        }
-    }
-
-    fn try_text(&self, theme: Theme) -> (String, String) {
-        let x = self.tally(theme);
-        let found = x.matched;
-        match theme {
-            Theme::Taking => (
-                "Taking what the table offers".into(),
-                format!(
-                    "{} Cards left lying are there for your opponent too, and a capture banks them now. Before you trail, it is worth a slow look at each card in your hand: does it match a card on the table, or add up with two or three of them?",
-                    if found == 0 {
-                        format!("A capture was the strongest play {} times this game, and each time you trailed or built instead.", x.chances)
-                    } else {
-                        format!("When a capture was the strongest play, you took something {found} times out of {}.", x.chances)
-                    }
-                ),
-            ),
-            Theme::Building => (
-                "Building for a bigger capture".into(),
-                format!(
-                    "Building was the strongest play {} times this game, and you built in {}. A build gathers cards for a card you hold, so that next turn you take them all at once. Look for a card in your hand that, with cards on the table, adds up to another card you hold.",
-                    x.chances,
-                    if found == 0 { "none of them".to_string() } else { format!("{found} of them") }
-                ),
-            ),
-            Theme::Builds => (
-                "Choosing your builds".into(),
-                format!(
-                    "{} a build of yours cost more than another move would have. A build waits on the table for a turn or more, and your opponent may take it with a card of its value, or raise it into their own. Builds are safest when you hold two cards that take them, or when most of those cards have already been played.",
-                    times(x.slips)
-                ),
-            ),
-            Theme::Captures => (
-                "Choosing what to take".into(),
-                format!(
-                    "{} another capture, or holding the card back, would have done better than the capture you made. One card can take a match and a sum together, or several sums at once, and an ace or a Cassino in reach is worth the extra look. Now and then a card is worth more kept for a bigger capture next turn.",
-                    times(x.slips)
-                ),
-            ),
-            Theme::Sweeps => (
-                "What you leave on the table".into(),
-                format!(
-                    "{} your move left a table that one card could clear, when a safer move was there. {}Before you let a card go, add up what will be left: if it all comes to one value, a single card takes it.",
-                    times(x.slips),
-                    if self.sweeps_score {
-                        "A sweep scores a point, and it gives your opponent every card on the table. "
-                    } else {
-                        "Clearing the table gives your opponent every card on it. "
-                    }
-                ),
-            ),
-            Theme::Valuables => (
-                "Keeping the aces and Cassinos".into(),
-                format!(
-                    "{} you trailed an ace or a Cassino when another card could have gone. Each is worth a point (Big Cassino two), and whoever takes the table next takes it too. When a card has to go, a plain one is usually the cheaper gift.",
-                    times(x.slips)
-                ),
-            ),
-            Theme::Trailing => (
-                "Which card to trail".into(),
-                format!(
-                    "When trailing was right, you let go of the best card, or one as good, {found} times out of {}. The card you trail is an offer to your opponent: a low card that adds up with nothing on the table, or one whose matches have mostly been played, is the safest. A card that pairs or sums with what is there invites a capture.",
-                    x.chances
-                ),
-            ),
-            Theme::LastDeal => (
-                "The last deal".into(),
-                "Your moves in the last deal of each hand gave up more than the ones before. By then the pack is empty, so every card you have not seen is in your opponent's hand: counting what has gone tells you what they hold. And whoever makes the last capture takes what is left on the table, so a capturing card saved for the end can pay.".into(),
-            ),
-        }
-    }
 }
 
 #[cfg(test)]
@@ -567,6 +421,7 @@ mod tests {
     use super::*;
     use crate::agents::Agent;
     use crate::opponent::Skill;
+    use crate::rules::Rules;
     use crate::session::{Prompt, Session, Settings};
 
     /// A game with the person's seat played at `skill`, against the counter.
@@ -604,17 +459,52 @@ mod tests {
             for r in &rs {
                 assert_eq!(r.tally(Theme::Builds).chances, 0, "greedy never builds");
                 assert_eq!(r.tally(Theme::Building).matched, 0);
-                if r.tries.contains(&Theme::Building) {
-                    let told = r.told(true);
-                    let (_, text) = told
-                        .tries
-                        .iter()
-                        .find(|t| t.0.starts_with("Building"))
-                        .unwrap();
-                    assert!(text.contains("you built in none of them"), "{text}");
-                }
             }
         }
+    }
+
+    /// `played`, with a hint asked for at every decision.
+    fn played_with_hints(rules: Rules, skill: f64, seed: u64) -> Session {
+        let mut s = Session::new(seed, Settings { rules, skill: 3.0 });
+        let mut me = Skill(skill).opponent(seed ^ 0x5eed);
+        for _ in 0..2_000 {
+            match s.prompt() {
+                Prompt::Play => {
+                    assert!(s.send("hint"));
+                    let mv = me.choose(&s.view());
+                    assert!(s.send(&mv.to_string()));
+                }
+                Prompt::NextHand => assert!(s.send("next")),
+                Prompt::Over => return s,
+            }
+        }
+        panic!("the game did not end")
+    }
+
+    #[test]
+    fn nothing_is_praised_that_a_hint_gave() {
+        let skill_praise = |r: &Review| {
+            r.strengths.iter().any(|s| {
+                matches!(
+                    s,
+                    Strength::Taking { .. }
+                        | Strength::Building { .. }
+                        | Strength::LastDeal
+                        | Strength::Careful { .. }
+                )
+            })
+        };
+        let mut unaided = 0;
+        for seed in 0..4 {
+            let r = played(Rules::CLASSIC, 4.0, seed).review().unwrap();
+            unaided += usize::from(skill_praise(&r));
+            let s = played_with_hints(Rules::CLASSIC, 4.0, seed);
+            assert!(s.turns().iter().all(|t| t.assisted));
+            let r = s.review().unwrap();
+            assert!(!skill_praise(&r), "seed {seed}: {:?}", r.strengths);
+            assert!(r.tries.is_empty(), "nor blamed for it: {:?}", r.tries);
+        }
+        assert!(unaided >= 2, "the strongest play earns praise: {unaided}");
     }
 
     #[test]
@@ -711,33 +601,9 @@ mod tests {
         }
     }
 
-    #[test]
-    fn no_capture_at_all_is_said_plainly() {
-        let r = Review {
-            decisions: 20,
-            sound: 5,
-            loss: 12.0,
-            tallies: vec![(
-                Theme::Taking,
-                Tally {
-                    chances: 9,
-                    matched: 0,
-                    slips: 9,
-                    loss: 12.0,
-                },
-            )],
-            tries: vec![Theme::Taking],
-            strengths: vec![],
-            sweeps_score: false,
-        };
-        let (_, text) = &r.told(true).tries[0];
-        assert!(text.starts_with("A capture was the strongest play 9 times this game, and each time you trailed or built instead."), "{text}");
-    }
-
     /// Every review holds together, whatever the rules and whoever plays:
-    /// its counts agree, each habit told clears the bar, nothing praised is
-    /// also to work on, the words carry no slip of their own, and the same
-    /// game, restored, is reviewed alike.
+    /// its counts agree, each habit clears the bar, nothing praised is also
+    /// to work on, and the same game, restored, is reviewed alike.
     #[test]
     fn every_review_holds_together() {
         let variants = [
@@ -778,7 +644,6 @@ mod tests {
                     r.sound <= r.decisions && r.loss >= 0.0 && r.loss.is_finite(),
                     "{label}"
                 );
-                assert_eq!(r.sweeps_score, rules.sweeps);
                 for (t, x) in &r.tallies {
                     assert!(x.matched <= x.chances, "{label}: {t:?} {x:?}");
                     assert!(x.loss >= 0.0 && x.loss.is_finite(), "{label}: {t:?} {x:?}");
@@ -813,41 +678,6 @@ mod tests {
                         "{label}: {st:?} and {:?}",
                         r.tries
                     );
-                }
-                for aided in [false, true] {
-                    let t = r.told(aided);
-                    assert_eq!(t.strengths.len(), r.strengths.len());
-                    assert_eq!(t.tries.len(), r.tries.len());
-                    let mut all = vec![t.summary.clone(), t.closing.clone(), t.method.clone()];
-                    all.extend(t.strengths.clone());
-                    all.extend(t.tries.iter().flat_map(|(h, b)| [h.clone(), b.clone()]));
-                    for text in &all {
-                        assert!(
-                            !text.is_empty() && !text.contains("  "),
-                            "{label}: {text:?}"
-                        );
-                        for bad in [
-                            "{", "}", "NaN", "inf", " 0 times", " 1 times", "of 0", "..", " ,",
-                            "Some(", "None",
-                        ] {
-                            assert!(!text.contains(bad), "{label}: {bad:?} in {text}");
-                        }
-                        assert!(!text.contains(['♠', '♥', '♦', '♣']), "{label}: {text}");
-                        // Gentle: no marking, no orders.
-                        let lower = text.to_lowercase();
-                        for harsh in [
-                            "mistake", "blunder", "wrong", "bad", "poor", "error", "should", "must",
-                        ] {
-                            assert!(!lower.contains(harsh), "{label}: {harsh:?} in {text}");
-                        }
-                        assert!(
-                            text.ends_with(['.', '?']) || text.len() < 50,
-                            "{label}: {text}"
-                        );
-                    }
-                    if !rules.sweeps {
-                        assert!(!all.iter().any(|x| x.contains("A sweep scores")), "{label}");
-                    }
                 }
                 // The same game, restored, reviewed alike: the review is a
                 // pure function of the record.
@@ -893,14 +723,7 @@ mod tests {
 
     #[test]
     fn nothing_to_go_on_says_so() {
-        let r = review(&Rules::CLASSIC, &[], &[]);
+        let r = review(&[], &[]);
         assert_eq!((r.decisions, r.tries.len(), r.strengths.len()), (0, 0, 0));
-        let told = r.told(false);
-        assert!(told.summary.contains("nothing to review"));
-        assert!(
-            !told.closing.contains("habit"),
-            "no habits were told: {}",
-            told.closing
-        );
     }
 }

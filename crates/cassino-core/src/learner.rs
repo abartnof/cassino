@@ -260,12 +260,24 @@ fn index(skill: Skill) -> usize {
 /// The clear chances of the decisions the person made without help and with
 /// a choice (two moves or more), and whether they met each.
 pub fn chances_of(turns: &[Turn]) -> Vec<Chance> {
+    chances_with_pass(turns, &tutor::pass_of(turns, |t| !t.assisted))
+}
+
+/// [`chances_of`] from the advisor's values already worked out
+/// ([`tutor::pass_of`], over at least the unassisted decisions).
+pub fn chances_with_pass(turns: &[Turn], pass: &tutor::Pass) -> Vec<Chance> {
     let mut out = Vec::new();
-    for t in turns {
+    for (t, values) in turns.iter().zip(pass) {
         if t.assisted || t.view.candidates().len() < 2 {
             continue;
         }
-        out.extend(tutor::chances(&t.view, &t.mv, tutor::margin(&t.view)));
+        let Some(values) = values else { continue };
+        out.extend(tutor::chances_with(
+            &t.view,
+            &t.mv,
+            tutor::margin(&t.view),
+            values,
+        ));
     }
     out
 }
@@ -273,6 +285,11 @@ pub fn chances_of(turns: &[Turn]) -> Vec<Chance> {
 /// A game's evidence ([`chances_of`], summed up).
 pub fn evidence(turns: &[Turn]) -> Summary {
     Summary::from_chances(&chances_of(turns))
+}
+
+/// [`evidence`] from the advisor's values already worked out.
+pub fn evidence_with(turns: &[Turn], pass: &tutor::Pass) -> Summary {
+    Summary::from_chances(&chances_with_pass(turns, pass))
 }
 
 /// What the games say of one skill.

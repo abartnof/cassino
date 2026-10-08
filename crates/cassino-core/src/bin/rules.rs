@@ -12,11 +12,12 @@
 //! measures only those rules and prints "confirmed" or "not confirmed".
 //!
 //! ```text
-//! rules [GAMES] [--rules classic|royal] [--sweeps] [--seed S] [--confirm] [--only ID,ID]
+//! rules [GAMES] [--rules classic|royal] [--sweeps] [--aces14] [--no-raise] [--seed S] [--confirm] [--only ID,ID]
 //! ```
 //!
 //! The game's default rules: sweeps not scored (`--sweeps` scores them),
-//! "Aces count 1 or 14" off, builds raised. A fixed count, descriptive and
+//! "Aces count 1 or 14" off (`--aces14` turns it on; Royal only), builds
+//! raised (`--no-raise` turns raising off). A fixed count, descriptive and
 //! not sequential (`docs/DESIGN.md` §11.4). Games are seeded `S .. S +
 //! GAMES`; selection starts at [`SELECT_SEED`] and `--confirm` at
 //! [`CONFIRM_SEED`], which no selection run reaches, unless `--seed` says
@@ -38,10 +39,12 @@ const CONFIRM_SEED: u64 = 5_000_000;
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let usage =
-        "rules [GAMES] [--rules classic|royal] [--sweeps] [--seed S] [--confirm] [--only ID,ID]";
+        "rules [GAMES] [--rules classic|royal] [--sweeps] [--aces14] [--no-raise] [--seed S] [--confirm] [--only ID,ID]";
     let mut games: u64 = 20;
     let mut which = vec![("Classic", Rules::CLASSIC), ("Royal", Rules::ROYAL)];
     let mut sweeps = false;
+    let mut aces14 = false;
+    let mut raising = true;
     let mut only: Option<Vec<String>> = None;
     let mut seed: Option<u64> = None;
     let mut confirm = false;
@@ -66,6 +69,8 @@ fn main() {
             }
             "--confirm" => confirm = true,
             "--sweeps" => sweeps = true,
+            "--aces14" => aces14 = true,
+            "--no-raise" => raising = false,
             "--only" => {
                 i += 1;
                 only = Some(
@@ -98,13 +103,15 @@ fn main() {
     let first = seed.unwrap_or(if confirm { CONFIRM_SEED } else { SELECT_SEED });
     println!(
         "Plan: {} games of the strongest rung (skill 4.0, in the person's seat) against skill 3.0, \
-         seeds {first}..{}, for each of {:?} (sweeps {}); {} candidate rules, each held against every \
+         seeds {first}..{}, for each of {:?} (sweeps {}, aces at 14 {}, raising {}); {} candidate rules, each held against every \
          decision. Fixed count, descriptive; {}. A rule ships if its game-clustered precision's 95% \
          lower bound is at least {SHIP_BOUND}.",
         games,
         first + games,
         which.iter().map(|w| w.0).collect::<Vec<_>>(),
         if sweeps { "scored" } else { "not scored" },
+        if aces14 { "on (Royal only)" } else { "off" },
+        if raising { "on" } else { "off" },
         candidates.len(),
         if confirm {
             "fresh seeds: this confirms rules chosen in a selection run"
@@ -114,6 +121,8 @@ fn main() {
     );
     for (name, mut rules) in which {
         rules.sweeps = sweeps;
+        rules.aces_fourteen = aces14 && rules.game == cassino_core::rules::Game::Royal;
+        rules.raising = raising;
         let started = Instant::now();
         let mut measures = vec![Measure::default(); candidates.len()];
         let mut decisions = 0u64;

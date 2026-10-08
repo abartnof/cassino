@@ -20,7 +20,10 @@
 //!   at which help was shown stays helped across `undo` (the session
 //!   remembers it, and records the `hint` again on reaching it);
 //! - `nudged <skill>`: the client showed the tutor's nudge at this decision
-//!   (the skill's slug); recorded, and the decision marked assisted.
+//!   (the skill's slug); recorded, and the decision marked assisted;
+//! - `warned`: the client showed a warning about the move (the sweep
+//!   warning); handled like `hint`: recorded once a decision, and the
+//!   decision is assisted.
 
 use crate::advice::{self, Quality};
 use crate::agents::Agent;
@@ -310,7 +313,8 @@ pub struct Session {
     /// The person's decisions, for the review at the game's end.
     turns: Vec<Turn>,
     /// The person has been helped with the decision now pending: a hint
-    /// asked for or a nudge shown (the recorded `hint` and `nudged`).
+    /// asked for, a nudge or a warning shown (the recorded `hint`,
+    /// `nudged` and `warned`).
     assisted: bool,
     /// The skill the tutor is working on with this person, if the client
     /// has said (`set_focus`). Not part of the record.
@@ -322,6 +326,13 @@ pub struct Session {
     /// nudge was shown. Kept across undo, so that a hint seen, taken back
     /// and then reached again by the same moves still counts as help.
     helped_at: HashSet<u64>,
+    /// A nudge has been shown this game. Kept across undo, like
+    /// `helped_at`: taking the nudge back does not earn a second one.
+    nudged: bool,
+    /// The advisor's values over the person's decisions, once worked out for
+    /// the game's end (the evidence and the review share it). Dropped when a
+    /// decision is taken back or made.
+    pass: RefCell<Option<tutor::Pass>>,
 }
 
 /// A nudge query's key (position hash, focus) and its answer.
@@ -379,6 +390,8 @@ impl Session {
             focus: None,
             nudge_cache: RefCell::new(None),
             helped_at: HashSet::new(),
+            nudged: false,
+            pass: RefCell::new(None),
         };
         let cuts = session.game.cuts().to_vec();
         for (i, cut) in cuts.iter().enumerate() {
@@ -517,6 +530,20 @@ impl Session {
     /// marked as forced was not the only one. The aids are on while it
     /// replays (so the notes come back), forced moves aside.
     pub fn restore(saved: &Saved) -> Result<Session, String> {
+        Session::restore_with(saved, true)
+    }
+
+    /// [`Session::restore`] with the explanations left off while the record
+    /// is replayed, which are not needed to get the decisions back
+    /// ([`Session::turns`], the record, the score): each would cost an
+    /// advisor run. The aids are the saved ones in the end, but the table's
+    /// notes carry no verdicts. For work that reads the game, not shows it
+    /// (the evidence of a stored game).
+    pub fn restore_quietly(saved: &Saved) -> Result<Session, String> {
+        Session::restore_with(saved, false)
+    }
+
+    fn restore_with(saved: &Saved, explain: bool) -> Result<Session, String> {
         if saved.version != RECORD_VERSION {
             return Err(format!(
                 "the record was made by version {} of the engine's play, and this is version {RECORD_VERSION}",
@@ -526,6 +553,7 @@ impl Session {
         let mut session = Session::new(saved.seed, saved.settings);
         session.aids = Aids {
             play_forced: false,
+            explain: saved.aids.explain && explain,
             ..saved.aids
         };
         for entry in &saved.record {
@@ -609,31 +637,35 @@ impl Session {
             self.items = snap.items;
             self.next_id = snap.next_id;
             self.turns.truncate(snap.turns);
+            *self.pass.borrow_mut() = None;
             self.assisted = snap.assisted;
             return Ok(());
         }
-        if command == "hint" || command.starts_with("nudged") {
+        if command == "hint" || command == "warned" || command.starts_with("nudged") {
             if self.prompt() != Prompt::Play {
                 return refuse("not_your_turn", "There is no decision to be helped with.");
             }
-            if command != "hint" {
+            if command.starts_with("nudged") {
                 let slug = command.strip_prefix("nudged ").map(str::trim);
                 if !slug.is_some_and(|s| tutor::Skill::from_slug(s).is_some()) {
                     return refuse("bad_nudge", "nudged <skill>");
                 }
             }
             self.helped_at.insert(advice::advisor_seed(&self.view()));
+            if command.starts_with("nudged") {
+                self.nudged = true;
+            }
             // Once a decision: asking again records nothing more.
             let already = self
                 .record
                 .iter()
                 .rev()
-                .take_while(|l| *l == "hint" || l.starts_with("nudged"))
+                .take_while(|l| *l == "hint" || *l == "warned" || l.starts_with("nudged"))
                 .any(|l| {
-                    if command == "hint" {
-                        l == "hint"
-                    } else {
+                    if command.starts_with("nudged") {
                         l.starts_with("nudged")
+                    } else {
+                        l == command
                     }
                 });
             if !already {
@@ -747,6 +779,7 @@ impl Session {
         let before = *self.game.hand().table();
         let observer = self.view();
         if seat == Seat::South && !self.watching() {
+            *self.pass.borrow_mut() = None;
             self.turns.push(Turn {
                 view: observer,
                 mv,
@@ -1113,11 +1146,7 @@ impl Session {
     /// decision does not count towards the person's evidence.
     pub fn nudge(&self) -> Option<tutor::Skill> {
         let focus = self.focus?;
-        if self.watching()
-            || self.prompt() != Prompt::Play
-            || self.assisted
-            || self.record.iter().any(|l| l.starts_with("nudged"))
-        {
+        if self.watching() || self.prompt() != Prompt::Play || self.assisted || self.nudged {
             return None;
         }
         let view = self.view();
@@ -1143,11 +1172,26 @@ impl Session {
         if self.prompt() != Prompt::Over || self.watching() {
             return None;
         }
-        Some(review::review(
-            &self.settings.rules,
-            &self.turns,
-            self.game.history(),
-        ))
+        Some(self.with_pass(|pass| review::review_with(&self.turns, self.game.history(), pass)))
+    }
+
+    /// This game's evidence summary ([`learner::evidence`] of
+    /// [`Session::turns`]), once the game is over; `None` before and in a
+    /// watched game. Shares the advisor pass with the review.
+    pub fn evidence(&self) -> Option<learner::Summary> {
+        if self.prompt() != Prompt::Over || self.watching() {
+            return None;
+        }
+        Some(self.with_pass(|pass| learner::evidence_with(&self.turns, pass)))
+    }
+
+    /// `f` over the advisor's values at every decision: worked out once for
+    /// the game as it stands, whichever of the review and the evidence asks
+    /// first.
+    fn with_pass<T>(&self, f: impl FnOnce(&tutor::Pass) -> T) -> T {
+        let mut cached = self.pass.borrow_mut();
+        let pass = cached.get_or_insert_with(|| tutor::pass_of(&self.turns, |_| true));
+        f(pass)
     }
 
     /// The review in three bullets (`brief.rs`), once the game is over;
@@ -1157,7 +1201,7 @@ impl Session {
     /// alone). Runs the advisor over the game ([`learner::evidence`]), so
     /// call it once.
     pub fn brief(&self, history: &[learner::Summary]) -> Option<brief::Brief> {
-        self.brief_with(&learner::evidence(&self.turns), history)
+        self.brief_with(&self.evidence()?, history)
     }
 
     /// [`Session::brief`] with this game's summary already in hand
@@ -1623,6 +1667,144 @@ mod tests {
         }
         assert!(s.send("hint"));
         assert_eq!(s.nudge(), None);
+    }
+
+    #[test]
+    fn a_quiet_restore_gives_back_the_same_decisions() {
+        let mut s = Session::new(4, settings());
+        assert!(s.send("set explain on"));
+        for i in 0..24 {
+            match s.prompt() {
+                Prompt::Play => {
+                    if i % 5 == 0 {
+                        assert!(s.send("hint"));
+                    }
+                    let moves = s.candidates();
+                    assert!(s.send(&moves[i % moves.len()].to_string()));
+                }
+                Prompt::NextHand => assert!(s.send("next")),
+                Prompt::Over => break,
+            }
+        }
+        let full = Session::restore(&s.saved()).unwrap();
+        let quiet = Session::restore_quietly(&s.saved()).unwrap();
+        assert_eq!(quiet.record(), full.record());
+        assert_eq!(quiet.turns(), full.turns());
+        assert_eq!(quiet.aids(), full.aids());
+        assert!(
+            quiet.events().len() < full.events().len(),
+            "no verdicts told: {} against {}",
+            quiet.events().len(),
+            full.events().len()
+        );
+    }
+
+    #[test]
+    fn the_evidence_and_the_review_share_one_pass_over_the_game() {
+        let mut s = Session::new(2, settings());
+        for _ in 0..2_000 {
+            match s.prompt() {
+                Prompt::Play => assert!(s.send(&s.candidates()[0].to_string())),
+                Prompt::NextHand => assert!(s.send("next")),
+                Prompt::Over => break,
+            }
+        }
+        assert_eq!(s.prompt(), Prompt::Over);
+        assert_eq!(s.evidence(), Some(learner::evidence(s.turns())));
+        // The brief agrees with one made from the same summary, and the
+        // review with one worked out alone.
+        let alone = review::review(s.turns(), s.game.history());
+        assert_eq!(s.review(), Some(alone));
+        let game = s.evidence().unwrap();
+        assert_eq!(s.brief(&[]), s.brief_with(&game, &[]));
+        // Taking the last decision back and playing another is another
+        // game's end: nothing stale is kept.
+        if s.send("undo") {
+            let moves = s.candidates();
+            let other = moves[moves.len() - 1];
+            if s.send(&other.to_string()) && s.prompt() == Prompt::Over {
+                assert_eq!(s.evidence(), Some(learner::evidence(s.turns())));
+                let alone = review::review(s.turns(), s.game.history());
+                assert_eq!(s.review(), Some(alone));
+            }
+        }
+    }
+
+    #[test]
+    fn a_warning_is_recorded_once_marks_the_decision_assisted_and_survives_undo() {
+        let mut s = Session::new(6, settings());
+        assert!(s.send("warned"));
+        assert!(s.send("warned"), "not an error");
+        assert_eq!(s.record(), ["warned"]);
+        let mv = s.candidates()[0];
+        assert!(s.send(&mv.to_string()));
+        assert!(s.turns()[0].assisted);
+        // Replays, assisted as before.
+        let again = Session::restore(&s.saved()).unwrap();
+        assert_eq!(again.record(), s.record());
+        assert!(again.turns()[0].assisted);
+        // Only on the person's turn.
+        let mut watched = Session::watch(1, Rules::CLASSIC, [1.0, 1.0]);
+        assert!(!watched.send("warned"));
+        // A warning seen at a later position, taken back and reached again.
+        let mut s = Session::new(6, settings());
+        let first = s.candidates()[0];
+        assert!(s.send(&first.to_string()));
+        assert!(s.send("warned"));
+        assert!(s.send("undo"));
+        assert!(s.record().is_empty());
+        assert!(s.send(&first.to_string()));
+        let mv = s.candidates()[0];
+        assert!(s.send(&mv.to_string()));
+        assert!(s.turns()[1].assisted);
+        assert!(!s.turns()[0].assisted);
+        let again = Session::restore(&s.saved()).unwrap();
+        assert!(again.turns()[1].assisted);
+    }
+
+    #[test]
+    fn the_nudge_is_once_a_game_even_after_undo() {
+        let mut probed = 0;
+        for seed in 1..8 {
+            let mut s = Session::new(seed, settings());
+            s.set_focus(Some(tutor::Skill::Pairs));
+            let (mut nudged, mut other) = (0, false);
+            for _ in 0..120 {
+                match s.prompt() {
+                    Prompt::Play => {
+                        if let Some(skill) = s.nudge() {
+                            assert!(s.send(&format!("nudged {}", skill.slug())));
+                            nudged += 1;
+                            if nudged == 1 {
+                                let mv = s.candidates()[0];
+                                assert!(s.send(&mv.to_string()));
+                                // Take it back, past the nudge, and play on
+                                // differently.
+                                while s.record().iter().any(|l| l.starts_with("nudged")) {
+                                    if !s.send("undo") {
+                                        break;
+                                    }
+                                }
+                                other = !s.record().iter().any(|l| l.starts_with("nudged"));
+                                continue;
+                            }
+                        }
+                        let moves = s.candidates();
+                        let mv = if other {
+                            moves[moves.len() - 1]
+                        } else {
+                            moves[0]
+                        };
+                        assert!(s.send(&mv.to_string()));
+                    }
+                    Prompt::NextHand => assert!(s.send("next")),
+                    Prompt::Over => break,
+                }
+            }
+            assert!(nudged <= 1, "seed {seed}: once a game, undo or not");
+            probed += u32::from(other);
+        }
+        assert!(probed > 0, "some game took the nudge back");
     }
 
     #[test]

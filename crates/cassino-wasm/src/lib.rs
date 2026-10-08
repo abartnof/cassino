@@ -665,31 +665,6 @@ pub fn hint(session: &mut Session) -> String {
     ])
 }
 
-/// The review of the person's game, in words, once it is over (`null`
-/// before, and in a watched game): `{summary, strengths, tries: [{title,
-/// text}], closing, method}`.
-pub fn review(session: &Session) -> String {
-    let Some(r) = session.review() else {
-        return "null".into();
-    };
-    let aids = session.aids();
-    let told = r.told(aids.hints || aids.explain);
-    object(&[
-        ("summary", text(&told.summary)),
-        ("strengths", list(told.strengths.iter().map(|s| text(s)))),
-        (
-            "tries",
-            list(
-                told.tries
-                    .iter()
-                    .map(|(title, body)| object(&[("title", text(title)), ("text", text(body))])),
-            ),
-        ),
-        ("closing", text(&told.closing)),
-        ("method", text(&told.method)),
-    ])
-}
-
 // ---------------------------------------------------------------------------
 // The tutor: evidence, the brief, the learner, the nudge (`docs/PROTOCOL.md`).
 // ---------------------------------------------------------------------------
@@ -720,20 +695,20 @@ pub fn summaries(text: &str) -> Vec<Option<Summary>> {
 /// over; `null` before and in a watched game. Runs the advisor over the
 /// game (about 0.8 s natively): the client calls it off the game-end path.
 pub fn evidence(session: &Session) -> String {
-    if session.prompt() != Prompt::Over || session.watching() {
-        return "null".into();
+    match session.evidence() {
+        Some(summary) => object(&[("summary", text(&summary.to_text()))]),
+        None => "null".into(),
     }
-    object(&[(
-        "summary",
-        text(&learner::evidence(session.turns()).to_text()),
-    )])
 }
 
 /// The summary of a stored record (a saved text of a finished game), as
 /// [`evidence`] gives it: `{"summary": text}`, or `{"error": …}` when the
 /// text does not restore or the game was not over.
 pub fn evidence_of(record: &str) -> String {
-    match restore(record) {
+    // Explanations off: they cost an advisor run a move and the evidence has no use for them.
+    match cassino_core::session::Saved::parse(record)
+        .and_then(|saved| Session::restore_quietly(&saved))
+    {
         Ok(session) if session.prompt() == Prompt::Over && !session.watching() => {
             evidence(&session)
         }
@@ -782,7 +757,11 @@ pub fn brief_of(session: &Session, input: &str) -> String {
         None if input.trim() == SUMMARY_SEPARATOR => ("", ""),
         None => (input, ""),
     };
-    let game = Summary::parse(game).unwrap_or_else(|_| learner::evidence(session.turns()));
+    // Without the game's summary it is worked out here, sharing the
+    // advisor pass with the review.
+    let Some(game) = Summary::parse(game).ok().or_else(|| session.evidence()) else {
+        return "null".into();
+    };
     let history: Vec<Summary> = summaries(history).into_iter().flatten().collect();
     let Some(brief) = session.brief_with(&game, &history) else {
         return "null".into();
@@ -875,7 +854,7 @@ pub fn scripted(game: u32, aces_fourteen: u32, sweeps: u32, skill_milli: u32, se
 
 pub mod ffi {
     use super::{
-        brief_of, evidence, evidence_of, hint, learner_of, nudge, offer, reveal, review, set_focus,
+        brief_of, evidence, evidence_of, hint, learner_of, nudge, offer, reveal, set_focus,
         sit_down, state, watch, Session,
     };
     use std::cell::RefCell;
@@ -996,18 +975,6 @@ pub mod ffi {
             s.borrow_mut()
                 .as_mut()
                 .map_or_else(|| "null".to_string(), hint)
-        });
-        OUT.with(|out| *out.borrow_mut() = json.into_bytes());
-    }
-
-    /// Renders the review of the person's game, once it is over (`null`
-    /// before).
-    #[no_mangle]
-    pub extern "C" fn cassino_review() {
-        let json = SESSION.with(|s| {
-            s.borrow()
-                .as_ref()
-                .map_or_else(|| "null".to_string(), review)
         });
         OUT.with(|out| *out.borrow_mut() = json.into_bytes());
     }
@@ -1494,44 +1461,6 @@ mod tests {
         assert!(v["notes"].as_array().is_some());
         // Showing it is recorded, so that the decision is not evidence.
         assert_eq!(s.record().last().map(String::as_str), Some("hint"));
-    }
-
-    #[test]
-    fn a_review_once_the_game_is_over_in_words() {
-        let mut s = sit_down(1, 1, 0, 1, 3000, 12);
-        assert_eq!(review(&s), "null", "not while it is played");
-        for _ in 0..2_000 {
-            match s.prompt() {
-                Prompt::Play => {
-                    let m = s.candidates()[0];
-                    assert!(s.send(&m.to_string()));
-                }
-                Prompt::NextHand => assert!(s.send("next")),
-                Prompt::Over => break,
-            }
-        }
-        let v = parse(&review(&s));
-        assert!(v["summary"].as_str().unwrap().starts_with("You made "));
-        assert!(v["strengths"].as_array().unwrap().len() <= 2);
-        let tries = v["tries"].as_array().unwrap();
-        assert!(
-            !tries.is_empty() && tries.len() <= 2,
-            "always the first candidate: something to work on"
-        );
-        for t in tries {
-            assert!(t["title"].as_str().unwrap().len() > 3);
-            assert!(t["text"].as_str().unwrap().len() > 20);
-        }
-        assert!(
-            v["closing"].as_str().unwrap().contains("Hints"),
-            "no aids on: they are offered"
-        );
-        assert!(v["method"]
-            .as_str()
-            .unwrap()
-            .contains("knowing only what you knew"));
-        let w = watch(1, 0, 1, 1, 2000, 2000, 3);
-        assert_eq!(review(&w), "null");
     }
 
     /// A game played to its end by the first candidate each time.

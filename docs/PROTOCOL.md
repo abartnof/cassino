@@ -42,6 +42,7 @@ the same record of commands always replays into the same game.
 | `set <aid> on` / `off` | any time | `hints`, `explain`, `play_forced` |
 | `hint` | `prompt == "play"` | Record that the hint was shown; no change to the game. The decision pending then counts as assisted (the tutor does not take it as evidence). The `hint` query sends it itself when it answers |
 | `nudged <skill>` | `prompt == "play"` | Record that the tutor's nudge for that skill (its slug: `pairs`, `sums`, `building`, `safe-builds`, `answering-builds`, `sweeps`, `valuables`, `trailing`) was shown; the decision pending counts as assisted |
+| `warned` | `prompt == "play"` | Record that a warning about the move (the page's sweep warning) was shown. Like `hint`: once a decision, the decision pending counts as assisted, and a position at which one was shown stays assisted across `undo`. The page sends it when it shows a sweep warning |
 
 A refused command leaves the game as it was, and `state.error` says why in a
 sentence a person can read ("To build 9 you must hold another card that can
@@ -186,13 +187,10 @@ as they did.
 
 ## The review
 
-Once the game is over, the `review` query gives the review of the person's
-game (`null` before, and in a watched game): `{summary, strengths, tries:
-[{title, text}], closing, method}`, all in words ready to show. It is about
-habits, never a single move (`docs/DESIGN.md` §12.4): at most two strengths
-and two habits to work on, either list possibly empty. It is worked out when
-asked, every move of the person's rated again by the advisor: about half a
-second for a whole game in Node.
+The review at the game's end is the brief (see "The tutor" below and
+`docs/DESIGN.md` §12.8): a few bullets and a method, gentle and about
+habits, never a single move. There is no other review query; the longer prose
+review it replaced is gone.
 
 ## The tutor
 
@@ -211,6 +209,8 @@ line of `--` between; an entry that is missing or no summary counts as stale.
 - **`evidence_of(record)`**: the same for a stored record (a finished game's
   saved text), the sitting left alone; `{summary}` or `{error}`. For the
   summaries `learner` lists as stale (made by another evidence version).
+  The record is restored with the explanations off, which the evidence has
+  no use for and which would cost an advisor run a move.
 - **`learner(history)`**: `{games, focus, mastered, stale}`: the number of
   current summaries, the skill to work on next (a slug or `null`), the
   slugs mastered, and the indexes to recompute with `evidence_of`.
@@ -219,7 +219,9 @@ line of `--` between; an entry that is missing or no summary counts as stale.
   (`null` before the game is over). The input is this game's summary (empty
   to have it worked out here), a `--` line, then the earlier games'
   summaries (empty with no stored games: the brief then rests on this game).
-  It rates the game again for its review, about 0.45 s.
+  The review it rests on shares one advisor pass over the game with the
+  evidence, kept in the sitting: with `evidence` asked first, the brief
+  costs nothing more; asked alone, about the cost of `evidence`.
 - **`set_focus(slug)`**: tells the sitting which skill to work on (empty for
   none; 1 if it was a skill). Not in the record: say it again after a
   restore. With a focus set, the person's decisions at it may be nudged.
@@ -262,7 +264,6 @@ The module exports, with no `wasm-bindgen`:
 | `cassino_step() -> 0/1` | One step of a watched game; renders the state |
 | `cassino_offer(len)` | Renders the offer for the selection just written |
 | `cassino_hint()` | Renders the hint |
-| `cassino_review()` | Renders the review once the game is over (`null` before; see "The review") |
 | `cassino_evidence()` | Renders this game's summary once it is over (`null` before; see "The tutor") |
 | `cassino_evidence_of(len)` | Renders the summary of the stored record just written |
 | `cassino_learner(len)` | Renders the learner over the summaries just written |
