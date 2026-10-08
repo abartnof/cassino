@@ -342,10 +342,12 @@ legal move. RULES.md now says each held card answers for one build value.
   - [x] 11.1 The skills and clear chances (`tutor::chances`); the
     advisor's noise measured (`bin/noise.rs`), the margin set at 0.4
     points before the last deal and 0.15 in it (`measurements/README.md`).
-  - [ ] 11.2 Knockouts of each skill in the strongest rung; what each
-    skill is worth, and the prerequisites, measured. The knockout agent
-    is in (`knockout.rs`, `measure searcher-no-<skill>[+<skill>] searcher`);
-    the runs are not yet made.
+  - [x] 11.2 Knockouts of each skill in the strongest rung (`knockout.rs`,
+    `measure searcher-no-<skill>[+<skill>] searcher`): every skill's worth
+    clear, from about 0.3 points a hand (leaving no sweep) to 5 (taking
+    pairs, Classic); pairs of knockouts showed the skills stand in for one
+    another, so the prerequisites stay the logical ones
+    (`measurements/README.md`).
   - [ ] 11.3 Candidate rules and their precision measured; one rule a
     skill shipped, or none.
     The 22 candidates (two or three a skill) and `rules` (precision with

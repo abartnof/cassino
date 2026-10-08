@@ -150,3 +150,42 @@ By skill the medians run from 0.14 (choosing builds, trailing) to 0.32
 (aces and Cassinos in Royal). The margin is set at **0.4 points**, about
 twice the typical spread; in the last deal, where the values are exact, it
 is `advice::SOUND` (0.15).
+
+## What each skill is worth: the strongest rung with one knocked out
+
+For the tutor (`docs/DESIGN.md` §12.8; `knockout.rs`): the searcher with
+one skill knocked out against itself whole, sweeps not scored (the game's
+default), raising on, unit hand, batches of 100, at most 4 looks, seeds from
+1,000,000. A skill of action is knocked out by withholding its moves; one of
+restraint by choosing as if blind to it. Every run was clear. Points lost
+per mirrored pair of hands (two hands), ± one standard error:
+
+| Date | Skill knocked out | Classic | Royal |
+|---|---|---|---|
+| 2026-10-08 | Taking pairs | **−10.15 ± 0.49** (look 1) | **−5.91 ± 0.59** (look 1) |
+| 2026-10-08 | Building | **−3.84 ± 0.60** (look 1) | **−6.24 ± 0.64** (look 1) |
+| 2026-10-08 | Choosing what to trail (any trail at random) | **−3.83 ± 0.61** (look 1) | **−2.94 ± 0.67** (look 1) |
+| 2026-10-08 | Taking sums | **−2.65 ± 0.55** (look 1) | **−3.80 ± 0.54** (look 1) |
+| 2026-10-08 | Answering your opponent's builds | **−2.01 ± 0.39** (look 1) | **−3.49 ± 0.54** (look 1) |
+| 2026-10-08 | Keeping aces and Cassinos | **−1.05 ± 0.24** (look 3) | **−1.30 ± 0.34** (look 2) |
+| 2026-10-08 | Choosing safe builds (a build at random) | **−0.70 ± 0.21** (look 3) | **−1.53 ± 0.35** (look 2) |
+| 2026-10-08 | Leaving no sweep (blind to it) | **−0.62 ± 0.18** (look 2) | **−0.61 ± 0.23** (look 4) |
+
+Royal's court cards build and sum (J 11, Q 12, K 13), so building and sums
+are worth more there and pairs less. A sweep scores nothing here, yet
+leaving one still costs about 0.3 points a hand: the cards go with it.
+
+**The prerequisites, by pairs of knockouts** (Classic): the second skill's
+worth with the first already out, against its worth alone.
+
+| Date | First out | Then out | Worth with the first out | Worth alone |
+|---|---|---|---|---|
+| 2026-10-08 | Taking pairs | Taking sums | **−4.43 ± 0.74** (look 1) | −2.65 ± 0.55 |
+| 2026-10-08 | Taking sums | Building | **−7.62 ± 0.70** (look 1) | −3.84 ± 0.60 |
+| 2026-10-08 | Taking sums | Answering builds | **−3.34 ± 0.44** (look 1) | −2.01 ± 0.39 |
+
+No skill lost its worth with another gone; each was worth *more*. The
+skills stand in for one another (a player who cannot take pairs leans on
+sums, and one who cannot take sums leans on building), so worth cannot show
+which skill must be learnt first. The prerequisites stay the logical ones:
+a build is a sum, and so is the capture of most builds.

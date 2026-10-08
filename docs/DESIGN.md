@@ -800,8 +800,11 @@ taught by a rule.
    O'Brien–Fleming looks, Classic and Royal separately. A skill of action
    (taking, building, answering builds) is knocked out by withholding its
    moves; one of restraint by choosing as if blind to it (by what a move
-   banks now, or a card at random among trails). Pairs of knockouts check
-   the prerequisites: a skill worth nothing once another is gone needs it.
+   banks now, or a card at random among trails). Pairs of knockouts were
+   to check the prerequisites (a skill worth nothing once another is gone
+   needs it); measured, each skill was worth more with another gone, not
+   less: the skills stand in for one another, so worth cannot order them,
+   and the prerequisites stay the logical ones (`measurements/README.md`).
 4. **Diagnosis.** Lesioned students (the strongest rung with one skill
    knocked out) must be pointed at that skill within a few games, and the
    whole strongest rung at none. In `cargo test`, deterministic.
