@@ -104,12 +104,18 @@ pub fn rollout_deal(mut world: Hand, seat: Seat, policy: Policy, rng: &mut Rng) 
 pub const SOLVER_BUDGET: u64 = 300_000;
 
 impl SearchAgent {
-    /// The candidates the searcher considers: the counter's best few.
-    pub fn shortlist(&mut self, view: &View) -> Vec<Move> {
+    /// Every candidate, the counter's best first.
+    pub fn ranked(&mut self, view: &View) -> Vec<Move> {
         let mut ranked = self.counter.assess(view);
         ranked.sort_by(|a, b| b.1.total().total_cmp(&a.1.total()));
-        ranked.truncate(self.width);
         ranked.into_iter().map(|(m, _)| m).collect()
+    }
+
+    /// The candidates the searcher considers: the counter's best few.
+    pub fn shortlist(&mut self, view: &View) -> Vec<Move> {
+        let mut ranked = self.ranked(view);
+        ranked.truncate(self.width);
+        ranked
     }
 
     /// The searcher's value of each of `moves` (candidates of `view`), in

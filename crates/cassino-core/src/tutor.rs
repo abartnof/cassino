@@ -6,6 +6,8 @@ use crate::cards::{Card, ACE};
 use crate::moves::Move;
 use crate::observation::View;
 use crate::review::{is_build, is_trail, leaves_sweep};
+use crate::rng::Rng;
+use crate::search::SearchAgent;
 
 /// A skill a decision can show.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -304,6 +306,64 @@ pub fn margin(view: &View) -> f64 {
     }
 }
 
+/// The most candidates the last deal rates in full: a crowded table can
+/// offer hundreds, and the exact solver's budget
+/// ([`crate::search::SOLVER_BUDGET`]) is for a few. Past it the last deal is
+/// rated as the earlier ones are.
+pub const ALL_CAP: usize = 24;
+
+/// The moves to value for the tutor: what the hint and the rating value
+/// (the counter's shortlist and the move chosen) and, for each skill, the
+/// counter's best-ranked move on each side if not there already: showing
+/// the skill and not, leaving a sweep and not, trailing a valuable and not;
+/// and for Trailing and SafeBuilds the best- and worst-ranked trail and
+/// build. In the last deal, where the values are exact, every candidate
+/// (up to [`ALL_CAP`]).
+fn rated_moves(view: &View, chosen: Option<Move>, advisor: &mut SearchAgent) -> Vec<Move> {
+    let ranked = advisor.ranked(view);
+    let mut moves: Vec<Move> = if view.perfect_information() && ranked.len() <= ALL_CAP {
+        ranked.clone()
+    } else {
+        ranked.iter().copied().take(advisor.width).collect()
+    };
+    let add = |m: Option<&Move>, moves: &mut Vec<Move>| {
+        if let Some(&m) = m {
+            if !moves.contains(&m) {
+                moves.push(m);
+            }
+        }
+    };
+    if let Some(m) = chosen {
+        add(Some(&m), &mut moves);
+    }
+    for skill in Skill::ALL {
+        match skill {
+            Skill::Trailing => {
+                add(ranked.iter().find(|m| is_trail(m)), &mut moves);
+                add(ranked.iter().rev().find(|m| is_trail(m)), &mut moves);
+            }
+            Skill::SafeBuilds => {
+                add(ranked.iter().find(|m| is_build(m)), &mut moves);
+                add(ranked.iter().rev().find(|m| is_build(m)), &mut moves);
+            }
+            _ => {
+                add(ranked.iter().find(|m| good(skill, view, m)), &mut moves);
+                add(ranked.iter().find(|m| !good(skill, view, m)), &mut moves);
+            }
+        }
+    }
+    moves
+}
+
+/// The advisor's values of the moves the tutor needs ([`rated_moves`]),
+/// seeded from the view as the hint is. The hint and the rating use
+/// [`advice::assessed`] and are unchanged.
+pub fn assessed(view: &View, chosen: Option<Move>) -> Vec<(Move, f64)> {
+    let mut advisor = SearchAgent::new(Rng::seeded(advice::advisor_seed(view)));
+    let moves = rated_moves(view, chosen, &mut advisor);
+    advisor.evaluate(view, &moves)
+}
+
 /// The clear chances in the person's decision to play `mv` in `view`,
 /// with the advisor's values (deterministic, seeded from the view; see
 /// [`chances_with`]). Empty unless it is the viewer's turn.
@@ -311,7 +371,7 @@ pub fn chances(view: &View, mv: &Move, margin: f64) -> Vec<Chance> {
     if view.to_move != Some(view.me) {
         return Vec::new();
     }
-    chances_with(view, mv, margin, &advice::assessed(view, Some(*mv)))
+    chances_with(view, mv, margin, &assessed(view, Some(*mv)))
 }
 
 #[cfg(test)]
@@ -677,6 +737,51 @@ mod tests {
             }
         }
         all
+    }
+
+    /// Both sides of every skill the position offers are among the moves
+    /// rated, though the counter's shortlist may hold only one.
+    #[test]
+    fn the_rated_moves_hold_both_sides_of_each_skill() {
+        let (mut positions, mut shortlist_lacked) = (0, 0);
+        for seed in 0..2 {
+            for (v, m) in decisions(C, 4.0, seed) {
+                if v.to_move != Some(v.me) || v.candidates().len() < 2 {
+                    continue;
+                }
+                positions += 1;
+                let rated: Vec<Move> = assessed(&v, Some(m)).into_iter().map(|x| x.0).collect();
+                let short: Vec<Move> = advice::assessed(&v, Some(m))
+                    .into_iter()
+                    .map(|x| x.0)
+                    .collect();
+                let all = v.candidates();
+                if v.perfect_information() && all.len() <= ALL_CAP {
+                    assert!(all.iter().all(|c| rated.contains(c)), "last deal");
+                    continue;
+                }
+                assert!(rated.contains(&m));
+                for skill in Skill::ALL {
+                    // How many moves of each side: (shows, does not), or
+                    // for the two that compare kinds, (of the kind, 0).
+                    let sides = |moves: &[Move]| -> (usize, usize) {
+                        let n = |f: &dyn Fn(&Move) -> bool| moves.iter().filter(|x| f(x)).count();
+                        match skill {
+                            Skill::Trailing => (n(&is_trail).min(2), 0),
+                            Skill::SafeBuilds => (n(&is_build).min(2), 0),
+                            _ => (
+                                n(&|x| good(skill, &v, x)).min(1),
+                                n(&|x| !good(skill, &v, x)).min(1),
+                            ),
+                        }
+                    };
+                    assert_eq!(sides(&rated), sides(&all), "{skill:?}");
+                    shortlist_lacked += usize::from(sides(&short) != sides(&all));
+                }
+            }
+        }
+        assert!(positions > 20);
+        assert!(shortlist_lacked > 0, "the shortlist always held both sides");
     }
 
     #[test]
