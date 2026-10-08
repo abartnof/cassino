@@ -24,6 +24,7 @@
 
 use crate::advice::{self, Quality};
 use crate::agents::Agent;
+use crate::brief;
 use crate::cards::{Card, CardSet};
 use crate::game::Game;
 use crate::hand::{self, Clinch};
@@ -1127,6 +1128,29 @@ impl Session {
             &self.settings.rules,
             &self.turns,
             self.game.history(),
+        ))
+    }
+
+    /// The review in three bullets (`brief.rs`), once the game is over;
+    /// `None` before, and in a watched game. `history` is the summaries of
+    /// the person's earlier games, oldest first and not including this one
+    /// (empty with no stored games: the brief then rests on this game
+    /// alone). Runs the advisor over the game ([`learner::evidence`]), so
+    /// call it once.
+    pub fn brief(&self, history: &[learner::Summary]) -> Option<brief::Brief> {
+        let review = self.review()?;
+        let game = learner::evidence(&self.turns);
+        let before = learner::learn(history);
+        let mut all = history.to_vec();
+        all.push(game.clone());
+        let after = learner::learn(&all);
+        Some(brief::brief(
+            &review,
+            &game,
+            &before,
+            &after,
+            &self.settings.rules,
+            self.settings.skill,
         ))
     }
 

@@ -65,27 +65,23 @@ impl<R: BufRead, W: Write> Table<R, W> {
     }
 
     /// The review of the person's game, once it is over (none when
-    /// watching): the engine's words, as the page shows them.
+    /// watching): at most three bullets and a line on how it is worked
+    /// out, the engine's words as the page shows them. The terminal keeps
+    /// no history of games, so the brief rests on this game alone.
     fn review(&mut self, session: &Session) -> io::Result<()> {
-        let Some(review) = session.review() else {
+        let Some(brief) = session.brief(&[]) else {
             return Ok(());
         };
-        let aids = session.aids();
-        let told = review.told(aids.hints || aids.explain);
-        writeln!(self.out, "\n-- How you played --\n{}", told.summary)?;
-        if !told.strengths.is_empty() {
-            writeln!(self.out, "Going well:")?;
-            for s in &told.strengths {
-                writeln!(self.out, "  - {s}")?;
-            }
+        writeln!(self.out, "\n-- How you played --")?;
+        for bullet in &brief.bullets {
+            writeln!(self.out, "  - {}", bullet.plain())?;
         }
-        if !told.tries.is_empty() {
-            writeln!(self.out, "Something to try:")?;
-            for (title, text) in &told.tries {
-                writeln!(self.out, "  {title}. {text}")?;
-            }
+        let how = format!("(how this is worked out: {})", brief.method);
+        if self.options.colour {
+            writeln!(self.out, "\x1b[2m{how}\x1b[0m")
+        } else {
+            writeln!(self.out, "{how}")
         }
-        writeln!(self.out, "{}\n({})", told.closing, told.method)
     }
 
     /// Sits down and plays a game to its end.
@@ -475,7 +471,11 @@ mod tests {
         );
         // The review at the game's end, after the result.
         let at = text.find("How you played").expect("the review");
-        assert!(text[at..].contains("You made "), "{text}");
+        let review = &text[at..];
+        let bullets = review.lines().filter(|l| l.starts_with("  - ")).count();
+        assert!((1..=3).contains(&bullets), "{text}");
+        assert!(review.contains("(how this is worked out: "), "{text}");
+        assert!(!review.contains("You made "), "the long review is gone");
         assert!(at > text.find("the game").unwrap());
     }
 

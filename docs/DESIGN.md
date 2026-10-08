@@ -723,6 +723,15 @@ think about it." At the game's end, three bullets at most:
   and this game's figure for it;
 - nothing else; how it was worked out is a link.
 
+`brief.rs` builds them (about 45 words in all). The second bullet gives
+the rule shipped for the skill in this game (`lessons::taught`; none for
+sums, leaving no sweep or trailing, or for answering builds in Royal), and
+for a skill with none, one plain fact in place of a rule; then this game's
+figure from the summary tally. With no focus, it says that nothing stood
+out (and to try the next opponent up, below the top setting), or that it is
+too early to say. A skill is never praised and worked on together, and a
+short game says so in one bullet.
+
 **The skills** are the ones a game can show, each observable in a decision:
 
 | Skill | Needs |
