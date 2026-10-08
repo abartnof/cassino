@@ -23,6 +23,7 @@ pub mod solver;
 pub mod sums;
 pub mod table;
 pub mod tournament;
+pub mod tutor;
 pub mod words;
 pub mod worth;
 

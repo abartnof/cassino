@@ -706,6 +706,100 @@ All of these are pure functions of public state, so none can leak:
 0.4 MB of engine. Cassino adds 20 pip cards (2–6). These are simple images,
 so the estimate is about +0.3 MB, about 3.5 MB in all.
 
+### 12.8 The tutor
+
+The review (§12.4) says what one game showed. The tutor carries that from
+game to game, and narrows it to **the one skill the player is ready for
+next**, in place of everything there is to learn. This is the standing
+lesson of intelligent tutoring systems (model and knowledge tracing):
+learners bootstrap one skill at a time.
+
+**What the player reads stays short.** The user: "a few bullet points at
+most. A reader should be able to read it in just a few moments and then
+think about it." At the game's end, three bullets at most:
+
+- what went well (one strength, or a skill just mastered);
+- the one skill to work on next, with one rule of fifteen words or fewer,
+  and this game's figure for it;
+- nothing else; how it was worked out is a link.
+
+**The skills** are the ones a game can show, each observable in a decision:
+
+| Skill | Needs |
+|---|---|
+| Taking pairs | |
+| Taking sums | Taking pairs |
+| Building | Taking sums |
+| Choosing safe builds | Building |
+| Answering your opponent's builds (taking or raising them) | Taking sums |
+| Leaving no sweep | |
+| Keeping aces and Cassinos | |
+| Choosing what to trail | |
+
+Guarding a build is not among them: the rules enforce it (`RULES.md`, the
+build requirement). Playing to the score is not: the strongest rung does
+not, and playing the last deal for the game measured no better
+(`measurements/README.md`). Counting is not: it shows only through its
+consequences, which the trailing skills cover. The prerequisites are the
+logical ones only, and checked by measurement (below); no global order is
+assumed. The literature's teaching ladder (§12.5) is a teacher's sequence,
+not a measured one, and the difficulty an item-response model would give
+needs real players: run on the computer's rungs it would recover how the
+rungs were written.
+
+**Evidence is clear chances only.** A decision is a chance at a skill when
+the best move that uses it beats the best that does not by more than the
+advisor's noise (measured, below), or the reverse for the skills of
+restraint (leaving no sweep, keeping aces). Near-ties are no evidence. A
+decision after a hint, or after the tutor's own nudge, is not evidence: the
+teaching would otherwise spoil the measuring.
+
+**The learner model is a pure function of the stored games.** The page
+keeps each finished game's record (its seed, settings and moves, a few
+hundred bytes) in the browser's storage, and the engine replays them. A
+change to a detector or a threshold then rescores the whole history. Each
+skill holds a Beta posterior over clear chances, recent games weighing
+more; a skill is mastered when its lower bound passes a threshold, and
+lost again only well below it (hysteresis, so progress does not flicker).
+Without storage (a private window), the review is the one game's, as
+before. Records can be exported and imported.
+
+**The next skill** is the unmastered skill whose prerequisites are
+mastered with the largest expected gain: its clear chances a game, times
+the points a miss costs, times one less the mastery. The points come from
+measuring the strongest rung with the skill knocked out (below). With every
+skill mastered, the tutor says so and suggests the next opponent up.
+
+**Teaching is two touches.** The rule in the review; and in the next game,
+one nudge at the first clear chance at the skill ("a build is on here"),
+that decision then not counting.
+
+**Every rule is a measured claim.** A rule is a trigger and a prescription.
+Its precision is how often the strongest rung does what it prescribes when
+the trigger fires; its coverage, how often it fires when the skill
+matters. A rule ships only when its precision's 95% lower bound is at
+least 0.80, the chosen rule confirmed on fresh positions (§11.4, the
+maximum of noisy estimates). A skill with no rule that passes is not
+taught by a rule.
+
+**Measurements, each planned before its first batch:**
+
+1. **The advisor's noise.** Positions from the strongest rung's own games;
+   each skill's gap (best move using it less best not) re-evaluated under
+   independent seeds. The margin for a clear chance is set from the
+   spread. Descriptive, not a comparison: a fixed count.
+2. **Rule precision**, as above.
+3. **What each skill is worth.** The strongest rung with one skill knocked
+   out against itself whole, mirrored hands, sequential with
+   O'Brien–Fleming looks, Classic and Royal separately. A skill of action
+   (taking, building, answering builds) is knocked out by withholding its
+   moves; one of restraint by choosing as if blind to it (by what a move
+   banks now, or a card at random among trails). Pairs of knockouts check
+   the prerequisites: a skill worth nothing once another is gone needs it.
+4. **Diagnosis.** Lesioned students (the strongest rung with one skill
+   knocked out) must be pointed at that skill within a few games, and the
+   whole strongest rung at none. In `cargo test`, deterministic.
+
 ## 13. Testing
 
 1. **Unit tests**, test first, in every module.

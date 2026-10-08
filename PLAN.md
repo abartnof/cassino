@@ -337,6 +337,20 @@ legal move. RULES.md now says each held card answers for one build value.
 - [x] 10. **Teaching**: tutorial pages at each idea's first moment, and all
   of them from the question mark (T7).
 
+- [ ] 11. **The tutor** (`docs/DESIGN.md` §12.8): the review narrowed to
+  the one skill the player is ready for, carried from game to game.
+  - [ ] 11.1 The skills and clear chances (`tutor.rs`); the advisor's
+    noise measured, the margin set.
+  - [ ] 11.2 Knockouts of each skill in the strongest rung; what each
+    skill is worth, and the prerequisites, measured.
+  - [ ] 11.3 Candidate rules and their precision measured; one rule a
+    skill shipped, or none.
+  - [ ] 11.4 The learner model from stored records, the next skill by
+    expected gain; lesioned students diagnosed in `cargo test`.
+  - [ ] 11.5 The review in three bullets, in the engine and the terminal.
+  - [ ] 11.6 The page: records kept in storage, the protocol's queries,
+    the review dialog, the next game's nudge; export and import.
+
 ## Working conventions
 
 - **Test-driven**: tests first, throughout.
