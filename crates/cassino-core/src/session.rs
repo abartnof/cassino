@@ -16,6 +16,9 @@
 //! - `set <aid> on|off`: switch an aid (`hints`, `explain`, `play_forced`);
 //! - `hint`: the client showed the hint. It changes nothing in the game; it
 //!   is recorded, and the decision pending is marked assisted;
+//!   asking again at the same decision records nothing more, and a position
+//!   at which help was shown stays helped across `undo` (the session
+//!   remembers it, and records the `hint` again on reaching it);
 //! - `nudged <skill>`: the client showed the tutor's nudge at this decision
 //!   (the skill's slug); recorded, and the decision marked assisted.
 
@@ -35,6 +38,8 @@ use crate::scoring::Breakdown;
 use crate::table::{Seat, Table};
 use crate::tutor;
 use crate::words;
+use std::cell::RefCell;
+use std::collections::HashSet;
 
 /// The game and the opponent, chosen at the start.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -305,7 +310,17 @@ pub struct Session {
     /// The skill the tutor is working on with this person, if the client
     /// has said (`set_focus`). Not part of the record.
     focus: Option<tutor::Skill>,
+    /// The nudge asked for last: the position's hash, the focus, the answer.
+    /// One advisor run per decision, however often a client asks.
+    nudge_cache: RefCell<Option<NudgeAnswer>>,
+    /// The positions (hashes of the person's view) at which a hint or a
+    /// nudge was shown. Kept across undo, so that a hint seen, taken back
+    /// and then reached again by the same moves still counts as help.
+    helped_at: HashSet<u64>,
 }
+
+/// A nudge query's key (position hash, focus) and its answer.
+type NudgeAnswer = (u64, Option<tutor::Skill>, Option<tutor::Skill>);
 
 #[derive(Clone)]
 struct Snapshot {
@@ -349,6 +364,8 @@ impl Session {
             turns: Vec::new(),
             assisted: false,
             focus: None,
+            nudge_cache: RefCell::new(None),
+            helped_at: HashSet::new(),
         };
         let cuts = session.game.cuts().to_vec();
         for (i, cut) in cuts.iter().enumerate() {
@@ -586,7 +603,23 @@ impl Session {
                     return refuse("bad_nudge", "nudged <skill>");
                 }
             }
-            self.record.push(command.to_string());
+            self.helped_at.insert(advice::advisor_seed(&self.view()));
+            // Once a decision: asking again records nothing more.
+            let already = self
+                .record
+                .iter()
+                .rev()
+                .take_while(|l| *l == "hint" || l.starts_with("nudged"))
+                .any(|l| {
+                    if command == "hint" {
+                        l == "hint"
+                    } else {
+                        l.starts_with("nudged")
+                    }
+                });
+            if !already {
+                self.record.push(command.to_string());
+            }
             self.assisted = true;
             return Ok(());
         }
@@ -655,6 +688,20 @@ impl Session {
     /// Runs the opponent until it is the person's turn or the hand is over,
     /// and plays a forced move for the person when that aid is on.
     fn advance(&mut self) {
+        self.run_opponent();
+        // A position at which help was shown before (and taken back by an
+        // undo) is helped again: the hint is recorded, so a restore keeps it.
+        if !self.watching()
+            && self.prompt() == Prompt::Play
+            && !self.assisted
+            && self.helped_at.contains(&advice::advisor_seed(&self.view()))
+        {
+            self.record.push("hint".into());
+            self.assisted = true;
+        }
+    }
+
+    fn run_opponent(&mut self) {
         loop {
             match self.game.hand().to_move() {
                 Some(Seat::North) => {
@@ -1053,7 +1100,16 @@ impl Session {
         {
             return None;
         }
-        learner::nudge(focus, &self.view()).then_some(focus)
+        let view = self.view();
+        let key = advice::advisor_seed(&view);
+        if let Some((k, f, answer)) = *self.nudge_cache.borrow() {
+            if k == key && f == self.focus {
+                return answer;
+            }
+        }
+        let answer = learner::nudge(focus, &view).then_some(focus);
+        *self.nudge_cache.borrow_mut() = Some((key, self.focus, answer));
+        answer
     }
 
     /// The person's decisions so far, each with what they could see.
@@ -1514,6 +1570,58 @@ mod tests {
         }
         assert!(s.send("hint"));
         assert_eq!(s.nudge(), None);
+    }
+
+    #[test]
+    fn asking_for_help_twice_at_one_decision_records_it_once() {
+        let mut s = Session::new(6, settings());
+        assert!(s.send("hint"));
+        assert!(s.send("hint"), "not an error");
+        assert_eq!(s.record(), ["hint"]);
+        assert!(s.send("nudged pairs"));
+        assert!(s.send("nudged building"));
+        assert!(s.send("hint"));
+        assert_eq!(s.record(), ["hint", "nudged pairs"]);
+        // The next decision is its own.
+        let mv = s.candidates()[0];
+        assert!(s.send(&mv.to_string()));
+        assert!(s.send("hint"));
+        assert_eq!(s.record().iter().filter(|l| *l == "hint").count(), 2);
+    }
+
+    #[test]
+    fn undo_does_not_launder_a_hint_seen_at_a_later_position() {
+        let mut s = Session::new(6, settings());
+        let first = s.candidates()[0];
+        assert!(s.send(&first.to_string()));
+        assert_eq!(s.prompt(), Prompt::Play);
+        assert!(s.send("hint"), "seen at the second decision");
+        assert!(s.send("undo"));
+        assert!(s.record().is_empty(), "the hint is taken back with it");
+        // The same first move brings the same position: it is assisted.
+        assert!(s.send(&first.to_string()));
+        assert_eq!(s.record().last().map(String::as_str), Some("hint"));
+        let mv = s.candidates()[0];
+        assert!(s.send(&mv.to_string()));
+        assert!(s.turns()[1].assisted);
+        assert!(!s.turns()[0].assisted);
+        // And a restore keeps it.
+        let again = Session::restore(&s.saved()).unwrap();
+        assert!(again.turns()[1].assisted);
+        assert!(!again.turns()[0].assisted);
+    }
+
+    #[test]
+    fn repeated_nudge_queries_agree() {
+        let mut s = Session::new(6, settings());
+        s.set_focus(Some(tutor::Skill::Pairs));
+        let first = s.nudge();
+        assert_eq!(s.nudge(), first);
+        assert_eq!(s.nudge(), first);
+        s.set_focus(Some(tutor::Skill::Building));
+        let other = s.nudge();
+        assert!(other.is_none() || other == Some(tutor::Skill::Building));
+        assert_eq!(s.nudge(), other);
     }
 
     #[test]
