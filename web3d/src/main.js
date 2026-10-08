@@ -298,6 +298,7 @@ async function main() {
     hideOpponent();
     badgeFrom = null;
     lastMove = null;
+    endedRecord = null;
     director.cancelTimed();
     watchStep = false; // a step pending was cancelled with the rest (review T2)
     overlay.hush();
@@ -470,9 +471,16 @@ async function main() {
   // A finished game of yours is kept at once with its record, and its
   // summary follows when the ending has settled (a game left before then
   // is summed up at the next opening: the stale ones are recomputed).
+  // `endedRecord`: the record as the game ended. An aid switched after the
+  // end rewrites the live record's header (`state.saved`), but the game is
+  // the same one.
+  let endedRecord = null;
   function keepGame() {
     if (state.watching) return;
     const record = state.saved;
+    endedRecord = record;
+    // A seeded link's game, or a staged ending, is nobody's progress.
+    if ((fixedSeed || STAGING) && !params.has("keep")) return; // ?keep: for the browser test
     addGame(store, { record, summary: summaries.get(record) ?? null });
     idle(() => {
       summaryOf(record);
@@ -514,8 +522,8 @@ async function main() {
   // opened: the game's summary (made already, or now) and the earlier games'.
   let review = { of: null, words: null };
   function reviewed() {
-    if (review.of !== state.saved) {
-      const record = state.saved;
+    const record = endedRecord ?? state.saved;
+    if (review.of !== record) {
       const earlier = loadProgress(store).filter((g) => g.record !== record);
       review = { of: record, words: engine.brief(summaryOf(record), historyOf(earlier)) };
     }

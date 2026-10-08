@@ -729,8 +729,11 @@ def check_review(browser, failures, viewport=None):
     dialog with the engine's words, gentle and about habits, no card named;
     closed, the game's end as it was."""
     where = "review" + (" on a phone" if viewport else "")
-    page = open_page(browser, "ending&speed=2", viewport=viewport, calm=True)
+    page = open_page(browser, "ending&keep&speed=2", viewport=viewport, calm=True)
     settle(page)
+    # What the brief is given of the earlier games, to see this game counted
+    # once however the aids are switched after it.
+    page.evaluate("() => { const e = window.cassino3d.engine; const brief = e.brief; window.briefHistories = []; e.brief = (g, h) => { window.briefHistories.push(h.length); return brief(g, h); }; }")
     button = page.locator(".controls .review")
     if not button.is_hidden():
         failures.append(f"{where}: offered before the game is over")
@@ -779,6 +782,23 @@ def check_review(browser, failures, viewport=None):
     page.wait_for_function("!document.querySelector('.review-dialog').open", timeout=5_000)
     if button.is_hidden() or page.locator(".controls md-filled-button.again").is_hidden():
         failures.append(f"{where}: closed, the game's end lost its buttons")
+    # An aid switched after the end rewrites the record's header, but it is
+    # the same game: not counted among the earlier ones.
+    page.locator(".controls md-filled-button.again").wait_for(state="visible")
+    before_aid = page.evaluate("window.cassino3d.state().saved")
+    page.locator("md-icon-button.settings-open").click()
+    page.wait_for_timeout(1200)
+    page.locator('md-switch[data-aid="hints"]').click()
+    page.locator(".settings-dialog md-filled-tonal-button", has_text="Done").click()
+    page.wait_for_timeout(800)
+    if page.evaluate("window.cassino3d.state().saved") == before_aid:
+        failures.append(f"{where}: switching an aid after the end did not change the record")
+    button.click()
+    page.wait_for_function("document.querySelector('.review-dialog').open", timeout=5_000)
+    page.locator(".review-dialog .review-close").click()
+    page.wait_for_function("!document.querySelector('.review-dialog').open", timeout=5_000)
+    if page.evaluate("window.briefHistories").count(1):
+        failures.append(f"{where}: the game was counted among its own earlier games: {page.evaluate('window.briefHistories')}")
     # Opened again, the same review, at once (worked out once a game).
     button.click()
     page.wait_for_function("document.querySelector('.review-dialog').open && !document.querySelector('.review-waiting')", timeout=5_000)
