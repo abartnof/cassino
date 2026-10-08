@@ -38,7 +38,7 @@ the same record of commands always replays into the same game.
 | `build 8 3D 5C` | `prompt == "play"` | A new build: value, played card, loose cards |
 | `build 9 2S on 3C 9D` | `prompt == "play"` | Onto the build containing 3C, absorbing 9D |
 | `next` | `prompt == "next_hand"` | Deal the next hand, once the count has been seen |
-| `undo` | `can_undo` | Take back the last decision, with the opponent's replies and anything the table did for the person after it; refused (`deal_seen`) once a deal has come since it, whose cards the person has seen |
+| `undo` | `can_undo` | Take back the last decision, with the opponent's replies and anything the table did for the person after it; refused (`deal_seen`) once a deal has come since it, whose cards the person has seen. A known limit: undoing a move the person made after a hint or a reveal lets them remember a card that was shown and taken back |
 | `set <aid> on` / `off` | any time | `hints`, `explain`, `play_forced` |
 | `hint` | `prompt == "play"` | Record that the hint was shown; no change to the game. The decision pending then counts as assisted (the tutor does not take it as evidence). The `hint` query sends it itself when it answers |
 | `nudged <skill>` | `prompt == "play"` | Record that the tutor's nudge for that skill (its slug: `pairs`, `sums`, `building`, `safe-builds`, `answering-builds`, `sweeps`, `valuables`, `trailing`) was shown; the decision pending counts as assisted |
@@ -113,7 +113,7 @@ client cannot show more than the person at the table could know.
 | `scores`, `target` | The game's totals before this hand, and 21 |
 | `events` | Everything that has happened, in order (see below) |
 | `can_undo`, `aids`, `error` | |
-| `error_code` | Why the last command was refused, as a code: an `Illegal` reason (`not_holding`, `does_not_split`, …) or `not_a_move`, `game_over`, `hand_over`, `hand_not_over`, `nothing_to_undo`, `deal_seen`, `bad_setting`, `watching` |
+| `error_code` | Why the last command was refused, as a code: an `Illegal` reason (`not_holding`, `does_not_split`, …) or `not_a_move`, `game_over`, `hand_over`, `hand_not_over`, `not_your_turn` (a `hint` or `nudged` with no decision pending), `nothing_to_undo`, `deal_seen`, `bad_setting`, `bad_nudge` (`nudged` without a known skill slug), `watching` |
 | `saved`, `record_version` | The sitting as text, to keep across a reload (see "Saving and restoring") |
 | `unseen` | The counting aid: `{aces, big_casino, little_casino, spades, cards}` that you cannot see |
 | `sweep_values` | The values a single card could sweep the table with |
@@ -244,8 +244,10 @@ check that the computer played fair (DESIGN.md §12.3).
 
 `watch(game, aces14, sweeps, raising, south_skill, north_skill, seed)` seats two
 computer players. `step` makes the next move, one move whoever's it is, or
-deals the next hand. The narration names the seats South and North, and every other
-command is refused.
+deals the next hand. The narration names the seats South and North. Every command but `set` is
+refused (`watching`); `set` changes the aid but plays nothing.
+The `sweep` warning of an offered move (`leaves_sweep`) carries its own
+words, which promise no point when sweeps are off.
 
 ## WebAssembly
 
