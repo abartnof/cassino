@@ -64,6 +64,30 @@ impl<R: BufRead, W: Write> Table<R, W> {
             .join(" ")
     }
 
+    /// The review of the person's game, once it is over (none when
+    /// watching): the engine's words, as the page shows them.
+    fn review(&mut self, session: &Session) -> io::Result<()> {
+        let Some(review) = session.review() else {
+            return Ok(());
+        };
+        let aids = session.aids();
+        let told = review.told(aids.hints || aids.explain);
+        writeln!(self.out, "\n-- How you played --\n{}", told.summary)?;
+        if !told.strengths.is_empty() {
+            writeln!(self.out, "Going well:")?;
+            for s in &told.strengths {
+                writeln!(self.out, "  - {s}")?;
+            }
+        }
+        if !told.tries.is_empty() {
+            writeln!(self.out, "Something to try:")?;
+            for (title, text) in &told.tries {
+                writeln!(self.out, "  {title}. {text}")?;
+            }
+        }
+        writeln!(self.out, "{}\n({})", told.closing, told.method)
+    }
+
     /// Sits down and plays a game to its end.
     pub fn play(&mut self) -> io::Result<()> {
         let rules = self.options.rules;
@@ -108,7 +132,7 @@ impl<R: BufRead, W: Write> Table<R, W> {
         loop {
             self.tell(&session)?;
             match session.prompt() {
-                Prompt::Over => return Ok(()),
+                Prompt::Over => return self.review(&session),
                 _ if session.watching() => {
                     session.step();
                     if self.options.pause && self.line()?.is_none() {
@@ -448,6 +472,16 @@ mod tests {
             text.contains("win the game") || text.contains("wins the game"),
             "{text}"
         );
+        // The review at the game's end, after the result.
+        let at = text.find("How you played").expect("the review");
+        assert!(text[at..].contains("You made "), "{text}");
+        assert!(at > text.find("the game").unwrap());
+    }
+
+    #[test]
+    fn no_review_of_a_watched_game() {
+        let text = run("", options(true, 2, Rules::CLASSIC));
+        assert!(!text.contains("How you played"));
     }
 
     #[test]

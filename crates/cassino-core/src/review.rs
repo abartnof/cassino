@@ -314,7 +314,9 @@ pub fn review(rules: &Rules, turns: &[Turn], history: &[Breakdown]) -> Review {
             chances: builds,
         });
     }
-    if last >= 6 && last_rate <= 0.1 {
+    // Only from a player solid before it too: a last deal holds few real
+    // choices, and a careless one can come through it clean by luck.
+    if last >= 6 && last_rate <= 0.1 && early_rate <= 0.3 {
         strengths.push(Strength::LastDeal);
     }
     if decisions >= FEW && left_to_clear == 0 && avoided >= 3 {
@@ -668,7 +670,11 @@ mod tests {
     /// A game with the person always playing the first move offered: a
     /// player who trails whatever the table holds.
     fn first_offered(rules: Rules, seed: u64) -> Session {
-        let mut s = Session::new(seed, Settings { rules, skill: 3.0 });
+        first_offered_against(rules, seed, 3.0)
+    }
+
+    fn first_offered_against(rules: Rules, seed: u64, skill: f64) -> Session {
+        let mut s = Session::new(seed, Settings { rules, skill });
         for _ in 0..2_000 {
             match s.prompt() {
                 Prompt::Play => {
@@ -711,6 +717,22 @@ mod tests {
                     turn.mv
                 );
             }
+        }
+    }
+
+    #[test]
+    fn no_praise_for_a_careless_players_clean_last_deals() {
+        // Seen in the terminal: always the first move offered, and "You
+        // played the last deals cleanly".
+        for seed in 0..6 {
+            let r = first_offered_against(Rules::CLASSIC, seed, 4.0)
+                .review()
+                .unwrap();
+            assert!(
+                !r.strengths.contains(&Strength::LastDeal),
+                "seed {seed}: {:?}",
+                r.strengths
+            );
         }
     }
 
