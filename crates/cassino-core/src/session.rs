@@ -23,6 +23,7 @@ use crate::hand::{self, Clinch};
 use crate::moves::{self, BuildKind, Move};
 use crate::observation::View;
 use crate::opponent::{Opponent, Skill};
+use crate::review::{self, Review, Turn};
 use crate::rng::{purpose, Rng};
 use crate::rules::Rules;
 use crate::scoring::Breakdown;
@@ -290,6 +291,8 @@ pub struct Session {
     next_id: u32,
     /// Watching two computer players: South's player.
     watched: Option<Opponent>,
+    /// The person's decisions, for the review at the game's end.
+    turns: Vec<Turn>,
 }
 
 #[derive(Clone)]
@@ -299,6 +302,7 @@ struct Snapshot {
     record: usize,
     items: Vec<Item>,
     next_id: u32,
+    turns: usize,
 }
 
 impl Session {
@@ -329,6 +333,7 @@ impl Session {
             items: Vec::new(),
             next_id: 1,
             watched,
+            turns: Vec::new(),
         };
         let cuts = session.game.cuts().to_vec();
         for (i, cut) in cuts.iter().enumerate() {
@@ -552,6 +557,7 @@ impl Session {
             self.record.truncate(snap.record);
             self.items = snap.items;
             self.next_id = snap.next_id;
+            self.turns.truncate(snap.turns);
             return Ok(());
         }
         if let Some(rest) = command.strip_prefix("set ") {
@@ -611,6 +617,7 @@ impl Session {
             record: self.record.len(),
             items: self.items.clone(),
             next_id: self.next_id,
+            turns: self.turns.len(),
         });
     }
 
@@ -641,6 +648,9 @@ impl Session {
     fn play_move(&mut self, seat: Seat, mv: Move) {
         let before = *self.game.hand().table();
         let observer = self.view();
+        if seat == Seat::South && !self.watching() {
+            self.turns.push(Turn { view: observer, mv });
+        }
         let events = self.game.play(&mv).expect("checked before it was played");
         self.place(&before, &mv);
         if self.game.hand().is_over() {
@@ -983,6 +993,24 @@ impl Session {
         } else {
             None
         }
+    }
+
+    /// The person's decisions so far, each with what they could see.
+    pub fn turns(&self) -> &[Turn] {
+        &self.turns
+    }
+
+    /// The review of the person's game, once it is over (`review.rs`);
+    /// `None` before, and in a watched game.
+    pub fn review(&self) -> Option<Review> {
+        if self.prompt() != Prompt::Over || self.watching() {
+            return None;
+        }
+        Some(review::review(
+            &self.settings.rules,
+            &self.turns,
+            self.game.history(),
+        ))
     }
 
     /// Whether the last decision can be taken back: not once a deal has
@@ -1618,5 +1646,40 @@ mod tests {
         play_out(&mut low);
         play_out(&mut high);
         assert_ne!(low.events(), high.events());
+    }
+
+    #[test]
+    fn the_review_comes_once_the_game_is_over() {
+        let mut s = Session::new(11, settings());
+        assert!(s.review().is_none(), "not while it is played");
+        play_out(&mut s);
+        let r = s.review().expect("a review at the end");
+        assert!(r.decisions > 0 && r.decisions <= s.turns().len() as u32);
+        let mut w = Session::watch(11, Rules::CLASSIC, [2.0, 2.0]);
+        while w.step() {}
+        assert!(w.review().is_none(), "nobody to review in a watched game");
+        assert!(w.turns().is_empty());
+    }
+
+    #[test]
+    fn an_undone_move_leaves_the_review() {
+        let mut s = Session::new(5, settings());
+        let m = s.candidates()[0];
+        assert!(s.send(&m.to_string()));
+        assert_eq!(s.turns().len(), 1);
+        assert_eq!(s.turns()[0].mv, m);
+        assert!(s.send("undo"));
+        assert!(s.turns().is_empty());
+    }
+
+    #[test]
+    fn a_restored_sitting_keeps_its_turns() {
+        let mut s = Session::new(9, settings());
+        for _ in 0..3 {
+            let m = s.candidates()[0];
+            assert!(s.send(&m.to_string()));
+        }
+        let back = Session::restore(&s.saved()).expect("restores");
+        assert_eq!(back.turns(), s.turns());
     }
 }

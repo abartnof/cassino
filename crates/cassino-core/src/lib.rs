@@ -12,6 +12,7 @@ pub mod hand;
 pub mod moves;
 pub mod observation;
 pub mod opponent;
+pub mod review;
 pub mod rng;
 pub mod rules;
 pub mod scoring;

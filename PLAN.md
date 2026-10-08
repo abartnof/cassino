@@ -44,6 +44,13 @@ legal move. RULES.md now says each held card answers for one build value.
   announces, sweeps left open, cards left behind, builds at risk), hints
   from the top rung, ratings (sound, dubious, blunder), the unseen summary,
   sweep values.
+- **The review at the game's end** (`review.rs`; `docs/DESIGN.md` §12.4):
+  gentle, about habits and never a single move. Each of the person's moves
+  is rated against the top rung, each slip put down to a theme, and the
+  mix of moves compared with the strongest play's on the same positions;
+  at most two strengths and two habits, each habit above the advisor's
+  noise as measured with every rung in the person's seat
+  (`cargo run --release --bin reviews`).
 - **The selection interface** (`select.rs`): pick a card, tap the table,
   and get the chips, the addable cards, the running sum and the reasons.
 - **The session and protocol** (`session.rs`, `crates/cassino-wasm`,
