@@ -292,6 +292,8 @@ pub struct SkillState {
 /// What the games say, after the latest.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Learner {
+    /// How many games (summaries of the present version) it was learnt from.
+    pub games: usize,
     /// In [`Skill::ALL`] order.
     pub skills: [SkillState; 8],
     /// The skills that became mastered with the latest game.
@@ -398,6 +400,7 @@ pub fn learn(games: &[Summary]) -> Learner {
         .filter(|&s| mastered[index(s)] && !before[index(s)])
         .collect();
     Learner {
+        games: games.iter().filter(|g| g.is_current()).count(),
         skills,
         just_mastered,
         focus,

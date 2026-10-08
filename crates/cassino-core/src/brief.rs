@@ -154,6 +154,11 @@ pub fn strength_line(s: Strength) -> String {
 /// out: at least this many with [`MIN_CHANCES`] discounted chances.
 const ENOUGH_SKILLS: usize = 3;
 
+/// The earlier games a mastery needs before it is announced: after one game
+/// (the terminal's case, with no history) a mastery is luck of the draw, not
+/// a skill shown over time.
+const MIN_HISTORY: usize = 2;
+
 /// The brief of one finished game.
 ///
 /// - `review`: the game's review (`Session::review`).
@@ -191,6 +196,7 @@ pub fn brief(
     let mastered: Vec<Skill> = Skill::ALL
         .into_iter()
         .filter(|&s| after.mastered(s) && !before.mastered(s))
+        .filter(|_| before.games >= MIN_HISTORY)
         .collect();
     if !mastered.is_empty() {
         let names: Vec<&str> = mastered.iter().take(2).map(|&s| name(s)).collect();
@@ -467,12 +473,12 @@ mod tests {
 
     #[test]
     fn a_skill_just_mastered_is_praised_first() {
-        let game = summary(&[(Skill::Pairs, 6, 6, 0.0), (Skill::Building, 6, 0, 6.0)]);
-        let history = [game.clone(), game.clone()];
+        let game = summary(&[(Skill::Pairs, 4, 4, 0.0), (Skill::Building, 4, 0, 6.0)]);
+        let history = [game.clone(), game.clone(), game.clone()];
         let b = made(
             &review(40, vec![Strength::LastDeal]),
             &game,
-            &history[..1],
+            &history[..2],
             &classic(),
             3.0,
         );
@@ -483,26 +489,47 @@ mod tests {
             plain(&b)
         );
         assert_eq!(b.bullets.len(), 2);
-        // Only the game it came with: the third game says nothing of it.
+        // Only the game it came with: the next game says nothing of it.
         let b = made(&review(40, vec![]), &game, &history, &classic(), 3.0);
         assert!(plain(&b)[0].starts_with("Next: building."));
-        // Several: two are named.
+        // Several at once: they are named (sums, mastered a game earlier, not).
         let many = summary(&[
-            (Skill::Pairs, 6, 6, 0.0),
-            (Skill::Sums, 6, 6, 0.0),
-            (Skill::Valuables, 6, 6, 0.0),
+            (Skill::Pairs, 4, 4, 0.0),
+            (Skill::Sums, 4, 0, 0.1),
+            (Skill::Valuables, 4, 4, 0.0),
         ]);
         let b = made(
             &review(40, vec![]),
             &many,
-            std::slice::from_ref(&many),
+            &[many.clone(), many.clone()],
             &classic(),
             3.0,
         );
         assert_eq!(
             plain(&b)[0],
-            "\u{2713} Taking pairs, taking sums: mastered."
+            "\u{2713} Taking pairs, aces and Cassinos: mastered."
         );
+    }
+
+    #[test]
+    fn no_mastery_is_announced_on_too_little_history() {
+        // A single game (the terminal's case), or one before it: whatever
+        // the learner makes of the figures, no tick.
+        let game = summary(&[(Skill::Pairs, 12, 12, 0.0), (Skill::Building, 4, 0, 6.0)]);
+        for history in [&[][..], &[game.clone()][..]] {
+            let b = made(
+                &review(40, vec![Strength::LastDeal]),
+                &game,
+                history,
+                &classic(),
+                3.0,
+            );
+            assert!(
+                !plain(&b).iter().any(|l| l.contains("mastered")),
+                "{:?}",
+                plain(&b)
+            );
+        }
     }
 
     #[test]
