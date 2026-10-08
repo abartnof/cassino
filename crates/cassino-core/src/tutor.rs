@@ -139,8 +139,11 @@ pub fn shows(view: &View, mv: &Move) -> Vec<Skill> {
 /// action, as [`shows`] has them, and the two of restraint:
 ///
 /// - **NoSweep**: a move that leaves no table one card could clear for the
-///   opponent ([`leaves_sweep`]; whether or not sweeps are scored, since
-///   clearing the table takes every card on it).
+///   opponent ([`leaves_sweep`]). Sweeps are off by default
+///   (`docs/RULES.md`), and then clearing the table scores nothing, but it
+///   still hands over every card on it; so the skill stands either way,
+///   and its chance is the advisor's value gap, which already includes
+///   the cost (the point for the sweep only when sweeps score).
 /// - **Valuables**: not trailing an ace or a Cassino.
 fn good(skill: Skill, view: &View, m: &Move) -> bool {
     match skill {
@@ -586,6 +589,24 @@ mod tests {
         let tie = [("trail 5H", 0.95), ("trail KC", 1.0)];
         let none = with(&v, "trail 5H", &tie);
         assert!(!none.iter().any(|(s, _)| *s == Skill::NoSweep));
+    }
+
+    #[test]
+    fn a_table_one_card_could_clear_is_a_danger_whether_or_not_sweeps_score() {
+        // Clearing the table hands over every card on it, scored or not.
+        let off = Rules { sweeps: false, ..C };
+        let (on, off) = (view(C, "4D", "5H KC 2C 3C"), view(off, "4D", "5H KC 2C 3C"));
+        for v in [&on, &off] {
+            assert!(leaves_sweep(v, &mv("trail 5H")));
+            assert!(!leaves_sweep(v, &mv("trail KC")));
+        }
+        let vals = [("trail 5H", 0.0), ("trail KC", 1.0)];
+        for v in [&on, &off] {
+            let missed = with(v, "trail 5H", &vals);
+            assert!(missed.contains(&(Skill::NoSweep, false)), "{missed:?}");
+            let met = with(v, "trail KC", &vals);
+            assert!(met.contains(&(Skill::NoSweep, true)), "{met:?}");
+        }
     }
 
     #[test]

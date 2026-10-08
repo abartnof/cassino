@@ -754,6 +754,12 @@ restraint (leaving no sweep, keeping aces). Near-ties are no evidence. A
 decision after a hint, or after the tutor's own nudge, is not evidence: the
 teaching would otherwise spoil the measuring.
 
+**Sweeps off still count.** Sweeps are not scored by default
+(`docs/RULES.md`), but clearing the table hands the opponent every card on
+it, so leaving no sweep stays a skill: a table one card could clear is a
+danger whether or not the sweep scores, and the chance is the advisor's
+value gap, which already holds the cost.
+
 **The learner model is a pure function of the stored games.** The page
 keeps each finished game's record (its seed, settings and moves, a few
 hundred bytes) in the browser's storage, and the engine replays them. A

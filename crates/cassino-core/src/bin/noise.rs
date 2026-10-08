@@ -14,8 +14,11 @@
 //! standard deviation, in points.
 //!
 //! ```text
-//! noise [POSITIONS] [SEEDS] [--rules classic|royal]
+//! noise [POSITIONS] [SEEDS] [--rules classic|royal] [--sweeps]
 //! ```
+//!
+//! The game's default rules: sweeps not scored (as `docs/RULES.md` has
+//! them), "Aces count 1 or 14" off, builds raised. `--sweeps` scores them.
 
 use std::time::Instant;
 
@@ -24,7 +27,7 @@ use cassino_core::agents::Agent;
 use cassino_core::observation::View;
 use cassino_core::opponent::Skill as Rung;
 use cassino_core::rng::Rng;
-use cassino_core::rules::Rules;
+use cassino_core::rules::{Game, Rules};
 use cassino_core::search::SearchAgent;
 use cassino_core::session::{Prompt, Session, Settings};
 use cassino_core::tutor::{self, Skill};
@@ -61,15 +64,20 @@ fn decisions(rules: Rules, seed: u64) -> Vec<View> {
 
 fn main() {
     let mut numbers = Vec::new();
-    let mut rules = Rules::CLASSIC;
+    let mut rules = Rules {
+        sweeps: false,
+        ..Rules::CLASSIC
+    };
     let mut args = std::env::args().skip(1);
     while let Some(a) = args.next() {
         if a == "--rules" {
-            rules = match args.next().as_deref() {
-                Some("classic") => Rules::CLASSIC,
-                Some("royal") => Rules::ROYAL,
+            rules.game = match args.next().as_deref() {
+                Some("classic") => Game::Classic,
+                Some("royal") => Game::Royal,
                 other => panic!("--rules classic|royal, not {other:?}"),
             };
+        } else if a == "--sweeps" {
+            rules.sweeps = true;
         } else {
             numbers.push(a.parse::<usize>().expect("a number"));
         }
@@ -79,9 +87,10 @@ fn main() {
     assert!(seeds >= 2, "at least two seeds");
     println!(
         "Plan: {positions} positions (every fifth eligible decision of the strongest rung's \
-         games, {:?}), each skill's gap re-evaluated under {seeds} advisor seeds; \
+         games, {:?}, sweeps {}), each skill's gap re-evaluated under {seeds} advisor seeds; \
          descriptive, no looks.",
-        rules.game
+        rules.game,
+        if rules.sweeps { "scored" } else { "not scored" }
     );
     let started = Instant::now();
     let mut found: Vec<View> = Vec::new();

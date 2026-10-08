@@ -157,7 +157,8 @@ pub(crate) fn is_trail(m: &Move) -> bool {
 }
 
 /// Whether `mv` leaves a table one card could clear for the opponent, by a
-/// card they might hold.
+/// card they might hold. Whether or not sweeps are scored: clearing the
+/// table hands over every card on it either way.
 pub(crate) fn leaves_sweep(view: &View, mv: &Move) -> bool {
     advice::notes(view, view.me, mv)
         .iter()
