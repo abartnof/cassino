@@ -352,8 +352,16 @@ legal move. RULES.md now says each held card answers for one build value.
     Wilson bounds, coverage; `--confirm` for fresh seeds) are in
     `lessons.rs` and `bin/rules.rs`; the full runs (selection, then
     confirmation) are still to do.
-  - [ ] 11.4 The learner model from stored records, the next skill by
+  - [x] 11.4 The learner model from stored records, the next skill by
     expected gain; lesioned students diagnosed in `cargo test`.
+    In the engine (`learner.rs`): recorded `hint` and `nudged <skill>`
+    commands mark a decision assisted (`Turn::assisted`); `evidence` makes
+    a game's summary (versioned, text form), `learn` folds the summaries
+    into mastery with hysteresis and the focus; `Session::set_focus` and
+    `nudge` choose the once-a-game nudge. Constants set on the strongest
+    rung's 60 games (`measurements/README.md`); the `learn` binary shows a
+    student. The wasm exports for the focus and nudge, and the page's
+    storage, are 11.6.
   - [ ] 11.5 The review in three bullets, in the engine and the terminal.
   - [ ] 11.6 The page: records kept in storage, the protocol's queries,
     the review dialog, the next game's nudge; export and import.

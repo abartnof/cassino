@@ -24,6 +24,7 @@ use crate::agents::Agent;
 use crate::cards::{Card, CardSet};
 use crate::game::Game;
 use crate::hand::{self, Clinch};
+use crate::learner;
 use crate::moves::{self, BuildKind, Move};
 use crate::observation::View;
 use crate::opponent::{Opponent, Skill};
@@ -301,6 +302,9 @@ pub struct Session {
     /// The person has been helped with the decision now pending: a hint
     /// asked for or a nudge shown (the recorded `hint` and `nudged`).
     assisted: bool,
+    /// The skill the tutor is working on with this person, if the client
+    /// has said (`set_focus`). Not part of the record.
+    focus: Option<tutor::Skill>,
 }
 
 #[derive(Clone)]
@@ -344,6 +348,7 @@ impl Session {
             watched,
             turns: Vec::new(),
             assisted: false,
+            focus: None,
         };
         let cuts = session.game.cuts().to_vec();
         for (i, cut) in cuts.iter().enumerate() {
@@ -1025,6 +1030,32 @@ impl Session {
         }
     }
 
+    /// Tells the sitting which skill the tutor is working on with this
+    /// person (`learner::Learner::focus`, from their earlier games). It is
+    /// not in the record: the client says it again after a restore.
+    pub fn set_focus(&mut self, focus: Option<tutor::Skill>) {
+        self.focus = focus;
+    }
+
+    /// The skill to nudge the person on at this decision, if it is the one:
+    /// a focus is set, it is the person's turn, a clear chance at the
+    /// focus is on the table ([`learner::nudge`], one advisor run), and
+    /// neither a nudge this game nor a hint at this decision has been
+    /// recorded. The client shows the nudge and then sends `nudged <skill>`;
+    /// until it does, the nudge is still on offer, and once it has the
+    /// decision does not count towards the person's evidence.
+    pub fn nudge(&self) -> Option<tutor::Skill> {
+        let focus = self.focus?;
+        if self.watching()
+            || self.prompt() != Prompt::Play
+            || self.assisted
+            || self.record.iter().any(|l| l.starts_with("nudged"))
+        {
+            return None;
+        }
+        learner::nudge(focus, &self.view()).then_some(focus)
+    }
+
     /// The person's decisions so far, each with what they could see.
     pub fn turns(&self) -> &[Turn] {
         &self.turns
@@ -1438,6 +1469,51 @@ mod tests {
         assert!(s.turns()[0].assisted);
         let again = Session::restore(&s.saved()).unwrap();
         assert!(again.turns()[0].assisted);
+    }
+
+    #[test]
+    fn the_nudge_comes_once_a_game_at_a_clear_chance_at_the_focus() {
+        let mut s = Session::new(6, settings());
+        assert_eq!(s.nudge(), None, "no focus, no nudge");
+        s.set_focus(Some(tutor::Skill::Pairs));
+        let mut nudged_at = None;
+        for step in 0..60 {
+            match s.prompt() {
+                Prompt::Play => {
+                    if let Some(skill) = s.nudge() {
+                        assert_eq!(skill, tutor::Skill::Pairs);
+                        assert!(nudged_at.is_none(), "once a game");
+                        nudged_at = Some(step);
+                        assert!(
+                            tutor::chances(&s.view(), &s.candidates()[0], 0.0)
+                                .iter()
+                                .any(|c| c.skill == skill),
+                            "a chance is there"
+                        );
+                        // Until the client says it showed it, it is offered.
+                        assert_eq!(s.nudge(), Some(skill));
+                        assert!(s.send(&format!("nudged {}", skill.slug())));
+                        assert_eq!(s.nudge(), None);
+                    }
+                    let mv = s.candidates()[0];
+                    assert!(s.send(&mv.to_string()));
+                }
+                Prompt::NextHand => assert!(s.send("next")),
+                Prompt::Over => break,
+            }
+        }
+        assert!(nudged_at.is_some(), "a game of pairs holds a chance");
+        let again = Session::restore(&s.saved()).unwrap();
+        assert!(again.turns().iter().filter(|t| t.assisted).count() == 1);
+        // And never at a decision already helped with.
+        let mut s = Session::new(6, settings());
+        s.set_focus(Some(tutor::Skill::Pairs));
+        while s.prompt() == Prompt::Play && s.nudge().is_none() {
+            let mv = s.candidates()[0];
+            assert!(s.send(&mv.to_string()));
+        }
+        assert!(s.send("hint"));
+        assert_eq!(s.nudge(), None);
     }
 
     #[test]

@@ -176,14 +176,14 @@ choice, which samples other worlds. Lesioned students, one game each of
 Classic from seed 1 (the `learn` binary, descriptive): the searcher with
 building out met 0 of 34 chances at building (7.5 points a game); with
 pairs out, 0 of 99 (17.5 a game); greedy, 0 of 31 at building (6.2 a game)
-and 22 of 57 at trailing (5.7 a game). The counter (rung 3) met 77% of its
+and 35 of 57 at trailing (5.7 a game). The counter (rung 3) met 77% of its
 building chances and 72% of its trailing chances (2.2 points a game):
 trailing is where it is weakest.
 
 The learner's constants (`learner.rs`) were set against these numbers by
 replaying the strongest rung's 54 four-game windows: with the lower bound
 at the 10th percentile and mastery at 0.9 of the strongest rung's rate it
-mastered 2 to 3 skills of 8 in four games, and named a focus (a single miss
+mastered 2.5 skills of 8 on average in four games, and named a focus (a single miss
 in a rare skill) in 10 of 54; at the 20th percentile and 0.85, with a focus
 asked to be surely short of mastery (90th percentile below the bar), it
 masters 3 to 7 and names none. The rarest skills (answering builds, two
