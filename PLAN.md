@@ -346,12 +346,15 @@ legal move. RULES.md now says each held card answers for one build value.
     skill is worth, and the prerequisites, measured. The knockout agent
     is in (`knockout.rs`, `measure searcher-no-<skill>[+<skill>] searcher`);
     the runs are not yet made.
-  - [ ] 11.3 Candidate rules and their precision measured; one rule a
+  - [x] 11.3 Candidate rules and their precision measured; one rule a
     skill shipped, or none.
-    The 22 candidates (two or three a skill) and `rules` (precision with
-    Wilson bounds, coverage; `--confirm` for fresh seeds) are in
-    `lessons.rs` and `bin/rules.rs`; the full runs (selection, then
-    confirmation) are still to do.
+    34 candidates in `lessons.rs`; triggers and prescriptions match their
+    texts, safe-build rules are measured where the rung built, intervals
+    are clustered by game, coverage is over clear chances, sweeps off.
+    `rules --confirm --only IDS` confirms on fresh seeds. Shipped (both
+    games): pairs P3, building B3, safe builds SB1, valuables V1;
+    answering builds A3 in Classic (Royal's A2 did not confirm). No rule
+    for sums, leaving no sweep or trailing (`measurements/README.md`).
   - [ ] 11.4 The learner model from stored records, the next skill by
     expected gain; lesioned students diagnosed in `cargo test`.
   - [ ] 11.5 The review in three bullets, in the engine and the terminal.
