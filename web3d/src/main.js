@@ -37,6 +37,7 @@ import { pageDue, parseTutorial } from "./tutorial.js";
 import TUTORIAL_TEXT from "../tutorial.md";
 import { CARD, PORTRAIT_BELOW, ZONES, ZONES_PORTRAIT, ZONES_TOUCH } from "./units.js";
 import { cardCorners } from "./kinematics.js";
+import { decisionKey } from "./decision.js";
 
 /* global WASM_BASE64, ART, COURTS, WORDS */
 
@@ -965,7 +966,7 @@ async function main() {
     offer = sel.chosen && state.prompt === "play" ? engine.offer(selectionText(sel)) : null;
     if (offer?.error) offer = null;
     // The hint, once a position: it cannot change within a turn (T13).
-    const hintFor = !state.watching && state.prompt === "play" && state.aids.hints ? state.saved : null;
+    const hintFor = !state.watching && state.prompt === "play" && state.aids.hints ? decisionKey(state.saved) : null;
     if (hintFor !== hintKey) {
       hintKey = hintFor;
       hint = hintFor ? engine.hint() : null;
