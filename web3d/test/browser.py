@@ -767,6 +767,19 @@ def check_review(browser, failures, viewport=None):
     page.wait_for_function("!document.querySelector('.review-dialog').open", timeout=5_000)
     if button.is_hidden() or page.locator(".controls md-filled-button.again").is_hidden():
         failures.append(f"{where}: closed, the game's end lost its buttons")
+    # Opened again, the same review, at once (worked out once a game).
+    button.click()
+    page.wait_for_function("document.querySelector('.review-dialog').open && !document.querySelector('.review-waiting')", timeout=5_000)
+    if page.evaluate("document.querySelector('.review-page').textContent") != text:
+        failures.append(f"{where}: opened again, a different review")
+    page.locator(".review-dialog .review-close").click()
+    page.wait_for_function("!document.querySelector('.review-dialog').open", timeout=5_000)
+    # A new game: no review offered until it is over.
+    page.locator("md-filled-button.again").click()
+    deal_from_menu(page)
+    settle(page)
+    if not button.is_hidden():
+        failures.append(f"{where}: still offered once a new game is dealt")
     if page.errors:
         failures.append(f"{where}: console errors {page.errors[:5]}")
     page.context.close()

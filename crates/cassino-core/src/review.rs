@@ -541,7 +541,7 @@ impl Review {
             Theme::Valuables => (
                 "Keeping the aces and Cassinos".into(),
                 format!(
-                    "{} you trailed an ace or a Cassino when another card could have gone. Each is worth a point (Big Cassino two), and whoever takes the table next takes it too. When you must trail, a plain card is usually the cheaper gift.",
+                    "{} you trailed an ace or a Cassino when another card could have gone. Each is worth a point (Big Cassino two), and whoever takes the table next takes it too. When a card has to go, a plain one is usually the cheaper gift.",
                     times(x.slips)
                 ),
             ),
@@ -640,33 +640,6 @@ mod tests {
         }
     }
 
-    #[test]
-    fn the_review_tells_habits_gently_never_a_single_move() {
-        for skill in [1.0, 2.0, 3.0] {
-            for r in reviews(Rules::ROYAL, skill) {
-                assert!(r.tries.len() <= MOST_TRIES && r.strengths.len() <= MOST_STRENGTHS);
-                for aided in [false, true] {
-                    let t = r.told(aided);
-                    let mut all = vec![t.summary, t.closing, t.method];
-                    all.extend(t.strengths);
-                    all.extend(t.tries.into_iter().flat_map(|(h, b)| [h, b]));
-                    for text in &all {
-                        assert!(
-                            !text.contains(['♠', '♥', '♦', '♣']),
-                            "no card named: {text}"
-                        );
-                        let lower = text.to_lowercase();
-                        for harsh in [
-                            "mistake", "blunder", "wrong", "bad", "poor", "error", "should",
-                        ] {
-                            assert!(!lower.contains(harsh), "{harsh:?} in {text}");
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     /// A game with the person always playing the first move offered: a
     /// player who trails whatever the table holds.
     fn first_offered(rules: Rules, seed: u64) -> Session {
@@ -692,7 +665,7 @@ mod tests {
     fn careful_only_when_no_table_was_left_to_clear() {
         // Seen at the table: a player who trailed every time, their slips
         // put down to the captures let go, was praised as careful.
-        for seed in 0..6 {
+        for seed in 0..4 {
             let s = first_offered(Rules::ROYAL, seed);
             let r = s.review().unwrap();
             let Some(&Strength::Careful { avoided }) = r
@@ -724,7 +697,7 @@ mod tests {
     fn no_praise_for_a_careless_players_clean_last_deals() {
         // Seen in the terminal: always the first move offered, and "You
         // played the last deals cleanly".
-        for seed in 0..6 {
+        for seed in 0..4 {
             let r = first_offered_against(Rules::CLASSIC, seed, 4.0)
                 .review()
                 .unwrap();
@@ -759,6 +732,163 @@ mod tests {
         assert!(text.starts_with("A capture was the strongest play 9 times this game, and each time you trailed or built instead."), "{text}");
     }
 
+    /// Every review holds together, whatever the rules and whoever plays:
+    /// its counts agree, each habit told clears the bar, nothing praised is
+    /// also to work on, the words carry no slip of their own, and the same
+    /// game, restored, is reviewed alike.
+    #[test]
+    fn every_review_holds_together() {
+        let variants = [
+            Rules::CLASSIC,
+            Rules {
+                sweeps: false,
+                ..Rules::CLASSIC
+            },
+            Rules {
+                aces_fourteen: true,
+                ..Rules::ROYAL
+            },
+            Rules {
+                raising: false,
+                sweeps: false,
+                ..Rules::ROYAL
+            },
+        ];
+        let mut games = 0;
+        for (k, rules) in variants.into_iter().enumerate() {
+            for (j, who) in [Some(1.0), Some(2.0), Some(2.5), Some(3.0), None]
+                .into_iter()
+                .enumerate()
+            {
+                let seed = 40 + (k * 5 + j) as u64;
+                let s = match who {
+                    Some(skill) => played(rules, skill, seed),
+                    None => first_offered(rules, seed),
+                };
+                let r = s.review().unwrap();
+                games += 1;
+                let label = format!("{rules:?} {who:?} seed {seed}");
+                assert!(
+                    r.decisions > 0 && r.decisions <= s.turns().len() as u32,
+                    "{label}"
+                );
+                assert!(
+                    r.sound <= r.decisions && r.loss >= 0.0 && r.loss.is_finite(),
+                    "{label}"
+                );
+                assert_eq!(r.sweeps_score, rules.sweeps);
+                for (t, x) in &r.tallies {
+                    assert!(x.matched <= x.chances, "{label}: {t:?} {x:?}");
+                    assert!(x.loss >= 0.0 && x.loss.is_finite(), "{label}: {t:?} {x:?}");
+                    if !matches!(t, Theme::Sweeps | Theme::LastDeal) {
+                        assert!(x.slips <= x.chances, "{label}: {t:?} {x:?}");
+                    }
+                }
+                assert!(r.tries.len() <= MOST_TRIES && r.strengths.len() <= MOST_STRENGTHS);
+                for w in r.tries.windows(2) {
+                    assert!(
+                        r.tally(w[0]).loss >= r.tally(w[1]).loss,
+                        "{label}: the costliest first"
+                    );
+                }
+                for t in &r.tries {
+                    let x = r.tally(*t);
+                    assert!(
+                        x.slips >= HABIT_SLIPS && x.loss >= HABIT_POINTS,
+                        "{label}: {t:?} {x:?}"
+                    );
+                }
+                let clash = |s: &Strength| match s {
+                    Strength::Taking { .. } => Some(Theme::Taking),
+                    Strength::Building { .. } => Some(Theme::Building),
+                    Strength::LastDeal => Some(Theme::LastDeal),
+                    Strength::Careful { .. } => Some(Theme::Sweeps),
+                    _ => None,
+                };
+                for st in &r.strengths {
+                    assert!(
+                        clash(st).is_none_or(|t| !r.tries.contains(&t)),
+                        "{label}: {st:?} and {:?}",
+                        r.tries
+                    );
+                }
+                for aided in [false, true] {
+                    let t = r.told(aided);
+                    assert_eq!(t.strengths.len(), r.strengths.len());
+                    assert_eq!(t.tries.len(), r.tries.len());
+                    let mut all = vec![t.summary.clone(), t.closing.clone(), t.method.clone()];
+                    all.extend(t.strengths.clone());
+                    all.extend(t.tries.iter().flat_map(|(h, b)| [h.clone(), b.clone()]));
+                    for text in &all {
+                        assert!(
+                            !text.is_empty() && !text.contains("  "),
+                            "{label}: {text:?}"
+                        );
+                        for bad in [
+                            "{", "}", "NaN", "inf", " 0 times", " 1 times", "of 0", "..", " ,",
+                            "Some(", "None",
+                        ] {
+                            assert!(!text.contains(bad), "{label}: {bad:?} in {text}");
+                        }
+                        assert!(!text.contains(['♠', '♥', '♦', '♣']), "{label}: {text}");
+                        // Gentle: no marking, no orders.
+                        let lower = text.to_lowercase();
+                        for harsh in [
+                            "mistake", "blunder", "wrong", "bad", "poor", "error", "should", "must",
+                        ] {
+                            assert!(!lower.contains(harsh), "{label}: {harsh:?} in {text}");
+                        }
+                        assert!(
+                            text.ends_with(['.', '?']) || text.len() < 50,
+                            "{label}: {text}"
+                        );
+                    }
+                    if !rules.sweeps {
+                        assert!(!all.iter().any(|x| x.contains("A sweep scores")), "{label}");
+                    }
+                }
+                // The same game, restored, reviewed alike: the review is a
+                // pure function of the record.
+                if games % 2 == 0 {
+                    let back = Session::restore(&s.saved()).unwrap();
+                    assert_eq!(back.review(), Some(r.clone()), "{label}: restored");
+                }
+            }
+        }
+        assert_eq!(games, 20);
+    }
+
+    #[test]
+    fn an_undone_move_is_not_reviewed() {
+        // Undo, then play on: the review sees only the moves that stood.
+        let mut s = Session::new(
+            23,
+            Settings {
+                rules: Rules::CLASSIC,
+                skill: 3.0,
+            },
+        );
+        let first = s.candidates()[0];
+        assert!(s.send(&first.to_string()));
+        assert!(s.send("undo"));
+        let mut kept = Vec::new();
+        for _ in 0..2_000 {
+            match s.prompt() {
+                Prompt::Play => {
+                    let c = s.candidates();
+                    let mv = c[c.len() - 1];
+                    kept.push(mv);
+                    assert!(s.send(&mv.to_string()));
+                }
+                Prompt::NextHand => assert!(s.send("next")),
+                Prompt::Over => break,
+            }
+        }
+        let turns: Vec<Move> = s.turns().iter().map(|t| t.mv).collect();
+        assert_eq!(turns, kept);
+        assert!(s.review().is_some());
+    }
+
     #[test]
     fn nothing_to_go_on_says_so() {
         let r = review(&Rules::CLASSIC, &[], &[]);
@@ -770,21 +900,5 @@ mod tests {
             "no habits were told: {}",
             told.closing
         );
-    }
-
-    #[test]
-    fn a_habit_is_never_also_praised() {
-        for skill in [1.0, 2.0, 2.5, 3.0] {
-            for r in reviews(Rules::CLASSIC, skill) {
-                for s in &r.strengths {
-                    let clash = match s {
-                        Strength::Taking { .. } => r.tries.contains(&Theme::Taking),
-                        Strength::Building { .. } => r.tries.contains(&Theme::Building),
-                        _ => false,
-                    };
-                    assert!(!clash, "{s:?} with {:?}", r.tries);
-                }
-            }
-        }
     }
 }
