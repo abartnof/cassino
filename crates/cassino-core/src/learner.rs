@@ -69,6 +69,15 @@ pub const MIN_CHANCES: f64 = 4.0;
 /// The least a skill must cost, in points a game, to be worth working on.
 pub const MIN_GAIN: f64 = 0.5;
 
+/// The gain, in points a game, at which an unmastered skill is the focus
+/// although its rate is not shown to be short ([`UPPER`]): twice
+/// [`MIN_GAIN`], so that the backstop names only what is clearly costly.
+pub const BACKSTOP_GAIN: f64 = 2.0 * MIN_GAIN;
+
+/// The discounted chances the backstop needs: twice [`MIN_CHANCES`], so that
+/// one miss in five (three points, say) does not name a focus.
+pub const BACKSTOP_CHANCES: f64 = 2.0 * MIN_CHANCES;
+
 /// The quantile of the met rate that must reach [`master`], for mastery:
 /// the rate is at least that high with 80% confidence. At 90% the strongest
 /// rung itself mastered only two or three skills of eight in four games,
@@ -341,20 +350,46 @@ pub fn learn(games: &[Summary]) -> Learner {
             gain: (cost - top_cost(Skill::ALL[i])).max(0.0),
         }
     });
-    let cleared = |s: Skill| mastered[index(s)] || skills[index(s)].gain < MIN_GAIN;
-    let focus = Skill::ALL
-        .into_iter()
-        .filter(|&s| {
-            !mastered[index(s)]
-                && skills[index(s)].gain >= MIN_GAIN
-                && s.needs().iter().all(|&n| cleared(n))
-                && beta_quantile(
-                    UPPER,
-                    1.0 + met[index(s)],
-                    1.0 + chances[index(s)] - met[index(s)],
-                ) < master(s)
-        })
-        .max_by(|&a, &b| skills[index(a)].gain.total_cmp(&skills[index(b)].gain));
+    let seen = |s: Skill| skills[index(s)].chances >= MIN_CHANCES;
+    // Surely short: enough chances, and the rate shown below mastery.
+    let short = |s: Skill| {
+        let i = index(s);
+        seen(s) && beta_quantile(UPPER, 1.0 + met[i], 1.0 + chances[i] - met[i]) < master(s)
+    };
+    // Cleared: mastered, or costing too little to matter, or not shown to be
+    // short (a prerequisite half-proven either way must not hold back its
+    // dependents).
+    let cleared = |s: Skill| mastered[index(s)] || skills[index(s)].gain < MIN_GAIN || !short(s);
+    let open = |s: Skill| {
+        !mastered[index(s)]
+            && skills[index(s)].gain >= MIN_GAIN
+            && s.needs().iter().all(|&n| cleared(n))
+    };
+    let costliest = |candidates: Vec<Skill>| {
+        candidates
+            .into_iter()
+            .max_by(|&a, &b| skills[index(a)].gain.total_cmp(&skills[index(b)].gain))
+    };
+    let focus = costliest(
+        Skill::ALL
+            .into_iter()
+            .filter(|&s| open(s) && short(s))
+            .collect(),
+    )
+    // The backstop: nothing is surely short, but one skill is costing
+    // a great deal over enough chances.
+    .or_else(|| {
+        costliest(
+            Skill::ALL
+                .into_iter()
+                .filter(|&s| {
+                    open(s)
+                        && skills[index(s)].chances >= BACKSTOP_CHANCES
+                        && skills[index(s)].gain >= BACKSTOP_GAIN
+                })
+                .collect(),
+        )
+    });
     let just_mastered = Skill::ALL
         .into_iter()
         .filter(|&s| mastered[index(s)] && !before[index(s)])
@@ -703,6 +738,34 @@ mod tests {
         // Two met of five in each of six games: surely short.
         let six = vec![summary(&[(Skill::Valuables, 5, 2, 3.0)]); 6];
         assert_eq!(learn(&six).focus, Some(Skill::Valuables));
+    }
+
+    #[test]
+    fn one_missed_chance_names_no_focus() {
+        // A single chance, missed, with a large gap: no evidence of a rate.
+        let one = vec![summary(&[(Skill::Valuables, 1, 0, 3.0)])];
+        assert_eq!(learn(&one).focus, None);
+    }
+
+    #[test]
+    fn a_prerequisite_not_shown_short_does_not_block_what_is_surely_short() {
+        // Pairs is met 7 of 8 (a miss costs 2 points): not mastered, but not
+        // surely short either. Sums is met 1 of 6: surely short, and it
+        // should be named, not left behind its half-proven prerequisite.
+        let games = vec![summary(&[(Skill::Pairs, 8, 7, 2.0), (Skill::Sums, 6, 1, 25.0)]); 20];
+        let l = learn(&games);
+        assert!(!l.mastered(Skill::Pairs));
+        assert_eq!(l.focus, Some(Skill::Sums));
+    }
+
+    #[test]
+    fn a_skill_costing_a_lot_is_the_focus_even_when_not_surely_short() {
+        // Met 5 of 6 each game, a miss costing 12 points: not surely short
+        // (the rate may be 0.85) but a great deal is being lost.
+        let games = vec![summary(&[(Skill::Valuables, 6, 5, 12.0)]); 10];
+        let l = learn(&games);
+        assert!(!l.mastered(Skill::Valuables));
+        assert_eq!(l.focus, Some(Skill::Valuables));
     }
 
     #[test]
