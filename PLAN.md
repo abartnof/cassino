@@ -349,6 +349,10 @@ legal move. RULES.md now says each held card answers for one build value.
     the runs are not yet made.
   - [ ] 11.3 Candidate rules and their precision measured; one rule a
     skill shipped, or none.
+    The 22 candidates (two or three a skill) and `rules` (precision with
+    Wilson bounds, coverage; `--confirm` for fresh seeds) are in
+    `lessons.rs` and `bin/rules.rs`; the full runs (selection, then
+    confirmation) are still to do.
   - [ ] 11.4 The learner model from stored records, the next skill by
     expected gain; lesioned students diagnosed in `cargo test`.
   - [ ] 11.5 The review in three bullets, in the engine and the terminal.

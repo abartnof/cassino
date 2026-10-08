@@ -78,7 +78,7 @@ pub fn sweep_values(rules: &Rules, table: &Table) -> Vec<u8> {
 }
 
 /// The cards that capture as `value` (or, for a Classic court, pair with it).
-fn capturers(rules: &Rules, value: u8) -> CardSet {
+pub(crate) fn capturers(rules: &Rules, value: u8) -> CardSet {
     match value {
         1..=13 => CardSet::of_rank(value),
         14 if rules.game == crate::rules::Game::Royal && rules.aces_fourteen => {

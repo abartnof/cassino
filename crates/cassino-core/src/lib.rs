@@ -10,6 +10,7 @@ pub mod counter;
 pub mod game;
 pub mod hand;
 pub mod knockout;
+pub mod lessons;
 pub mod moves;
 pub mod observation;
 pub mod opponent;
