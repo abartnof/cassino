@@ -30,8 +30,9 @@
 //!
 //! - NoSweep: blind to leaving a table one card clears. If the move chosen
 //!   leaves no such table, yet some other move in the pool does, the player
-//!   cannot tell the two apart by danger, and plays the move that banks most
-//!   at once ([`immediate_worth`]; ties to the better value). If the move
+//!   cannot tell them apart by danger, and of the move chosen and those
+//!   that leave one, plays the move that banks most at once
+//!   ([`immediate_worth`]; ties to the better value). If the move
 //!   chosen leaves one the player stays with it: it does not seek the
 //!   danger, it is merely not afraid of it.
 //! - Valuables: blind to what a trail gives away. When the move chosen is a
@@ -245,9 +246,12 @@ impl Agent for Knockout {
             && pool.iter().any(|(x, _)| leaves_sweep(view, x))
         {
             let now = |x: &Move| immediate_worth(&view.rules, &view.table, x).total();
-            m = pool
-                .iter()
-                .copied()
+            // Only the moves the danger told apart: the one chosen, and
+            // those that leave a sweep.
+            let chosen = pool.iter().copied().find(|(x, _)| *x == m);
+            m = chosen
+                .into_iter()
+                .chain(pool.iter().copied().filter(|(x, _)| leaves_sweep(view, x)))
                 .fold(None, |best: Option<(Move, f64)>, (x, v)| match best {
                     Some((b, bv)) if (now(&b), bv) >= (now(&x), v) => best,
                     _ => Some((x, v)),
@@ -562,8 +566,9 @@ mod tests {
                 }
                 found[2] += d.len();
                 let d = differences(&[Skill::NoSweep], rules, seed);
-                for (s, _, v) in &d {
+                for (s, k, v) in &d {
                     assert!(!leaves_sweep(v, s), "the searcher left a sweep: {s}");
+                    assert!(leaves_sweep(v, k), "a safe move for a safe one: {s} {k}");
                 }
                 found[3] += d.len();
             }
