@@ -103,6 +103,17 @@ pub fn rollout_deal(mut world: Hand, seat: Seat, policy: Policy, rng: &mut Rng) 
 /// engine review's F3 found a crowded last deal that took 18 s unbounded).
 pub const SOLVER_BUDGET: u64 = 300_000;
 
+/// The table size up to which [`SOLVER_BUDGET`] stands; a position costs
+/// about as much more to search as the table has more cards (measured: 27 us
+/// a position with 16 cards loose, 60 us with 30), so a crowded table gets
+/// a proportionally smaller budget and the wait stays about the same.
+const BUDGET_TABLE: u64 = 12;
+
+/// The solver's budget for the decision at `view`.
+fn solver_budget(view: &View) -> u64 {
+    SOLVER_BUDGET * BUDGET_TABLE / (view.table.cards().len() as u64).max(BUDGET_TABLE)
+}
+
 impl SearchAgent {
     /// Every candidate, the counter's best first.
     pub fn ranked(&mut self, view: &View) -> Vec<Move> {
@@ -124,9 +135,16 @@ impl SearchAgent {
     /// sampled worlds, the same worlds for every move. For hints and for
     /// rating a move against the best.
     pub fn evaluate(&mut self, view: &View, moves: &[Move]) -> Vec<(Move, f64)> {
-        if view.perfect_information() {
+        self.evaluate_with(view, moves, true)
+    }
+
+    /// [`evaluate`](Self::evaluate), with the exact solver tried first only
+    /// if `exact`: `choose` has already found a last deal too big to solve,
+    /// and would otherwise pay the whole budget a second time.
+    fn evaluate_with(&mut self, view: &View, moves: &[Move], exact: bool) -> Vec<(Move, f64)> {
+        if exact && view.perfect_information() {
             let world = view.world(view.unseen(), &[]);
-            let mut solver = Solver::with_budget(&Margin, SOLVER_BUDGET);
+            let mut solver = Solver::with_budget(&Margin, solver_budget(view));
             let exact: Option<Vec<(Move, f64)>> = moves
                 .iter()
                 .map(|&m| {
@@ -169,17 +187,20 @@ impl Agent for SearchAgent {
     }
 
     fn choose(&mut self, view: &View) -> Move {
+        let mut exact = true;
         if view.perfect_information() {
             let world = view.world(view.unseen(), &[]);
-            if let Some((m, _)) = Solver::with_budget(&Margin, SOLVER_BUDGET).try_best(&world) {
+            if let Some((m, _)) = Solver::with_budget(&Margin, solver_budget(view)).try_best(&world)
+            {
                 return m;
             }
+            exact = false;
         }
         let shortlist = self.shortlist(view);
         if shortlist.len() == 1 {
             return shortlist[0];
         }
-        self.evaluate(view, &shortlist)
+        self.evaluate_with(view, &shortlist, exact)
             .into_iter()
             .fold(None, |best: Option<(f64, Move)>, (m, v)| match best {
                 Some((bv, _)) if bv >= v => best,
@@ -315,6 +336,76 @@ mod tests {
             started.elapsed()
         );
         assert!(v.candidates().contains(&m));
+    }
+
+    #[test]
+    fn a_crowded_table_gets_a_smaller_solver_budget() {
+        let h = crate::solver::tests::busy_last_deal();
+        let v = h.view(Seat::South, [0, 0]);
+        assert_eq!(v.table.cards().len(), 16);
+        assert_eq!(solver_budget(&v), SOLVER_BUDGET * 12 / 16);
+    }
+
+    /// Timings of `choose` on crowded last deals, for the engine review's F3:
+    /// `cargo test --release -p cassino-core --lib solver_fallback_timings
+    /// -- --ignored --nocapture`.
+    #[test]
+    #[ignore]
+    fn solver_fallback_timings() {
+        use crate::cards::CardSet;
+        use crate::table::Table;
+        for top in [4u8, 5, 6, 8] {
+            let rules = Rules::CLASSIC;
+            let hands = [
+                CardSet::parse("9C TD 8S 7H").unwrap(),
+                CardSet::parse("KC QD JH 9H").unwrap(),
+            ];
+            let mut table = Table::new();
+            for r in 1..=top.min(6) {
+                table.loose |= CardSet::of_rank(r);
+            }
+            if top == 8 {
+                // Thirty cards: the other sevens and eights as well.
+                table.loose |= CardSet::parse("7C 7D 7S 8C 8D 8H").unwrap();
+            }
+            let rest: Vec<Card> = (!(hands[0] | hands[1] | table.loose)).iter().collect();
+            let piles = [
+                rest[..rest.len() / 2].iter().copied().collect(),
+                rest[rest.len() / 2..].iter().copied().collect(),
+            ];
+            let h = Hand::from_parts(
+                rules,
+                Seat::North,
+                6,
+                Some(Seat::South),
+                hands,
+                table,
+                piles,
+                [0, 0],
+                Some(Seat::North),
+                &[],
+            );
+            let v = h.view(Seat::South, [0, 0]);
+            let t = std::time::Instant::now();
+            let world = v.world(v.unseen(), &[]);
+            let mut sv = Solver::with_budget(&Margin, solver_budget(&v));
+            let solved = sv.try_best(&world).is_some();
+            println!("  nodes {}", sv.nodes);
+            let solver = t.elapsed();
+            let t = std::time::Instant::now();
+            SearchAgent::new(Rng::seeded(1)).choose(&v);
+            let chosen = t.elapsed();
+            // The old path: the solver again inside `evaluate`.
+            let t = std::time::Instant::now();
+            let mut a = SearchAgent::new(Rng::seeded(1));
+            let sl = a.shortlist(&v);
+            a.evaluate_with(&v, &sl, true);
+            let old = solver + t.elapsed();
+            println!(
+                "table of {:2}: solver {solver:?} (solved: {solved}), choose {chosen:?}, before the fix about {old:?}",
+                table.loose.len(),
+            );
+        }
     }
 
     #[test]
