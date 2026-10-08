@@ -98,6 +98,10 @@ test("the reducer replays a move into the state the engine reaches", { skip }, (
         assert.equal(s.undealt, next.undealt, `${label}: stock`);
         assert.equal(s.dealer, next.dealer, `${label}: dealer`);
       }
+      // The user: "make sure ace in the hand is always high or low- i've
+      // seen it swap around places in the hand." Every stage keeps the
+      // rules, so a sorted hand holds its ace where the rules put it.
+      for (const { state: st } of stages) assert.deepEqual(st.rules, next.rules, `seed ${seed} step ${n}: a stage keeps the rules`);
       state = next;
     }
     assert.equal(state.prompt, "over");

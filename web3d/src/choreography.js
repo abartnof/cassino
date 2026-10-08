@@ -130,9 +130,11 @@ function sameStart(prev, next) {
   return last < 0 || (next.events[last].kind === prev.events[last].kind && next.events[last].text === prev.events[last].text);
 }
 
-// Only what the layout reads.
+// Only what the layout reads (the rules among it: whether a sorted hand
+// holds its aces high).
 function snapshot(s) {
   return {
+    rules: s.rules,
     events: s.events,
     hand: [...s.hand],
     opponent_holds: s.opponent_holds,
