@@ -25,7 +25,7 @@
 use cassino_core::advice::{self, Quality};
 use cassino_core::cards::{Card, CardSet};
 use cassino_core::hand::Clinch;
-use cassino_core::learner::{self, Summary};
+use cassino_core::learner::{self, Summary, EVIDENCE_VERSION};
 use cassino_core::moves::{BuildKind, Move};
 use cassino_core::rules::{Game, Rules};
 use cassino_core::scoring::{Breakdown, Item as Line};
@@ -744,6 +744,7 @@ pub fn learner_of(history: &str) -> String {
             ),
         ),
         ("stale", stale),
+        ("version", EVIDENCE_VERSION.to_string()),
     ])
 }
 
@@ -752,6 +753,11 @@ pub fn learner_of(history: &str) -> String {
 /// this game's summary (empty to have it worked out here), then, after a
 /// `--` line, the earlier games' summaries, oldest first.
 pub fn brief_of(session: &Session, input: &str) -> String {
+    brief_fields(session, input, None)
+}
+
+/// The brief's JSON, with the game's summary added when `summary` is given.
+fn brief_fields(session: &Session, input: &str, summary: Option<&Summary>) -> String {
     let (game, history) = match input.split_once(&format!("\n{SUMMARY_SEPARATOR}\n")) {
         Some((game, rest)) => (game, rest),
         None if input.trim() == SUMMARY_SEPARATOR => ("", ""),
@@ -766,7 +772,7 @@ pub fn brief_of(session: &Session, input: &str) -> String {
     let Some(brief) = session.brief_with(&game, &history) else {
         return "null".into();
     };
-    object(&[
+    let mut fields = vec![
         (
             "bullets",
             list(
@@ -777,7 +783,37 @@ pub fn brief_of(session: &Session, input: &str) -> String {
             ),
         ),
         ("method", text(&brief.method)),
-    ])
+    ];
+    if let Some(summary) = summary {
+        fields.push(("summary", text(&summary.to_text())));
+    }
+    object(&fields)
+}
+
+/// The brief of a stored record (the saved text of a finished game), the
+/// sitting left alone: `{bullets, method, summary}`, `summary` being the
+/// game's own, worked out in the same advisor pass. `input` is the record,
+/// a line `==`, then the earlier games' summaries, oldest first, separated
+/// by `--` lines (empty: none). `null` if the record does not restore or the
+/// game was not over. For a client that keeps no sitting of the game (a
+/// worker).
+pub fn brief_of_record(input: &str) -> String {
+    let Some((record, history)) = input.split_once("\n==\n") else {
+        return "null".into();
+    };
+    let Ok(session) = cassino_core::session::Saved::parse(record)
+        .and_then(|saved| Session::restore_quietly(&saved))
+    else {
+        return "null".into();
+    };
+    if session.prompt() != Prompt::Over || session.watching() {
+        return "null".into();
+    }
+    let Some(summary) = session.evidence() else {
+        return "null".into();
+    };
+    let rest = format!("{}\n{SUMMARY_SEPARATOR}\n{history}", summary.to_text());
+    brief_fields(&session, &rest, Some(&summary))
 }
 
 /// Sets the tutor's focus (a skill's slug, or empty for none); false if the
@@ -854,8 +890,8 @@ pub fn scripted(game: u32, aces_fourteen: u32, sweeps: u32, skill_milli: u32, se
 
 pub mod ffi {
     use super::{
-        brief_of, evidence, evidence_of, hint, learner_of, nudge, offer, reveal, set_focus,
-        sit_down, state, watch, Session,
+        brief_of, brief_of_record, evidence, evidence_of, hint, learner_of, nudge, offer, reveal,
+        set_focus, sit_down, state, watch, Session,
     };
     use std::cell::RefCell;
 
@@ -1019,6 +1055,13 @@ pub mod ffi {
                 .as_ref()
                 .map_or_else(|| "null".to_string(), |session| brief_of(session, &history))
         }));
+    }
+
+    /// Renders the brief of the stored record in the `len` bytes just
+    /// written (see [`brief_of_record`]), the sitting left alone.
+    #[no_mangle]
+    pub extern "C" fn cassino_brief_of_record(len: usize) {
+        give(brief_of_record(&input(len)));
     }
 
     /// Sets the tutor's focus from the skill slug in the `len` bytes just
@@ -1545,6 +1588,40 @@ mod tests {
         assert!(!again["bullets"].as_array().unwrap().is_empty());
         let alone = parse(&brief_of(&s, &format!("{game}\n--\n")));
         assert_eq!(alone["bullets"], v["bullets"], "an empty history is none");
+    }
+
+    #[test]
+    fn the_brief_of_a_stored_record_needs_no_sitting_and_hands_back_the_summary() {
+        let s = played_out(12);
+        let record = parse(&state(&s))["saved"].as_str().unwrap().to_string();
+        let live = parse(&brief_of(&s, ""));
+        let v = parse(&brief_of_record(&format!("{record}\n==\n")));
+        assert_eq!(
+            v["bullets"], live["bullets"],
+            "the same brief, from the record"
+        );
+        assert_eq!(
+            v["summary"],
+            parse(&evidence(&s))["summary"],
+            "and the game's summary with it"
+        );
+        let with_history = parse(&brief_of_record(&format!(
+            "{record}\n==\n{}",
+            v["summary"].as_str().unwrap()
+        )));
+        assert!(!with_history["bullets"].as_array().unwrap().is_empty());
+        let unfinished = parse(&state(&sit_down(1, 1, 0, 1, 3000, 12)))["saved"]
+            .as_str()
+            .unwrap()
+            .to_string();
+        assert_eq!(brief_of_record(&format!("{unfinished}\n==\n")), "null");
+        assert_eq!(brief_of_record("nonsense"), "null");
+    }
+
+    #[test]
+    fn the_learner_names_the_evidence_version_it_knows() {
+        let v = parse(&learner_of(""));
+        assert_eq!(v["version"], EVIDENCE_VERSION);
     }
 
     #[test]

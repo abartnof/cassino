@@ -213,7 +213,10 @@ line of `--` between; an entry that is missing or no summary counts as stale.
   no use for and which would cost an advisor run a move.
 - **`learner(history)`**: `{games, focus, mastered, stale}`: the number of
   current summaries, the skill to work on next (a slug or `null`), the
-  slugs mastered, and the indexes to recompute with `evidence_of`.
+  slugs mastered, the indexes to recompute with `evidence_of`, and
+  `version`, the evidence version this engine makes. A summary of a
+  *newer* version is listed as stale too (this engine cannot read it), but a
+  client should not recompute it back: another tab with a newer page made it.
 - **`brief(game, history)`**: `{bullets: [{lead, text}], method}`, one to
   three bullets and the sentences that say how they were worked out
   (`null` before the game is over). The input is this game's summary (empty
@@ -222,6 +225,14 @@ line of `--` between; an entry that is missing or no summary counts as stale.
   The review it rests on shares one advisor pass over the game with the
   evidence, kept in the sitting: with `evidence` asked first, the brief
   costs nothing more; asked alone, about the cost of `evidence`.
+- **`brief_of_record(record, history)`**: `{bullets, method, summary}` for a
+  stored record of a finished game, with no sitting needed (`null` if the
+  record does not restore or was not finished): the record is restored
+  quietly, and the game's evidence, the review and the brief come from one
+  advisor pass. The input is the record, a line `==`, then the history as for
+  `brief`. For a client that works out the tutor off its main thread, in a
+  worker with an instance of its own: `evidence_of`, `learner` and this are
+  stateless.
 - **`set_focus(slug)`**: tells the sitting which skill to work on (empty for
   none; 1 if it was a skill). Not in the record: say it again after a
   restore. With a focus set, the person's decisions at it may be nudged.
@@ -268,6 +279,7 @@ The module exports, with no `wasm-bindgen`:
 | `cassino_evidence_of(len)` | Renders the summary of the stored record just written |
 | `cassino_learner(len)` | Renders the learner over the summaries just written |
 | `cassino_brief(len)` | Renders the brief; the input is this game's summary, `--`, the history |
+| `cassino_brief_of_record(len)` | Renders the brief of the stored record just written, `==`, the history (see "The tutor") |
 | `cassino_set_focus(len) -> 0/1` | Sets the tutor's focus from the slug just written (empty: none) |
 | `cassino_nudge()` | Renders the nudge for the current decision (`null` for none) |
 | `cassino_reveal()` | Renders every hand's deals once the game is over (`null` before; see "The replay") |

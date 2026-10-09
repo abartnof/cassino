@@ -87,7 +87,9 @@ test("the tutor's queries: evidence, stored records, learner, brief", { skip: !e
   console.log(`# evidence of a stored record: ${(performance.now() - t).toFixed(0)} ms`);
   assert.equal(engine.evidenceOf("nonsense"), null);
   assert.equal(engine.evidence(), summary, "the sitting is as it was");
-  assert.deepEqual(engine.learner([]), { games: 0, focus: null, mastered: [], stale: [] });
+  const empty = engine.learner([]);
+  assert.deepEqual({ ...empty, version: 0 }, { games: 0, focus: null, mastered: [], stale: [], version: 0 });
+  assert.equal(summary.match(/^cassino evidence v(\d+)/)[1], String(empty.version), "the learner names the evidence version it knows");
   const learner = engine.learner([summary, null, summary]);
   assert.equal(learner.games, 2);
   assert.deepEqual(learner.stale, [1]);
@@ -98,6 +100,13 @@ test("the tutor's queries: evidence, stored records, learner, brief", { skip: !e
   assert.ok(brief.bullets.every((b) => typeof b.lead === "string" && b.text));
   assert.ok(brief.method.length > 40);
   assert.ok(engine.brief(null, []).bullets.length >= 1, "with no history, and the summary worked out");
+  // The same from the record alone (a worker has no sitting), with the game's summary.
+  t = performance.now();
+  const fromRecord = engine.briefOfRecord(over.saved, [summary, summary]);
+  console.log(`# brief of a stored record (its evidence too): ${(performance.now() - t).toFixed(0)} ms`);
+  assert.equal(fromRecord.summary, summary);
+  assert.deepEqual(fromRecord.bullets, brief.bullets);
+  assert.equal(engine.briefOfRecord("nonsense", []), null);
 });
 
 test("the focus and the nudge: words from the engine, once a game", { skip: !existsSync(WASM) && "build the module first" }, async () => {

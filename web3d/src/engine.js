@@ -119,7 +119,8 @@ export async function loadEngine(bytes, onTrap = () => {}) {
       return out()?.summary ?? null;
     },
     // What the games say, oldest first: { games, focus, mastered, stale }
-    // (focus a skill's slug or null; stale the indexes to recompute).
+    // (focus a skill's slug or null; stale the indexes to recompute),
+    // plus `version`, the evidence version this engine makes.
     learner(history) {
       ex.cassino_learner(write(joinSummaries(history)));
       return out();
@@ -129,6 +130,14 @@ export async function loadEngine(bytes, onTrap = () => {}) {
     // have it worked out here), `history` the earlier games', oldest first.
     brief(game, history) {
       ex.cassino_brief(write(`${game ?? ""}\n${SEPARATOR}\n${joinSummaries(history)}`));
+      return out();
+    },
+    // The brief of a stored record of a finished game, the sitting left
+    // alone, with the game's own summary: { bullets, method, summary } or
+    // null if the record does not restore or was not finished. One advisor
+    // pass for both. For a worker, which keeps no sitting.
+    briefOfRecord(record, history) {
+      ex.cassino_brief_of_record(write(`${record}\n==\n${joinSummaries(history)}`));
       return out();
     },
     // Tells the sitting which skill the tutor is on (a slug; null for none).
