@@ -223,8 +223,10 @@ opens a dialog, "How you played": the engine's brief (`DESIGN.md` §12.8,
 each with its lead in bold, and a folded "How is this worked out?" with the
 method. The engine rates every move again when asked, and works out the
 game's evidence if that has not been done yet (together about a second in
-the module), so the dialog opens first, "Thinking back over your game...",
-and the brief follows; it is worked out once a game.
+the module). That runs off the table's thread (below): the brief is asked
+for once the ending has settled, so it is usually ready when the button is
+pressed; if not, the dialog opens first, "Thinking back over your game...",
+and the brief follows. It is worked out once a game.
 
 **The tutor** (`DESIGN.md` §12.8). `progress.js` keeps the last 30
 finished games in the browser's storage (key `cassino.progress`, version 1:
@@ -232,16 +234,51 @@ finished games in the browser's storage (key `cassino.progress`, version 1:
 engine's evidence summary text), every access in a try/catch; with no
 storage everything works as one game. A finished game is kept at once with
 its record; its summary is worked out when the ending has settled (4.5 s
-on, when idle: about 0.5 s in the module) and stored with it. Summaries
-the engine calls stale (`learner` lists them) are recomputed from their
-records one at a time when idle. At a new game (and on a restored one) the
-page asks the engine's learner over the stored summaries for the focus and
-hands it to the sitting (`set_focus`); on your turn it asks the engine for
-the nudge once per position (`refresh`, keyed like the hint), shows its
+on, when idle) and stored with it. **The heavy calls run in a Web Worker**
+(`tutorworker.js`, `tutorworker-entry.js`): the evidence of a stored record
+and the brief of a stored record (`brief_of_record`, which gives the game's
+summary with the brief from one advisor pass) are stateless, so the worker
+has an engine instance of its own, and the page asks for them as promises.
+The page is one file, so `build.py` bundles the worker's script separately
+and inlines it as a text script (`#tutor-worker`), and the page runs it from
+a Blob URL, posting it the engine's bytes. Where no worker can be had (or
+one dies or cannot load the engine) the same calls are made on the main
+thread, a task at a time; `?noworker` forces that. The learner (7 ms for
+thirty games) and the nudge (it needs the live session) stay on the main
+thread, and the nudge is asked only with the cards at rest (the director's
+`rested`, or a refresh while nothing moves), never in an animation.
+Summaries the engine calls stale (`learner` lists them) are recomputed from
+their records one at a time when idle, each in a try/catch so one failure
+does not end the rest; a summary of a *newer* evidence than the engine's is
+left alone. A record the engine cannot restore is dropped after that one
+try. At a new game (and on a restored one) the page asks the engine's
+learner over the stored summaries for the focus and hands it to the sitting
+(`set_focus`); when a summary lands afterwards (the game just played, or a
+stale one recomputed) the learner is asked again and the sitting told, if
+the focus changed and no tip has been shown this game. On your turn it asks
+the engine for the nudge once per position (keyed like the hint), shows its
 words once the cards are still on the aid line under the prompt ("Tip: ..."),
-and sends `nudged <skill>`. Settings: "Tips from the tutor" (on by default;
-off sets no focus), and "Your progress": Export (a JSON file), Import (a file
-chosen; a bad one is refused in a sentence and changes nothing) and Clear.
+and sends `nudged <skill>`. A sweep warning the player has turned on follows
+the tip on the same line (a tip does not hide it), and showing it sends
+`warned`; a hint shown is saved at once, like the tip. Storage is checked:
+a record over 20 KB, a summary that is not the engine's evidence text, an
+import file over 1 MB or with no games are refused or read as missing; a
+store written by a newer page (`v` above this page's) is read as empty,
+left as it is and said so once. Settings: "Tips from the tutor" (on by
+default; off sets no focus), and "Your progress": Export (a JSON file),
+Import (a file chosen; a bad one is refused in a sentence and changes
+nothing) and Clear.
+
+*Measured* (Chromium, SwiftShader, 54-decision games against skill 3). On the
+main thread, before the worker: the evidence of a game 0.3 to 0.7 s, the
+brief the same again (0.3 to 0.7 s, with its own advisor pass), a stale
+recompute 0.3 to 0.7 s a game and up to thirty in a row, the learner 3 ms.
+Opening the review had a 767 ms long task and took 845 ms to show its
+bullets; with the worker it has none (longest frame 24 ms) and shows them in
+76 ms, the brief having been worked out in the worker when the ending
+settled. At the game's end the table's own software-rendered frames (about
+550 ms each on SwiftShader) hide the rest in a long-task trace, but the
+calls themselves no longer run there: the page only posts a message.
 
 ## 7. Table talk
 

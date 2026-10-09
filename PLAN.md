@@ -408,6 +408,20 @@ legal move. RULES.md now says each held card answers for one build value.
     told building as a fact (B3 0.796). A sweep
     warning is recorded as `warned` (assisted, like a hint); the nudge is
     once a game even across undo.
+  - [x] 11.7 The page-side review's findings, fixed. The tutor's heavy
+    calls (evidence of a record, the brief with its summary:
+    `brief_of_record`) run in a Web Worker with its own engine instance
+    (`tutorworker.js`; `build.py` inlines a second bundle; a main-thread
+    fallback), so the table does not freeze; the nudge check waits for the
+    cards to rest. The focus is set again when a summary lands, until a tip
+    has been shown this game. A shown sweep warning is sent as `warned`, and
+    follows a tip on the aid line instead of being hidden by it; a hint is
+    saved the moment it is shown. Storage is bounded and checked (record 20
+    KB, import 1 MB, summaries as the engine's text, a newer store left
+    alone, newer evidence not recomputed back, an unrestorable record dropped
+    after one try, each recompute in a try/catch). Browser checks
+    `check_assist`, `check_focus`. Main-thread times before and after are in
+    `docs/TABLE3D.md` §6.
 
 ## Working conventions
 

@@ -731,9 +731,8 @@ def check_review(browser, failures, viewport=None):
     where = "review" + (" on a phone" if viewport else "")
     page = open_page(browser, "ending&keep&speed=2", viewport=viewport, calm=True)
     settle(page)
-    # What the brief is given of the earlier games, to see this game counted
-    # once however the aids are switched after it.
-    page.evaluate("() => { const e = window.cassino3d.engine; const brief = e.brief; window.briefHistories = []; e.brief = (g, h) => { window.briefHistories.push(h.length); return brief(g, h); }; }")
+    # What the brief is given of the earlier games (the page keeps the list),
+    # to see this game counted once however the aids are switched after it.
     button = page.locator(".controls .review")
     if not button.is_hidden():
         failures.append(f"{where}: offered before the game is over")
@@ -797,8 +796,9 @@ def check_review(browser, failures, viewport=None):
     page.wait_for_function("document.querySelector('.review-dialog').open", timeout=5_000)
     page.locator(".review-dialog .review-close").click()
     page.wait_for_function("!document.querySelector('.review-dialog').open", timeout=5_000)
-    if page.evaluate("window.briefHistories").count(1):
-        failures.append(f"{where}: the game was counted among its own earlier games: {page.evaluate('window.briefHistories')}")
+    histories = page.evaluate("window.cassino3d.briefHistories()")
+    if histories.count(1) or not histories:
+        failures.append(f"{where}: the game was counted among its own earlier games, or no brief was asked: {histories}")
     # Opened again, the same review, at once (worked out once a game).
     button.click()
     page.wait_for_function("document.querySelector('.review-dialog').open && !document.querySelector('.review-waiting')", timeout=5_000)
@@ -889,6 +889,99 @@ def check_tutor(browser, failures):
         if page.errors:
             failures.append(f"{where}: console errors {page.errors[:5]}")
         page.context.close()
+
+
+def check_focus(browser, failures):
+    """The tutor's focus follows the summaries as they land (the page-side
+    review's second finding): after a change to the evidence the stored
+    summaries are stale, so the first game starts with no focus; as each is
+    recomputed from its record, off the table's thread, the sitting is told
+    the skill to work on, without waiting for the next new game. The calls
+    run in a worker."""
+    page = open_page(browser, "speed=8&skill=2&sweeps")
+    settle(page)
+    games = page.evaluate(
+        """() => { const e = window.cassino3d.engine; const out = [];
+        for (let seed = 1; seed <= 5; seed++) {
+          let s = e.start({ game: 'classic', skill: 2, seed });
+          for (let n = 0; s.prompt !== 'over' && n < 600; n++) s = e.send(s.prompt === 'play' ? s.moves[0] : 'next').state;
+          out.push(s.saved);
+        }
+        return out; }"""
+    )
+    old = "cassino evidence v0\n" + "\n".join(f"{slug} 0 0 0" for slug in ("pairs", "sums", "building", "safe-builds", "answering-builds", "sweeps", "valuables", "trailing")) + "\n"
+    page.evaluate(
+        "([games, old]) => localStorage.setItem('cassino.progress', JSON.stringify({ v: 1, games: games.map((record) => ({ record, summary: old })) }))",
+        [games, old],
+    )
+    page.reload()
+    page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
+    settle(page)
+    if not page.evaluate("window.cassino3d.threaded()"):
+        failures.append("focus: the tutor's calls are not running in a worker")
+    if page.evaluate("window.cassino3d.focus()") is not None:
+        failures.append("focus: a focus from summaries the engine calls stale")
+    try:
+        page.wait_for_function("window.cassino3d.progress().length === 5 && window.cassino3d.progress().every((g) => g.summary && !g.summary.startsWith('cassino evidence v0'))", timeout=120_000)
+    except Exception:
+        failures.append(f"focus: the stale summaries were not recomputed: {[(g['summary'] or '')[:20] for g in page.evaluate('window.cassino3d.progress()')]}")
+        page.context.close()
+        return
+    want = page.evaluate("window.cassino3d.engine.learner(window.cassino3d.progress().map((g) => g.summary)).focus")
+    got = page.evaluate("window.cassino3d.focus()")
+    if want is None:
+        failures.append("focus: the scenario gives no skill to work on (choose other games)")
+    elif got != want:
+        failures.append(f"focus: the sitting was left on {got!r}, not the learner's {want!r}, once the summaries landed")
+    if page.errors:
+        failures.append(f"focus: console errors {page.errors[:5]}")
+    page.context.close()
+
+
+def check_assist(browser, failures):
+    """Help shown is help recorded, and kept at once: a hint is in the saved
+    sitting the moment it is shown (a reload keeps it), and so is the sweep
+    warning (the engine's `warned`), with or without the tutor's tip."""
+    kept = "Object.values(localStorage).some((v) => v.split('\\n').includes(%s))"
+    # The hint.
+    page = open_page(browser, "speed=8&skill=1")
+    page.evaluate("localStorage.setItem('cassino.prefs', JSON.stringify({ aids: { hints: true }, v: 6 }))")
+    page.reload()
+    page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
+    settle(page)
+    if not page.evaluate("window.cassino3d.hint()"):
+        failures.append("assist: no hint with the hints on")
+    elif not page.evaluate(kept % "'hint'"):
+        failures.append("assist: the hint shown was not kept in the saved sitting")
+    else:
+        page.reload()
+        page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
+        settle(page)
+        if "\nhint" not in page.evaluate("window.cassino3d.engine.state().saved"):
+            failures.append("assist: a reload lost the hint that had been shown")
+    if page.errors:
+        failures.append(f"assist: console errors {page.errors[:5]}")
+    page.context.close()
+    # The sweep warning: seed 29 opens with a table that trailing the 8H
+    # leaves for a single card to sweep. A seeded game is not saved, so the
+    # engine's record is what is looked at.
+    page = open_page(browser, "seed=29&speed=8&skill=1&sweeps")
+    page.evaluate("localStorage.setItem('cassino.prefs', JSON.stringify({ sweepWarning: true, v: 6 }))")
+    page.reload()
+    page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
+    settle(page)
+    if "\nwarned" in page.evaluate("window.cassino3d.engine.state().saved"):
+        failures.append("assist: a warning recorded before it was shown")
+    click_card(page, "8H")
+    settle(page)
+    text = page.evaluate("(document.querySelector('.aid-line') || { hidden: true }).hidden ? '' : document.querySelector('.aid-line').textContent")
+    if "leaves a sweep" not in text:
+        failures.append(f"assist: no sweep warning on the aid line for the 8H: {text!r}")
+    elif "\nwarned" not in page.evaluate("window.cassino3d.engine.state().saved"):
+        failures.append("assist: a sweep warning was shown but not recorded as help")
+    if page.errors:
+        failures.append(f"assist: console errors {page.errors[:5]}")
+    page.context.close()
 
 
 def check_move_bar(browser, failures):
@@ -1758,7 +1851,15 @@ def check_settings(browser, failures):
     page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
     settle(page)
     back = page.evaluate("window.cassino3d.state()")
-    if back["saved"] != made["saved"]:
+    # (The hint shown at this turn is kept at once, so the record that comes
+    # back may end with its line: the position is the same.)
+    def position(text):
+        lines = text.rstrip("\n").split("\n")
+        while lines and re.match(r"^(hint|warned|nudged)\b", lines[-1]):
+            lines.pop()
+        return lines
+
+    if position(back["saved"]) != position(made["saved"]):
         failures.append("settings: the sitting did not come back after a reload")
     if not page.evaluate("window.cassino3d.prefs()")["aids"]["hints"]:
         failures.append("settings: hints were not kept across the reload")
@@ -1964,6 +2065,8 @@ def main() -> int:
         check_review(browser, failures)
         check_review(browser, failures, viewport={"width": 390, "height": 664})
         check_tutor(browser, failures)
+        check_assist(browser, failures)
+        check_focus(browser, failures)
         check_tutorial(browser, failures)
         check_phone(browser, failures)
         check_tablet_faces(browser, failures)

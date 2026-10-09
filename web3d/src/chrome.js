@@ -423,15 +423,21 @@ export function createChrome(root, on) {
       el("div", { slot: "actions" }, el("md-text-button", { onclick: () => reviewDialog.close() }, "Close")),
     );
     reviewDialog.show();
+    const block = (b) =>
+      b.type === "bullets"
+        ? el("ul", { class: "review-bullets" }, b.items.map((it) => el("li", {}, it.lead ? [el("strong", {}, it.lead), " "] : null, it.text)))
+        : el("details", { class: "review-method" }, el("summary", {}, b.title), el("p", {}, b.text));
+    const fill = (brief) => {
+      if (!brief) return reviewDialog.close();
+      content.replaceChildren(...briefBlocks(brief).map(block));
+    };
+    // The brief is worked out off the table's thread (a promise; or the
+    // brief itself): the dialog says it is thinking until it arrives.
     requestAnimationFrame(() =>
       setTimeout(() => {
-        const brief = get();
-        if (!brief) return reviewDialog.close();
-        const block = (b) =>
-          b.type === "bullets"
-            ? el("ul", { class: "review-bullets" }, b.items.map((it) => el("li", {}, it.lead ? [el("strong", {}, it.lead), " "] : null, it.text)))
-            : el("details", { class: "review-method" }, el("summary", {}, b.title), el("p", {}, b.text));
-        content.replaceChildren(...briefBlocks(brief).map(block));
+        Promise.resolve()
+          .then(get)
+          .then(fill, () => reviewDialog.close());
       }, 0),
     );
   }

@@ -57,14 +57,15 @@ def build_wasm() -> bytes:
     return WASM.read_bytes()
 
 
-def bundle() -> tuple[str, dict[str, int]]:
-    """The page's script, minified, and how many of its bytes each part owns."""
+def bundle(entry: str = "src/main.js") -> tuple[str, dict[str, int]]:
+    """A script of the page (the table's, or the tutor's worker), minified, and
+    how many of its bytes each part owns."""
     if not ESBUILD.exists():
         sys.exit("esbuild is missing: run `npm ci` in web3d/ first")
     with tempfile.TemporaryDirectory() as tmp:
         out, meta = Path(tmp) / "app.js", Path(tmp) / "meta.json"
         subprocess.run(
-            [str(ESBUILD), "src/main.js", "--bundle", "--minify", "--format=iife",
+            [str(ESBUILD), entry, "--bundle", "--minify", "--format=iife",
              "--target=es2022", "--platform=browser", "--legal-comments=eof",
              # The tutorial's pages are Markdown, inlined as text (web3d/tutorial.md).
              "--loader:.md=text",
@@ -146,8 +147,12 @@ def main() -> int:
     out = OUT if args.art == "webp" else OUT.with_name("cassino3d-svg.html")
     wasm = build_wasm()
     code, owned = bundle()
-    if "</script" in code.lower():
-        sys.exit("the bundle contains '</script', which would end the inline script early")
+    # The tutor's worker (src/tutorworker.js): its own small bundle, carried in
+    # a text script and run from a Blob URL, since the page is one file.
+    worker, _ = bundle("src/tutorworker-entry.js")
+    for name, text in (("the bundle", code), ("the worker's bundle", worker)):
+        if "</script" in text.lower():
+            sys.exit(f"{name} contains '</script', which would end the inline script early")
     style = (SRC / "style.css").read_text()
     engine = base64.b64encode(wasm).decode("ascii")
     cards = art(args.art)
@@ -156,6 +161,7 @@ def main() -> int:
     page = fill((SRC / "index.html").read_text(), {
         "/*STYLE*/": style,
         "/*APP*/": code,
+        "/*TUTORWORKER*/": worker,
         "__WASM_BASE64__": engine,
         "/*ART*/": cards,
         "/*COURTS*/": figures,
@@ -173,6 +179,7 @@ def main() -> int:
     rows = [("the engine (wasm, base64)", len(engine)), (art_name, len(cards.encode())),
             ("the courts at the game's end (WebP, base64)", len(figures.encode())),
             ("the dialogue's words", len(words.encode())),
+            ("the tutor's worker", len(worker.encode())),
             *owned.items(),
             ("stylesheet", len(style.encode()))]
     rows.append(("page skeleton", size - sum(n for _, n in rows)))

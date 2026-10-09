@@ -37,7 +37,9 @@ import { pageDue, parseTutorial } from "./tutorial.js";
 import TUTORIAL_TEXT from "../tutorial.md";
 import { CARD, PORTRAIT_BELOW, ZONES, ZONES_PORTRAIT, ZONES_TOUCH } from "./units.js";
 import { cardCorners } from "./kinematics.js";
+import { aidLine as aidsLine } from "./aids.js";
 import { decisionKey } from "./decision.js";
+import { createTutor } from "./tutorworker.js";
 import { addGame, clearProgress, exportProgress, historyOf, importProgress, isNewerStore, loadProgress, progressSaid, refreshOne, setSummary } from "./progress.js";
 
 /* global WASM_BASE64, ART, COURTS, WORDS */
@@ -63,7 +65,8 @@ async function main() {
   // the table says so calmly and offers to reload, the saved sitting kept;
   // the engine, meanwhile, is still (engine.js `guard`).
   let stopped = () => {};
-  const engine = await loadEngine(decodeBase64(WASM_BASE64), (error) => {
+  const wasmBytes = decodeBase64(WASM_BASE64);
+  const engine = await loadEngine(wasmBytes, (error) => {
     console.error(error);
     stopped();
   });
@@ -86,6 +89,7 @@ async function main() {
   let nudge = null; // the tutor's nudge for this turn, if the engine names one
   let nudgeKey = null; // the position it was asked for (once a turn, not per frame)
   let nudgeSent = false; // whether `nudged` is recorded for it
+  let warnedKey = null; // the position a sweep warning was shown at (`warned` is recorded for it)
   let logOpen = false;
   let badgeFrom = null; // the state the cards are moving from (badges.js)
 
@@ -151,6 +155,7 @@ async function main() {
     view: () => ({ ...sel, zones: zonesNow(), sort: prefs.sortTable }),
     decorate,
     rested: () => {
+      askNudge(); // the cards are still: the one place the tutor's check may run
       badgeFrom = state; // from here, a move starts from this table
       placeBadges();
       overlay.trackers(trackers(state), state.watching);
@@ -452,19 +457,25 @@ async function main() {
   const idle = (fn, ms = 0) => setTimeout(() => (window.requestIdleCallback ? window.requestIdleCallback(fn, { timeout: 4000 }) : fn()), ms);
   const ENDING_SETTLES = 4500; // ms after the game's end before its evidence is worked out
 
+  // The heavy calls (the evidence of a game, the brief that shares its
+  // advisor pass) run in a worker with an engine of its own, so the table
+  // does not stop for them (tutorworker.js); ?noworker has them on this
+  // thread, as the page does where there is no worker.
+  function spawnTutorWorker() {
+    const source = document.getElementById("tutor-worker")?.textContent;
+    if (!source || typeof Worker === "undefined" || params.has("noworker")) return null;
+    return new Worker(URL.createObjectURL(new Blob([source], { type: "text/javascript" })));
+  }
+  const tutor = createTutor({ spawn: spawnTutorWorker, local: engine, bytes: wasmBytes });
+
   // The summaries worked out this sitting, by record: the stored ones are
   // read from storage, so with none the brief still rests on this game.
   const summaries = new Map();
-  function summaryOf(record) {
-    let summary = summaries.get(record);
-    if (!summary) {
-      summary = engine.evidenceOf(record);
-      if (summary) {
-        summaries.set(record, summary);
-        setSummary(store, record, summary);
-      }
-    }
-    return summary;
+  function keepSummary(record, summary) {
+    if (!summary) return;
+    summaries.set(record, summary);
+    setSummary(store, record, summary);
+    refocus();
   }
   const sayProgress = () => chrome.progressSaid(progressSaid(loadProgress(store).length, isNewerStore(store)));
 
@@ -482,8 +493,14 @@ async function main() {
     // A seeded link's game, or a staged ending, is nobody's progress.
     if ((fixedSeed || STAGING) && !params.has("keep")) return; // ?keep: for the browser test
     addGame(store, { record, summary: summaries.get(record) ?? null });
-    idle(() => {
-      summaryOf(record);
+    // The brief and the summary come from one advisor pass, off this thread;
+    // the review then opens at once.
+    idle(async () => {
+      try {
+        await reviewOf(record);
+      } catch (error) {
+        console.error(error);
+      }
       sayProgress();
     }, ENDING_SETTLES);
   }
@@ -491,22 +508,62 @@ async function main() {
   // Summaries made by another version of the evidence are recomputed from
   // their records, one at a time, when idle (learner::stale).
   const tried = new Set();
+  const staleEngine = { learner: (h) => engine.learner(h), evidenceOf: (r) => tutor.evidenceOf(r), stopped: () => engine.stopped() };
   function staleSoon(ms = 1500) {
     idle(async () => {
-      if (await refreshOne(store, engine, tried)) staleSoon(2500);
-      else sayProgress();
+      try {
+        if (await refreshOne(store, staleEngine, tried)) {
+          refocus();
+          staleSoon(2500);
+          return;
+        }
+      } catch (error) {
+        console.error(error);
+      }
+      sayProgress();
     }, ms);
   }
 
   // The skill to work on, from the games kept, handed to the sitting at a
   // new game (and a game restored: the record does not hold it); none with
   // the tips off.
+  let givenFocus = null; // the focus the sitting has been given
   function tutorFocus() {
     nudge = null;
     nudgeKey = null;
     if (state.watching) return;
-    const focus = prefs.tutor ? engine.learner(historyOf(loadProgress(store))).focus : null;
+    givenFocus = prefs.tutor ? engine.learner(historyOf(loadProgress(store))).focus : null;
+    engine.setFocus(givenFocus);
+  }
+
+  // A summary has landed (the game just played, or a stale one recomputed):
+  // the skill to work on may have changed, so the sitting is told again, as
+  // long as no tip has been shown this game (the engine lets one through a
+  // game). Without this a quick new game runs on the focus of the game
+  // before the last, and after a change to the evidence the first game has
+  // none at all.
+  function refocus() {
+    if (!prefs.tutor || state.watching || state.prompt === "over") return;
+    if (/^nudged\b/m.test(engine.state()?.saved ?? "")) return;
+    const focus = engine.learner(historyOf(loadProgress(store))).focus;
+    if (focus === givenFocus) return;
+    givenFocus = focus;
     engine.setFocus(focus);
+    nudge = null;
+    nudgeKey = null; // asked again, at rest
+    if (!director.busy()) refresh();
+  }
+
+  // The tutor's nudge for this turn, asked once a turn as the hint is, and
+  // only with the cards at rest: it costs an advisor run (35 ms on average,
+  // 280 ms at worst) on this thread, which must not fall in an animation.
+  function askNudge() {
+    const nudgeFor = prefs.tutor && !state.watching && state.prompt === "play" ? decisionKey(state.saved) : null;
+    if (nudgeFor !== nudgeKey) {
+      nudgeKey = nudgeFor;
+      nudgeSent = false;
+      nudge = nudgeFor ? engine.nudge() : null;
+    }
   }
 
   function download(name, text) {
@@ -519,16 +576,27 @@ async function main() {
   }
 
   // The brief of the game just played, worked out once however often it is
-  // opened: the game's summary (made already, or now) and the earlier games'.
-  let review = { of: null, words: null };
-  function reviewed() {
-    const record = endedRecord ?? state.saved;
+  // opened, in the worker: a promise of { bullets, method } (the game's own
+  // summary comes with it, and is kept).
+  let review = { of: null, promise: null };
+  const briefHistories = []; // how many earlier games each brief was given (for the browser test)
+  function reviewOf(record) {
     if (review.of !== record) {
       const earlier = loadProgress(store).filter((g) => g.record !== record);
-      review = { of: record, words: engine.brief(summaryOf(record), historyOf(earlier)) };
+      briefHistories.push(earlier.length);
+      const promise = tutor.briefOfRecord(record, historyOf(earlier)).then((got) => {
+        if (got?.summary) keepSummary(record, got.summary);
+        return got;
+      });
+      review = { of: record, promise };
+      // One that failed is asked for again next time.
+      promise.catch(() => {
+        if (review.promise === promise) review = { of: null, promise: null };
+      });
     }
-    return review.words;
+    return review.promise;
   }
+  const reviewed = () => reviewOf(endedRecord ?? state.saved);
 
   // The sitting kept across a reload; a watched game, or one that is over,
   // is not kept.
@@ -1039,20 +1107,24 @@ async function main() {
   // says so before it is made; otherwise, what would clear the table now.
   function aidLine() {
     if (state.watching || state.prompt !== "play") return null;
-    if (hint) return `Hint: ${hint.advice}.`;
-    if (nudge) return `Tip: ${nudge.words}`;
-    if (!prefs.sweepWarning) return null;
-    const warning = sweepWarning(chipsOf(offer));
-    if (warning) return warning;
-    if (state.sweep_values.length) {
+    const warning = prefs.sweepWarning ? sweepWarning(chipsOf(offer)) : null;
+    let clearing = null;
+    if (prefs.sweepWarning && !warning && state.sweep_values.length) {
       const text = `${valuesSaid(state.sweep_values)} would clear the table.`;
-      return text[0].toUpperCase() + text.slice(1);
+      clearing = text[0].toUpperCase() + text.slice(1);
     }
-    return null;
+    return aidsLine({ hint, nudge, warning, clearing });
+  }
+
+  // The sitting as the engine has it now, kept (a command recorded since
+  // the last move: the hint, the tip, the warning shown).
+  function keepSitting(saved) {
+    if (!fixedSeed && !STAGING && !state.watching) saveSitting(store, saved);
   }
 
   function show() {
     const busy = director.busy();
+    const aid = aidLine();
     // Room for the aids' line under the prompt, upright, while an aid that
     // speaks there is on; and for the prompt and the note, while the
     // explanations are (style.css).
@@ -1064,11 +1136,18 @@ async function main() {
     if (nudge && !nudgeSent && !busy && state.prompt === "play" && !hint) {
       nudgeSent = true;
       const sent = engine.send(`nudged ${nudge.skill}`);
-      if (sent.ok && !fixedSeed && !STAGING) saveSitting(store, sent.state.saved);
+      if (sent.ok) keepSitting(sent.state.saved);
+    }
+    // A sweep warning on the screen is help, like the hint: the engine
+    // records it (once a decision) and the decision is not evidence.
+    if (aid?.warned && !busy && state.prompt === "play" && warnedKey !== decisionKey(state.saved)) {
+      warnedKey = decisionKey(state.saved);
+      const sent = engine.send("warned");
+      if (sent.ok) keepSitting(sent.state.saved);
     }
     document.documentElement.classList.toggle("explain-on", explain);
     const after = prefs.match === "best-of-7" && !state.watching ? seriesLine(series) : null;
-    overlay.show({ state, chips: busy ? [] : chipsOf(offer), message, busy, aid: aidLine(), after, leftHanded: prefs.leftHanded, explain });
+    overlay.show({ state, chips: busy ? [] : chipsOf(offer), message, busy, aid: aid?.text ?? null, after, leftHanded: prefs.leftHanded, explain });
     // The cards still out and the log tell what the cards have shown: they
     // wait for the cards to come to rest, as the trackers do (review T7).
     if (!busy) {
@@ -1099,15 +1178,12 @@ async function main() {
       hintKey = hintFor;
       hint = hintFor ? engine.hint() : null;
       if (!hint?.move) hint = null;
+      // The hint is recorded in the sitting the moment it is shown: kept at once, so a reload keeps it.
+      else keepSitting(engine.state().saved);
     }
-    // The tutor's nudge, once a turn as the hint is (the engine remembers
-    // its answer for the position; it costs an advisor run until it fires).
-    const nudgeFor = prefs.tutor && !state.watching && state.prompt === "play" ? decisionKey(state.saved) : null;
-    if (nudgeFor !== nudgeKey) {
-      nudgeKey = nudgeFor;
-      nudgeSent = false;
-      nudge = nudgeFor ? engine.nudge() : null;
-    }
+    // The tutor's nudge, once a turn as the hint is, but never in an
+    // animation: while the cards move it waits for `rested`.
+    if (!director.busy()) askNudge();
     director.rearrange();
     show();
   }
@@ -1255,6 +1331,9 @@ async function main() {
     hint: () => hint,
     nudge: () => nudge,
     progress: () => loadProgress(store),
+    focus: () => givenFocus,
+    threaded: () => tutor.threaded(),
+    briefHistories: () => [...briefHistories],
     // The game's end: who your opponent turned out to be, whether the figure
     // stands, and how far the camera has pulled back (null in play).
     opponent: () => ({ court: standing, revealed: stage.revealed(), ending: endingsBar.hidden ? null : endingWords.textContent }),
