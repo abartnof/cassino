@@ -133,3 +133,24 @@ test("against the real engine: the same text as on this thread", { skip: !exists
   assert.equal(brief.summary, summary);
   assert.ok(brief.bullets.length >= 1);
 });
+
+test("a worker whose engine has stopped is given up, and its nulls are not taken as answers", async () => {
+  const restore = quiet();
+  const dead = { ...engineStub("worker"), evidenceOf: () => null, stopped: () => true };
+  const w = fakeWorker(dead);
+  const tutor = createTutor({ spawn: () => w, local: engineStub("local"), bytes: new Uint8Array() });
+  assert.equal(await tutor.evidenceOf("r"), "local summary of r");
+  assert.equal(tutor.threaded(), false);
+  assert.equal(w.terminated, true);
+  restore();
+});
+
+test("a worker that never answers is given up after a while", async () => {
+  const restore = quiet();
+  const w = { postMessage() {}, terminate() { w.terminated = true; } };
+  const tutor = createTutor({ spawn: () => w, local: engineStub("local"), bytes: new Uint8Array(), patience: 20 });
+  assert.equal(await tutor.evidenceOf("r"), "local summary of r");
+  assert.equal(tutor.threaded(), false);
+  assert.equal(w.terminated, true);
+  restore();
+});

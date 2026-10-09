@@ -29,7 +29,11 @@ export function tutorServer(load, post) {
     try {
       if (!OPS.has(data.op)) throw new Error(`not a tutor call: ${data.op}`);
       const e = await engine;
-      post({ id: data.id, result: e[data.op](...data.args) });
+      const result = e[data.op](...data.args);
+      // A trap stops that engine for good, and its later answers are nulls
+      // that would read as "will not restore": the worker is given up.
+      if (e.stopped?.()) throw ((failed = true), new Error("the worker's engine has stopped"));
+      post({ id: data.id, result });
     } catch (error) {
       post({ id: data.id, error: String(error?.message ?? error), fatal: failed || engine === null });
     }
@@ -38,8 +42,10 @@ export function tutorServer(load, post) {
 
 // The page's side. `spawn()` returns a worker (postMessage, onmessage,
 // onerror), or throws or returns null where there is none; `local` is the
-// engine on this thread, for the fallback; `bytes` the module for the worker.
-export function createTutor({ spawn, local, bytes }) {
+// engine on this thread, for the fallback; `bytes` the module for the worker;
+// `patience` how long a call may go unanswered before the worker is taken
+// for dead (killed or hung, which no event tells).
+export function createTutor({ spawn, local, bytes, patience = 30_000 }) {
   let worker = null;
   let calls = 0;
   const pending = new Map();
@@ -66,6 +72,7 @@ export function createTutor({ spawn, local, bytes }) {
     } catch {
       // Already gone.
     }
+    for (const [, call] of pending) clearTimeout(call.timer);
     for (const [, call] of pending) onThisThread(call.op, call.args).then(call.resolve, call.reject);
     pending.clear();
   }
@@ -84,10 +91,12 @@ export function createTutor({ spawn, local, bytes }) {
       // The engine would not load there: a fault of the worker, not of the call.
       if (data.error !== undefined && data.fatal) return giveUp(data.error);
       pending.delete(data.id);
+      clearTimeout(call.timer);
       if (data.error !== undefined) call.reject(new Error(data.error));
       else call.resolve(data.result);
     };
     worker.onerror = (event) => giveUp(event?.message ?? "error");
+    worker.onmessageerror = () => giveUp("a reply could not be read");
     worker.postMessage({ init: bytes });
   }
 
@@ -95,7 +104,8 @@ export function createTutor({ spawn, local, bytes }) {
     if (!worker) return onThisThread(op, args);
     return new Promise((resolve, reject) => {
       const id = ++calls;
-      pending.set(id, { op, args, resolve, reject });
+      const timer = setTimeout(() => giveUp("no answer"), patience);
+      pending.set(id, { op, args, resolve, reject, timer });
       worker.postMessage({ id, op, args });
     });
   };
@@ -109,6 +119,7 @@ export function createTutor({ spawn, local, bytes }) {
     // summaries, or null.
     briefOfRecord: (record, history) => ask("briefOfRecord", [record, history]),
     close: () => {
+      for (const [, call] of pending) clearTimeout(call.timer);
       pending.clear();
       worker?.terminate?.();
       worker = null;

@@ -137,8 +137,10 @@ test("a summary is kept only if it reads as the engine's evidence text", () => {
   const store = memory();
   store.setItem("cassino.progress", JSON.stringify({ v: 1, games: [{ record: "r", summary: "cassino evidence v1\n--\n" }, { record: "s", summary: summaryOf(2) }] }));
   assert.deepEqual(loadProgress(store), [{ record: "r", summary: null }, { record: "s", summary: summaryOf(2) }], "a bad summary becomes missing, to be recomputed");
-  assert.equal(setSummary(store, "r", "not a summary"), true);
+  assert.equal(setSummary(store, "r", "not a summary"), false, "an unreadable summary is refused");
   assert.equal(loadProgress(store)[0].summary, null);
+  assert.equal(setSummary(store, "s", "not a summary"), false);
+  assert.equal(loadProgress(store)[1].summary, summaryOf(2), "and a good one is not lost to it");
 });
 
 test("a record is capped in length, and a long one is not kept", () => {

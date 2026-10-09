@@ -95,8 +95,8 @@ export function addGame(store, game) {
 export function setSummary(store, record, summary) {
   const games = loadProgress(store);
   const g = games.find((x) => x.record === record);
-  if (!g) return false;
-  g.summary = validSummary(summary) ? summary : null;
+  if (!g || !validSummary(summary)) return false;
+  g.summary = summary;
   return save(store, games);
 }
 

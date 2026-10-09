@@ -532,7 +532,7 @@ async function main() {
     nudge = null;
     nudgeKey = null;
     if (state.watching) return;
-    givenFocus = prefs.tutor ? engine.learner(historyOf(loadProgress(store))).focus : null;
+    givenFocus = prefs.tutor ? engine.learner(historyOf(loadProgress(store)))?.focus ?? null : null;
     engine.setFocus(givenFocus);
   }
 
@@ -545,7 +545,7 @@ async function main() {
   function refocus() {
     if (!prefs.tutor || state.watching || state.prompt === "over") return;
     if (/^nudged\b/m.test(engine.state()?.saved ?? "")) return;
-    const focus = engine.learner(historyOf(loadProgress(store))).focus;
+    const focus = engine.learner(historyOf(loadProgress(store)))?.focus ?? null;
     if (focus === givenFocus) return;
     givenFocus = focus;
     engine.setFocus(focus);
