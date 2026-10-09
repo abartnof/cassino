@@ -442,7 +442,10 @@ every part by others (`CREDITS.md`).
 1. **One design call made provisionally**: the game's seed is shown only once
    the game is over (shown during it, a second window could read your
    opponent's hand; the second review, S4). Fairness is still checkable
-   after the game: the seed deals the same cards again.
+   after the game: the seed deals the same cards again. "Copy game record"
+   (the record names the seed) is offered only once the game is over; the
+   saved sitting in the browser's storage necessarily holds the seed all the
+   same, so this guards against a glance, not against someone who looks.
 
 2. **The trackers' fold** could not be made to fail here (Chromium and
    WebKit, mouse and touch); the whole heading is now its button. Worth

@@ -4,7 +4,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
-import { loadEngine } from "../src/engine.js";
+import { guard, loadEngine } from "../src/engine.js";
 
 const WASM = new URL("../../target/wasm32-unknown-unknown/release/cassino_wasm.wasm", import.meta.url);
 
@@ -131,4 +131,34 @@ test("the focus and the nudge: words from the engine, once a game", { skip: !exi
   console.log(`# nudge: ${(total / asked).toFixed(0)} ms a decision on average, ${slowest.toFixed(0)} ms at most, ${asked} decisions`);
   assert.ok(nudged, "a game of pairs holds a chance");
   assert.equal(engine.setFocus(null), true);
+});
+
+// A fault in the module (a panic aborts; a borrow left held makes later
+// calls fail too): the page is told once, and the engine then answers
+// nothing and takes nothing, the last state standing.
+test("a fault in the module is told once, and the engine is then still", () => {
+  let calls = 0;
+  const told = [];
+  const api = {
+    start: () => ({ prompt: "play", n: 1 }),
+    send: (c) => {
+      calls++;
+      if (c === "boom") throw new WebAssembly.RuntimeError("unreachable");
+      return { ok: true, state: { prompt: "play", n: 2 } };
+    },
+    restore: () => ({ ok: true, state: { prompt: "play", n: 3 } }),
+    brief: () => ({ bullets: [] }),
+  };
+  const engine = guard(api, (error) => told.push(error));
+  engine.start({});
+  assert.equal(engine.send("a").ok, true);
+  const failed = engine.send("boom");
+  assert.equal(failed.ok, false);
+  assert.equal(failed.state.n, 2, "the last state stands");
+  assert.equal(told.length, 1);
+  assert.equal(engine.send("a").ok, false);
+  assert.equal(calls, 2, "nothing more sent to the module");
+  assert.equal(engine.brief(null, []), null);
+  assert.equal(engine.restore("x").ok, false);
+  assert.equal(told.length, 1);
 });

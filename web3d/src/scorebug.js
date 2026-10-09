@@ -51,7 +51,7 @@ export function celebrationOf(line) {
 
 // The count of the hand under way, once it is over: its `scored` event.
 export function countOf(state) {
-  return (state.events ?? []).findLast((e) => e.kind === "scored" && e.hand === state.hand_number) ?? null;
+  return [...(state.events ?? [])].reverse().find((e) => e.kind === "scored" && e.hand === state.hand_number) ?? null;
 }
 
 // The count's lines, in Foster's order, each with its words and its card.

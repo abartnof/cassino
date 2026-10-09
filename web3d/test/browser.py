@@ -729,8 +729,11 @@ def check_review(browser, failures, viewport=None):
     dialog with the engine's words, gentle and about habits, no card named;
     closed, the game's end as it was."""
     where = "review" + (" on a phone" if viewport else "")
-    page = open_page(browser, "ending&speed=2", viewport=viewport, calm=True)
+    page = open_page(browser, "ending&keep&speed=2", viewport=viewport, calm=True)
     settle(page)
+    # What the brief is given of the earlier games, to see this game counted
+    # once however the aids are switched after it.
+    page.evaluate("() => { const e = window.cassino3d.engine; const brief = e.brief; window.briefHistories = []; e.brief = (g, h) => { window.briefHistories.push(h.length); return brief(g, h); }; }")
     button = page.locator(".controls .review")
     if not button.is_hidden():
         failures.append(f"{where}: offered before the game is over")
@@ -779,6 +782,23 @@ def check_review(browser, failures, viewport=None):
     page.wait_for_function("!document.querySelector('.review-dialog').open", timeout=5_000)
     if button.is_hidden() or page.locator(".controls md-filled-button.again").is_hidden():
         failures.append(f"{where}: closed, the game's end lost its buttons")
+    # An aid switched after the end rewrites the record's header, but it is
+    # the same game: not counted among the earlier ones.
+    page.locator(".controls md-filled-button.again").wait_for(state="visible")
+    before_aid = page.evaluate("window.cassino3d.state().saved")
+    page.locator("md-icon-button.settings-open").click()
+    page.wait_for_timeout(1200)
+    page.locator('md-switch[data-aid="hints"]').click()
+    page.locator(".settings-dialog md-filled-tonal-button", has_text="Done").click()
+    page.wait_for_timeout(800)
+    if page.evaluate("window.cassino3d.state().saved") == before_aid:
+        failures.append(f"{where}: switching an aid after the end did not change the record")
+    button.click()
+    page.wait_for_function("document.querySelector('.review-dialog').open", timeout=5_000)
+    page.locator(".review-dialog .review-close").click()
+    page.wait_for_function("!document.querySelector('.review-dialog').open", timeout=5_000)
+    if page.evaluate("window.briefHistories").count(1):
+        failures.append(f"{where}: the game was counted among its own earlier games: {page.evaluate('window.briefHistories')}")
     # Opened again, the same review, at once (worked out once a game).
     button.click()
     page.wait_for_function("document.querySelector('.review-dialog').open && !document.querySelector('.review-waiting')", timeout=5_000)
@@ -1505,7 +1525,7 @@ BIG_BUILD_JS = """() => {
   for (let seed = 1; seed < 400; seed++) {
     let s = e.start({ game: "classic", aces14: false, sweeps: false, raising: true, skill: 2, seed });
     for (let n = 0; n < 400 && s.prompt !== "over"; n++) {
-      if (s.prompt === "play" && s.table.some((i) => i.build && i.cards.length >= 5)) {
+      if (s.prompt === "play" && s.opponent_holds >= 3 && s.table.some((i) => i.build && i.cards.length >= 5)) {
         localStorage.setItem("cassino.sitting", s.saved);
         return seed;
       }
@@ -1541,8 +1561,154 @@ def check_big_build(browser, failures):
         cut = page.evaluate("[document.querySelector('.move-bar'), ...document.querySelectorAll('.move-bar .chips, .move-bar .place')].some((e) => e.style.clipPath.includes('path'))")
         if cut:
             failures.append(f"big build {where}: at rest, a card crosses the move bar")
+        # Across the table, your opponent's hand stays on the window.
+        hand = page.evaluate("window.cassino3d.zoneBounds('their-hand')")
+        if device is None and (hand is None or hand["top"] < 0):
+            failures.append(f"big build {where}: their hand rises off the window: {hand}")
         shot(page, f"t2-big-build-{where}")
         context.close()
+
+
+def check_resize(browser, failures):
+    """The window turned or resized mid-game, desktop to upright to
+    sideways and back: no error in the console, and your hand and the move
+    bar still on the screen."""
+    page = open_page(browser, "seed=7&speed=100", calm=True)
+    settle(page)
+    for width, height in ((390, 780), (844, 390), (1280, 800), (390, 780)):
+        page.set_viewport_size({"width": width, "height": height})
+        page.wait_for_timeout(700)
+        settle(page)
+        where = f"{width}x{height}"
+        hand = page.evaluate("window.cassino3d.zoneBounds('your-hand')")
+        if hand is None or hand["left"] < -2 or hand["right"] > width + 2 or hand["bottom"] > height + 2 or hand["top"] < 0:
+            failures.append(f"resize {where}: your hand is off the screen: {hand}")
+        bar = page.locator(".move-bar").bounding_box()
+        if bar and (bar["y"] < 0 or bar["y"] + bar["height"] > height + 2):
+            failures.append(f"resize {where}: the move bar is off the screen: {bar}")
+        if not page.locator(".controls .prompt").count():
+            failures.append(f"resize {where}: no prompt")
+        play_by_clicking(page, failures, 0)
+    if page.errors:
+        failures.append(f"resize: console errors: {page.errors[:5]}")
+    page.context.close()
+
+
+def check_rush(browser, failures):
+    """Taps while the cards are still moving, and a new game started in the
+    middle of the count's celebration: no error, and no celebration left up
+    over the new game."""
+    page = open_page(browser, "seed=7&speed=1", calm=True)
+    page.wait_for_timeout(1500)
+    for _ in range(6):
+        page.mouse.click(640, 520)
+        page.mouse.click(300, 300)
+    page.evaluate("window.cassino3d.skip()")
+    settle(page)
+    if page.errors:
+        failures.append(f"rush: console errors after tapping in motion: {page.errors[:5]}")
+    page.context.close()
+    # At the table's own pace, so the celebration stays up long enough
+    # to be caught.
+    page = open_page(browser, "seed=7&speed=1", calm=True)
+    made = 0
+    while True:
+        settle(page)
+        s = page.evaluate("window.cassino3d.state()")
+        if s["prompt"] != "play":
+            failures.append("rush: no count reached to celebrate")
+            page.context.close()
+            return
+        last = len(s["hand"]) == 1 and any(e["kind"] == "dealt" and e.get("last") for e in s["events"] if e["hand"] == s["hand_number"])
+        play_by_clicking(page, failures, made)
+        made += 1
+        if last:
+            break
+    # The new game's menu opened as the count begins; Deal chosen with a
+    # celebration up.
+    page.locator("md-icon-button.new-game").click()
+    deal = page.locator(".new-game-dialog md-filled-button.deal")
+    deal.wait_for(state="visible", timeout=10_000)
+    try:
+        page.wait_for_function("window.cassino3d.cheers().length > 0", timeout=20_000)
+    except Exception:
+        failures.append("rush: no celebration came up")
+        page.context.close()
+        return
+    deal.click()
+    page.wait_for_timeout(300)
+    settle(page)
+    page.wait_for_timeout(2500)
+    if page.evaluate("window.cassino3d.cheers().length") or page.evaluate("document.querySelectorAll('.cheer').length"):
+        failures.append("rush: a celebration was left up over the new game")
+    if page.errors:
+        failures.append(f"rush: console errors: {page.errors[:5]}")
+    page.context.close()
+
+
+def check_lost_sitting(browser, failures):
+    """A sitting kept that will not restore is not dropped silently: a new
+    game is dealt, and the table says so."""
+    page = open_page(browser, "speed=8")
+    page.evaluate("localStorage.setItem('cassino.sitting', 'not a record')")
+    page.reload()
+    page.wait_for_function("window.cassino3d !== undefined", timeout=120_000)
+    settle(page)
+    page.wait_for_timeout(800)
+    text = page.locator(".notice-dialog").inner_text()
+    if not page.evaluate("document.querySelector('.notice-dialog').open") or "could not be carried on" not in text:
+        failures.append(f"lost sitting: no word of it: {text!r}")
+    if page.evaluate("window.cassino3d.state().prompt") != "play":
+        failures.append("lost sitting: no new game was dealt")
+    if page.errors:
+        failures.append(f"lost sitting: console errors: {page.errors[:5]}")
+    page.context.close()
+
+
+def check_access(browser, failures):
+    """The basics for a screen reader and a keyboard: a build's badge is a
+    button with a name, reached by Tab and worked by Enter; the turn and the
+    last move told in a live region; and focus kept in the controls after a
+    move rather than dropped to the page."""
+    page = open_page(browser, "seed=1&skill=1&values", calm=True)
+    settle(page)
+    told = page.evaluate("document.querySelector('.announce').textContent")
+    if "Your turn." not in told or page.evaluate("document.querySelector('.announce').getAttribute('aria-live')") != "polite":
+        failures.append(f"access: the turn is not told: {told!r}")
+    for _ in range(30):
+        settle(page)
+        s = page.evaluate("window.cassino3d.state()")
+        if s["prompt"] != "play":
+            continue
+        if page.locator(".badge").count():
+            break
+        play_by_clicking(page, failures, 0)
+    badge = page.locator(".badge").first
+    if badge.count():
+        if badge.get_attribute("role") != "button" or badge.get_attribute("tabindex") != "0" or not badge.get_attribute("aria-label"):
+            failures.append("access: a badge is not a named button")
+        badge.focus()
+        page.keyboard.press("Enter")
+        settle(page)
+    else:
+        failures.append("access: no build came up to give a badge")
+    s = page.evaluate("window.cassino3d.state()")
+    if s["prompt"] == "play":
+        move = s["moves"][0]
+        click_card(page, move.split()[1].split("=")[0] if move.split()[0] != "build" else move.split()[2])
+        settle(page)
+        for code in table_cards(move):
+            click_card(page, code)
+            settle(page)
+        chip = page.locator(f'.move-bar [data-move="{move}"]')
+        if chip.count():
+            chip.click()
+            page.wait_for_timeout(400)
+            if page.evaluate("document.activeElement === document.body"):
+                failures.append("access: after a move the focus fell to the page")
+    if page.errors:
+        failures.append(f"access: console errors {page.errors[:5]}")
+    page.context.close()
 
 
 def check_settings(browser, failures):
@@ -1555,6 +1721,8 @@ def check_settings(browser, failures):
     page.locator("md-icon-button.settings-open").click()
     page.wait_for_timeout(1500)
     shot(page, "t6-settings")
+    if page.locator(".settings-dialog md-text-button.copy").is_visible():
+        failures.append("settings: Copy game record (it names the seed) is offered during the game")
     page.locator('md-switch[data-aid="hints"]').click()
     if page.locator('md-switch[data-pref="undo"]').count() or page.locator("md-icon-button.undo").count():
         failures.append("settings: undo is still offered")
@@ -1715,6 +1883,21 @@ def quick() -> int:
     return 1 if failures else 0
 
 
+def only(names) -> int:
+    """--only=check_a,check_b: run just these checks (each takes the browser
+    and the failures; see main for the full list), for a change to one."""
+    failures = []
+    with sync_playwright() as p:
+        browser = p.chromium.launch(executable_path="/usr/bin/chromium", args=["--use-angle=swiftshader", "--disable-gpu-compositing"])
+        for name in names:
+            globals()[name](browser, failures)
+        browser.close()
+    for f in failures:
+        print("FAIL:", f)
+    print("browser (only): ok" if not failures else f"browser (only): {len(failures)} failures")
+    return 1 if failures else 0
+
+
 def main() -> int:
     failures = []
     with sync_playwright() as p:
@@ -1831,4 +2014,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(quick() if "--quick" in sys.argv else main())
+    chosen = next((a.split("=", 1)[1].split(",") for a in sys.argv[1:] if a.startswith("--only=")), None)
+    sys.exit(only(chosen) if chosen else quick() if "--quick" in sys.argv else main())

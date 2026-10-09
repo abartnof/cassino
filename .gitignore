@@ -22,3 +22,6 @@ __pycache__/
 # The built page is committed (web3d/cassino3d.html, the game itself); its
 # vector-art variant is not.
 web3d/cassino3d-svg.html
+
+# Also a symlink of that name (an agent worktree once linked it).
+node_modules

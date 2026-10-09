@@ -360,5 +360,6 @@ test("a big build grows away from you: its nearest card where a three-card build
   const behind = layout(build(6)).find((x) => x.item === 7).pose.position.z + CARD.height / 2;
   assert.ok(behind <= far - ZONES.middle.gapZ + 1e-9, `the row behind reaches ${behind.toFixed(2)}, the build ${far.toFixed(2)}`);
   const theirs = (n) => layout(build(n)).find((x) => x.zone === "their-hand").pose.position.z;
-  assert.ok(theirs(6) <= theirs(3) - 3 * ZONES.stack.dz + 1e-9, "your opponent's hand drawn back with it");
+  // Drawn back with it, but by 4 cm at most, to stay in view (eye.test.js).
+  assert.ok(Math.abs(theirs(6) - (theirs(3) - 4)) < 1e-9 && Math.abs(theirs(8) - theirs(6)) < 1e-9, "your opponent's hand drawn back with it, as far as 4 cm");
 });

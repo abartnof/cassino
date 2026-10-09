@@ -76,6 +76,8 @@
 }
 
 html, body {
+  /* No double-tap zoom on quick taps (iOS Safari), on the canvas and the controls. */
+  touch-action: manipulation;
   margin: 0;
   height: 100%;
   overflow: hidden;
@@ -1501,7 +1503,8 @@ html.sideways .game-log {
 }
 
 /* Told to a screen reader, not shown: what the keyboard's focus is on. */
-.focus-told {
+.focus-told,
+.announce {
   position: absolute;
   width: 1px;
   height: 1px;

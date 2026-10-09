@@ -59,7 +59,14 @@ function storage() {
 }
 
 async function main() {
-  const engine = await loadEngine(decodeBase64(WASM_BASE64));
+  // A fault in the module (a panic aborts; every later call then fails):
+  // the table says so calmly and offers to reload, the saved sitting kept;
+  // the engine, meanwhile, is still (engine.js `guard`).
+  let stopped = () => {};
+  const engine = await loadEngine(decodeBase64(WASM_BASE64), (error) => {
+    console.error(error);
+    stopped();
+  });
   const store = params.has("fresh") ? null : storage();
   // What is saved is the person's own settings; the URL's say (for tests and
   // links) is laid over them but never saved (the table review's T16).
@@ -159,7 +166,13 @@ async function main() {
   const overlay = createOverlay(document.getElementById("overlay"), {
     onChip: (chip) => {
       const sent = engine.send(chip.move);
-      message = sent.ok ? null : sent.state.error;
+      // A refused move changes nothing: say why, and keep the last move.
+      if (!sent.ok) {
+        message = sent.state.error;
+        show();
+        return;
+      }
+      message = null;
       advance(sent.state);
     },
     onNext: () => advance(engine.send("next").state),
@@ -285,9 +298,11 @@ async function main() {
     hideOpponent();
     badgeFrom = null;
     lastMove = null;
+    endedRecord = null;
     director.cancelTimed();
     watchStep = false; // a step pending was cancelled with the rest (review T2)
     overlay.hush();
+    overlay.clearCheers();
     dialogue.stop();
     state = watch
       ? engine.watch({ ...prefs.rules, skills: [prefs.skill, prefs.skill], seed })
@@ -456,9 +471,16 @@ async function main() {
   // A finished game of yours is kept at once with its record, and its
   // summary follows when the ending has settled (a game left before then
   // is summed up at the next opening: the stale ones are recomputed).
+  // `endedRecord`: the record as the game ended. An aid switched after the
+  // end rewrites the live record's header (`state.saved`), but the game is
+  // the same one.
+  let endedRecord = null;
   function keepGame() {
     if (state.watching) return;
     const record = state.saved;
+    endedRecord = record;
+    // A seeded link's game, or a staged ending, is nobody's progress.
+    if ((fixedSeed || STAGING) && !params.has("keep")) return; // ?keep: for the browser test
     addGame(store, { record, summary: summaries.get(record) ?? null });
     idle(() => {
       summaryOf(record);
@@ -500,8 +522,8 @@ async function main() {
   // opened: the game's summary (made already, or now) and the earlier games'.
   let review = { of: null, words: null };
   function reviewed() {
-    if (review.of !== state.saved) {
-      const record = state.saved;
+    const record = endedRecord ?? state.saved;
+    if (review.of !== record) {
       const earlier = loadProgress(store).filter((g) => g.record !== record);
       review = { of: record, words: engine.brief(summaryOf(record), historyOf(earlier)) };
     }
@@ -519,7 +541,7 @@ async function main() {
 
   // A game finished counts in the series, once.
   function countGame() {
-    const ends = state.events.findLast((e) => e.kind === "game_ends");
+    const ends = [...state.events].reverse().find((e) => e.kind === "game_ends");
     if (!ends || state.watching || STAGING || prefs.match !== "best-of-7") return;
     // Each game counted once, by its record (a seed can deal more than one
     // game: a seeded link, today's deal twice; the second review, S8); a
@@ -611,7 +633,7 @@ async function main() {
       at(ms, () => (e.end ? hud.endHand(e.hand) : hud.score(e)));
       // A sweep scored, celebrated on its card once it is held up.
       if (e.cat === "sweeps") {
-        const card = state.events.slice(0, e.at).findLast((p) => p.kind === "played")?.card.card;
+        const card = state.events.slice(0, e.at).reverse().find((p) => p.kind === "played")?.card.card;
         at(ms + 380 / prefs.speed, () => cheer({ label: "Sweep", pts: e.pts, card, pile: null }, true));
       }
     }
@@ -889,7 +911,7 @@ async function main() {
     // The record without its last decision of yours (a "*" line is a move
     // the table made for you, so it goes too).
     const lines = s.saved.trimEnd().split("\n");
-    const last = lines.findLastIndex((l) => /^(take|build|trail) /.test(l));
+    const last = lines.length - 1 - [...lines].reverse().findIndex((l) => /^(take|build|trail) /.test(l));
     const taken = engine.restore(lines.slice(0, last).join("\n") + "\n");
     state = taken.ok ? taken.state : engine.start({ ...prefs.rules, skill: prefs.skill, seed: fixedSeed ?? 31 });
     director.restart(state);
@@ -915,7 +937,7 @@ async function main() {
   endingsBar.append(stepper("The ending before", -1), endingWords, stepper("The next ending", 1));
   document.getElementById("overlay").append(endingsBar);
   function showEndings() {
-    const theyWon = !state.events.findLast((e) => e.kind === "game_ends")?.you_won;
+    const theyWon = ![...state.events].reverse().find((e) => e.kind === "game_ends")?.you_won;
     ending = ENDINGS.findIndex((e) => e.court === standing && e.theyWon === theyWon);
     endingsBar.hidden = false;
     endingWords.textContent = endingLabel(ENDINGS[ending]);
@@ -1178,6 +1200,11 @@ async function main() {
 
   // The sitting under way when the page was last open, if there is one and
   // no game was asked for; else a new one.
+  stopped = () =>
+    chrome.showNotice("The table has stopped", "Something went wrong in the table. Your game is kept as of your last move: reload the table to carry on from there.", {
+      action: { label: "Reload the table", run: () => location.reload() },
+      stay: true,
+    });
   const kept = fixedSeed || params.has("watch") || STAGING ? null : loadSitting(store);
   const restored = kept ? engine.restore(kept) : null;
   if (restored?.ok && restored.state.prompt !== "over") {
@@ -1208,6 +1235,9 @@ async function main() {
   document.getElementById("loading").remove();
   sayProgress();
   staleSoon(4000);
+  // A sitting kept that would not restore (from an older table, or damaged)
+  // is not carried on: said briefly, rather than dropped without a word.
+  if (kept && restored && !restored.ok) chrome.showNotice("A new game", "The game kept from your last visit could not be carried on, so a new one has been dealt.");
 
   // For the browser test: where a card is on the screen, the chips, the
   // sheet and the talk, and the clock (with ?manual, the test moves it).

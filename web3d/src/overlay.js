@@ -13,6 +13,7 @@
 import "@material/web/button/filled-button.js";
 import "@material/web/button/filled-tonal-button.js";
 import "@material/web/iconbutton/icon-button.js";
+import { announcement } from "./announce.js";
 import { besideAt, choosePlace } from "./dialogue.js";
 import { trackerTable } from "./scorebug.js";
 import { BAR, barAcross, barHoles, clipPathFor, fitLabels, mergeHoles, moveBar, pointIn } from "./selection.js";
@@ -37,6 +38,7 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReview = () =
     <aside class="game-log" hidden aria-label="The game log"><h2>Game log</h2><ol></ol></aside>
     <section class="controls">
       <p class="prompt" aria-live="polite"></p>
+      <p class="announce" aria-live="polite" tabindex="-1"></p>
       <p class="note" aria-live="polite"></p>
       <p class="aid-line" hidden></p>
       <div class="move-bar" hidden><div class="chips" role="group" aria-label="Your move"></div></div>
@@ -46,6 +48,7 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReview = () =
     </section>`;
   const $ = (s) => root.querySelector(s);
   const prompt = $(".prompt");
+  const announce = $(".announce");
   const note = $(".note");
   const chipSet = $(".chips");
   const next = $(".next");
@@ -96,6 +99,13 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReview = () =
   // screen helper text that's just sort of loose into the explanations
   // mode"); the game's result is said whatever.
   function show({ state, chips, message, busy = false, aid = null, after = null, leftHanded = false, explain = false }) {
+    // Told to a screen reader (the prompt above is empty for most of a
+    // turn): the last move's sentence and whose turn it is, once the cards
+    // are still, and only when it changes.
+    if (!busy) {
+      const words = announcement(state);
+      if (announce.textContent !== words) announce.textContent = words;
+    }
     prompt.textContent = busy || (!explain && state.prompt !== "over") ? "" : promptText(state, chips);
     if (!busy && after && state.prompt === "over") prompt.textContent += ` ${after}`;
     aidLine.hidden = busy || !aid;
@@ -133,7 +143,15 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReview = () =
               button.dataset.move = c.move;
               button.setAttribute("aria-label", c.label);
               if (c.call) button.title = c.call;
-              button.addEventListener("click", () => onChip(c));
+              button.addEventListener("click", () => {
+                onChip(c);
+                // The chips are made again after a move, and the focus would
+                // fall to the page: keep it with the announcement.
+                requestAnimationFrame(() => {
+                  const now = document.activeElement;
+                  if (!now || now === document.body || !root.contains(now)) announce.focus({ preventScroll: true });
+                });
+              });
               return button;
             }),
           ),
@@ -188,12 +206,22 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReview = () =
       if (!badge) {
         badge = document.createElement("div");
         badge.className = "badge";
+        badge.setAttribute("role", "button");
+        badge.tabIndex = 0;
         badge.addEventListener("click", () => onBadge(id));
+        badge.addEventListener("keydown", (event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          event.stopPropagation();
+          onBadge(id);
+        });
         placed.set(id, badge);
         badges.append(badge);
       }
       if (badge.textContent !== text) badge.textContent = text;
       if (badge.title !== title) badge.title = title;
+      const label = title ? `${title}: ${text}` : `Build of ${text}`;
+      if (badge.getAttribute("aria-label") !== label) badge.setAttribute("aria-label", label);
       badge.style.left = `${x}px`;
       badge.style.top = `${y}px`;
       if (font) badge.style.fontSize = `${font.toFixed(1)}px`;
@@ -501,6 +529,11 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReview = () =
     const half = node.offsetWidth / 2 + 8;
     node.style.left = `${Math.min(Math.max(place.x, half), view.width - half)}px`;
   }
+  // A new game drops the celebrations still up: the timer that would take
+  // each down is cancelled with the rest.
+  function clearCheers() {
+    cheers.replaceChildren();
+  }
   function hush() {
     takeDown("you", true);
     takeDown("them", true);
@@ -517,6 +550,7 @@ export function createOverlay(root, { onChip, onNext, onNewGame, onReview = () =
     placeBadges,
     say,
     hush,
+    clearCheers,
     tell,
     celebrate,
     cheers: () => [...cheers.querySelectorAll(".cheer")].map((c) => ({ label: c.querySelector(".cheer-disc").textContent, bursts: c.querySelectorAll(".cheer-burst").length })),

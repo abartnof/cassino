@@ -62,10 +62,14 @@ function yourHand(codes, chosen, Z) {
 // middle's last row: `back` further off for each row past the first
 // (`rows`).
 // `deeper`: how much further back a big build has pushed the table's rows
-// (middleDepth).
+// (middleDepth), by no more than `DEEPER_MAX`: the eye keeps the hand's top
+// in view (units.js CAMERA.reach.up), and a big build must not raise it off
+// the window (the table review: with a six or eight-card build it rose
+// off it). Past that a build's far cards lie under the hand's backs.
+const DEEPER_MAX = 4;
 function theirHand(count, Z, rows = 1, deeper = 0) {
   const zone = Z.theirHand;
-  const centre = new Vector3(...zone.centre).add(new Vector3(0, 0, -(zone.back ?? 0) * Math.max(0, rows - 1) - deeper));
+  const centre = new Vector3(...zone.centre).add(new Vector3(0, 0, -(zone.back ?? 0) * Math.max(0, rows - 1) - Math.min(deeper, DEEPER_MAX)));
   return fan({
     count,
     centre,

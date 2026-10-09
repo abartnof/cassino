@@ -436,7 +436,26 @@ export function createChrome(root, on) {
     );
   }
 
-  root.append(bar, settings, newGameDialog, credits, tutorial, reviewDialog);
+  // A plain word to the person: `text` and, if given, one button (`action`:
+  // { label, run }) besides closing. `stay`: no closing it (the table has
+  // stopped, and only reloading helps).
+  const noticeDialog = el("md-dialog", { class: "notice-dialog" });
+  function showNotice(headline, text, { action = null, stay = false } = {}) {
+    noticeDialog.replaceChildren(
+      el("div", { slot: "headline" }, headline),
+      el("div", { slot: "content" }, el("p", {}, text)),
+      el(
+        "div",
+        { slot: "actions" },
+        action ? el("md-filled-tonal-button", { class: "notice-action", onclick: action.run }, action.label) : null,
+        stay ? null : el("md-text-button", { onclick: () => noticeDialog.close() }, "Close"),
+      ),
+    );
+    if (stay) noticeDialog.addEventListener("cancel", (e) => e.preventDefault());
+    noticeDialog.show();
+  }
+
+  root.append(bar, settings, newGameDialog, credits, tutorial, reviewDialog, noticeDialog);
 
   // Everything drawn from the person's settings and the state.
   let last = { prefs: null, state: null, busy: false };
@@ -468,6 +487,9 @@ export function createChrome(root, on) {
       : state.prompt === "over"
         ? `This game's seed was ${state.seed}: the same seed deals the same cards, and your opponent saw only what you saw. Add ?seed=${state.seed} to the page's address to deal it again.`
         : "This game's seed is shown when it is over: the same seed deals the same cards, so it would show your opponent's hand now.";
+    // The record carries the seed, so it is offered with it, once the game
+    // is over.
+    copy.hidden = state?.prompt !== "over";
     const watching = Boolean(state?.watching);
     hint.hidden = watching || !state?.aids?.hints;
     aidBar.hidden = watching;
@@ -492,6 +514,7 @@ export function createChrome(root, on) {
     showTutorial,
     showNewGame,
     showReview,
+    showNotice,
     // A dialog is up that the table waits on: a tutorial page, the new
     // game's menu.
     tutorialOpen: () => tutorial.open || newGameOpen,
