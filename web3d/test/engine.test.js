@@ -5,6 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { guard, loadEngine } from "../src/engine.js";
+import { validSummary } from "../src/progress.js";
 
 const WASM = new URL("../../target/wasm32-unknown-unknown/release/cassino_wasm.wasm", import.meta.url);
 
@@ -82,6 +83,7 @@ test("the tutor's queries: evidence, stored records, learner, brief", { skip: !e
   const summary = engine.evidence();
   console.log(`# evidence: ${(performance.now() - t).toFixed(0)} ms`);
   assert.match(summary, /^cassino evidence v\d+\npairs /);
+  assert.equal(validSummary(summary), true, "the page keeps what the engine writes");
   t = performance.now();
   assert.equal(engine.evidenceOf(over.saved), summary, "the stored record gives the same summary");
   console.log(`# evidence of a stored record: ${(performance.now() - t).toFixed(0)} ms`);
@@ -170,4 +172,5 @@ test("a fault in the module is told once, and the engine is then still", () => {
   assert.equal(engine.brief(null, []), null);
   assert.equal(engine.restore("x").ok, false);
   assert.equal(told.length, 1);
+  assert.equal(engine.stopped(), true);
 });

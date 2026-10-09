@@ -42,6 +42,9 @@ export function guard(api, onTrap) {
       }
     };
   }
+  // Whether the module has faulted (and so answers nothing): a caller that
+  // would act on a null answer asks first.
+  out.stopped = () => dead;
   return out;
 }
 

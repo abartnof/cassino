@@ -779,7 +779,13 @@ before. Records can be exported and imported. On the page each stored game
 is its record and its evidence summary (text, versioned), the last thirty
 kept; the summary is worked out once the ending has settled and recomputed
 from the record when the engine calls it stale, so a change to the evidence
-never drops a game.
+never drops a game. (A record the engine can no longer restore, after a
+change to the record's own version, is a different matter: it is dropped
+after one failed recompute, not retried every sitting. A summary made by a
+newer evidence than the page's is left as it is, not recomputed back; a store
+written by a newer page is read as empty and never written over.) What is
+kept is bounded and checked: a record of at most 20 KB, a summary only if it
+reads as the engine's evidence text, an import file of at most 1 MB.
 
 **The next skill** is the unmastered skill with the largest gain among
 those *eligible*. A skill's cost is the points a game its missed chances

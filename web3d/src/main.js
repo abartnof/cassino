@@ -38,7 +38,7 @@ import TUTORIAL_TEXT from "../tutorial.md";
 import { CARD, PORTRAIT_BELOW, ZONES, ZONES_PORTRAIT, ZONES_TOUCH } from "./units.js";
 import { cardCorners } from "./kinematics.js";
 import { decisionKey } from "./decision.js";
-import { addGame, clearProgress, exportProgress, historyOf, importProgress, loadProgress, progressSaid, refreshOne, setSummary } from "./progress.js";
+import { addGame, clearProgress, exportProgress, historyOf, importProgress, isNewerStore, loadProgress, progressSaid, refreshOne, setSummary } from "./progress.js";
 
 /* global WASM_BASE64, ART, COURTS, WORDS */
 
@@ -466,7 +466,7 @@ async function main() {
     }
     return summary;
   }
-  const sayProgress = () => chrome.progressSaid(progressSaid(loadProgress(store).length));
+  const sayProgress = () => chrome.progressSaid(progressSaid(loadProgress(store).length, isNewerStore(store)));
 
   // A finished game of yours is kept at once with its record, and its
   // summary follows when the ending has settled (a game left before then
@@ -492,8 +492,8 @@ async function main() {
   // their records, one at a time, when idle (learner::stale).
   const tried = new Set();
   function staleSoon(ms = 1500) {
-    idle(() => {
-      if (refreshOne(store, engine, tried)) staleSoon(2500);
+    idle(async () => {
+      if (await refreshOne(store, engine, tried)) staleSoon(2500);
       else sayProgress();
     }, ms);
   }
@@ -1235,6 +1235,7 @@ async function main() {
   document.getElementById("loading").remove();
   sayProgress();
   staleSoon(4000);
+  if (isNewerStore(store)) chrome.showNotice("Progress from a newer version", progressSaid(0, true));
   // A sitting kept that would not restore (from an older table, or damaged)
   // is not carried on: said briefly, rather than dropped without a word.
   if (kept && restored && !restored.ok) chrome.showNotice("A new game", "The game kept from your last visit could not be carried on, so a new one has been dealt.");
