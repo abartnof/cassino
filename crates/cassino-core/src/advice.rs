@@ -683,14 +683,13 @@ mod tests {
             &undealt,
         );
         let v = h.view(Seat::South, [0, 0]);
-        let started = std::time::Instant::now();
-        let a = hint(&v).expect("a hint");
-        let r = rate(&v, &v.candidates()[0]).expect("a rating");
-        assert!(
-            started.elapsed().as_secs_f64() < 3.0,
-            "{:?}",
-            started.elapsed()
-        );
+        let ((a, r), took) = crate::timing::cpu_seconds(|| {
+            let a = hint(&v).expect("a hint");
+            (a, rate(&v, &v.candidates()[0]).expect("a rating"))
+        });
+        // CPU time, in a debug build: about 1.7 s alone, 3.2 s beside a
+        // test on a core's other thread. The slow solver took 18 s.
+        assert!(took < 6.0, "{took} s");
         assert!(v.candidates().contains(&a.mv));
         assert!(r.best_value >= r.value);
     }

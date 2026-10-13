@@ -33,3 +33,5 @@ pub mod worth;
 
 #[cfg(test)]
 mod reference;
+#[cfg(test)]
+mod timing;

@@ -328,13 +328,10 @@ mod tests {
         // The review's F3: the exact solver once took 18 s here.
         let h = crate::solver::tests::busy_last_deal();
         let v = h.view(Seat::South, [0, 0]);
-        let started = std::time::Instant::now();
-        let m = SearchAgent::new(Rng::seeded(1)).choose(&v);
-        assert!(
-            started.elapsed().as_secs_f64() < 3.0,
-            "{:?}",
-            started.elapsed()
-        );
+        let (m, took) = crate::timing::cpu_seconds(|| SearchAgent::new(Rng::seeded(1)).choose(&v));
+        // CPU time, in a debug build: about 1.7 s alone, 3.2 s beside a
+        // test on a core's other thread. The slow solver took 18 s.
+        assert!(took < 6.0, "{took} s");
         assert!(v.candidates().contains(&m));
     }
 
