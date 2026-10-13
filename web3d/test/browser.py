@@ -52,6 +52,12 @@ def shot(page, name):
         page.screenshot(path=str(SHOTS / f"{name}.png"))
 
 
+def close_all(browser):
+    """Every page a check left open, closed."""
+    for context in list(browser.contexts):
+        context.close()
+
+
 def open_page(browser, query="seed=7", viewport=None, calm=False, device=None):
     """A fresh context, offline, recording every request the page makes.
     `calm`: with reduced motion, so the dialogue boxes appear without their
@@ -2050,34 +2056,39 @@ def main() -> int:
         check_offline(page, failures)
         if page.errors:
             failures.append(f"console errors: {page.errors[:5]}")
-        # The gather and the sweep, frame by frame (seeds found to open with
-        # them: a pair and a sum taken with 9C; all four cards with 10C).
-        check_settings(browser, failures)
-        check_badges(browser, failures)
-        check_trackers(browser, failures)
-        check_new_game(browser, failures)
-        check_welcome(browser, failures)
-        check_aid_toggles(browser, failures)
-        check_cheers(browser, failures)
-        check_talk(browser, failures)
-        check_move_bar(browser, failures)
-        check_ending(browser, failures)
-        check_review(browser, failures)
-        check_review(browser, failures, viewport={"width": 390, "height": 664})
-        check_tutor(browser, failures)
-        check_assist(browser, failures)
-        check_focus(browser, failures)
-        check_tutorial(browser, failures)
-        check_phone(browser, failures)
-        check_tablet_faces(browser, failures)
-        check_still(browser, failures)
-        check_sorted(browser, failures)
-        check_bar_under(browser, failures)
-        check_big_build(browser, failures)
-        check_hud_room(browser, failures)
-        check_desktop_frame(browser, failures)
-        check_phone_talk(browser, failures)
-        check_phone_room(browser, failures)
+        page.context.close()
+        # Each check's pages closed after it: an open table keeps drawing
+        # in software, and a run of them starves every later check.
+        for check, options in [
+            (check_settings, {}),
+            (check_badges, {}),
+            (check_trackers, {}),
+            (check_new_game, {}),
+            (check_welcome, {}),
+            (check_aid_toggles, {}),
+            (check_cheers, {}),
+            (check_talk, {}),
+            (check_move_bar, {}),
+            (check_ending, {}),
+            (check_review, {}),
+            (check_review, {"viewport": {"width": 390, "height": 664}}),
+            (check_tutor, {}),
+            (check_assist, {}),
+            (check_focus, {}),
+            (check_tutorial, {}),
+            (check_phone, {}),
+            (check_tablet_faces, {}),
+            (check_still, {}),
+            (check_sorted, {}),
+            (check_bar_under, {}),
+            (check_big_build, {}),
+            (check_hud_room, {}),
+            (check_desktop_frame, {}),
+            (check_phone_talk, {}),
+            (check_phone_room, {}),
+        ]:
+            check(browser, failures, **options)
+            close_all(browser)
         page = open_page(browser, "seed=11&skill=4&manual", calm=True)
         # The game proposed and accepted, then the house rules: both speak
         # within the opening's first seconds.
@@ -2098,6 +2109,9 @@ def main() -> int:
             failures.append("a tap took the table talk down at once")
         page.evaluate("window.cassino3d.tick(3000)")
         strip(page, "t3-deal", None, frames=12, step=180)
+        page.context.close()
+        # The gather and the sweep, frame by frame (seeds found to open with
+        # them: a pair and a sum taken with 9C; all four cards with 10C).
         for name, query, move in [
             ("t3-gather", "seed=11&skill=4&manual&sweeps", "take 9C 6S 3H 9H"),
             ("t3-sweep", "seed=112&skill=4&manual&sweeps", "take TC 2S 3S 7D 8C"),
@@ -2109,6 +2123,7 @@ def main() -> int:
             end = page.evaluate("window.cassino3d.state()")
             if not any(e["kind"] == "played" and e["move"].startswith("take") for e in end["events"]):
                 failures.append(f"{name}: the capture was not made")
+            page.context.close()
         browser.close()
     for f in failures:
         print("FAIL:", f)

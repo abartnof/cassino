@@ -491,7 +491,11 @@ every part by others (`CREDITS.md`).
 - Before committing a table change: `bin/gate` (it builds the module and
   checks the committed page), then `~/piquet/.venv/bin/python
   web3d/test/browser.py --quick`; the full browser test (about fifteen
-  minutes, best run in the background) before calling a phase done.
+  minutes on a larger machine, over an hour on the two-core VM, where the
+  table draws in software; best run in the background, and stopped once
+  the checks that matter have run) before calling a phase done. It closes
+  each check's pages as it goes, which keeps the VM's memory in hand (an
+  earlier run was killed for want of it) but saves little time.
 - Read `docs/RULES.md` before touching move generation. The fixtures W1–W20
   are the rules' worked examples.
 - `~/piquet` and `~/bezique` are the working references. Read their
