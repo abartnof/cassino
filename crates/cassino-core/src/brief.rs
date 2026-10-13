@@ -15,11 +15,13 @@
 //! ([`Brief::method`]), for a link.
 
 use crate::agents;
+use crate::cards::Card;
 use crate::learner::{Learner, Summary, Tally, MIN_CHANCES};
 use crate::lessons;
-use crate::review::{times, Review, Strength, FEW};
+use crate::moves::Move;
+use crate::review::{times, Review, Strength, Turn, FEW};
 use crate::rules::Rules;
-use crate::tutor::Skill;
+use crate::tutor::{self, Skill};
 
 /// One bullet: a lead the page may set in bold, then the rest.
 #[derive(Clone, Debug, PartialEq)]
@@ -112,6 +114,46 @@ pub fn fact(skill: Skill) -> &'static str {
     }
 }
 
+/// This game's costliest trail that missed a clear chance at trailing, as
+/// the card trailed and the best card to trail, by the advisor's values
+/// (`pass`, as [`crate::learner::chances_with_pass`] takes it). No rule
+/// about trailing passed (`measurements/README.md`), so the brief names
+/// this one instead of the fact.
+pub fn costliest_trail(turns: &[Turn], pass: &tutor::Pass) -> Option<(Card, Card)> {
+    let trailed = |m: &Move| match *m {
+        Move::Trail { card } => Some(card),
+        _ => None,
+    };
+    let mut worst: Option<(f64, Card, Card)> = None;
+    for (t, values) in turns.iter().zip(pass) {
+        let Some(values) = values else { continue };
+        if t.assisted || t.view.candidates().len() < 2 {
+            continue;
+        }
+        let chances = tutor::chances_with(&t.view, &t.mv, tutor::margin(&t.view), values);
+        if !chances.iter().any(|c| c.skill == Skill::Trailing && !c.met) {
+            continue;
+        }
+        let Some(&(_, mine)) = values.iter().find(|(m, _)| *m == t.mv) else {
+            continue;
+        };
+        let Some((best, value)) = values
+            .iter()
+            .filter_map(|(m, v)| trailed(m).map(|c| (c, *v)))
+            .max_by(|a, b| a.1.total_cmp(&b.1))
+        else {
+            continue;
+        };
+        let (Some(card), cost) = (trailed(&t.mv), value - mine) else {
+            continue;
+        };
+        if worst.is_none_or(|(w, _, _)| cost > w) {
+            worst = Some((cost, card, best));
+        }
+    }
+    worst.map(|(_, card, best)| (card, best))
+}
+
 /// The skill a strength is praise of, where it is one: praise is dropped
 /// when the same skill is the one to work on.
 fn praised(s: Strength) -> Vec<Skill> {
@@ -174,6 +216,9 @@ const MIN_HISTORY: usize = 2;
 ///   on them) and the opponent's skill setting (`Settings::skill`; the top
 ///   of the dial has no next opponent up).
 ///
+/// - `trail`: this game's [`costliest_trail`], told in place of the fact
+///   when trailing is the one to work on.
+///
 /// `Session::brief` assembles these.
 pub fn brief(
     review: &Review,
@@ -182,6 +227,7 @@ pub fn brief(
     after: &Learner,
     rules: &Rules,
     opponent: f64,
+    trail: Option<(Card, Card)>,
 ) -> Brief {
     let method = METHOD.to_string();
     if review.decisions < FEW {
@@ -216,9 +262,14 @@ pub fn brief(
     }
     match after.focus {
         Some(skill) => {
-            let said = match lessons::taught(skill, rules) {
-                Some(rule) => rule.text,
-                None => fact(skill),
+            let said = match (lessons::taught(skill, rules), trail) {
+                (Some(rule), _) => rule.text.to_string(),
+                (None, Some((card, best))) if skill == Skill::Trailing => format!(
+                    "This game you trailed the {} where the {} was better.",
+                    card.label(),
+                    best.label()
+                ),
+                (None, _) => fact(skill).to_string(),
             };
             bullets.push(Bullet::new(
                 &format!("Next: {}.", name(skill)),
@@ -300,7 +351,15 @@ mod tests {
     ) -> Brief {
         let mut all = history.to_vec();
         all.push(game.clone());
-        brief(r, game, &learn(history), &learn(&all), rules, opponent)
+        brief(
+            r,
+            game,
+            &learn(history),
+            &learn(&all),
+            rules,
+            opponent,
+            None,
+        )
     }
 
     fn plain(b: &Brief) -> Vec<String> {
@@ -472,6 +531,46 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn trailing_names_this_games_costliest_trail_in_place_of_the_fact() {
+        let card = |s: &str| s.parse::<crate::cards::Card>().unwrap();
+        let game = summary(&[(Skill::Trailing, 8, 3, 8.0)]);
+        let b = brief(
+            &review(40, vec![]),
+            &game,
+            &learn(&[]),
+            &learn(std::slice::from_ref(&game)),
+            &royal(),
+            3.0,
+            Some((card("9S"), card("3H"))),
+        );
+        assert_eq!(
+            b.bullets.last().unwrap().plain(),
+            "Next: choosing what to trail. This game you trailed the 9♠ where the 3♥ was better. \
+             You trailed the best card 3 of the 8 times."
+        );
+        within_budget(&b);
+    }
+
+    #[test]
+    fn the_costliest_trail_is_one_the_person_made_with_the_better_card_in_hand() {
+        let mut found = 0;
+        for seed in 8_200..8_202 {
+            let g = greedy_game(Rules::CLASSIC, seed);
+            let pass = crate::tutor::pass_of(g.turns(), |_| true);
+            let missed = evidence(g.turns()).of(Skill::Trailing);
+            let worst = costliest_trail(g.turns(), &pass);
+            assert_eq!(worst.is_some(), missed.met < missed.chances, "seed {seed}");
+            if let Some((trailed, better)) = worst {
+                found += 1;
+                assert!(g.turns().iter().any(|t| !t.assisted
+                    && t.mv == crate::moves::Move::Trail { card: trailed }
+                    && t.view.hand.contains(better)));
+            }
+        }
+        assert!(found > 0, "the greedy player misses some trails");
     }
 
     #[test]
