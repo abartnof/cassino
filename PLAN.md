@@ -422,10 +422,12 @@ legal move. RULES.md now says each held card answers for one build value.
     after one try, each recompute in a try/catch). Browser checks
     `check_assist`, `check_focus`. Main-thread times before and after are in
     `docs/TABLE3D.md` §6.
-  - [x] 11.8 Trailing as the focus names this game's costliest missed
-    trail ("This game you trailed the 9♠ where the 3♥ was better.",
-    `brief::costliest_trail`, from the review's advisor pass) in place of
-    the one-line fact, which repeated every game and was not actionable.
+  - [x] 11.8 A focus with no rule names this game's costliest miss at it
+    in place of the one-line fact, which repeated every game and was not
+    actionable (`brief::costliest`, `brief::example`, from the review's
+    advisor pass): trailing ("This game you trailed the 9♠ where the 3♥
+    was better."), sums, leaving no sweep, answering builds in Royal, and
+    building in Classic with sweeps scored.
 
 ## Working conventions
 

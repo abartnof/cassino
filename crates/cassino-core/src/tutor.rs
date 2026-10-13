@@ -145,7 +145,7 @@ pub fn shows(view: &View, mv: &Move) -> Vec<Skill> {
 ///   and its chance is the advisor's value gap, which already includes
 ///   the cost (the point for the sweep only when sweeps score).
 /// - **Valuables**: not trailing an ace or a Cassino.
-fn good(skill: Skill, view: &View, m: &Move) -> bool {
+pub(crate) fn good(skill: Skill, view: &View, m: &Move) -> bool {
     match skill {
         Skill::NoSweep => !leaves_sweep(view, m),
         Skill::Valuables => !(is_trail(m) && valuable(m.card())),

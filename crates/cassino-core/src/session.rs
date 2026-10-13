@@ -1224,7 +1224,7 @@ impl Session {
             &after,
             &self.settings.rules,
             self.settings.skill,
-            self.with_pass(|pass| brief::costliest_trail(&self.turns, pass)),
+            &self.with_pass(|pass| brief::costliest(&self.turns, pass)),
         ))
     }
 

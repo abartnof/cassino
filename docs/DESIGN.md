@@ -725,10 +725,11 @@ think about it." At the game's end, three bullets at most:
 the rule shipped for the skill in this game (`lessons::taught`; none for
 sums, leaving no sweep or trailing, or for answering builds in Royal), and
 for a skill with none, one plain fact in place of a rule; then this game's
-figure from the summary tally. Trailing, the commonest focus with no rule,
-names instead this game's costliest missed trail and the better card
-(`brief::costliest_trail`): the fact alone was the same every game and gave
-nothing to act on. With no focus, it says that nothing stood
+figure from the summary tally. Where the game holds a miss at that skill,
+the fact gives way to the costliest one (`brief::costliest`,
+`brief::example`): "This game you trailed the 9♠ where the 3♥ was
+better.", "This game your 7♦ could have taken 3♠ 4♥." The fact alone was
+the same every game and gave nothing to act on. With no focus, it says that nothing stood
 out (and to try the next opponent up, below the top setting), or that it is
 too early to say. A skill is never praised and worked on together, and a
 short game says so in one bullet.

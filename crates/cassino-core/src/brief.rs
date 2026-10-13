@@ -15,10 +15,10 @@
 //! ([`Brief::method`]), for a link.
 
 use crate::agents;
-use crate::cards::Card;
 use crate::learner::{Learner, Summary, Tally, MIN_CHANCES};
 use crate::lessons;
 use crate::moves::Move;
+use crate::observation::View;
 use crate::review::{times, Review, Strength, Turn, FEW};
 use crate::rules::Rules;
 use crate::tutor::{self, Skill};
@@ -114,44 +114,139 @@ pub fn fact(skill: Skill) -> &'static str {
     }
 }
 
-/// This game's costliest trail that missed a clear chance at trailing, as
-/// the card trailed and the best card to trail, by the advisor's values
-/// (`pass`, as [`crate::learner::chances_with_pass`] takes it). No rule
-/// about trailing passed (`measurements/README.md`), so the brief names
-/// this one instead of the fact.
-pub fn costliest_trail(turns: &[Turn], pass: &tutor::Pass) -> Option<(Card, Card)> {
-    let trailed = |m: &Move| match *m {
-        Move::Trail { card } => Some(card),
-        _ => None,
-    };
-    let mut worst: Option<(f64, Card, Card)> = None;
+/// One of this game's missed chances at a skill: the position, the move
+/// the person made, and the best move that met the chance.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct Miss {
+    pub view: View,
+    pub played: Move,
+    pub better: Move,
+}
+
+/// Each skill's costliest miss this game, in [`Skill::ALL`] order.
+pub type Misses = [Option<Miss>; 8];
+
+/// This game's costliest miss at each skill, by the advisor's values
+/// (`pass`, as [`crate::learner::chances_with_pass`] takes it): the miss
+/// whose better move beats the move made by the most. The better move is
+/// the best trail for trailing, the best build for safe builds, and
+/// otherwise the best move that shows the skill.
+pub fn costliest(turns: &[Turn], pass: &tutor::Pass) -> Misses {
+    let mut worst: [Option<(f64, Miss)>; 8] = [None; 8];
     for (t, values) in turns.iter().zip(pass) {
         let Some(values) = values else { continue };
         if t.assisted || t.view.candidates().len() < 2 {
             continue;
         }
-        let chances = tutor::chances_with(&t.view, &t.mv, tutor::margin(&t.view), values);
-        if !chances.iter().any(|c| c.skill == Skill::Trailing && !c.met) {
-            continue;
-        }
         let Some(&(_, mine)) = values.iter().find(|(m, _)| *m == t.mv) else {
             continue;
         };
-        let Some((best, value)) = values
-            .iter()
-            .filter_map(|(m, v)| trailed(m).map(|c| (c, *v)))
-            .max_by(|a, b| a.1.total_cmp(&b.1))
-        else {
-            continue;
-        };
-        let (Some(card), cost) = (trailed(&t.mv), value - mine) else {
-            continue;
-        };
-        if worst.is_none_or(|(w, _, _)| cost > w) {
-            worst = Some((cost, card, best));
+        let chances = tutor::chances_with(&t.view, &t.mv, tutor::margin(&t.view), values);
+        for c in chances.iter().filter(|c| !c.met) {
+            let meets = |m: &Move| match c.skill {
+                Skill::Trailing => matches!(m, Move::Trail { .. }),
+                Skill::SafeBuilds => matches!(m, Move::Build { .. }),
+                skill => tutor::good(skill, &t.view, m),
+            };
+            let Some(&(better, value)) = values
+                .iter()
+                .filter(|(m, _)| meets(m))
+                .max_by(|a, b| a.1.total_cmp(&b.1))
+            else {
+                continue;
+            };
+            let i = Skill::ALL
+                .iter()
+                .position(|&k| k == c.skill)
+                .expect("a skill");
+            let cost = value - mine;
+            if better != t.mv && worst[i].is_none_or(|(w, _)| cost > w) {
+                let miss = Miss {
+                    view: t.view,
+                    played: t.mv,
+                    better,
+                };
+                worst[i] = Some((cost, miss));
+            }
         }
     }
-    worst.map(|(_, card, best)| (card, best))
+    worst.map(|w| w.map(|(_, m)| m))
+}
+
+/// The cards a capture takes, listed, or counted past five.
+fn listed(cards: crate::cards::CardSet) -> String {
+    if cards.len() > 5 {
+        format!("{} cards", cards.len())
+    } else {
+        cards.labels()
+    }
+}
+
+/// A miss told in one sentence, for a skill with no rule (`lessons::taught`)
+/// in place of its fact: `None` for the skills that always have a rule, or
+/// a move of a kind the skill does not ask for.
+pub fn example(skill: Skill, m: &Miss) -> Option<String> {
+    use crate::words::value_word;
+    let theirs = |card| {
+        m.view
+            .table
+            .build_of(card)
+            .filter(|b| b.controller == m.view.opponent())
+    };
+    let text = match (skill, m.played, m.better) {
+        (Skill::Trailing, Move::Trail { card }, Move::Trail { card: best }) => format!(
+            "This game you trailed the {} where the {} was better.",
+            card.label(),
+            best.label()
+        ),
+        (Skill::Sums, _, Move::Capture { card, taken, .. }) => format!(
+            "This game your {} could have taken {}.",
+            card.label(),
+            listed(taken)
+        ),
+        (Skill::NoSweep, played, _) => format!(
+            "This game, after you played the {}, one card could clear the table.",
+            played.card().label()
+        ),
+        (Skill::AnsweringBuilds, _, Move::Capture { card, taken, .. }) => {
+            let b = taken.iter().find_map(theirs)?;
+            format!(
+                "This game your {} could have taken their build of {}.",
+                card.label(),
+                value_word(b.value)
+            )
+        }
+        (
+            Skill::AnsweringBuilds,
+            _,
+            Move::Build {
+                card, value, onto, ..
+            },
+        ) => {
+            let b = theirs(onto?)?;
+            if b.value == value {
+                format!(
+                    "This game your {} could have added to their {}.",
+                    card.label(),
+                    value_word(value)
+                )
+            } else {
+                format!(
+                    "This game your {} could have raised their {} to {}.",
+                    card.label(),
+                    value_word(b.value),
+                    value_word(value)
+                )
+            }
+        }
+        (Skill::Building, _, Move::Build { card, value, .. }) => format!(
+            "This game you could have built {} with the {}.",
+            value_word(value),
+            card.label()
+        ),
+        _ => return None,
+    };
+    Some(text)
 }
 
 /// The skill a strength is praise of, where it is one: praise is dropped
@@ -216,8 +311,8 @@ const MIN_HISTORY: usize = 2;
 ///   on them) and the opponent's skill setting (`Settings::skill`; the top
 ///   of the dial has no next opponent up).
 ///
-/// - `trail`: this game's [`costliest_trail`], told in place of the fact
-///   when trailing is the one to work on.
+/// - `misses`: this game's [`costliest`] miss at each skill; for a skill
+///   with no rule, its [`example`] is told in place of the fact.
 ///
 /// `Session::brief` assembles these.
 pub fn brief(
@@ -227,7 +322,7 @@ pub fn brief(
     after: &Learner,
     rules: &Rules,
     opponent: f64,
-    trail: Option<(Card, Card)>,
+    misses: &Misses,
 ) -> Brief {
     let method = METHOD.to_string();
     if review.decisions < FEW {
@@ -262,14 +357,15 @@ pub fn brief(
     }
     match after.focus {
         Some(skill) => {
-            let said = match (lessons::taught(skill, rules), trail) {
-                (Some(rule), _) => rule.text.to_string(),
-                (None, Some((card, best))) if skill == Skill::Trailing => format!(
-                    "This game you trailed the {} where the {} was better.",
-                    card.label(),
-                    best.label()
-                ),
-                (None, _) => fact(skill).to_string(),
+            let i = Skill::ALL
+                .iter()
+                .position(|&k| k == skill)
+                .expect("a skill");
+            let said = match lessons::taught(skill, rules) {
+                Some(rule) => rule.text.to_string(),
+                None => misses[i]
+                    .and_then(|m| example(skill, &m))
+                    .unwrap_or_else(|| fact(skill).to_string()),
             };
             bullets.push(Bullet::new(
                 &format!("Next: {}.", name(skill)),
@@ -358,7 +454,7 @@ mod tests {
             &learn(&all),
             rules,
             opponent,
-            None,
+            &NONE,
         )
     }
 
@@ -533,44 +629,157 @@ mod tests {
         }
     }
 
-    #[test]
-    fn trailing_names_this_games_costliest_trail_in_place_of_the_fact() {
-        let card = |s: &str| s.parse::<crate::cards::Card>().unwrap();
-        let game = summary(&[(Skill::Trailing, 8, 3, 8.0)]);
-        let b = brief(
-            &review(40, vec![]),
-            &game,
-            &learn(&[]),
-            &learn(std::slice::from_ref(&game)),
-            &royal(),
-            3.0,
-            Some((card("9S"), card("3H"))),
-        );
-        assert_eq!(
-            b.bullets.last().unwrap().plain(),
-            "Next: choosing what to trail. This game you trailed the 9♠ where the 3♥ was better. \
-             You trailed the best card 3 of the 8 times."
-        );
-        within_budget(&b);
+    const NONE: Misses = [None; 8];
+
+    /// South's view before moving: `table`, `hand`, a consistent first
+    /// deal (as the tutor's tests).
+    fn view(rules: Rules, table: &str, hand: &str) -> crate::observation::View {
+        use crate::cards::{pack, CardSet};
+        use crate::table::{Seat, Table};
+        let (h, _) = crate::hand::Hand::deal(rules, Seat::North, pack());
+        let mut v = h.view(Seat::South, [0, 0]);
+        v.table = Table::parse(&rules, table).unwrap();
+        v.hand = CardSet::parse(hand).unwrap();
+        v.piles = [CardSet::EMPTY, CardSet::EMPTY];
+        v.opponent_holds = 4;
+        v.undealt = v.unseen().len() as u8 - 4;
+        v
+    }
+
+    fn miss(rules: Rules, table: &str, hand: &str, played: &str, better: &str) -> Miss {
+        let view = view(rules, table, hand);
+        let (played, better) = (Move::parse(played).unwrap(), Move::parse(better).unwrap());
+        for m in [played, better] {
+            assert!(view.candidates().contains(&m), "{m} is not a candidate");
+        }
+        Miss {
+            view,
+            played,
+            better,
+        }
     }
 
     #[test]
-    fn the_costliest_trail_is_one_the_person_made_with_the_better_card_in_hand() {
+    fn each_skill_with_no_rule_has_an_example_from_the_game() {
+        let r = royal();
+        for (skill, m, want) in [
+            (
+                Skill::Trailing,
+                miss(classic(), "4D 6H", "9S 3H 2C", "trail 9S", "trail 3H"),
+                "This game you trailed the 9♠ where the 3♥ was better.",
+            ),
+            (
+                Skill::Sums,
+                miss(classic(), "3S 4H 6D", "7D 9C", "trail 9C", "take 7D 3S 4H"),
+                "This game your 7♦ could have taken 3♠ 4♥.",
+            ),
+            (
+                Skill::NoSweep,
+                miss(classic(), "4D", "4C 9S", "trail 9S", "take 4C 4D"),
+                "This game, after you played the 9♠, one card could clear the table.",
+            ),
+            (
+                Skill::AnsweringBuilds,
+                miss(
+                    classic(),
+                    "[5 @N: 3H 2S]",
+                    "5C 9D",
+                    "trail 9D",
+                    "take 5C 3H 2S",
+                ),
+                "This game your 5♣ could have taken their build of five.",
+            ),
+            (
+                Skill::AnsweringBuilds,
+                miss(r, "[5 @N: 3H 2S]", "3C 8D", "trail 8D", "build 8 3C on 2S"),
+                "This game your 3♣ could have raised their five to eight.",
+            ),
+            (
+                Skill::Building,
+                miss(classic(), "5S", "3C 8D 9H", "trail 9H", "build 8 3C 5S"),
+                "This game you could have built eight with the 3♣.",
+            ),
+        ] {
+            assert_eq!(example(skill, &m).as_deref(), Some(want), "{skill:?}");
+        }
+        // A long capture is counted, not listed.
+        let big = miss(
+            classic(),
+            "AS 2H 3D 4C 5S 6H",
+            "7D 9C",
+            "trail 9C",
+            "take 7D AS 6H 2H 5S 3D 4C",
+        );
+        assert_eq!(
+            example(Skill::Sums, &big).as_deref(),
+            Some("This game your 7♦ could have taken 6 cards.")
+        );
+    }
+
+    #[test]
+    fn the_example_replaces_the_fact_but_never_a_rule() {
+        let m = miss(classic(), "3S 4H 6D", "7D 9C", "trail 9C", "take 7D 3S 4H");
+        let mut misses = NONE;
+        for skill in [Skill::Sums, Skill::Pairs] {
+            misses[Skill::ALL.iter().position(|&k| k == skill).unwrap()] = Some(m);
+        }
+        let told = |skill| {
+            let game = summary(&[(skill, 8, 1, 8.0)]);
+            let b = brief(
+                &review(40, vec![]),
+                &game,
+                &learn(&[]),
+                &learn(std::slice::from_ref(&game)),
+                &classic(),
+                3.0,
+                &misses,
+            );
+            within_budget(&b);
+            b.bullets.last().unwrap().plain()
+        };
+        assert_eq!(
+            told(Skill::Sums),
+            "Next: taking sums. This game your 7♦ could have taken 3♠ 4♥. \
+             You took a sum 1 of the 8 times it was best."
+        );
+        assert!(
+            told(Skill::Pairs).contains("Take a pair"),
+            "{}",
+            told(Skill::Pairs)
+        );
+    }
+
+    #[test]
+    fn the_costliest_miss_is_a_move_the_person_made_and_a_better_one_on_offer() {
         let mut found = 0;
         for seed in 8_200..8_202 {
             let g = greedy_game(Rules::CLASSIC, seed);
             let pass = crate::tutor::pass_of(g.turns(), |_| true);
-            let missed = evidence(g.turns()).of(Skill::Trailing);
-            let worst = costliest_trail(g.turns(), &pass);
-            assert_eq!(worst.is_some(), missed.met < missed.chances, "seed {seed}");
-            if let Some((trailed, better)) = worst {
-                found += 1;
-                assert!(g.turns().iter().any(|t| !t.assisted
-                    && t.mv == crate::moves::Move::Trail { card: trailed }
-                    && t.view.hand.contains(better)));
+            let summary = evidence(g.turns());
+            let misses = costliest(g.turns(), &pass);
+            for (i, skill) in Skill::ALL.into_iter().enumerate() {
+                let t = summary.of(skill);
+                assert_eq!(
+                    misses[i].is_some(),
+                    t.met < t.chances,
+                    "{skill:?} seed {seed}"
+                );
+                if let Some(m) = misses[i] {
+                    found += 1;
+                    assert!(g
+                        .turns()
+                        .iter()
+                        .any(|t| !t.assisted && t.view == m.view && t.mv == m.played));
+                    assert!(m.view.candidates().contains(&m.better));
+                    assert_ne!(m.played, m.better);
+                    if let Some(e) = example(skill, &m) {
+                        // With the longest lead and figure, 28 words at most.
+                        assert!(words(&e) <= 13, "{e}");
+                    }
+                }
             }
         }
-        assert!(found > 0, "the greedy player misses some trails");
+        assert!(found > 0, "the greedy player misses some chances");
     }
 
     #[test]
