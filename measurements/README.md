@@ -348,3 +348,26 @@ a plain fact. Raw output: `rules-<rules>-<setting>.txt`. Date 2026-10-08.
   with sweeps scored and aces at 14) is told what each of its settings
   confirms, which is not itself measured.
 - The runs took 4 to 16 minutes each on a loaded machine.
+
+## Why a trail was better: no plain reason
+
+For the brief's example (`brief::example`: "This game you trailed the 9♠
+where the 3♥ was better."), whether a plain reason could follow it. `why
+200 --rules classic|royal`: the counter (rung 3) in the person's seat
+against the counter, sweeps not scored; every missed chance at trailing,
+with P the card trailed and B the best trail. A reason would be told, where
+it holds, if it held for B in at least half the misses and at least three
+times as often as for P. Descriptive, a fixed count; R3 and R4 were written
+after R1 and R2 fell short, before they ran.
+
+| Date | Reason | Classic (323 misses): B, P | Royal (509 misses): B, P | Verdict |
+|---|---|---|---|---|
+| 2026-10-13 | R1 fewer copies of B's rank unseen | 21.1%, 34.7% | 24.2%, 30.3% | backwards |
+| 2026-10-13 | R2 B adds up with nothing on the table, P does | 4.3%, 25.7% | 5.3%, 34.0% | backwards |
+| 2026-10-13 | R3 you hold another of B's rank, none of P's | 13.6%, 2.2% | 14.3%, 3.1% | rare |
+| 2026-10-13 | R4 B ranks below P | 68.7%, 30.7% | 78.0%, 20.6% | short in Classic |
+
+None passed, so the example names the better card and gives no reason.
+The trailing rules' fate (T1 to T6, none above 0.80) says the same: the
+card to trail turns on more than one plain feature. The scarce, isolated
+card is, if anything, the one people trail when they should not.

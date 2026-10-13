@@ -450,7 +450,7 @@ fn sweep_choice(v: &View, at_least: u32) -> bool {
 
 /// A card that pairs with nothing and adds up with nothing on the table: it
 /// cannot be taken but by a card of its own rank.
-fn isolated(v: &View, card: Card) -> bool {
+pub fn isolated(v: &View, card: Card) -> bool {
     let rules = &v.rules;
     if !(v.table.loose & CardSet::of_rank(card.rank())).is_empty() {
         return false;

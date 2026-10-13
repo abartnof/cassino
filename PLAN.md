@@ -427,7 +427,9 @@ legal move. RULES.md now says each held card answers for one build value.
     actionable (`brief::costliest`, `brief::example`, from the review's
     advisor pass): trailing ("This game you trailed the 9♠ where the 3♥
     was better."), sums, leaving no sweep, answering builds in Royal, and
-    building in Classic with sweeps scored.
+    building in Classic with sweeps scored. No plain reason for a better
+    trail passed (`why`; `measurements/README.md`, "Why a trail was
+    better"), so the example gives none.
 
 ## Working conventions
 
