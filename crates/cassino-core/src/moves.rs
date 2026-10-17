@@ -165,7 +165,8 @@ impl fmt::Display for Move {
 pub enum Illegal {
     /// The card is not in the hand.
     NotInHand,
-    /// A player who controls a build may not trail (rule 6).
+    /// A player who controls a build may not trail (rule 6), unless
+    /// "Controllers may trail" is on.
     ControllerCannotTrail,
     /// A capture must take something.
     NothingTaken,
@@ -347,7 +348,7 @@ fn generate(
     me: Seat,
     limit: Option<usize>,
 ) -> Vec<Move> {
-    let controls = table.controls_any(me);
+    let barred = !rules.controller_trails && table.controls_any(me);
     let unions_over = |groups: &[CardSet]| match limit {
         None => disjoint_unions(groups),
         Some(l) => bounded_unions(groups, l),
@@ -363,7 +364,7 @@ fn generate(
     for card in hand {
         let rest = hand.without(card);
         let mut mine = Vec::new();
-        if !controls {
+        if !barred {
             mine.push(Move::Trail { card });
         }
         for &value in rules.capture_values(card) {
@@ -588,7 +589,7 @@ pub fn check(
     let rest = hand.without(card);
     match *mv {
         Move::Trail { .. } => {
-            if table.controls_any(me) {
+            if !rules.controller_trails && table.controls_any(me) {
                 return Err(Illegal::ControllerCannotTrail);
             }
         }
@@ -834,14 +835,17 @@ mod tests {
         aces_fourteen: true,
         sweeps: true,
         raising: true,
+        controller_trails: false,
     };
     // "Raise builds" off (play-testing), in each game.
     const CLASSIC_NO_RAISE: Rules = Rules {
         raising: false,
+        controller_trails: false,
         ..Rules::CLASSIC
     };
     const ROYAL_14_NO_RAISE: Rules = Rules {
         raising: false,
+        controller_trails: false,
         ..ROYAL_14
     };
 
@@ -1384,6 +1388,52 @@ mod tests {
         q.assert_illegal("build 14 AC KS AH", Illegal::DoesNotMake(14));
     }
 
+    // "Controllers may trail" on: rule 6's ban is lifted, rule 7 is not.
+    const CLASSIC_TRAILING: Rules = Rules {
+        controller_trails: true,
+        ..Rules::CLASSIC
+    };
+    const ROYAL_14_TRAILING: Rules = Rules {
+        controller_trails: true,
+        ..ROYAL_14
+    };
+
+    #[test]
+    fn a_controller_may_trail_when_the_setting_is_on() {
+        let p = pos(CLASSIC_TRAILING, "[8 @S: 5S 3H] 8D", "8C 4D");
+        p.assert_legal("trail 4D");
+        assert!(texts(&p.legal()).contains(&"trail 4D".to_string()));
+        let played = pos(CLASSIC_TRAILING, "[8 @S: 5S 3H] 8D", "8C 4D").play("trail 4D");
+        assert!(played.won.is_empty());
+    }
+
+    #[test]
+    fn a_controller_still_may_not_trail_the_card_that_guards_the_build() {
+        // Rule 7 holds after any move: the 8C is the only card of value 8.
+        let p = pos(CLASSIC_TRAILING, "[8 @S: 5S 3H] 8D", "8C 4D");
+        p.assert_illegal("trail 8C", Illegal::LeavesBuildUnguarded(8));
+        // And a last card cannot be trailed while a build stands.
+        let last = pos(CLASSIC_TRAILING, "[8 @S: 5S 3H]", "8C");
+        last.assert_illegal("trail 8C", Illegal::LeavesBuildUnguarded(8));
+        assert_eq!(texts(&last.legal()), ["take 8C 5S 3H"]);
+    }
+
+    #[test]
+    fn trailing_by_a_controller_needs_a_card_for_each_value() {
+        // Two builds, 8 and 9: the hand 8C 9D 4D may trail the 4 only.
+        let p = pos(CLASSIC_TRAILING, "[8 @S: 5S 3H] [9 @S: 6S 3C]", "8C 9D 4D");
+        p.assert_legal("trail 4D");
+        p.assert_illegal("trail 9D", Illegal::LeavesBuildUnguarded(9));
+        p.assert_illegal("trail 8C", Illegal::LeavesBuildUnguarded(8));
+    }
+
+    #[test]
+    fn an_opponent_controlled_build_never_stopped_a_trail() {
+        for rules in [Rules::CLASSIC, CLASSIC_TRAILING] {
+            pos(rules, "[8 @N: 5S 3H]", "8C 4D").assert_legal("trail 4D");
+        }
+    }
+
     // ------------------------------------------- against the reference
 
     #[test]
@@ -1394,6 +1444,8 @@ mod tests {
             ROYAL_14,
             CLASSIC_NO_RAISE,
             ROYAL_14_NO_RAISE,
+            CLASSIC_TRAILING,
+            ROYAL_14_TRAILING,
         ] {
             for seed in 0..400 {
                 let (table, hand) = reference::random_position(&rules, seed);
@@ -1422,6 +1474,8 @@ mod tests {
             ROYAL_14,
             CLASSIC_NO_RAISE,
             ROYAL_14_NO_RAISE,
+            CLASSIC_TRAILING,
+            ROYAL_14_TRAILING,
         ] {
             for seed in 1000..1100 {
                 let (table, hand) = reference::random_position(&rules, seed);

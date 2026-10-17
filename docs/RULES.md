@@ -27,7 +27,7 @@ Pagat was the authority for piquet too. It is current (updated May 2026). It
 is explicit about building, where the old books are loose. And its worked
 examples make good test fixtures (see "Worked examples").
 
-**Two games, four settings.** The game is chosen at the start, and so are
+**Two games, five settings.** The game is chosen at the start, and so are
 its settings:
 
 | Setting | Values | Default | Notes |
@@ -35,6 +35,7 @@ its settings:
 | Game | Classic, Royal | Classic | Royal changes only the card values (rule 1) |
 | Aces count 1 or 14 | off, on | off | Royal only. Parlett's variation [01-S1], standard in pagat's North American Royal [02-S3] |
 | Raise builds | on, off | on | Both games. Off, rule 5b does not apply: no build is raised, yours or your opponent's; adding to a build at its value (5c) still is. Asked for in play-testing. The literature's own variant is narrower: no raising of your own build (Dick 1866, USPCC 1898; "Decisions on contested points") |
+| Controllers may trail | off, on | off | Both games. On, rule 6's ban does not apply: a player who controls a build may trail a card, so long as rule 7 still holds after the move (the card that answers for each build is kept, so the last card, or the only card of a build's value, can never be trailed). Asked for after play-testing; the rule it lifts is pagat's [02-S1], so it is off unless chosen at a new game. No other rule changes. |
 | Score sweeps | on, off | off | Both games. A variant on pagat's Casino page, standard in Foster [02-S1][02-S31]; Royal "is often played without a score for sweeps" [02-S3]. Off by default since the first play-testing |
 
 Everything else is one rule, implemented once.
@@ -183,7 +184,10 @@ V of an existing build, single or multiple, and joins it [02-S1].
 - **Trailing** puts the played card on the table as a loose card, without
   capturing or building.
 - It is allowed even when the card could have captured [02-S1].
-- **A player who controls a build may not trail** [02-S1].
+- **A player who controls a build may not trail** [02-S1], unless the
+  setting "Controllers may trail" is on. Then they may, but rule 7 still
+  binds: a trail that leaves a build without a card of its value held
+  (a different card for each value) is illegal.
 
 ### 7. The controller's obligation
 
@@ -261,7 +265,7 @@ their sources. §3.3 ranks the arguments. This is what the engine does.
 | Builds made only of table cards | **No** | pagat [02-S1] | pagat's own variant; Swazi [02-S4] |
 | Table cards in raising a single build | **No**, except absorbing groups of the new value | pagat [02-S1] | pagat's variant; Cats at Cards [02-S39] |
 | A single build as a card in a sum | **No** | pagat [02-S1]; BGG [02-S59] | pagat's variant; Dick 1867 [02-S36] |
-| The controller trailing | **No** | pagat [02-S1] | pagat's variant; Swazi [02-S4] |
+| The controller trailing | **No**; a setting allows it | pagat [02-S1] | pagat's variant; Swazi [02-S4] |
 | Sweeps | **Scored, 1 point** (setting) | Foster, USPCC, Britannica [03-S31][02-S32][02-S33] | A variant in pagat [02-S1]; often unscored in Royal [02-S3] |
 | Sweep cancellation | **No** | pagat Royal [02-S3] | Foster, Dominican, Finnish [03-S31][02-S3][10-S1] |
 | A sweep on the last card | **Counts**, if it takes everything | pagat [02-S1] | Scopa; Finnish last deal [02-S10][02-S5] |

@@ -60,6 +60,34 @@ test("with raising off, no build is raised in a whole game, and the state says s
   assert.ok(raisesOn > 0, "with it on, the same games raise");
 });
 
+// "Controllers may trail": off, as the rules have it, a player who controls a
+// build never trails; on, they do, and the state says which.
+test("with controllers trailing on, a builder trails in a whole game; off, never", { skip: !existsSync(WASM) && "build the module first" }, async () => {
+  const engine = await loadEngine(readFileSync(WASM));
+  assert.equal(engine.start({ game: "classic", seed: 5 }).rules.controller_trails, false);
+  const trailed = { on: 0, off: 0 };
+  for (const controller_trails of [true, false]) {
+    for (const seed of [5, 6, 7, 8, 9, 10]) {
+      let s = engine.start({ game: seed === 6 ? "royal" : "classic", controller_trails, skill: 3, seed });
+      assert.equal(s.rules.controller_trails, controller_trails);
+      for (let n = 0; s.prompt !== "over" && n < 500; n++) {
+        if (s.prompt === "play") {
+          // A builder of yours: some build of the table is yours.
+          const yours = s.table.some((item) => item.build && item.build.controller === "you");
+          const trails = s.moves.filter((m) => m.startsWith("trail"));
+          if (yours && trails.length) trailed[controller_trails ? "on" : "off"] += 1;
+          const pick = controller_trails && trails.length && yours ? trails[0] : s.moves[(n * 5) % s.moves.length];
+          s = engine.send(pick).state;
+        } else {
+          s = engine.send("next").state;
+        }
+      }
+    }
+  }
+  assert.equal(trailed.off, 0, "off: a builder is never offered a trail");
+  assert.ok(trailed.on > 0, "on: a builder is offered one");
+});
+
 // The tutor (docs/PROTOCOL.md, "The tutor"): a game's evidence once over, the
 // summary of a stored record, the learner and the brief over a history, the
 // focus and the nudge. The timings are printed: the page keeps the evidence

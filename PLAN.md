@@ -174,6 +174,16 @@ legal move. RULES.md now says each held card answers for one build value.
   have it): off, no build is raised, in the engine, the table, the
   terminal (`--no-raise`) and the saved record (`raise=0`), and the
   tutorial's page on raising says so.
+  And "Controllers may trail" (2026-10-17, asked for as a would-be-nice): off by
+  default, so the game is as it was; on, rule 6's ban is lifted and rule 7
+  alone decides which trails stand. The audit found nothing else that
+  assumed a controller never trails: the generator, the checker and the
+  reference oracle each carry the one condition, and the agents, the
+  searcher and the solver go through the move list. Tests: the reference
+  agrees on random positions, whole hands and every agent level play with it
+  on, the record keeps it (`trail=1`), the table's menu offers it. The
+  advice, the brief and the measurements were made with it off and are not
+  re-run for it.
 - **The sixth play-testing** (2026-10-04): Large Text faces by default on
   a tablet as on a phone (an iPad's Safari says it is a Mac; its touch
   points tell it from one); Explanations to the left of Hints, under the
@@ -296,7 +306,7 @@ legal move. RULES.md now says each held card answers for one build value.
 | Decision | Choice | Reasoning |
 |---|---|---|
 | The games | Two-player **Classic** and **Royal** Cassino, chosen at the start; Royal the table's default since the seventh play-testing (the terminal's stays Classic) | the user; `RULES.md` |
-| Settings | "Aces count 1 or 14" (Royal only; on by default since the seventh play-testing), "Score sweeps" (off since the first play-testing) and "Raise builds" (on; a choice since the fifth) | `RULES.md`, "Authority" |
+| Settings | "Aces count 1 or 14" (Royal only; on by default since the seventh play-testing), "Score sweeps" (off since the first play-testing) and "Raise builds" (on; a choice since the fifth) and "Controllers may trail" (off; a choice at a new game) | `RULES.md`, "Authority" |
 | Rule authority | pagat.com, Casino and Royal Casino | `RULES.md` |
 | Language | **Rust from the first line**; no Python oracle | `DESIGN.md` §4 |
 | What replaces the oracle | A brute-force reference move generator, the worked examples, invariants | `DESIGN.md` §4, §13 |

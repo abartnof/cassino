@@ -117,7 +117,12 @@ pub fn is_legal(rules: &Rules, table: &Table, hand: CardSet, me: Seat, mv: &Move
     }
     let rest = hand.without(card);
     match *mv {
-        Move::Trail { .. } => !table.controls_any(me),
+        // A controller trails only if the setting lets them, and then rule 7
+        // still holds of the hand that is left.
+        Move::Trail { .. } => {
+            (rules.controller_trails || !table.controls_any(me))
+                && obligation_kept(rules, table, rest, me)
+        }
         Move::Capture { value, taken, .. } => {
             if taken.is_empty() || !rules.capture_values(card).contains(&value) {
                 return false;

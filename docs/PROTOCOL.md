@@ -12,7 +12,7 @@ the JSON; the shapes are the same.
 ## The loop
 
 ```
-new(game, aces14, sweeps, raising, skill, seed)  -> state
+new(game, aces14, sweeps, raising, controller_trails, skill, seed)  -> state
 loop:
     read state.prompt          -- "play", "next_hand" or "over"
     draw state                 -- hand, table, piles, scores, events
@@ -101,7 +101,7 @@ client cannot show more than the person at the table could know.
 | Field | Meaning |
 |---|---|
 | `protocol` | This document's version (1) |
-| `seed`, `rules` (`game`: `classic`/`royal`, `aces14`, `sweeps`, `raising`), `skill` | The sitting's settings |
+| `seed`, `rules` (`game`: `classic`/`royal`, `aces14`, `sweeps`, `raising`, `controller_trails`), `skill` | The sitting's settings |
 | `watching` | Two computer players: advance with `step` |
 | `prompt` | `play`, `next_hand` or `over` |
 | `hand` | Your cards, by rank then suit: `{card, label, rank, suit}` |
@@ -165,8 +165,10 @@ next
 *trail 7H
 ```
 
-With "Raise builds" off the rules line ends `raise=0`; on, the default, it says
-nothing of it, so records kept before the setting restore as they were.
+With "Raise builds" off the rules line says `raise=0`; on, the default, it says
+nothing of it. With "Controllers may trail" on it ends `trail=1` (after any
+`raise=0`); off, the default, it says nothing. Records kept before either
+setting restore as they were.
 
 A page keeps it and hands it to `cassino_restore` on reload. Restoring
 replays the commands with the aids on, so the notes come back. It is refused
@@ -255,7 +257,7 @@ check that the computer played fair (DESIGN.md §12.3).
 
 ## Watching
 
-`watch(game, aces14, sweeps, raising, south_skill, north_skill, seed)` seats two
+`watch(game, aces14, sweeps, raising, controller_trails, south_skill, north_skill, seed)` seats two
 computer players. `step` makes the next move, one move whoever's it is, or
 deals the next hand. The narration names the seats South and North. Every command but `set` is
 refused (`watching`); `set` changes the aid but plays nothing.
@@ -268,8 +270,8 @@ The module exports, with no `wasm-bindgen`:
 
 | Export | |
 |---|---|
-| `cassino_new(game, aces14, sweeps, raising, skill_milli, seed)` | A new sitting; game 0 Classic, 1 Royal; the settings 0 or 1; skill in thousandths (1000–4000) |
-| `cassino_watch(game, aces14, sweeps, raising, south_milli, north_milli, seed)` | A watched game |
+| `cassino_new(game, aces14, sweeps, raising, controller_trails, skill_milli, seed)` | A new sitting; game 0 Classic, 1 Royal; the settings 0 or 1; skill in thousandths (1000–4000) |
+| `cassino_watch(game, aces14, sweeps, raising, controller_trails, south_milli, north_milli, seed)` | A watched game |
 | `cassino_alloc(len) -> ptr` | A buffer to write a command or selection into |
 | `cassino_send(len) -> 0/1` | Carry out the command just written; renders the state |
 | `cassino_step() -> 0/1` | One step of a watched game; renders the state |

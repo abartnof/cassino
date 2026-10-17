@@ -446,6 +446,7 @@ mod tests {
         aces_fourteen: true,
         sweeps: true,
         raising: true,
+        controller_trails: false,
     };
 
     fn set(s: &str) -> CardSet {
@@ -593,7 +594,18 @@ mod tests {
 
     #[test]
     fn random_hands_keep_every_invariant() {
-        for rules in [Rules::CLASSIC, Rules::ROYAL, ROYAL_14] {
+        let trailing = |r: Rules| Rules {
+            controller_trails: true,
+            ..r
+        };
+        for rules in [
+            Rules::CLASSIC,
+            Rules::ROYAL,
+            ROYAL_14,
+            trailing(Rules::CLASSIC),
+            trailing(Rules::ROYAL),
+            trailing(ROYAL_14),
+        ] {
             for seed in 0..300 {
                 let (h, log) = random_hand(rules, seed);
                 assert!(h.table().is_empty(), "the residue is taken");
@@ -650,6 +662,33 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn controllers_trail_in_random_hands_only_when_the_setting_lets_them() {
+        let mut seen = [0, 0];
+        for (i, controller_trails) in [false, true].into_iter().enumerate() {
+            let rules = Rules {
+                controller_trails,
+                ..Rules::CLASSIC
+            };
+            for seed in 0..200 {
+                let mut rng = Rng::seeded(seed);
+                let (mut h, _) = Hand::deal(rules, Seat::South, shuffled(seed));
+                while let Some(seat) = h.to_move() {
+                    let moves = h.legal_moves();
+                    assert!(!moves.is_empty(), "{} / {}", h.table(), h.hand_of(seat));
+                    let mv = moves[rng.below(moves.len() as u64) as usize];
+                    if h.table().controls_any(seat) && matches!(mv, Move::Trail { .. }) {
+                        seen[i] += 1;
+                    }
+                    h.play(&mv).unwrap();
+                }
+                assert!(h.table().is_empty(), "no build outlives the hand");
+            }
+        }
+        assert_eq!(seen[0], 0, "never with the setting off");
+        assert!(seen[1] > 20, "often enough with it on: {}", seen[1]);
     }
 
     #[test]

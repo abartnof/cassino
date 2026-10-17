@@ -11,7 +11,7 @@ Two-player Cassino against the computer, in one self-contained web page:
 
 - **Two games**, chosen at the start: **Classic** (court cards pair only) and
   **Royal** (J 11, Q 12, K 13). Royal has an "Aces count 1 or 14" setting, and
-  both have "Score sweeps" and "Raise builds". `RULES.md` settles everything else once.
+  both have "Score sweeps", "Raise builds" and "Controllers may trail". `RULES.md` settles everything else once.
 - **A rules engine and opponent in Rust**, compiled to WebAssembly and inlined
   into the page.
 - **A 3D table** (three.js, realistic motion, Material Design 3 controls),
@@ -220,7 +220,9 @@ over the cards sorted by value.
     of loose V-groups;
   - **add**: each build of value V, plus S0 and any union of loose V-groups,
     as for a new multiple build.
-- **Trails**: every hand card, unless the player controls a build.
+- **Trails**: every hand card, unless the player controls a build and
+  "Controllers may trail" is off. With it on, the same filter below (rule 7)
+  decides which trails stand.
 - **Filter**: the controller's obligation (rule 7), checked on the resulting
   position.
 

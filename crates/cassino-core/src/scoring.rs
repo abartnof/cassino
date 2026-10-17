@@ -235,6 +235,7 @@ mod tests {
             aces_fourteen: false,
             sweeps: false,
             raising: true,
+            controller_trails: false,
         };
         let off = Breakdown::new(&off_rules, piles, [2, 1]);
         assert_eq!(off.total(), 11);

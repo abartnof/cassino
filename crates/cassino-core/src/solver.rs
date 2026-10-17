@@ -222,6 +222,7 @@ pub(crate) mod tests {
             aces_fourteen: true,
             sweeps: true,
             raising: true,
+            controller_trails: false,
         };
         for rules in [Rules::CLASSIC, Rules::ROYAL, royal14] {
             for seed in 0..60 {

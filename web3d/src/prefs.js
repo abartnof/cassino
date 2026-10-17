@@ -18,13 +18,16 @@ const SERIES = "cassino.series";
 export const DEFAULTS = Object.freeze({
   // Sweeps scored only if chosen: pagat's Casino has them as a variant, and
   // play-testing preferred the game without them (docs/RULES.md). Builds
-  // raised unless chosen otherwise (play-testing asked for the choice).
+  // raised unless chosen otherwise (play-testing asked for the choice). A
+  // player who controls a build may not trail unless chosen otherwise
+  // (docs/RULES.md rule 6: pagat's rule, kept unless the new game's menu
+  // lifts it).
   // Royal Cassino the game unless plain Cassino, the variant, is chosen
   // (the user: "I want Royal Casino on the left and to be the default.
   // Casino is the variant and on the right").
   // Its aces 1 or 14, unless chosen otherwise (the user: "Aces being high
   // or low should be selected by default").
-  rules: Object.freeze({ game: "royal", aces14: true, sweeps: false, raising: true }),
+  rules: Object.freeze({ game: "royal", aces14: true, sweeps: false, raising: true, controller_trails: false }),
   skill: 3,
   speed: 1,
   surface: "random",
@@ -117,6 +120,7 @@ export function loadPrefs(store) {
       aces14: game === "royal" && (isBool(r.aces14) && kept.v >= 5 ? r.aces14 : DEFAULTS.rules.aces14),
       sweeps: isBool(r.sweeps) && kept.v >= 2 ? r.sweeps : DEFAULTS.rules.sweeps,
       raising: isBool(r.raising) ? r.raising : DEFAULTS.rules.raising,
+      controller_trails: isBool(r.controller_trails) ? r.controller_trails : DEFAULTS.rules.controller_trails,
     },
     skill: SKILLS.some((s) => s.value === kept.skill) ? kept.skill : DEFAULTS.skill,
     speed: Number.isFinite(kept.speed) && kept.speed > 0 ? kept.speed : DEFAULTS.speed,
@@ -158,6 +162,7 @@ export function withUrl(prefs, params) {
   if (params.has("sweeps")) out.rules.sweeps = true;
   if (params.has("nosweeps")) out.rules.sweeps = false;
   if (params.has("noraise")) out.rules.raising = false;
+  if (params.has("trail")) out.rules.controller_trails = true;
   const skill = Number(params.get("skill"));
   if (params.has("skill") && skill >= 1 && skill <= 4) out.skill = skill;
   const speed = Number(params.get("speed"));
@@ -187,7 +192,7 @@ export function welcomeWanted(params) {
 export function chooseGame(prefs, series, { rules, skill, match, tutorial }) {
   const game = rules.game === "royal" ? "royal" : "classic";
   const patch = {
-    rules: { game, aces14: game === "royal" && rules.aces14 === true, sweeps: rules.sweeps === true, raising: rules.raising !== false },
+    rules: { game, aces14: game === "royal" && rules.aces14 === true, sweeps: rules.sweeps === true, raising: rules.raising !== false, controller_trails: rules.controller_trails === true },
     skill,
     match,
   };
@@ -221,6 +226,7 @@ export function gameSaid(rules, skill) {
   const parts = [rules.game === "royal" ? "Royal Cassino" : "Cassino"];
   if (rules.game === "royal" && rules.aces14) parts.push("aces 1 or 14");
   parts.push(rules.sweeps ? "sweeps scored" : "no sweeps", rules.raising === false ? "no raising" : "builds raised");
+  if (rules.controller_trails === true) parts.push("a builder may trail");
   return `${parts.join(", ")}; your opponent at ${skill}`;
 }
 

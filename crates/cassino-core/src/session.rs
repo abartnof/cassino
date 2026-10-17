@@ -205,7 +205,7 @@ impl Saved {
             format!("cassino record v{}", self.version),
             format!("seed {}", self.seed),
             format!(
-                "rules {} aces14={} sweeps={}{}",
+                "rules {} aces14={} sweeps={}{}{}",
                 if r.game == crate::rules::Game::Royal {
                     "royal"
                 } else {
@@ -215,7 +215,8 @@ impl Saved {
                 bit(r.sweeps),
                 // Said only when off: on, the record is as it was before
                 // the setting, and old records restore as they were.
-                if r.raising { "" } else { " raise=0" }
+                if r.raising { "" } else { " raise=0" },
+                if r.controller_trails { " trail=1" } else { "" }
             ),
             format!("skill {}", self.settings.skill),
             format!(
@@ -261,9 +262,13 @@ impl Saved {
             game,
             aces_fourteen: flag(words.get(1), "aces14=")?,
             sweeps: flag(words.get(2), "sweeps=")?,
-            raising: match words.get(3) {
+            raising: match words.get(3).filter(|w| w.starts_with("raise=")) {
                 None => true,
                 w => flag(w, "raise=")?,
+            },
+            controller_trails: match words.get(3..).unwrap_or_default().last() {
+                Some(w) if w.starts_with("trail=") => flag(Some(w), "trail=")?,
+                _ => false,
             },
         };
         let skill: f64 = header("skill ")?.parse().map_err(|_| "not a skill")?;
@@ -1409,6 +1414,7 @@ mod tests {
         let off = Settings {
             rules: Rules {
                 raising: false,
+                controller_trails: false,
                 ..settings().rules
             },
             ..settings()
@@ -1421,6 +1427,38 @@ mod tests {
             Saved::parse(&on).unwrap().settings.rules.raising,
             "an old record raises"
         );
+    }
+
+    // "Controllers may trail" on is kept as `trail=1`, after any `raise=0`;
+    // off, the default, the record is as it always was.
+    #[test]
+    fn controllers_trailing_is_kept_in_the_record_only_when_on() {
+        let off = Session::new(13, settings()).saved().to_text();
+        assert!(!off.contains("trail"), "{off}");
+        for raising in [true, false] {
+            let on = Settings {
+                rules: Rules {
+                    raising,
+                    controller_trails: true,
+                    ..settings().rules
+                },
+                ..settings()
+            };
+            let saved = Session::new(13, on).saved();
+            let text = saved.to_text();
+            let want = if raising {
+                " trail=1"
+            } else {
+                " raise=0 trail=1"
+            };
+            assert!(text.lines().nth(2).unwrap().ends_with(want), "{text}");
+            assert_eq!(Saved::parse(&text), Ok(saved.clone()));
+            let parsed = Saved::parse(&text).unwrap().settings.rules;
+            assert!(parsed.controller_trails && parsed.raising == raising);
+        }
+        assert!(!Saved::parse(&off).unwrap().settings.rules.controller_trails);
+        let bad = off.replacen(" sweeps=1", " sweeps=1 trail=2", 1);
+        assert!(Saved::parse(&bad).is_err(), "{bad}");
     }
 
     #[test]

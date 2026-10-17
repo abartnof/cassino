@@ -302,6 +302,7 @@ mod tests {
             aces_fourteen: false,
             sweeps: true,
             raising: true,
+            controller_trails: false,
         };
         assert_eq!(*g.rules(), rules);
     }

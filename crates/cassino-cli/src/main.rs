@@ -1,7 +1,7 @@
 //! `cassino`: play Cassino in the terminal, or watch two computer players.
 //!
 //! ```text
-//! cassino [--royal [--aces-14]] [--sweeps] [--no-raise] [--seed N] [--skill 1-TOP]
+//! cassino [--royal [--aces-14]] [--sweeps] [--no-raise] [--trail] [--seed N] [--skill 1-TOP]
 //!         [--watch [--skills A,B] [--reveal] [--fast]] [--explain] [--no-colour]
 //! ```
 
@@ -77,6 +77,7 @@ fn rule_flag(rules: &mut Rules, arg: &str) -> bool {
         "--sweeps" => rules.sweeps = true,
         "--no-sweeps" => rules.sweeps = false,
         "--no-raise" => rules.raising = false,
+        "--trail" => rules.controller_trails = true,
         _ => return false,
     }
     true
@@ -92,6 +93,7 @@ fn help() {
     println!("  --aces-14    (Royal) an ace from the hand may capture as 14");
     println!("  --sweeps     a point for each sweep (not scored by default)");
     println!("  --no-raise   no build is raised, yours or your opponent's");
+    println!("  --trail      a player who controls a build may trail a card");
     println!(
         "  --skill      how well your opponent plays, from 1 to {} (default {}):",
         agents::TOP,
@@ -158,5 +160,12 @@ mod tests {
         assert!(rules(&[]).raising);
         assert!(!rules(&["--no-raise"]).raising);
         assert!(!rules(&["--royal", "--no-raise"]).raising);
+    }
+
+    #[test]
+    fn controllers_trail_only_when_asked() {
+        assert!(!rules(&[]).controller_trails);
+        assert!(rules(&["--trail"]).controller_trails);
+        assert!(rules(&["--royal", "--trail", "--no-raise"]).controller_trails);
     }
 }

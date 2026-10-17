@@ -175,6 +175,7 @@ export function createChrome(root, on) {
     const aces = sw({ "data-rule": "aces14" }, (v) => (rules = { ...rules, aces14: v }));
     const sweeps = sw({ "data-rule": "sweeps" }, (v) => (rules = { ...rules, sweeps: v }));
     const raising = sw({ "data-rule": "raising" }, (v) => (rules = { ...rules, raising: v }));
+    const builderTrails = sw({ "data-rule": "controller_trails" }, (v) => (rules = { ...rules, controller_trails: v }));
     const options = (list, current) =>
       list.map(([value, words]) => el("md-select-option", { value: String(value), selected: String(value) === String(current) }, el("div", { slot: "headline" }, words)));
     const skill = el("md-outlined-select", { class: "skill", label: "Your opponent" }, options(SKILLS.map((k) => [k.value, `${k.value} \u2014 ${k.words}`]), from.skill));
@@ -196,6 +197,7 @@ export function createChrome(root, on) {
       aces.disabled = rules.game !== "royal";
       sweeps.selected = rules.sweeps;
       raising.selected = rules.raising !== false;
+      builderTrails.selected = rules.controller_trails === true;
     };
     gameSet.addEventListener("segmented-button-set-selection", (e) => {
       const game = e.detail.button.dataset.game;
@@ -221,6 +223,7 @@ export function createChrome(root, on) {
         row("Aces count 1 or 14", "Royal: an ace in your hand takes as one or as fourteen", aces),
         row("Score sweeps", "A point for each capture that clears the table", sweeps),
         row("Raise builds", "A card from your hand may raise a build to a higher total, yours or your opponent's", raising),
+        row("Builders may trail", "While you control a build you may still trail a card, if you keep the card that takes it", builderTrails),
         el("div", { class: "selects" }, skill, match),
         // Near the end: most players never need it (the user).
         row("Tutorial", "New to the game? Each idea explained the first time it comes up, and every build's value shown", tutorialSwitch),

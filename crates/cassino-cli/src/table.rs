@@ -100,6 +100,9 @@ impl<R: BufRead, W: Write> Table<R, W> {
         if !rules.raising {
             kind += "; no raising builds";
         }
+        if rules.controller_trails {
+            kind += "; a controller may trail";
+        }
         writeln!(
             self.out,
             "Cassino ({kind}). Game to 21. Seed {}.",

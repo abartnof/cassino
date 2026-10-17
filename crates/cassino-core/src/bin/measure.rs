@@ -68,6 +68,7 @@ fn main() {
                         aces_fourteen: true,
                         sweeps: true,
                         raising: true,
+                        controller_trails: false,
                     },
                     _ => panic!("{usage}"),
                 };

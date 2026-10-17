@@ -84,6 +84,7 @@ Play one card from your hand, and:
 - You must hold a card of the total. No 8, no build of 8.
 - Only a card of the total takes the build, and it takes the whole pile.
 - While you have a build, you can't trail: take something, or build again.
+- Unless you turned on **Builders may trail**, in the new game's menu.
 
 ## Your opponent
 

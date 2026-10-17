@@ -409,6 +409,7 @@ mod tests {
         aces_fourteen: true,
         sweeps: true,
         raising: true,
+        controller_trails: false,
     };
 
     fn t(rules: &Rules, s: &str) -> Table {

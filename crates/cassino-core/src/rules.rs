@@ -29,6 +29,11 @@ pub struct Rules {
     /// play-testing asked for the choice), no build is raised, yours or your
     /// opponent's; adding to a build at its value (5c) still is allowed.
     pub raising: bool,
+    /// "Controllers may trail": a player who controls a build may trail a
+    /// card (rule 6). Off, the pagat rule, a controller must capture, build
+    /// or add. Either way rule 7 holds after the move, so a trail that
+    /// leaves a build unguarded is still illegal.
+    pub controller_trails: bool,
 }
 
 impl Rules {
@@ -37,12 +42,14 @@ impl Rules {
         aces_fourteen: false,
         sweeps: true,
         raising: true,
+        controller_trails: false,
     };
     pub const ROYAL: Rules = Rules {
         game: Game::Royal,
         aces_fourteen: false,
         sweeps: true,
         raising: true,
+        controller_trails: false,
     };
 
     /// The card's value in sums and builds: `None` for a Classic court card.
@@ -152,12 +159,14 @@ mod tests {
         aces_fourteen: true,
         sweeps: true,
         raising: true,
+        controller_trails: false,
     };
     const CLASSIC_14: Rules = Rules {
         game: Game::Classic,
         aces_fourteen: true,
         sweeps: true,
         raising: true,
+        controller_trails: false,
     };
 
     #[test]

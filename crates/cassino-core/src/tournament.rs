@@ -279,6 +279,26 @@ mod tests {
     }
 
     #[test]
+    fn every_level_plays_whole_hands_with_controllers_trailing() {
+        // `play_out` panics on an illegal choice; the searcher and counter
+        // must also cope with the controller's extra moves.
+        for game in [Rules::CLASSIC, Rules::ROYAL] {
+            let rules = Rules {
+                controller_trails: true,
+                ..game
+            };
+            for level in 1..=crate::agents::TOP {
+                let make = move |seed: u64, seat: Seat| -> Box<dyn Agent> {
+                    crate::agents::by_level(level, agent_rng(seed, seat))
+                };
+                for seed in 0..2 {
+                    mirrored_hand(rules, seed, &make, &greedy);
+                }
+            }
+        }
+    }
+
+    #[test]
     fn the_boundaries_are_obrien_flemings() {
         let b = Plan {
             batch: 100,

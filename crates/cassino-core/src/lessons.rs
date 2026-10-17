@@ -1150,11 +1150,13 @@ mod tests {
                 Some("Classic, raising off") => Rules {
                     sweeps: false,
                     raising: false,
+                    controller_trails: false,
                     ..Rules::CLASSIC
                 },
                 Some("Royal, raising off") => Rules {
                     sweeps: false,
                     raising: false,
+                    controller_trails: false,
                     ..Rules::ROYAL
                 },
                 _ => continue,

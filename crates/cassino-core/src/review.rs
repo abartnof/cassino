@@ -618,6 +618,7 @@ mod tests {
             },
             Rules {
                 raising: false,
+                controller_trails: false,
                 sweeps: false,
                 ..Rules::ROYAL
             },

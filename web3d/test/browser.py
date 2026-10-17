@@ -418,6 +418,8 @@ def check_new_game(browser, failures):
     shot(page, "t6-new-game")
     if not page.evaluate("document.querySelector('.new-game-dialog md-switch[data-rule=\"raising\"]').selected"):
         failures.append("new game: Raise builds is not on by default")
+    if page.evaluate("document.querySelector('.new-game-dialog md-switch[data-rule=\"controller_trails\"]').selected"):
+        failures.append("new game: Builders may trail is not off by default")
     dialog.locator('md-outlined-segmented-button[data-game="classic"]').click()
     dialog.locator(".new-game-cancel").click()
     page.wait_for_function("!document.querySelector('.new-game-dialog').open")
@@ -431,12 +433,13 @@ def check_new_game(browser, failures):
 
     def royal(d):
         d.locator('md-switch[data-rule="raising"]').click()
+        d.locator('md-switch[data-rule="controller_trails"]').click()
 
     deal_from_menu(page, royal)
     settle(page)
     rules = page.evaluate("window.cassino3d.state().rules")
-    if rules != {"game": "royal", "aces14": True, "sweeps": False, "raising": False}:
-        failures.append(f"new game: dealt with {rules}, not Royal with aces 1 or 14 and no raising")
+    if rules != {"game": "royal", "aces14": True, "sweeps": False, "raising": False, "controller_trails": True}:
+        failures.append(f"new game: dealt with {rules}, not Royal with aces 1 or 14, no raising, builders trailing")
     page.locator("md-icon-button.settings-open").click()
     page.wait_for_timeout(1200)
     if "This game: Royal Cassino, aces 1 or 14" not in page.locator(".settings-dialog .game-line").inner_text():
@@ -449,10 +452,10 @@ def check_new_game(browser, failures):
     page.locator(".new-game-dialog md-filled-button.deal").wait_for(state="visible", timeout=10_000)
     shown = page.evaluate("""() => {
       const d = document.querySelector('.new-game-dialog');
-      return [[...d.querySelectorAll('md-outlined-segmented-button')].find((b) => b.selected)?.dataset.game, d.querySelector('md-switch[data-rule="aces14"]').selected, d.querySelector('md-switch[data-rule="raising"]').selected,
+      return [[...d.querySelectorAll('md-outlined-segmented-button')].find((b) => b.selected)?.dataset.game, d.querySelector('md-switch[data-rule="aces14"]').selected, d.querySelector('md-switch[data-rule="raising"]').selected, d.querySelector('md-switch[data-rule="controller_trails"]').selected,
         [...d.querySelectorAll('md-outlined-segmented-button')].map((b) => b.getAttribute('label'))];
     }""")
-    if shown != ["royal", True, False, ["Royal Cassino", "Cassino"]]:
+    if shown != ["royal", True, False, True, ["Royal Cassino", "Cassino"]]:
         failures.append(f"new game: the menu does not start from the last game, Royal Cassino left of Cassino: {shown}")
     page.locator(".new-game-dialog .new-game-cancel").click()
     if page.errors:

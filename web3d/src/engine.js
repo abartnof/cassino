@@ -62,25 +62,27 @@ export async function loadEngine(bytes, onTrap = () => {}) {
     new Uint8Array(ex.memory.buffer, at, bytes.length).set(bytes);
     return bytes.length;
   };
-  const numbers = ({ game = "classic", aces14 = false, sweeps = true, raising = true }) => [
+  const numbers = ({ game = "classic", aces14 = false, sweeps = true, raising = true, controller_trails = false }) => [
     game === "royal" ? 1 : 0,
     aces14 ? 1 : 0,
     sweeps ? 1 : 0,
     raising ? 1 : 0,
+    controller_trails ? 1 : 0,
   ];
   const api = {
     // A new sitting: { game: "classic" | "royal", aces14, sweeps, raising,
+    // controller_trails,
     // skill, seed }.
     start(settings) {
-      const [game, aces, sweeps, raising] = numbers(settings);
-      ex.cassino_new(game, aces, sweeps, raising, Math.round((settings.skill ?? 4) * 1000), settings.seed >>> 0);
+      const [game, aces, sweeps, raising, trails] = numbers(settings);
+      ex.cassino_new(game, aces, sweeps, raising, trails, Math.round((settings.skill ?? 4) * 1000), settings.seed >>> 0);
       return out();
     },
     // Two computer players to watch: { ..., skills: [south, north] }.
     watch(settings) {
-      const [game, aces, sweeps, raising] = numbers(settings);
+      const [game, aces, sweeps, raising, trails] = numbers(settings);
       const [south, north] = settings.skills ?? [4, 4];
-      ex.cassino_watch(game, aces, sweeps, raising, Math.round(south * 1000), Math.round(north * 1000), settings.seed >>> 0);
+      ex.cassino_watch(game, aces, sweeps, raising, trails, Math.round(south * 1000), Math.round(north * 1000), settings.seed >>> 0);
       return out();
     },
     state() {

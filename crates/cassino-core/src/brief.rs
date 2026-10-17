@@ -566,6 +566,7 @@ mod tests {
     fn a_figure_is_true_in_every_setting() {
         let no_raise = Rules {
             raising: false,
+            controller_trails: false,
             ..classic()
         };
         let t = Tally {
@@ -826,6 +827,7 @@ mod tests {
             .starts_with("If you cannot take their build, raise it, if you can."));
         let no_raise = Rules {
             raising: false,
+            controller_trails: false,
             ..classic()
         };
         let b = made(&review(40, vec![]), &game, &[], &no_raise, 3.0);
